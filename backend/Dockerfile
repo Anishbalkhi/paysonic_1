@@ -19,15 +19,13 @@ LABEL description="Paysonic Toll Ops Platform - Backend API"
 
 WORKDIR /app
 
-# Copy the built JAR from builder stage
-COPY --from=builder /build/target/paysonic-tollops-backend-1.0.0-enterprise.jar app.jar
+# Copy the built JAR from builder stage to both app.jar and target/ directory
+RUN mkdir -p /app/target
+COPY --from=builder /build/target/paysonic-tollops-backend-1.0.0-enterprise.jar /app/app.jar
+COPY --from=builder /build/target/paysonic-tollops-backend-1.0.0-enterprise.jar /app/target/paysonic-tollops-backend-1.0.0-enterprise.jar
 
 # Expose Spring Boot port
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget -qO- http://localhost:8080/api/dashboard || exit 1
 
 # Run Spring Boot
 ENTRYPOINT ["java", \
