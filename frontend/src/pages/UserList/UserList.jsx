@@ -221,6 +221,14 @@ export const UserList = () => {
       }
     }
 
+    if (name === 'confirmPassword' && (!editingId || formValues.password)) {
+      if (!value) {
+        error = 'Please confirm your password';
+      } else if (value !== formValues.password) {
+        error = 'Passwords do not match';
+      }
+    }
+
     if (name === 'name') {
       if (!value || !value.trim()) {
         error = 'Display name is required';
@@ -323,6 +331,12 @@ export const UserList = () => {
     const hasError = Object.values(errors).some(Boolean);
     if (hasError) {
       setFormErrors(errors);
+      setTimeout(() => {
+        const errorEl = document.querySelector('.modal-body .field-error');
+        if (errorEl) {
+          errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 50);
       return;
     }
 
@@ -343,37 +357,49 @@ export const UserList = () => {
       ? '—'
       : formValues.userType || 'Toll Plaza';
 
-    if (editingId) {
-      const updated = await UserService.updateUser(editingId, {
-        name: formValues.name || 'Updated User',
-        username: formValues.username || 'user',
-        email: formValues.email,
-        role: role || 'Plaza Admin',
-        userType,
-        plaza: plazaLabel,
-        status: formValues.status,
-        menuAccess: selectedMenuIds,
-      });
-      setUsers((prev) => prev.map((u) => (u.id === editingId ? updated : u)));
-    } else {
-      const created = await UserService.createUser({
-        id: nextUserId(),
-        name: formValues.name || 'New user',
-        username: formValues.username || 'new.user',
-        email: formValues.email,
-        role: role || 'Plaza Admin',
-        userType,
-        plaza: plazaLabel,
-        status: formValues.status || 'Active',
-        approval: 'Pending',
-        locked: false,
-        avatarBg: '#3762F2',
-        menuAccess: selectedMenuIds,
-      });
-      setUsers((prev) => [created, ...prev]);
+    try {
+      if (editingId) {
+        const updated = await UserService.updateUser(editingId, {
+          name: formValues.name || 'Updated User',
+          username: formValues.username || 'user',
+          email: formValues.email,
+          mobile: formValues.contact || '+91 9876543210',
+          contact: formValues.contact,
+          role: role || 'Plaza Admin',
+          userType,
+          assignedPlaza: plazaLabel,
+          plaza: plazaLabel,
+          plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
+          status: formValues.status,
+          menuAccess: selectedMenuIds,
+        });
+        setUsers((prev) => prev.map((u) => (u.id === editingId ? updated : u)));
+      } else {
+        const created = await UserService.createUser({
+          id: nextUserId(),
+          name: formValues.name || 'New user',
+          username: formValues.username || 'new.user',
+          email: formValues.email,
+          mobile: formValues.contact || '+91 9876543210',
+          contact: formValues.contact,
+          role: role || 'Plaza Admin',
+          userType,
+          assignedPlaza: plazaLabel,
+          plaza: plazaLabel,
+          plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
+          status: formValues.status || 'Active',
+          approval: 'Approved',
+          locked: false,
+          avatarBg: '#3762F2',
+          menuAccess: selectedMenuIds,
+        });
+        setUsers((prev) => [created, ...prev]);
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Failed to save user:', err);
+      alert(err?.response?.data?.message || err.message || 'Failed to save user. Please try again.');
     }
-
-    setIsModalOpen(false);
   };
 
   // Bulk Upload Functions (Section 8)
