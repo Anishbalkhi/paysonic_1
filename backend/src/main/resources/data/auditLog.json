@@ -1,0 +1,3967 @@
+[
+  {
+    "id": "AUD-1120",
+    "timestamp": "2026-09-21T04:50:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Recon Batch RCN-20260920",
+    "referenceId": "RCN-81129",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1120-100"
+  },
+  {
+    "id": "AUD-1072",
+    "timestamp": "2026-09-21T04:05:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "User PSN0006",
+    "referenceId": "PSN0006",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1072-101"
+  },
+  {
+    "id": "AUD-1082",
+    "timestamp": "2026-09-21T03:09:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Pass PSS-10101",
+    "referenceId": "PSS-10101",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-91",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1082-102"
+  },
+  {
+    "id": "AUD-1018",
+    "timestamp": "2026-09-21T01:12:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1018-103"
+  },
+  {
+    "id": "AUD-1133",
+    "timestamp": "2026-09-20T23:03:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "All plazas",
+    "target": "Claim DSP-48332",
+    "referenceId": "DSP-48332",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR99214019132"
+    },
+    "correlationId": "CORR-1133-104"
+  },
+  {
+    "id": "AUD-1141",
+    "timestamp": "2026-09-20T21:11:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0012",
+    "referenceId": "PSN0012",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0012",
+      "name": "Operative 141",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Mumbai Plaza NH-04"
+    },
+    "correlationId": "CORR-1141-105"
+  },
+  {
+    "id": "AUD-1098",
+    "timestamp": "2026-09-20T16:45:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Session SES-849102",
+    "referenceId": "SES-849102",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1098-106"
+  },
+  {
+    "id": "AUD-1092",
+    "timestamp": "2026-09-20T14:16:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Recon Batch RCN-20260912",
+    "referenceId": "RCN-81101",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1092-107"
+  },
+  {
+    "id": "AUD-1036",
+    "timestamp": "2026-09-20T13:28:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Recon Batch RCN-20260916",
+    "referenceId": "RCN-8145",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1036-108"
+  },
+  {
+    "id": "AUD-1071",
+    "timestamp": "2026-09-20T11:28:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0022",
+    "referenceId": "PSN0022",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0022",
+      "name": "Operative 71",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Mumbai Plaza NH-04"
+    },
+    "correlationId": "CORR-1071-109"
+  },
+  {
+    "id": "AUD-1089",
+    "timestamp": "2026-09-20T11:25:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1089-110"
+  },
+  {
+    "id": "AUD-1050",
+    "timestamp": "2026-09-20T05:55:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Recon Batch RCN-20260910",
+    "referenceId": "RCN-8159",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1050-111"
+  },
+  {
+    "id": "AUD-1046",
+    "timestamp": "2026-09-20T00:50:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1046-112"
+  },
+  {
+    "id": "AUD-1083",
+    "timestamp": "2026-09-19T21:50:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "FASTag TAG-66382",
+    "referenceId": "TAG-66382",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1083-113"
+  },
+  {
+    "id": "AUD-1138",
+    "timestamp": "2026-09-19T19:34:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Pass PSS-10157",
+    "referenceId": "PSS-10157",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-147",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1138-114"
+  },
+  {
+    "id": "AUD-1019",
+    "timestamp": "2026-09-19T16:17:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1019-115"
+  },
+  {
+    "id": "AUD-1131",
+    "timestamp": "2026-09-19T14:24:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1131-116"
+  },
+  {
+    "id": "AUD-1147",
+    "timestamp": "2026-09-19T13:38:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "Claim DSP-48346",
+    "referenceId": "DSP-48346",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR99214019146"
+    },
+    "correlationId": "CORR-1147-117"
+  },
+  {
+    "id": "AUD-1140",
+    "timestamp": "2026-09-19T09:45:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Session SES-849104",
+    "referenceId": "SES-849104",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1140-118"
+  },
+  {
+    "id": "AUD-1052",
+    "timestamp": "2026-09-19T09:30:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Violation VIO-77151",
+    "referenceId": "VIO-77151",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1051",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1052-119"
+  },
+  {
+    "id": "AUD-1094",
+    "timestamp": "2026-09-19T08:42:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Violation VIO-77193",
+    "referenceId": "VIO-77193",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1093",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1094-120"
+  },
+  {
+    "id": "AUD-1132",
+    "timestamp": "2026-09-19T04:49:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Claim DSP-49231",
+    "referenceId": "DSP-49231",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1132-121"
+  },
+  {
+    "id": "AUD-1003",
+    "timestamp": "2026-09-19T01:12:43.414Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1003-122"
+  },
+  {
+    "id": "AUD-1123",
+    "timestamp": "2026-09-19T01:09:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "Report TXN-SETTLE-123",
+    "referenceId": "TXN-88222",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1123-123"
+  },
+  {
+    "id": "AUD-1048",
+    "timestamp": "2026-09-18T20:39:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Claim DSP-49147",
+    "referenceId": "DSP-49147",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1048-124"
+  },
+  {
+    "id": "AUD-1016",
+    "timestamp": "2026-09-18T20:05:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1016-125"
+  },
+  {
+    "id": "AUD-1007",
+    "timestamp": "2026-09-18T19:59:43.414Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "All plazas",
+    "target": "Claim DSP-48206",
+    "referenceId": "DSP-48206",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR992140196"
+    },
+    "correlationId": "CORR-1007-126"
+  },
+  {
+    "id": "AUD-1101",
+    "timestamp": "2026-09-18T17:33:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1101-127"
+  },
+  {
+    "id": "AUD-1078",
+    "timestamp": "2026-09-18T12:59:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Recon Batch RCN-20260918",
+    "referenceId": "RCN-8187",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1078-128"
+  },
+  {
+    "id": "AUD-1125",
+    "timestamp": "2026-09-18T12:06:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "FASTag TAG-66424",
+    "referenceId": "TAG-66424",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1125-129"
+  },
+  {
+    "id": "AUD-1075",
+    "timestamp": "2026-09-18T08:14:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1075-130"
+  },
+  {
+    "id": "AUD-1032",
+    "timestamp": "2026-09-18T05:42:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1032-131"
+  },
+  {
+    "id": "AUD-1025",
+    "timestamp": "2026-09-18T04:37:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "All plazas",
+    "target": "Report TXN-SETTLE-25",
+    "referenceId": "TXN-88124",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1025-132"
+  },
+  {
+    "id": "AUD-1118",
+    "timestamp": "2026-09-17T21:34:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Claim DSP-49217",
+    "referenceId": "DSP-49217",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1118-133"
+  },
+  {
+    "id": "AUD-1100",
+    "timestamp": "2026-09-17T20:32:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1100-134"
+  },
+  {
+    "id": "AUD-1099",
+    "timestamp": "2026-09-17T17:09:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0030",
+    "referenceId": "PSN0030",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0030",
+      "name": "Operative 99",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Solapur Plaza NH-65"
+    },
+    "correlationId": "CORR-1099-135"
+  },
+  {
+    "id": "AUD-1126",
+    "timestamp": "2026-09-17T16:13:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Session SES-849106",
+    "referenceId": "SES-849106",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1126-136"
+  },
+  {
+    "id": "AUD-1042",
+    "timestamp": "2026-09-17T15:32:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Session SES-849102",
+    "referenceId": "SES-849102",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1042-137"
+  },
+  {
+    "id": "AUD-1053",
+    "timestamp": "2026-09-17T13:49:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "Report TXN-SETTLE-53",
+    "referenceId": "TXN-88152",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1053-138"
+  },
+  {
+    "id": "AUD-1081",
+    "timestamp": "2026-09-17T09:37:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "Report TXN-SETTLE-81",
+    "referenceId": "TXN-88180",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1081-139"
+  },
+  {
+    "id": "AUD-1105",
+    "timestamp": "2026-09-17T08:19:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "Claim DSP-48304",
+    "referenceId": "DSP-48304",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR99214019104"
+    },
+    "correlationId": "CORR-1105-140"
+  },
+  {
+    "id": "AUD-1060",
+    "timestamp": "2026-09-17T01:09:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1060-141"
+  },
+  {
+    "id": "AUD-1095",
+    "timestamp": "2026-09-17T00:33:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "Report TXN-SETTLE-95",
+    "referenceId": "TXN-88194",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1095-142"
+  },
+  {
+    "id": "AUD-1008",
+    "timestamp": "2026-09-16T23:08:43.414Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Recon Batch RCN-20260908",
+    "referenceId": "RCN-8117",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1008-143"
+  },
+  {
+    "id": "AUD-1109",
+    "timestamp": "2026-09-16T20:50:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "All plazas",
+    "target": "Report TXN-SETTLE-109",
+    "referenceId": "TXN-88208",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1109-144"
+  },
+  {
+    "id": "AUD-1059",
+    "timestamp": "2026-09-16T18:25:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0005",
+    "referenceId": "PSN0005",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1059-145"
+  },
+  {
+    "id": "AUD-1084",
+    "timestamp": "2026-09-16T17:16:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Session SES-849104",
+    "referenceId": "SES-849104",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1084-146"
+  },
+  {
+    "id": "AUD-1001",
+    "timestamp": "2026-09-16T15:41:43.413Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0012",
+    "referenceId": "PSN0012",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0012",
+      "name": "Operative 1",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Mumbai Plaza NH-04"
+    },
+    "correlationId": "CORR-1001-147"
+  },
+  {
+    "id": "AUD-1144",
+    "timestamp": "2026-09-16T15:14:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1144-148"
+  },
+  {
+    "id": "AUD-1005",
+    "timestamp": "2026-09-15T21:27:43.414Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1005-149"
+  },
+  {
+    "id": "AUD-1152",
+    "timestamp": "2026-09-15T11:00:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Pass PSS-10171",
+    "referenceId": "PSS-10171",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-161",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1152-150"
+  },
+  {
+    "id": "AUD-1014",
+    "timestamp": "2026-09-15T08:32:43.414Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Session SES-849106",
+    "referenceId": "SES-849106",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1014-151"
+  },
+  {
+    "id": "AUD-1134",
+    "timestamp": "2026-09-15T03:36:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Recon Batch RCN-20260914",
+    "referenceId": "RCN-81143",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1134-152"
+  },
+  {
+    "id": "AUD-1041",
+    "timestamp": "2026-09-15T02:58:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "FASTag TAG-66340",
+    "referenceId": "TAG-66340",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1041-153"
+  },
+  {
+    "id": "AUD-1039",
+    "timestamp": "2026-09-14T23:00:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "Report TXN-SETTLE-39",
+    "referenceId": "TXN-88138",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1039-154"
+  },
+  {
+    "id": "AUD-1020",
+    "timestamp": "2026-09-14T21:06:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Claim DSP-49119",
+    "referenceId": "DSP-49119",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1020-155"
+  },
+  {
+    "id": "AUD-1129",
+    "timestamp": "2026-09-14T15:43:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0005",
+    "referenceId": "PSN0005",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1129-156"
+  },
+  {
+    "id": "AUD-1017",
+    "timestamp": "2026-09-14T13:14:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0003",
+    "referenceId": "PSN0003",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1017-157"
+  },
+  {
+    "id": "AUD-1115",
+    "timestamp": "2026-09-14T07:11:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0006",
+    "referenceId": "PSN0006",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1115-158"
+  },
+  {
+    "id": "AUD-1054",
+    "timestamp": "2026-09-14T05:44:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Pass PSS-1073",
+    "referenceId": "PSS-1073",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-63",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1054-159"
+  },
+  {
+    "id": "AUD-1028",
+    "timestamp": "2026-09-13T19:14:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Session SES-849104",
+    "referenceId": "SES-849104",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1028-160"
+  },
+  {
+    "id": "AUD-1139",
+    "timestamp": "2026-09-13T11:06:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "All plazas",
+    "target": "FASTag TAG-66438",
+    "referenceId": "TAG-66438",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1139-161"
+  },
+  {
+    "id": "AUD-1029",
+    "timestamp": "2026-09-13T07:46:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0020",
+    "referenceId": "PSN0020",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0020",
+      "name": "Operative 29",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Solapur Plaza NH-65"
+    },
+    "correlationId": "CORR-1029-162"
+  },
+  {
+    "id": "AUD-1148",
+    "timestamp": "2026-09-13T02:50:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Recon Batch RCN-20260908",
+    "referenceId": "RCN-81157",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1148-163"
+  },
+  {
+    "id": "AUD-1136",
+    "timestamp": "2026-09-13T00:31:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Violation VIO-77235",
+    "referenceId": "VIO-77235",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1135",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1136-164"
+  },
+  {
+    "id": "AUD-1034",
+    "timestamp": "2026-09-12T21:15:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Claim DSP-49133",
+    "referenceId": "DSP-49133",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1034-165"
+  },
+  {
+    "id": "AUD-1031",
+    "timestamp": "2026-09-12T20:31:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1031-166"
+  },
+  {
+    "id": "AUD-1049",
+    "timestamp": "2026-09-12T08:31:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "All plazas",
+    "target": "Claim DSP-48248",
+    "referenceId": "DSP-48248",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR9921401948"
+    },
+    "correlationId": "CORR-1049-167"
+  },
+  {
+    "id": "AUD-1057",
+    "timestamp": "2026-09-12T06:18:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0028",
+    "referenceId": "PSN0028",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0028",
+      "name": "Operative 57",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "correlationId": "CORR-1057-168"
+  },
+  {
+    "id": "AUD-1024",
+    "timestamp": "2026-09-12T04:04:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Violation VIO-77123",
+    "referenceId": "VIO-77123",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1023",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1024-169"
+  },
+  {
+    "id": "AUD-1012",
+    "timestamp": "2026-09-12T00:48:43.414Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Pass PSS-1031",
+    "referenceId": "PSS-1031",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-21",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1012-170"
+  },
+  {
+    "id": "AUD-1090",
+    "timestamp": "2026-09-11T23:11:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Claim DSP-49189",
+    "referenceId": "DSP-49189",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1090-171"
+  },
+  {
+    "id": "AUD-1009",
+    "timestamp": "2026-09-11T22:28:43.414Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "TRS Batch Report 09-9",
+    "referenceId": "RCN-9928",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1009-172"
+  },
+  {
+    "id": "AUD-1045",
+    "timestamp": "2026-09-11T19:18:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0006",
+    "referenceId": "PSN0006",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1045-173"
+  },
+  {
+    "id": "AUD-1063",
+    "timestamp": "2026-09-11T16:54:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "Claim DSP-48262",
+    "referenceId": "DSP-48262",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR9921401962"
+    },
+    "correlationId": "CORR-1063-174"
+  },
+  {
+    "id": "AUD-1106",
+    "timestamp": "2026-09-11T04:50:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Recon Batch RCN-20260906",
+    "referenceId": "RCN-81115",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1106-175"
+  },
+  {
+    "id": "AUD-1002",
+    "timestamp": "2026-09-11T02:53:43.414Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1002-176"
+  },
+  {
+    "id": "AUD-1044",
+    "timestamp": "2026-09-11T00:58:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1044-177"
+  },
+  {
+    "id": "AUD-1037",
+    "timestamp": "2026-09-11T00:12:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "All plazas",
+    "target": "TRS Batch Report 09-17",
+    "referenceId": "RCN-9956",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1037-178"
+  },
+  {
+    "id": "AUD-1112",
+    "timestamp": "2026-09-10T23:14:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Session SES-849108",
+    "referenceId": "SES-849108",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1112-179"
+  },
+  {
+    "id": "AUD-1004",
+    "timestamp": "2026-09-10T12:56:43.414Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1004-180"
+  },
+  {
+    "id": "AUD-1056",
+    "timestamp": "2026-09-10T01:07:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Session SES-849108",
+    "referenceId": "SES-849108",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1056-181"
+  },
+  {
+    "id": "AUD-1127",
+    "timestamp": "2026-09-09T22:54:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0018",
+    "referenceId": "PSN0018",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0018",
+      "name": "Operative 127",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "correlationId": "CORR-1127-182"
+  },
+  {
+    "id": "AUD-1145",
+    "timestamp": "2026-09-09T20:15:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1145-183"
+  },
+  {
+    "id": "AUD-1079",
+    "timestamp": "2026-09-09T15:43:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "All plazas",
+    "target": "TRS Batch Report 09-19",
+    "referenceId": "RCN-9998",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1079-184"
+  },
+  {
+    "id": "AUD-1119",
+    "timestamp": "2026-09-09T11:35:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "Claim DSP-48318",
+    "referenceId": "DSP-48318",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR99214019118"
+    },
+    "correlationId": "CORR-1119-185"
+  },
+  {
+    "id": "AUD-1033",
+    "timestamp": "2026-09-09T04:35:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1033-186"
+  },
+  {
+    "id": "AUD-1066",
+    "timestamp": "2026-09-08T14:28:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Violation VIO-77165",
+    "referenceId": "VIO-77165",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1065",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1066-187"
+  },
+  {
+    "id": "AUD-1116",
+    "timestamp": "2026-09-08T12:09:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1116-188"
+  },
+  {
+    "id": "AUD-1070",
+    "timestamp": "2026-09-08T11:25:43.415Z",
+    "module": "User Management",
+    "action": "FORCE_LOGOUT",
+    "actionLabel": "Terminated Active Session",
+    "status": "FAILURE",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Session SES-849106",
+    "referenceId": "SES-849106",
+    "details": "Session revoked immediately by Master Admin due to policy breach",
+    "before": {
+      "sessionActive": true
+    },
+    "after": {
+      "sessionActive": false,
+      "terminationReason": "Administrative Force Logout"
+    },
+    "correlationId": "CORR-1070-189"
+  },
+  {
+    "id": "AUD-1085",
+    "timestamp": "2026-09-08T08:15:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0016",
+    "referenceId": "PSN0016",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0016",
+      "name": "Operative 85",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Kolhapur Plaza"
+    },
+    "correlationId": "CORR-1085-190"
+  },
+  {
+    "id": "AUD-1088",
+    "timestamp": "2026-09-08T07:23:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1088-191"
+  },
+  {
+    "id": "AUD-1124",
+    "timestamp": "2026-09-08T04:08:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Pass PSS-10143",
+    "referenceId": "PSS-10143",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-133",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1124-192"
+  },
+  {
+    "id": "AUD-1035",
+    "timestamp": "2026-09-07T11:23:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "Claim DSP-48234",
+    "referenceId": "DSP-48234",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR9921401934"
+    },
+    "correlationId": "CORR-1035-193"
+  },
+  {
+    "id": "AUD-1114",
+    "timestamp": "2026-09-07T10:09:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "User PSN0006",
+    "referenceId": "PSN0006",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1114-194"
+  },
+  {
+    "id": "AUD-1097",
+    "timestamp": "2026-09-06T23:13:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "All plazas",
+    "target": "FASTag TAG-66396",
+    "referenceId": "TAG-66396",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1097-195"
+  },
+  {
+    "id": "AUD-1121",
+    "timestamp": "2026-09-06T21:06:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "All plazas",
+    "target": "TRS Batch Report 09-1",
+    "referenceId": "RCN-99140",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1121-196"
+  },
+  {
+    "id": "AUD-1135",
+    "timestamp": "2026-09-06T16:02:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "TRS Batch Report 09-15",
+    "referenceId": "RCN-99154",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1135-197"
+  },
+  {
+    "id": "AUD-1151",
+    "timestamp": "2026-09-06T04:49:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "All plazas",
+    "target": "Report TXN-SETTLE-151",
+    "referenceId": "TXN-88250",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1151-198"
+  },
+  {
+    "id": "AUD-1061",
+    "timestamp": "2026-09-05T11:02:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1061-199"
+  },
+  {
+    "id": "AUD-1067",
+    "timestamp": "2026-09-05T02:25:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "All plazas",
+    "target": "Report TXN-SETTLE-67",
+    "referenceId": "TXN-88166",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1067-200"
+  },
+  {
+    "id": "AUD-1077",
+    "timestamp": "2026-09-05T02:11:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "Claim DSP-48276",
+    "referenceId": "DSP-48276",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR9921401976"
+    },
+    "correlationId": "CORR-1077-201"
+  },
+  {
+    "id": "AUD-1047",
+    "timestamp": "2026-09-04T14:02:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1047-202"
+  },
+  {
+    "id": "AUD-1086",
+    "timestamp": "2026-09-04T13:24:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1086-203"
+  },
+  {
+    "id": "AUD-1142",
+    "timestamp": "2026-09-04T10:23:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1142-204"
+  },
+  {
+    "id": "AUD-1091",
+    "timestamp": "2026-09-03T13:04:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "All plazas",
+    "target": "Claim DSP-48290",
+    "referenceId": "DSP-48290",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR9921401990"
+    },
+    "correlationId": "CORR-1091-205"
+  },
+  {
+    "id": "AUD-1058",
+    "timestamp": "2026-09-02T21:15:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1058-206"
+  },
+  {
+    "id": "AUD-1030",
+    "timestamp": "2026-09-02T19:51:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "User PSN0006",
+    "referenceId": "PSN0006",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1030-207"
+  },
+  {
+    "id": "AUD-1146",
+    "timestamp": "2026-09-02T16:10:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Claim DSP-49245",
+    "referenceId": "DSP-49245",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1146-208"
+  },
+  {
+    "id": "AUD-1087",
+    "timestamp": "2026-09-02T13:08:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0003",
+    "referenceId": "PSN0003",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1087-209"
+  },
+  {
+    "id": "AUD-1010",
+    "timestamp": "2026-09-02T10:40:43.414Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Violation VIO-77109",
+    "referenceId": "VIO-77109",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1009",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1010-210"
+  },
+  {
+    "id": "AUD-1076",
+    "timestamp": "2026-09-02T08:10:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Claim DSP-49175",
+    "referenceId": "DSP-49175",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1076-211"
+  },
+  {
+    "id": "AUD-1026",
+    "timestamp": "2026-09-02T06:25:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Pass PSS-1045",
+    "referenceId": "PSS-1045",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-35",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1026-212"
+  },
+  {
+    "id": "AUD-1065",
+    "timestamp": "2026-09-02T05:51:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "TRS Batch Report 09-5",
+    "referenceId": "RCN-9984",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1065-213"
+  },
+  {
+    "id": "AUD-1149",
+    "timestamp": "2026-08-31T16:33:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "TRS Batch Report 09-9",
+    "referenceId": "RCN-99168",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1149-214"
+  },
+  {
+    "id": "AUD-1093",
+    "timestamp": "2026-08-30T11:31:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "TRS Batch Report 09-13",
+    "referenceId": "RCN-99112",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1093-215"
+  },
+  {
+    "id": "AUD-1113",
+    "timestamp": "2026-08-30T10:49:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0024",
+    "referenceId": "PSN0024",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0024",
+      "name": "Operative 113",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1113-216"
+  },
+  {
+    "id": "AUD-1011",
+    "timestamp": "2026-08-30T09:13:43.414Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "Report TXN-SETTLE-11",
+    "referenceId": "TXN-88110",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1011-217"
+  },
+  {
+    "id": "AUD-1043",
+    "timestamp": "2026-08-30T06:11:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0014",
+    "referenceId": "PSN0014",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0014",
+      "name": "Operative 43",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1043-218"
+  },
+  {
+    "id": "AUD-1074",
+    "timestamp": "2026-08-29T10:00:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1074-219"
+  },
+  {
+    "id": "AUD-1064",
+    "timestamp": "2026-08-29T09:59:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Recon Batch RCN-20260904",
+    "referenceId": "RCN-8173",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1064-220"
+  },
+  {
+    "id": "AUD-1027",
+    "timestamp": "2026-08-29T09:23:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "FASTag TAG-66326",
+    "referenceId": "TAG-66326",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1027-221"
+  },
+  {
+    "id": "AUD-1103",
+    "timestamp": "2026-08-29T08:44:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1103-222"
+  },
+  {
+    "id": "AUD-1122",
+    "timestamp": "2026-08-29T00:16:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Violation VIO-77221",
+    "referenceId": "VIO-77221",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1121",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1122-223"
+  },
+  {
+    "id": "AUD-1107",
+    "timestamp": "2026-08-28T21:30:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "TRS Batch Report 09-7",
+    "referenceId": "RCN-99126",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1107-224"
+  },
+  {
+    "id": "AUD-1110",
+    "timestamp": "2026-08-28T20:32:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Pass PSS-10129",
+    "referenceId": "PSS-10129",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-119",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1110-225"
+  },
+  {
+    "id": "AUD-1111",
+    "timestamp": "2026-08-28T19:54:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "FASTag TAG-66410",
+    "referenceId": "TAG-66410",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1111-226"
+  },
+  {
+    "id": "AUD-1117",
+    "timestamp": "2026-08-28T14:13:43.415Z",
+    "module": "User Management",
+    "action": "UPDATE_ROLE",
+    "actionLabel": "Updated User Role & Access",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Promoted concessionaire account with multi-plaza scoping",
+    "before": {
+      "role": "Plaza Admin",
+      "plaza": "Pune Bypass Plaza"
+    },
+    "after": {
+      "role": "Concessionaire",
+      "plaza": "Pune Bypass Plaza, Nashik Toll Plaza"
+    },
+    "correlationId": "CORR-1117-227"
+  },
+  {
+    "id": "AUD-1130",
+    "timestamp": "2026-08-28T07:56:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0008",
+      "name": "Vikram Singh",
+      "role": "Admin",
+      "ipAddress": "103.77.192.31"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1130-228"
+  },
+  {
+    "id": "AUD-1150",
+    "timestamp": "2026-08-27T16:19:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Violation VIO-77249",
+    "referenceId": "VIO-77249",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1149",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1150-229"
+  },
+  {
+    "id": "AUD-1102",
+    "timestamp": "2026-08-27T06:33:43.415Z",
+    "module": "User Management",
+    "action": "UNLOCK_USER",
+    "actionLabel": "Unlocked User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Supervisor verified credentials and restored access",
+    "before": {
+      "locked": true
+    },
+    "after": {
+      "locked": false
+    },
+    "correlationId": "CORR-1102-230"
+  },
+  {
+    "id": "AUD-1068",
+    "timestamp": "2026-08-27T05:01:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Pass PSS-1087",
+    "referenceId": "PSS-1087",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-77",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1068-231"
+  },
+  {
+    "id": "AUD-1073",
+    "timestamp": "2026-08-26T23:41:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "All plazas",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1073-232"
+  },
+  {
+    "id": "AUD-1128",
+    "timestamp": "2026-08-26T12:17:43.415Z",
+    "module": "User Management",
+    "action": "APPROVE_USER",
+    "actionLabel": "Approved User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "User PSN0002",
+    "referenceId": "PSN0002",
+    "details": "Compliance review completed; granted system clearance",
+    "before": {
+      "approval": "Pending"
+    },
+    "after": {
+      "approval": "Approved"
+    },
+    "correlationId": "CORR-1128-233"
+  },
+  {
+    "id": "AUD-1108",
+    "timestamp": "2026-08-26T11:07:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0002",
+      "name": "Meera Joshi",
+      "role": "Concessionaire",
+      "ipAddress": "115.114.88.90"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Violation VIO-77207",
+    "referenceId": "VIO-77207",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1107",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1108-234"
+  },
+  {
+    "id": "AUD-1062",
+    "timestamp": "2026-08-26T04:59:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Claim DSP-49161",
+    "referenceId": "DSP-49161",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1062-235"
+  },
+  {
+    "id": "AUD-1096",
+    "timestamp": "2026-08-26T01:49:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Pass PSS-10115",
+    "referenceId": "PSS-10115",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-105",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1096-236"
+  },
+  {
+    "id": "AUD-1022",
+    "timestamp": "2026-08-26T01:34:43.415Z",
+    "module": "Recon Management",
+    "action": "UPLOAD_RECON_FILE",
+    "actionLabel": "Uploaded Daily Settlement File",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Recon Batch RCN-20260902",
+    "referenceId": "RCN-8131",
+    "details": "Cleared 48,290 toll records matching NPCI mapper ledger",
+    "before": null,
+    "after": {
+      "recordsProcessed": 48290,
+      "totalSettled": "₹1,42,80,450.00",
+      "unmatchedRecords": 0
+    },
+    "correlationId": "CORR-1022-237"
+  },
+  {
+    "id": "AUD-1038",
+    "timestamp": "2026-08-26T00:23:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Violation VIO-77137",
+    "referenceId": "VIO-77137",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1037",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1038-238"
+  },
+  {
+    "id": "AUD-1040",
+    "timestamp": "2026-08-25T16:39:43.415Z",
+    "module": "Pass Issuance",
+    "action": "ISSUE_LOCAL_PASS",
+    "actionLabel": "Issued Monthly Pass",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Nashik Toll Plaza",
+    "target": "Pass PSS-1059",
+    "referenceId": "PSS-1059",
+    "details": "Residential 20km radius pass issued under concession policy",
+    "before": null,
+    "after": {
+      "validityDays": 30,
+      "passHolder": "Citizen MH-49",
+      "fee": "₹330.00"
+    },
+    "correlationId": "CORR-1040-239"
+  },
+  {
+    "id": "AUD-1006",
+    "timestamp": "2026-08-25T12:55:43.414Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0009",
+      "name": "Anita Deshmukh",
+      "role": "Plaza POS",
+      "ipAddress": "117.211.64.15"
+    },
+    "plaza": "Kolhapur Plaza",
+    "target": "Claim DSP-49105",
+    "referenceId": "DSP-49105",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1006-240"
+  },
+  {
+    "id": "AUD-1143",
+    "timestamp": "2026-08-25T11:29:43.415Z",
+    "module": "User Management",
+    "action": "LOCK_USER",
+    "actionLabel": "Locked User Account",
+    "status": "WARNING",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "User PSN0004",
+    "referenceId": "PSN0004",
+    "details": "Account suspended following 3 suspicious geolocations in 10 mins",
+    "before": {
+      "locked": false,
+      "status": "Active"
+    },
+    "after": {
+      "locked": true,
+      "status": "Inactive",
+      "reason": "Security lock triggered"
+    },
+    "correlationId": "CORR-1143-241"
+  },
+  {
+    "id": "AUD-1137",
+    "timestamp": "2026-08-25T06:20:43.415Z",
+    "module": "Transactional Report",
+    "action": "EXPORT_LEDGER",
+    "actionLabel": "Exported Financial Ledger",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0005",
+      "name": "Sanjay Kulkarni",
+      "role": "Master Admin",
+      "ipAddress": "103.21.58.44"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "Report TXN-SETTLE-137",
+    "referenceId": "TXN-88236",
+    "details": "Downloaded full transactions ledger for monthly state audit",
+    "before": null,
+    "after": {
+      "rowCount": 12500,
+      "filterPlaza": "Mumbai Plaza NH-04",
+      "period": "Current Month"
+    },
+    "correlationId": "CORR-1137-242"
+  },
+  {
+    "id": "AUD-1055",
+    "timestamp": "2026-08-25T06:09:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "All plazas",
+    "target": "FASTag TAG-66354",
+    "referenceId": "TAG-66354",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1055-243"
+  },
+  {
+    "id": "AUD-1015",
+    "timestamp": "2026-08-25T05:38:43.415Z",
+    "module": "User Management",
+    "action": "CREATE_USER",
+    "actionLabel": "Created User Account",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "User PSN0026",
+    "referenceId": "PSN0026",
+    "details": "Admin onboarded new plaza staff with default menu access template",
+    "before": null,
+    "after": {
+      "userId": "PSN0026",
+      "name": "Operative 15",
+      "role": "Plaza Admin",
+      "userType": "Toll Plaza",
+      "status": "Active",
+      "approval": "Pending",
+      "plaza": "Kolhapur Plaza"
+    },
+    "correlationId": "CORR-1015-244"
+  },
+  {
+    "id": "AUD-1080",
+    "timestamp": "2026-08-24T15:51:43.415Z",
+    "module": "Violation Management",
+    "action": "VALIDATE_VIOLATION",
+    "actionLabel": "Validated Barrier Gate Violation",
+    "status": "WARNING",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Violation VIO-77179",
+    "referenceId": "VIO-77179",
+    "details": "ANPR camera flag: unregistered commercial axle tailgated plaza lane 4",
+    "before": {
+      "status": "Pending Review"
+    },
+    "after": {
+      "status": "Challan Issued",
+      "vehiclePlate": "MH-12-BQ-1079",
+      "fineAmount": "₹1,500.00"
+    },
+    "correlationId": "CORR-1080-245"
+  },
+  {
+    "id": "AUD-1021",
+    "timestamp": "2026-08-24T14:17:43.415Z",
+    "module": "Dispute Handling",
+    "action": "APPROVE_DISPUTE",
+    "actionLabel": "Approved Dispute Refund",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "Claim DSP-48220",
+    "referenceId": "DSP-48220",
+    "details": "NPCI NETC dispute settled in customer favor; reversal initiated",
+    "before": {
+      "status": "Under Review",
+      "refundDue": "₹340.00"
+    },
+    "after": {
+      "status": "Settled & Refunded",
+      "utr": "UTR9921401920"
+    },
+    "correlationId": "CORR-1021-246"
+  },
+  {
+    "id": "AUD-1013",
+    "timestamp": "2026-08-23T21:39:43.414Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "All plazas",
+    "target": "FASTag TAG-66312",
+    "referenceId": "TAG-66312",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1013-247"
+  },
+  {
+    "id": "AUD-1051",
+    "timestamp": "2026-08-23T15:03:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0001",
+      "name": "Rahul Sharma",
+      "role": "Plaza Admin",
+      "ipAddress": "49.36.128.12"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "TRS Batch Report 09-11",
+    "referenceId": "RCN-9970",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1051-248"
+  },
+  {
+    "id": "AUD-1069",
+    "timestamp": "2026-08-23T09:51:43.415Z",
+    "module": "Tag Details",
+    "action": "BLACKLIST_TAG_SEARCH",
+    "actionLabel": "Executed Blacklist Registry Query",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0006",
+      "name": "Priya Nair",
+      "role": "Request Tag Details",
+      "ipAddress": "157.34.201.78"
+    },
+    "plaza": "Pune Bypass Plaza",
+    "target": "FASTag TAG-66368",
+    "referenceId": "TAG-66368",
+    "details": "Live NPCI blacklist check returned Clean / Whitelisted status",
+    "before": null,
+    "after": {
+      "bankIssuer": "State Bank of India",
+      "tagStatus": "ACTIVE_NORMAL"
+    },
+    "correlationId": "CORR-1069-249"
+  },
+  {
+    "id": "AUD-1104",
+    "timestamp": "2026-08-23T04:24:43.415Z",
+    "module": "Dispute Handling",
+    "action": "CHARGEBACK_ASSIGN",
+    "actionLabel": "Assigned Chargeback Claim",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "SYSTEM",
+      "name": "Paysonic Cron Daemon",
+      "role": "System Service",
+      "ipAddress": "127.0.0.1"
+    },
+    "plaza": "Mumbai Plaza NH-04",
+    "target": "Claim DSP-49203",
+    "referenceId": "DSP-49203",
+    "details": "Disputed FASTag double-debit assigned to issuing bank nodal desk",
+    "before": {
+      "status": "Unassigned",
+      "owner": "Unassigned"
+    },
+    "after": {
+      "status": "In Review",
+      "owner": "HDFC Chargeback Cell",
+      "amount": "₹750.00"
+    },
+    "correlationId": "CORR-1104-250"
+  },
+  {
+    "id": "AUD-1023",
+    "timestamp": "2026-08-22T23:17:43.415Z",
+    "module": "Recon Management",
+    "action": "TRS_REPORT_GENERATED",
+    "actionLabel": "Generated Daily TRS Report",
+    "status": "SUCCESS",
+    "actor": {
+      "id": "PSN0010",
+      "name": "ICICI Settlement Gateway",
+      "role": "Bank",
+      "ipAddress": "182.72.108.9"
+    },
+    "plaza": "Solapur Plaza NH-65",
+    "target": "TRS Batch Report 09-3",
+    "referenceId": "RCN-9942",
+    "details": "Transaction Reconciliation Statement exported for audit committee",
+    "before": null,
+    "after": {
+      "exportFormat": "CSV & Signed PDF",
+      "checksum": "SHA256:d89f2a4..."
+    },
+    "correlationId": "CORR-1023-251"
+  }
+]

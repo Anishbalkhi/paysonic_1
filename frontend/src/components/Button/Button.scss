@@ -1,0 +1,98 @@
+@use '../../assets/styles/variables' as *;
+
+.c-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  font-family: inherit;
+  font-weight: $font-semibold;
+  border-radius: $radius-md;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all $transition-fast;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+
+  &--primary {
+    background: linear-gradient(135deg, $primary-light 0%, $primary-color 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba($primary-color, 0.25);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 12px rgba($primary-color, 0.4);
+      transform: translateY(-1px);
+    }
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+  }
+
+  &--secondary {
+    background-color: $bg-subtle;
+    color: $text-primary;
+    border-color: $border-color;
+
+    &:hover:not(:disabled) {
+      background-color: #e2e8f0;
+      border-color: $border-hover;
+    }
+  }
+
+  &--outline {
+    background: transparent;
+    color: $primary-color;
+    border-color: rgba($primary-color, 0.35);
+
+    &:hover:not(:disabled) {
+      background: rgba($primary-color, 0.06);
+      border-color: $primary-color;
+    }
+  }
+
+  &--danger {
+    background-color: $danger-color;
+    color: #ffffff;
+
+    &:hover:not(:disabled) {
+      background-color: #dc2626;
+    }
+  }
+
+  &--sm {
+    padding: 0.35rem 0.75rem;
+    font-size: $font-xs;
+  }
+
+  &--md {
+    padding: 0.55rem 1.15rem;
+    font-size: $font-sm;
+  }
+
+  &--lg {
+    padding: 0.75rem 1.6rem;
+    font-size: $font-base;
+  }
+
+  &--disabled,
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .c-button__spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: btn-spin 0.6s linear infinite;
+  }
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}

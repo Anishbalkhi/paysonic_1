@@ -1,0 +1,19 @@
+{
+  "name": "paysonic-tollops-platform",
+  "private": true,
+  "version": "1.0.0-enterprise",
+  "description": "Paysonic Toll Ops Platform - Monorepo with React Frontend and Java Spring Boot Backend",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "lint:frontend": "npm --prefix frontend run lint",
+    "preview:frontend": "npm --prefix frontend run preview",
+    "backend:run": "cd backend && mvn spring-boot:run",
+    "backend:h2": "cd backend && mvn spring-boot:run -Dspring-boot.run.profiles=h2"
+  },
+  "workspaces": [
+    "frontend"
+  ]
+}

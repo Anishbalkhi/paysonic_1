@@ -1,0 +1,97 @@
+@use 'variables' as *;
+@use 'common' as *;
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --brand-green: #{$brand-green};
+  --brand-blue: #{$brand-blue};
+  --ink: #{$ink};
+  --body-text: #{$body-text};
+  --muted: #{$muted};
+  --faint: #{$faint};
+  --border: #{$border};
+  --bg-page: #{$bg-page};
+  --surface: #{$surface};
+  --sidebar: #{$sidebar-bg};
+  --success-bg: #{$success-bg};
+  --success-text: #{$success-text};
+  --warning-bg: #{$warning-bg};
+  --warning-text: #{$warning-text};
+  --danger-bg: #{$danger-bg};
+  --danger-text: #{$danger-text};
+  --info-bg: #{$info-bg};
+  --info-text: #{$info-text};
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-page);
+  color: var(--body-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Manrope', sans-serif;
+  margin: 0;
+  color: var(--ink);
+}
+
+button {
+  font-family: 'Manrope', sans-serif;
+  cursor: pointer;
+}
+
+input, select {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+input:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 1px;
+}
+
+a {
+  color: var(--brand-blue);
+  text-decoration: none;
+  &:hover {
+    color: #2748c4;
+  }
+}
+
+::placeholder {
+  color: var(--faint);
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-page);
+  margin-left: 240px;
+  min-height: 100vh;
+}
+
+@media (max-width: 980px) {
+  .main {
+    margin-left: 0;
+  }
+}
+
+.content-container {
+  flex: 1;
+  min-width: 0;
+}

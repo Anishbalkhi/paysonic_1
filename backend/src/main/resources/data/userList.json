@@ -1,0 +1,85 @@
+[
+  {
+    "id": "PSN0001",
+    "name": "Rahul Sharma",
+    "username": "rahul.sharma",
+    "role": "Plaza Admin",
+    "userType": "Toll Plaza",
+    "plaza": "Mumbai Plaza NH-04",
+    "status": "Active",
+    "approval": "Approved",
+    "locked": false,
+    "avatarBg": "#3762F2",
+    "menuAccess": null
+  },
+  {
+    "id": "PSN0002",
+    "name": "Meera Joshi",
+    "username": "meera.joshi",
+    "role": "Concessionaire",
+    "userType": "EV",
+    "plaza": "Pune Bypass Plaza, Nashik Toll Plaza",
+    "status": "Active",
+    "approval": "Pending",
+    "locked": false,
+    "avatarBg": "#17A34A",
+    "menuAccess": null
+  },
+  {
+    "id": "PSN0003",
+    "name": "Arjun Patil",
+    "username": "arjun.patil",
+    "role": "Plaza POS",
+    "userType": "Fuel",
+    "plaza": "Nashik Toll Plaza",
+    "status": "Active",
+    "approval": "Approved",
+    "locked": true,
+    "avatarBg": "#EF6820",
+    "menuAccess": null
+  },
+  {
+    "id": "PSN0004",
+    "name": "HDFC Reconciliation",
+    "username": "hdfc.recon",
+    "role": "Bank",
+    "userType": "—",
+    "plaza": "Not applicable",
+    "status": "Inactive",
+    "approval": "Approved",
+    "locked": true,
+    "avatarBg": "#6941C6",
+    "menuAccess": null
+  },
+  {
+    "id": "PSN0005",
+    "name": "Sanjay Kulkarni",
+    "username": "sanjay.k",
+    "role": "Master Admin",
+    "userType": "—",
+    "plaza": "All plazas",
+    "status": "Active",
+    "approval": "Approved",
+    "locked": false,
+    "avatarBg": "#0F172A",
+    "menuAccess": null
+  },
+  {
+    "id": "PSN0006",
+    "name": "Priya Nair",
+    "username": "priya.nair",
+    "role": "Request Tag Details",
+    "userType": "Toll Plaza",
+    "plaza": "Solapur Plaza NH-65",
+    "status": "Active",
+    "approval": "Pending",
+    "locked": false,
+    "avatarBg": "#DD2590",
+    "menuAccess": [
+      "tag_details",
+      "tag_details_request_tag_details",
+      "tag_details_blacklist_search_history",
+      "pass_issuance_pass_issuance_view"
+    ]
+  }
+]

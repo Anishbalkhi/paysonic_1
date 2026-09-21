@@ -1,0 +1,229 @@
+@use '../../assets/styles/variables' as *;
+
+.home-page {
+  padding: $spacing-8 0;
+
+  @media (max-width: 768px) {
+    padding: $spacing-4 0;
+  }
+
+  &__header {
+    margin-bottom: $spacing-8;
+
+    @media (max-width: 768px) {
+      margin-bottom: $spacing-5;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: $spacing-4;
+
+      @media (max-width: 640px) {
+        flex-direction: column;
+        align-items: stretch;
+
+        .flex.gap-3 {
+          width: 100%;
+          flex-direction: column;
+          gap: $spacing-2;
+
+          button {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+
+      h1 {
+        font-size: $font-3xl;
+        font-weight: $font-extrabold;
+        color: $text-primary;
+        letter-spacing: -0.02em;
+
+        @media (max-width: 640px) {
+          font-size: $font-2xl;
+        }
+      }
+
+      p {
+        color: $text-secondary;
+        font-size: $font-sm;
+        margin-top: $spacing-1;
+      }
+    }
+  }
+
+  &__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: $spacing-5;
+    margin-bottom: $spacing-8;
+
+    .metric-card {
+      &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: $spacing-2;
+      }
+
+      &__title {
+        font-size: $font-sm;
+        font-weight: $font-medium;
+        color: $text-secondary;
+      }
+
+      &__value {
+        font-size: $font-2xl;
+        font-weight: $font-bold;
+        color: $text-primary;
+      }
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: $spacing-6;
+    margin-bottom: $spacing-8;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .revenue-chart {
+    &__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: $spacing-6;
+    }
+
+    &__title {
+      font-size: $font-lg;
+      font-weight: $font-bold;
+    }
+
+    &__subtitle {
+      font-size: $font-xs;
+      color: $text-muted;
+    }
+
+    &__controls {
+      display: flex;
+      gap: $spacing-1;
+      background: $bg-subtle;
+      padding: 3px;
+      border-radius: $radius-md;
+
+      .control-btn {
+        padding: 4px 12px;
+        font-size: $font-xs;
+        border: none;
+        background: transparent;
+        color: $text-secondary;
+        font-weight: $font-semibold;
+        border-radius: $radius-sm;
+        cursor: pointer;
+        transition: all $transition-fast;
+
+        &.active {
+          background: #ffffff;
+          color: $primary-color;
+          box-shadow: $shadow-sm;
+        }
+      }
+    }
+
+    &__bars {
+      display: flex;
+      align-items: flex-end;
+      height: 220px;
+      gap: $spacing-4;
+      padding-top: $spacing-6;
+    }
+
+    .bar-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+
+      .bar-wrapper {
+        width: 100%;
+        height: 100%;
+        background-color: $bg-subtle;
+        border-radius: $radius-sm;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        width: 100%;
+        background: linear-gradient(180deg, $primary-light 0%, $primary-color 100%);
+        border-radius: $radius-sm;
+        transition: height 0.5s ease-in-out;
+      }
+
+      .bar-label {
+        margin-top: $spacing-2;
+        font-size: $font-xs;
+        color: $text-secondary;
+        font-weight: $font-medium;
+      }
+    }
+  }
+
+  .system-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    &__title {
+      font-size: $font-lg;
+      font-weight: $font-bold;
+      margin-bottom: $spacing-4;
+    }
+
+    &__list {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-4;
+    }
+
+    &__item {
+      display: flex;
+      justify-content: space-between;
+      padding: $spacing-3 0;
+      border-bottom: 1px solid $border-light;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .label {
+        color: $text-secondary;
+        font-size: $font-sm;
+      }
+
+      .val {
+        font-weight: $font-semibold;
+        font-size: $font-sm;
+        color: $text-primary;
+      }
+    }
+  }
+
+  .transaction-section {
+    .section-title {
+      font-size: $font-lg;
+      font-weight: $font-bold;
+    }
+  }
+}

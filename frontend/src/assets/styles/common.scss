@@ -1,0 +1,148 @@
+@use 'variables' as *;
+
+// Shared utilities requested
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-2;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all $transition-fast;
+
+  &:hover {
+    opacity: 0.92;
+  }
+}
+
+.btn-primary {
+  background: $primary-color;
+  color: #fff;
+
+  &:hover {
+    background: $primary-dark;
+  }
+}
+
+.flex-row {
+  display: flex;
+  align-items: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+// Additional reusable utilities
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-2 { gap: $spacing-2; }
+.gap-3 { gap: $spacing-3; }
+.gap-4 { gap: $spacing-4; }
+
+.card {
+  background: $bg-card;
+  border-radius: $radius-lg;
+  border: 1px solid $border-color;
+  box-shadow: $shadow-sm;
+  padding: $spacing-6;
+  transition: box-shadow $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+
+  &--success {
+    background-color: $success-bg;
+    color: $success-color;
+    border: 1px solid rgba($success-color, 0.2);
+  }
+
+  &--warning {
+    background-color: $warning-bg;
+    color: $warning-color;
+    border: 1px solid rgba($warning-color, 0.2);
+  }
+
+  &--danger {
+    background-color: $danger-bg;
+    color: $danger-color;
+    border: 1px solid rgba($danger-color, 0.2);
+  }
+
+  &--neutral {
+    background-color: $bg-subtle;
+    color: $text-secondary;
+    border: 1px solid $border-color;
+  }
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: $radius-lg;
+  border: 1px solid $border-color;
+  background: $bg-card;
+
+  table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    text-align: left;
+
+    th {
+      padding: 12px 16px;
+      background-color: $bg-subtle;
+      color: $text-secondary;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid $border-color;
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 0.875rem;
+      color: $text-primary;
+      border-bottom: 1px solid $border-light;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: rgba($bg-subtle, 0.5);
+    }
+  }
+}

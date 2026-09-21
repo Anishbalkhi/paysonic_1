@@ -1,0 +1,93 @@
+@use '../../assets/styles/variables' as *;
+
+.c-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-4;
+  z-index: $z-modal;
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+.c-modal {
+  background: $bg-card;
+  width: 100%;
+  max-width: 540px;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-xl;
+  overflow: hidden;
+  border: 1px solid $border-color;
+  animation: modal-scale-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-5 $spacing-6;
+    border-bottom: 1px solid $border-color;
+
+    h3 {
+      font-size: $font-lg;
+      font-weight: $font-bold;
+      color: $text-primary;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.25rem;
+      line-height: 1;
+      color: $text-muted;
+      cursor: pointer;
+      padding: $spacing-2;
+      border-radius: $radius-sm;
+      transition: all $transition-fast;
+
+      &:hover {
+        background-color: $bg-subtle;
+        color: $text-primary;
+      }
+    }
+  }
+
+  &__body {
+    padding: $spacing-6;
+    color: $text-secondary;
+    font-size: $font-sm;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: $spacing-3;
+    padding: $spacing-4 $spacing-6;
+    background-color: $bg-subtle;
+    border-top: 1px solid $border-color;
+  }
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "id": "PROD-PAYSONIC-GATEWAY",
+  "name": "Paysonic Smart POS & Universal Gateway",
+  "tagline": "Next-generation omni-channel unified payment orchestration engine",
+  "status": "live",
+  "version": "v4.2.0-stable",
+  "createdAt": "2024-05-12T00:00:00Z",
+  "updatedAt": "2026-09-18T14:20:00Z",
+  "pricing": {
+    "tier": "Enterprise Custom",
+    "baseFee": "1.2% + $0.15 per transaction",
+    "monthlySubscription": "$499/month",
+    "settlementCycle": "T+1 Instant Auto-Settlement"
+  },
+  "metrics": {
+    "activeMerchants": 1840,
+    "monthlyVolumeUSD": 48200000.00,
+    "avgLatency": "180ms",
+    "uptimeSLA": "99.995%"
+  },
+  "features": [
+    {
+      "name": "Smart Routing & Failover",
+      "description": "Dynamically routes transactions across 12 tier-1 acquirers to prevent declines and maximize authorization rates.",
+      "enabled": true
+    },
+    {
+      "name": "Tokenization & Vaulting",
+      "description": "PCI-DSS Level 1 compliant token vault supporting seamless recurring billing and 1-click checkout.",
+      "enabled": true
+    },
+    {
+      "name": "Fraud Detection AI",
+      "description": "Real-time behavioral risk scoring and automated 3D Secure 2.2 step-up challenge.",
+      "enabled": true
+    },
+    {
+      "name": "Multi-Currency Settlement",
+      "description": "Accept 135+ currencies and settle automatically in USD, EUR, GBP, or stablecoins without FX markup.",
+      "enabled": true
+    }
+  ],
+  "apiConfig": {
+    "environment": "production",
+    "webhookUrl": "https://api.paysonic.io/v1/webhooks/listener",
+    "publicKey": "pk_live_8f7b2c0199d3e89a441e",
+    "secretKeyMasked": "sk_live_••••••••••••••••••••3a9b",
+    "supportedProtocols": ["REST JSON", "GraphQL", "gRPC Webhook"]
+  },
+  "supportedMethods": [
+    "Visa / Mastercard / Amex",
+    "Apple Pay & Google Pay",
+    "SEPA & ACH Instant",
+    "WeChat Pay & Alipay",
+    "USDC & USDT On-Chain"
+  ]
+}

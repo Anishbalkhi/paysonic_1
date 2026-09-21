@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: paysonic-backend
+    runtime: java
+    region: singapore
+    plan: free
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -Djava.security.egd=file:/dev/./urandom -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -jar target/paysonic-tollops-backend-1.0.0-enterprise.jar
+    healthCheckPath: /api/dashboard
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: mysql
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+
+databases:
+  - name: paysonic-mysql
+    plan: free
+    databaseName: paysonic_tollops
+    user: paysonic
