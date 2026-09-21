@@ -40,6 +40,7 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(List.of(
             "http://localhost:*",
             "http://127.0.0.1:*",
+            "https://paysonic-1.vercel.app",
             "https://*.vercel.app",
             "https://*.up.railway.app",
             "https://*.onrender.com",
