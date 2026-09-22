@@ -29,7 +29,7 @@ const AppLayout = () => {
   }
 
   return (
-    <div className="app" data-role={roleSlug}>
+    <div className="app paysonic-app" data-role={roleSlug}>
       <Sidebar
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}

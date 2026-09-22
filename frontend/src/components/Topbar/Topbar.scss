@@ -159,22 +159,24 @@
     padding: 0 16px;
 
     .topbar-left .mobile-hamburger-btn {
-      display: flex;
+      display: inline-flex !important;
     }
   }
 }
 
 @media (max-width: 640px) {
   .topbar {
-    height: 58px;
+    height: 56px;
     padding: 0 12px;
 
     .topbar-left {
+      gap: 8px;
       .topbar-crumb-block .crumb {
         display: none;
       }
       .topbar-crumb-block .crumb-title {
-        font-size: 13.5px;
+        font-size: 13px;
+        max-width: 130px;
       }
     }
 
@@ -183,11 +185,40 @@
     }
 
     .topbar-right {
-      gap: 8px;
+      gap: 6px;
+
+      .clearance-pill {
+        padding: 3px 8px !important;
+        font-size: 10.5px !important;
+        max-width: 130px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
       .mode-badge {
-        padding: 3px 7px;
-        font-size: 10px;
+        padding: 3px 6px;
+        font-size: 9.5px;
+      }
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .topbar {
+    padding: 0 8px;
+
+    .topbar-left .topbar-crumb-block .crumb-title {
+      max-width: 95px;
+      font-size: 12px;
+    }
+
+    .topbar-right {
+      .mode-badge {
+        display: none;
+      }
+      .clearance-pill {
+        max-width: 105px;
       }
     }
   }

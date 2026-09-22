@@ -1,166 +1,261 @@
 :root {
-  --bg: #f4f7fb;
-  --card: #ffffff;
-  --ink: #0f172a;
-  --muted: #5b6678;
-  --faint: #94a3b8;
-  --stroke: #e7ecf3;
-  --stroke-strong: #d6deea;
-  --blue: #2563eb;
-  --blue-2: #3b82f6;
-  --blue-soft: #eaf1ff;
-  --green: #16a34a;
-  --green-2: #22c55e;
-  --green-soft: #e7f8ee;
-  --amber: #d97706;
-  --amber-soft: #fef4e2;
-  --red: #ef4444;
-  --red-soft: #fdecec;
+  /* ── Base canvas (default: Master Admin Obsidian Matrix) ── */
+  --bg: #080c14;
+  --card: #111827;
+  --surface: #0e1524;
+  --surface-raised: #1f293d;
+  --ink: #f9fafb;
+  --body-text: #e5e7eb;
+  --muted: #9ca3af;
+  --faint: #6b7280;
+  --stroke: rgba(255, 255, 255, 0.08);
+  --stroke-strong: rgba(16, 185, 129, 0.35);
+
+  /* semantic constants (kept for component compatibility) */
+  --blue: #38bdf8;
+  --blue-2: #7dd3fc;
+  --blue-soft: rgba(56, 189, 248, 0.14);
+  --green: #10b981;
+  --green-2: #34d399;
+  --green-soft: rgba(16, 185, 129, 0.14);
+  --amber: #f59e0b;
+  --amber-soft: rgba(245, 158, 11, 0.14);
+  --red: #f87171;
+  --red-soft: rgba(248, 113, 113, 0.14);
   --r: 16px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 26px -14px rgba(16, 24, 40, 0.16);
-  --shadow-lg: 0 1px 3px rgba(16, 24, 40, 0.06), 0 18px 40px -18px rgba(16, 24, 40, 0.22);
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.7), 0 0 24px rgba(16, 185, 129, 0.12);
 
-  /* ==========================================================================
-     DEFAULT / MASTER ADMIN TOKENS (Sovereign Emerald)
-     ========================================================================== */
-  --role-primary: #15803d;        /* Emerald 700 */
-  --role-primary-hover: #166534;  /* Emerald 800 */
-  --role-soft: #f0fdf4;
-  --role-surface: #f0fdf4;        /* Soft Mint Tint */
-  --role-border: #bbf7d0;         /* Light Green Stroke */
-  --role-accent: #22c55e;         /* Vibrant Green 500 */
-  --role-glow: rgba(34, 197, 94, 0.16);
-  --sidebar-brand-badge: #14532d;
-  --topbar-accent-border: #22c55e;
+  /* ── DEFAULT ROLE TOKENS (Master Admin Obsidian Matrix) ── */
+  --role-primary: #10b981;
+  --role-primary-hover: #059669;
+  --role-soft: rgba(16, 185, 129, 0.12);
+  --role-surface: #111827;
+  --role-border: rgba(16, 185, 129, 0.4);
+  --role-accent: #34d399;
+  --role-glow: rgba(16, 185, 129, 0.28);
+  --spark-color: #10b981;
+  --sidebar-brand-badge: #064e3b;
+  --topbar-accent-border: #10b981;
 }
 
-/* ==========================================================================
-   ROLE 1: MASTER ADMIN (Clearance: Unrestricted Master Governance)
-   Vibe: Sovereign Emerald — High trust, authoritative, system-level safety
-   ========================================================================== */
+/* =========================================================================
+   ROLE 1: MASTER ADMIN — Obsidian Matrix
+   Full dark console shell, glowing cyber emerald accents
+   ========================================================================= */
 [data-role="master-admin"] {
-  --role-primary: #15803d;        /* Emerald 700 */
-  --role-primary-hover: #166534;  /* Emerald 800 */
-  --role-soft: #f0fdf4;
-  --role-surface: #f0fdf4;        /* Soft Mint Tint */
-  --role-border: #bbf7d0;         /* Light Green Stroke */
-  --role-accent: #22c55e;         /* Vibrant Green 500 */
-  --role-glow: rgba(34, 197, 94, 0.16);
+  --bg: #080c14;
+  --card: #111827;
+  --surface: #0e1524;
+  --surface-raised: #1f293d;
+  --ink: #f9fafb;
+  --body-text: #e5e7eb;
+  --muted: #9ca3af;
+  --faint: #6b7280;
+  --stroke: rgba(255, 255, 255, 0.08);
+  --stroke-strong: rgba(16, 185, 129, 0.35);
 
-  /* Specific Layout Overrides */
-  --sidebar-brand-badge: #14532d;
-  --topbar-accent-border: #22c55e;
+  --role-primary: #10b981;
+  --role-primary-hover: #059669;
+  --role-soft: rgba(16, 185, 129, 0.12);
+  --role-surface: #111827;
+  --role-border: rgba(16, 185, 129, 0.4);
+  --role-accent: #34d399;
+  --role-glow: rgba(16, 185, 129, 0.28);
+  --spark-color: #10b981;
+  --sidebar-brand-badge: #064e3b;
+  --topbar-accent-border: #10b981;
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.7), 0 0 24px rgba(16, 185, 129, 0.14);
 }
 
-/* ==========================================================================
-   ROLE 2: CENTRAL ADMIN (Clearance: Central Operations Management)
-   Vibe: Command Cobalt / Royal Blue — Precision, high-speed telemetry
-   ========================================================================== */
+/* =========================================================================
+   ROLE 2: ADMIN — Deep Oceanic Command
+   Midnight navy shell, glowing cobalt & neon azure accents
+   ========================================================================= */
 [data-role="admin"] {
-  --role-primary: #2563eb;        /* Royal Blue 600 */
-  --role-primary-hover: #1d4ed8;  /* Blue 700 */
-  --role-soft: #eff6ff;
-  --role-surface: #eff6ff;        /* Soft Blue Glow Tint */
-  --role-border: #bfdbfe;         /* Soft Blue Stroke */
-  --role-accent: #3b82f6;         /* High-Vis Blue */
-  --role-glow: rgba(37, 99, 235, 0.16);
+  --bg: #0a1128;
+  --card: #1c2541;
+  --surface: #131b31;
+  --surface-raised: #253256;
+  --ink: #f8fafc;
+  --body-text: #e2e8f0;
+  --muted: #94a3b8;
+  --faint: #64748b;
+  --stroke: rgba(56, 189, 248, 0.14);
+  --stroke-strong: rgba(56, 189, 248, 0.4);
 
-  --sidebar-brand-badge: #1e3a8a;
-  --topbar-accent-border: #3b82f6;
+  --role-primary: #0284c7;
+  --role-primary-hover: #0369a1;
+  --role-soft: rgba(56, 189, 248, 0.14);
+  --role-surface: #1c2541;
+  --role-border: rgba(56, 189, 248, 0.45);
+  --role-accent: #38bdf8;
+  --role-glow: rgba(56, 189, 248, 0.3);
+  --spark-color: #38bdf8;
+  --sidebar-brand-badge: #0c4a6e;
+  --topbar-accent-border: #38bdf8;
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.75), 0 0 28px rgba(56, 189, 248, 0.15);
 }
 
-/* ==========================================================================
-   ROLE 3: TOLL PLAZA MANAGER / PLAZA ADMIN (Clearance: Plaza Local Supervisor)
-   Vibe: Pacific Cyan / Sky Blue — Focused on lane status, local operations
-   ========================================================================== */
+/* =========================================================================
+   ROLE 3: PLAZA ADMIN / PLAZA MANAGER — Pacific Cyan Command
+   ========================================================================= */
 [data-role="plaza-admin"],
 [data-role="plaza-manager"] {
-  --role-primary: #0284c7;        /* Pacific Cyan 600 */
-  --role-primary-hover: #0369a1;  /* Pacific Cyan 700 */
-  --role-soft: #f0f9ff;
-  --role-surface: #f0f9ff;        /* Ice Blue */
-  --role-border: #bae6fd;         /* Cyan Stroke */
-  --role-accent: #38bdf8;         /* Sky Blue */
-  --role-glow: rgba(2, 132, 199, 0.16);
+  --bg: #08131e;
+  --card: #102336;
+  --surface: #0b1a29;
+  --surface-raised: #18334e;
+  --ink: #f0f9ff;
+  --body-text: #e0f2fe;
+  --muted: #bae6fd;
+  --faint: #7dd3fc;
+  --stroke: rgba(56, 189, 248, 0.18);
+  --stroke-strong: rgba(56, 189, 248, 0.45);
 
+  --role-primary: #0284c7;
+  --role-primary-hover: #0369a1;
+  --role-soft: rgba(2, 132, 199, 0.14);
+  --role-surface: #102336;
+  --role-border: rgba(56, 189, 248, 0.45);
+  --role-accent: #38bdf8;
+  --role-glow: rgba(2, 132, 199, 0.32);
+  --spark-color: #38bdf8;
   --sidebar-brand-badge: #0c4a6e;
-  --topbar-accent-border: #0ea5e9;
+  --topbar-accent-border: #0284c7;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.75), 0 0 28px rgba(2, 132, 199, 0.18);
 }
 
-/* ==========================================================================
-   ROLE 4: RECON OFFICER / BANK AUDITOR (Clearance: Acquirer Settlement & Recon)
-   Vibe: Deep Marine Teal — Financial rigor, audit-readiness, calculations
-   ========================================================================== */
+/* =========================================================================
+   ROLE 4: BANK AUDITOR / RECON OFFICER — Deep Jade & Titanium
+   Deep slate background, icy teal highlights, financial ledger precision
+   ========================================================================= */
 [data-role="recon-officer"],
 [data-role="bank-auditor"],
 [data-role="bank"] {
-  --role-primary: #0d9488;        /* Deep Teal 600 */
-  --role-primary-hover: #0f766e;  /* Deep Teal 700 */
-  --role-soft: #f0fdfa;
-  --role-surface: #f0fdfa;        /* Frosted Mint Tint */
-  --role-border: #99f6e4;         /* Teal Stroke */
-  --role-accent: #14b8a6;         /* Teal Spark */
-  --role-glow: rgba(13, 148, 136, 0.16);
+  --bg: #0b131e;
+  --card: #132233;
+  --surface: #0e1927;
+  --surface-raised: #1a2f47;
+  --ink: #f0fdfa;
+  --body-text: #ccfbf1;
+  --muted: #99f6e4;
+  --faint: #5eead4;
+  --stroke: rgba(20, 184, 166, 0.2);
+  --stroke-strong: rgba(20, 184, 166, 0.45);
 
+  --role-primary: #14b8a6;
+  --role-primary-hover: #0d9488;
+  --role-soft: rgba(20, 184, 166, 0.14);
+  --role-surface: #132233;
+  --role-border: rgba(20, 184, 166, 0.45);
+  --role-accent: #2dd4bf;
+  --role-glow: rgba(20, 184, 166, 0.32);
+  --spark-color: #14b8a6;
   --sidebar-brand-badge: #134e4a;
   --topbar-accent-border: #14b8a6;
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 38px -4px rgba(0, 0, 0, 0.8), 0 0 28px rgba(20, 184, 166, 0.16);
 }
 
-/* ==========================================================================
-   ROLE 5: DISPUTE HANDLER / COMPLIANCE AUDITOR (Clearance: Arbitration & Risk)
-   Vibe: Imperial Indigo / Violet — Judicial, dispute validation, legal review
-   ========================================================================== */
+/* =========================================================================
+   ROLE 5: DISPUTE HANDLER / COMPLIANCE AUDITOR / REQUEST TAG DETAILS
+   Cyber Violet Clearance
+   ========================================================================= */
 [data-role="dispute-handler"],
 [data-role="compliance-auditor"],
 [data-role="request-tag-details"],
 [data-role="tag-details"] {
-  --role-primary: #7c3aed;        /* Electric Violet 600 */
-  --role-primary-hover: #6d28d9;  /* Electric Violet 700 */
-  --role-soft: #faf5ff;
-  --role-surface: #faf5ff;        /* Soft Lavender Tint */
-  --role-border: #e9d5ff;         /* Violet Border */
-  --role-accent: #8b5cf6;         /* Vibrant Purple */
-  --role-glow: rgba(124, 58, 237, 0.16);
+  --bg: #0b0714;
+  --card: #1a102e;
+  --surface: #130a24;
+  --surface-raised: #281745;
+  --ink: #faf5ff;
+  --body-text: #f3e8ff;
+  --muted: #d8b4fe;
+  --faint: #a855f7;
+  --stroke: rgba(168, 85, 247, 0.2);
+  --stroke-strong: rgba(168, 85, 247, 0.45);
 
+  --role-primary: #8b5cf6;
+  --role-primary-hover: #7c3aed;
+  --role-soft: rgba(139, 92, 246, 0.15);
+  --role-surface: #1a102e;
+  --role-border: rgba(168, 85, 247, 0.42);
+  --role-accent: #a855f7;
+  --role-glow: rgba(139, 92, 246, 0.32);
+  --spark-color: #a855f7;
   --sidebar-brand-badge: #4c1d95;
   --topbar-accent-border: #8b5cf6;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.8), 0 0 28px rgba(139, 92, 246, 0.18);
 }
 
-/* ==========================================================================
-   ROLE 6: CONCESSIONAIRE / HIGHWAY AUTHORITY (Clearance: Corridor Analytics)
-   Vibe: Industrial Amber / Ochre — High-level ROI, corridor traffic overview
-   ========================================================================== */
+/* =========================================================================
+   ROLE 6: CONCESSIONAIRE — Industrial Amber & Carbon
+   ========================================================================= */
 [data-role="concessionaire"] {
-  --role-primary: #d97706;        /* Industrial Amber 600 */
-  --role-primary-hover: #b45309;  /* Industrial Amber 700 */
-  --role-soft: #fffbeb;
-  --role-surface: #fffbeb;        /* Warm Sand Glow */
-  --role-border: #fde68a;         /* Amber Stroke */
-  --role-accent: #f59e0b;         /* Warm Gold */
-  --role-glow: rgba(217, 119, 6, 0.16);
+  --bg: #0c0a09;
+  --card: #1c1917;
+  --surface: #141210;
+  --surface-raised: #292524;
+  --ink: #fffbeb;
+  --body-text: #fef3c7;
+  --muted: #fde68a;
+  --faint: #d97706;
+  --stroke: rgba(245, 158, 11, 0.18);
+  --stroke-strong: rgba(245, 158, 11, 0.4);
 
+  --role-primary: #d97706;
+  --role-primary-hover: #b45309;
+  --role-soft: rgba(217, 119, 6, 0.14);
+  --role-surface: #1c1917;
+  --role-border: rgba(245, 158, 11, 0.35);
+  --role-accent: #f59e0b;
+  --role-glow: rgba(217, 119, 6, 0.32);
+  --spark-color: #f59e0b;
   --sidebar-brand-badge: #78350f;
   --topbar-accent-border: #f59e0b;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.8), 0 0 28px rgba(217, 119, 6, 0.18);
 }
 
-/* ==========================================================================
-   ROLE 7: PLAZA POS / CASHIER (Clearance: Lane Terminal & Barrier Control)
-   Vibe: Sunset Ochre Orange — Fast reflexes, urgent lane clearance, booth ops
-   ========================================================================== */
+/* =========================================================================
+   ROLE 7: PLAZA POS / CASHIER — Industrial Highway Terminal
+   High-vis brutalist theme, stark safety orange, amber alerts
+   ========================================================================= */
 [data-role="plaza-pos"],
 [data-role="cashier"] {
-  --role-primary: #ea580c;        /* Blaze Orange 600 */
-  --role-primary-hover: #c2410c;  /* Blaze Orange 700 */
-  --role-soft: #fff7ed;
-  --role-surface: #fff7ed;        /* Soft Peach Tint */
-  --role-border: #fed7aa;         /* Orange Border */
-  --role-accent: #f97316;         /* Flame Orange */
-  --role-glow: rgba(234, 88, 12, 0.16);
+  --bg: #111827;
+  --card: #1e293b;
+  --surface: #162030;
+  --surface-raised: #2a374f;
+  --ink: #ffffff;
+  --body-text: #f1f5f9;
+  --muted: #cbd5e1;
+  --faint: #94a3b8;
+  --stroke: #334155;
+  --stroke-strong: #ea580c;
 
+  --role-primary: #ea580c;
+  --role-primary-hover: #c2410c;
+  --role-soft: rgba(234, 88, 12, 0.16);
+  --role-surface: #1e293b;
+  --role-border: #f97316;
+  --role-accent: #f97316;
+  --role-glow: rgba(234, 88, 12, 0.35);
+  --spark-color: #f97316;
   --sidebar-brand-badge: #7c2d12;
-  --topbar-accent-border: #f97316;
+  --topbar-accent-border: #ea580c;
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 26px rgba(234, 88, 12, 0.2);
 }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 html { scroll-behavior: smooth; }
 body {
   font-family: "Inter", system-ui, sans-serif;
@@ -332,25 +427,25 @@ body::before {
   line-height: 0 !important;
 }
 
-.hero { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 22px; border: 1px solid var(--stroke); background: linear-gradient(118deg, #ffffff 0%, #edf3fc 55%, #e7f6ee 100%); box-shadow: var(--shadow-lg); }
+.hero { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 22px; border: 1px solid var(--stroke-strong); background: radial-gradient(circle at 85% 15%, var(--role-soft), transparent 55%), linear-gradient(135deg, var(--card) 0%, var(--bg) 100%); box-shadow: var(--shadow-lg); }
 #gantry { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.hero-scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.62) 38%, rgba(255, 255, 255, 0) 74%); }
+.hero-scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--bg) 0%, rgba(8, 12, 20, 0.75) 45%, rgba(8, 12, 20, 0.08) 80%); }
 .hero-inner { position: relative; padding: 26px 30px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; min-height: 310px; pointer-events: none; }
 .hero-inner .hero-stats { pointer-events: auto; }
-.hero-lead .eyebrow { font-size: 10.5px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--blue); font-weight: 600; margin-bottom: 10px; }
+.hero-lead .eyebrow { font-size: 10.5px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--role-accent); font-weight: 600; margin-bottom: 10px; }
 .hero-lead h2 { font-size: 14px; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
 .hero-lead .big { font-family: "JetBrains Mono"; font-weight: 700; font-size: clamp(38px, 6vw, 58px); line-height: 1; letter-spacing: -1px; color: var(--ink); }
-.hero-lead .big .cur { color: var(--green); }
-.hero-lead .delta { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--green); }
-.hero-lead .delta .chip { background: var(--green-soft); border: 1px solid #c6eed3; padding: 3px 9px; border-radius: 8px; font-family: "JetBrains Mono"; }
-.hero-lead .delta small { color: var(--faint); font-weight: 500; }
+.hero-lead .big .cur { color: var(--role-primary); }
+.hero-lead .delta { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--role-accent); }
+.hero-lead .delta .chip { background: var(--role-soft); border: 1px solid var(--role-border); color: var(--role-accent); padding: 3px 9px; border-radius: 8px; font-family: "JetBrains Mono"; }
+.hero-lead .delta small { color: var(--muted); font-weight: 500; }
 .hero-stats { display: flex; gap: 12px; flex-wrap: wrap; }
-.hstat { background: rgba(255, 255, 255, 0.78); border: 1px solid var(--stroke); border-radius: 14px; padding: 14px 18px; min-width: 116px; backdrop-filter: blur(4px); box-shadow: var(--shadow); }
+.hstat { background: var(--card); border: 1px solid var(--stroke); border-radius: 14px; padding: 14px 18px; min-width: 116px; backdrop-filter: blur(8px); box-shadow: var(--shadow); }
 .hstat .k { font-size: 11px; color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
 .hstat .k i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .hstat .v { font-family: "JetBrains Mono"; font-weight: 700; font-size: 22px; letter-spacing: -0.5px; color: var(--ink); }
 .hstat .s { font-size: 11px; color: var(--faint); margin-top: 3px; }
-.hero-hint { position: absolute; right: 16px; bottom: 14px; font-size: 10.5px; color: var(--muted); letter-spacing: 0.3px; background: rgba(255, 255, 255, 0.8); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--stroke); pointer-events: none; }
+.hero-hint { position: absolute; right: 16px; bottom: 14px; font-size: 10.5px; color: var(--muted); letter-spacing: 0.3px; background: var(--surface); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--stroke); pointer-events: none; }
 
 .section-head { display: flex; align-items: center; justify-content: space-between; margin: 26px 2px 14px; }
 .section-head h3 { font-family: "Space Grotesk"; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 9px; color: var(--ink); }
@@ -366,25 +461,25 @@ body::before {
 .card .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
 .card .ic svg { width: 20px; height: 20px; }
 .card .trend { font-family: "JetBrains Mono"; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 8px; }
-.trend.up { color: var(--green); background: var(--green-soft); }
+.trend.up { color: var(--role-accent, #34d399); background: var(--role-soft, rgba(16, 185, 129, 0.14)); }
 .trend.down { color: var(--red); background: var(--red-soft); }
 .card .lbl { font-size: 12px; color: var(--muted); margin: 16px 0 6px; transform: translateZ(16px); }
 .card .val { font-family: "JetBrains Mono"; font-weight: 700; font-size: 27px; letter-spacing: -0.8px; transform: translateZ(28px); color: var(--ink); }
 .card .val .u { font-size: 15px; color: var(--faint); font-weight: 500; }
 .card .spark { position: absolute; right: 14px; bottom: 14px; width: 78px; height: 34px; transform: translateZ(12px); }
-.ic.i-green { background: var(--green-soft); color: var(--green); }
-.ic.i-blue { background: var(--blue-soft); color: var(--blue); }
-.ic.i-amber { background: var(--amber-soft); color: var(--amber); }
-.ic.i-red { background: var(--red-soft); color: var(--red); }
+.ic.i-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.ic.i-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+.ic.i-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.ic.i-red { background: rgba(248, 113, 113, 0.15); color: #f87171; }
 
 .grid-2 { display: grid; grid-template-columns: 1.9fr 1fr; gap: 16px; align-items: stretch; }
 .panel { border-radius: var(--r); padding: 20px; background: var(--card); border: 1px solid var(--stroke); box-shadow: var(--shadow); }
 .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 10px; }
 .panel-head h4 { font-family: "Space Grotesk"; font-size: 15px; font-weight: 600; color: var(--ink); }
-.panel-head p { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
-.seg { display: inline-flex; background: #f1f5fb; border: 1px solid var(--stroke); border-radius: 10px; padding: 3px; }
+.panel-head p { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--stroke); border-radius: 10px; padding: 3px; }
 .seg button { border: none; background: transparent; color: var(--muted); font-family: "JetBrains Mono"; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 7px; cursor: pointer; transition: 0.16s; }
-.seg button.on { background: var(--card); color: var(--blue); box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12); }
+.seg button.on { background: var(--card); color: var(--role-accent, var(--blue)); box-shadow: 0 1px 3px rgba(16, 24, 40, 0.25); }
 .legend { display: flex; gap: 16px; margin: 14px 0 8px; flex-wrap: wrap; }
 .legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
 .legend i { width: 10px; height: 10px; border-radius: 3px; }
@@ -397,7 +492,7 @@ body::before {
 .gauge .center .p { font-family: "JetBrains Mono"; font-weight: 700; font-size: 42px; letter-spacing: -1px; color: var(--green); }
 .gauge .center .c { font-size: 11px; letter-spacing: 2px; color: var(--faint); text-transform: uppercase; margin-top: 2px; }
 .mini-rows { margin-top: auto; display: grid; gap: 10px; padding-top: 16px; }
-.mini { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 13px; background: #f7fafe; border: 1px solid var(--stroke); }
+.mini { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 13px; background: var(--surface); border: 1px solid var(--stroke); }
 .mini .mi { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; }
 .mini .mtxt b { font-size: 12px; color: var(--muted); font-weight: 500; }
 .mini .mtxt span { display: block; font-family: "JetBrains Mono"; font-weight: 700; font-size: 18px; margin-top: 2px; color: var(--ink); }
@@ -414,14 +509,14 @@ body::before {
 
 .tbl-search { position: relative; }
 .tbl-search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--faint); }
-.tbl-search input { background: #f7fafe; border: 1px solid var(--stroke); border-radius: 10px; padding: 8px 12px 8px 33px; color: var(--ink); font-size: 12.5px; font-family: inherit; width: 200px; }
+.tbl-search input { background: var(--surface); border: 1px solid var(--stroke); border-radius: 10px; padding: 8px 12px 8px 33px; color: var(--ink); font-size: 12.5px; font-family: inherit; width: 200px; }
 .tbl-search input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 table { width: 100%; border-collapse: collapse; }
 thead th { text-align: left; font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--stroke-strong); }
 thead th.r { text-align: right; }
 tbody td { padding: 14px 12px; border-bottom: 1px solid var(--stroke); font-size: 13.5px; }
 tbody tr { transition: 0.14s; }
-tbody tr:hover { background: #f7fafe; }
+tbody tr:hover { background: var(--surface); }
 tbody tr:last-child td { border-bottom: none; }
 .pid { font-family: "JetBrains Mono"; font-weight: 600; color: var(--blue); }
 .pname { font-weight: 600; color: var(--ink); }
@@ -492,44 +587,62 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* ── 860px: Tablet portrait / large phone ── */
 @media (max-width: 860px) {
-  /* Sidebar: hidden off-canvas, slides in on mobile-open */
-  .app { grid-template-columns: 1fr; }
-  .sidebar {
-    position: fixed; left: 0; top: 0; bottom: 0;
-    transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 260px; z-index: 100;
-    box-shadow: var(--shadow-lg);
+  /* Sidebar & App shell */
+  .app,
+  .app-dashboard {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 1fr !important;
   }
-  .app-dashboard.mobile-open .sidebar { transform: translateX(0); }
-  .app-dashboard.collapsed { grid-template-columns: 1fr; }
+  .app-dashboard.collapsed { grid-template-columns: 1fr !important; }
 
-  /* Mobile overlay when sidebar is open */
-  .app-dashboard.mobile-open::before {
-    content: "";
-    position: fixed; inset: 0; z-index: 99;
-    background: rgba(15, 23, 42, 0.38);
-    backdrop-filter: blur(2px);
-    animation: fadeIn 0.2s ease;
+  .main {
+    padding: 14px 14px 60px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
   }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .main { padding: 14px 14px 60px; }
+  /* Dynamic Role Banner on mobile */
+  .clearance-banner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 12px 14px !important;
+    gap: 12px !important;
 
-  /* Topbar: search goes to second row */
-  .topbar { flex-wrap: wrap; gap: 10px; }
-  .search { order: 5; width: 100%; min-width: 0; }
-  .title h1 { font-size: 18px; }
+    > div:last-child {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+  }
 
-  /* Hero: smaller */
-  .hero-inner { padding: 20px; min-height: 240px; flex-direction: column; gap: 18px; align-items: flex-start; }
-  .hero-lead .big { font-size: clamp(30px, 8vw, 46px); }
-  .hero-stats { gap: 10px; }
-  .hstat { min-width: 100px; padding: 12px 14px; }
-  .hstat .v { font-size: 18px; }
+  /* Hero: mobile */
+  .hero-inner {
+    padding: 18px 16px !important;
+    min-height: auto !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    align-items: flex-start !important;
+  }
+  .hero-lead .big { font-size: clamp(28px, 7vw, 44px) !important; }
+  .hero-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .hstat {
+    min-width: 0 !important;
+    padding: 10px 12px !important;
+  }
+  .hstat .v { font-size: 17px !important; }
 
   /* KPIs: 2-column */
-  .kpis { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .kpis { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
   .card .val { font-size: 22px; }
 
   /* Panels */
@@ -560,7 +673,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* ── 600px: Phone ── */
 @media (max-width: 600px) {
-  .main { padding: 12px 12px 60px; }
+  .main { padding: 10px 10px 60px !important; }
 
   /* Topbar compact */
   .title h1 { font-size: 16px; }
@@ -570,32 +683,43 @@ tbody tr:last-child td { border-bottom: none; }
   .icon-btn { width: 36px; height: 36px; }
 
   /* Hero stacked */
-  .hero-inner { padding: 16px; min-height: 200px; gap: 14px; }
+  .hero-inner { padding: 16px 14px !important; min-height: auto !important; gap: 14px !important; }
   .hero-lead h2 { font-size: 12.5px; }
-  .hero-lead .big { font-size: clamp(26px, 9vw, 38px); }
-  .hero-lead .delta { font-size: 12px; flex-wrap: wrap; gap: 4px; }
-  .hero-stats { flex-direction: row; flex-wrap: wrap; gap: 8px; }
-  .hstat { min-width: calc(50% - 4px); padding: 10px 12px; }
-  .hstat .v { font-size: 17px; }
-  .hero-hint { display: none; }
+  .hero-lead .big { font-size: clamp(24px, 8.5vw, 36px) !important; }
+  .hero-lead .delta { font-size: 11.5px; flex-wrap: wrap; gap: 4px; }
+  .hero-stats {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .hero-stats .hstat:last-child {
+    grid-column: span 2;
+  }
+  .hstat {
+    min-width: 0 !important;
+    padding: 10px 12px !important;
+  }
+  .hstat .v { font-size: 16px !important; }
+  .hero-hint { display: none !important; }
 
-  /* KPIs: 1-column on small phones */
-  .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .card { padding: 14px; }
-  .card .val { font-size: 20px; }
-  .card .lbl { font-size: 11px; margin: 12px 0 4px; }
-  .card .ic { width: 34px; height: 34px; border-radius: 10px; }
-  .card .spark { width: 60px; height: 26px; right: 10px; bottom: 10px; }
+  /* KPIs: 2-column on phones */
+  .kpis { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+  .card { padding: 12px; }
+  .card .val { font-size: 19px; }
+  .card .lbl { font-size: 11px; margin: 10px 0 4px; }
+  .card .ic { width: 32px; height: 32px; border-radius: 9px; }
+  .card .spark { width: 55px; height: 24px; right: 8px; bottom: 8px; }
 
   /* Tab segment: full width */
   .tm-tabs { width: 100%; }
   .seg { width: 100%; justify-content: stretch; }
   .seg button { flex: 1; font-size: 11px; padding: 7px 6px; }
 
-  /* Dispute stat3: single column */
-  .stat3 { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .stat3 .s3 { padding: 12px 8px; }
-  .stat3 .s3 .v { font-size: 20px; }
+  /* Dispute stat3: single row / 3 columns */
+  .stat3 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .stat3 .s3 { padding: 10px 6px; }
+  .stat3 .s3 .v { font-size: 18px; }
 
   /* Chart: shorter height */
   .chart-wrap { height: 220px; }
@@ -642,6 +766,7 @@ tbody tr:last-child td { border-bottom: none; }
   .tbl-panel .panel-head { gap: 8px; }
 }
 
+
 /* ── 420px: Small phone ── */
 @media (max-width: 420px) {
   .main { padding: 10px 10px 60px; }
@@ -673,7 +798,7 @@ tbody tr:last-child td { border-bottom: none; }
 .tm-tabs { margin: -4px 2px 16px; }
 .dispute-open-panel { margin-top: 16px; }
 .stat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
-.stat3 .s3 { background: #f7fafe; border: 1px solid var(--stroke); border-radius: 13px; padding: 16px; text-align: center; }
+.stat3 .s3 { background: var(--surface); border: 1px solid var(--stroke); border-radius: 13px; padding: 16px; text-align: center; }
 .stat3 .s3 .k { font-size: 11.5px; color: var(--faint); margin-bottom: 8px; }
 .stat3 .s3 .v { font-family: "JetBrains Mono"; font-weight: 700; font-size: 26px; color: var(--ink); }
 .stat3 .s3.warn .v { color: var(--amber); }
@@ -685,9 +810,9 @@ tbody tr:last-child td { border-bottom: none; }
 .rank-list { display: flex; flex-direction: column; gap: 13px; margin-top: 14px; }
 .rank-row { display: grid; grid-template-columns: 168px 1fr 44px; gap: 12px; align-items: center; cursor: default; }
 .rank-row.clickable { cursor: pointer; }
-.rank-row.clickable:hover .rank-label { color: var(--blue); }
+.rank-row.clickable:hover .rank-label { color: var(--role-accent, var(--blue)); }
 .rank-label { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: 0.15s; }
-.rank-track { height: 8px; border-radius: 5px; background: #eef2f7; overflow: hidden; }
+.rank-track { height: 8px; border-radius: 5px; background: var(--surface-raised); overflow: hidden; }
 .rank-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--red), #f87171); }
 .rank-count { font-family: "JetBrains Mono"; font-weight: 700; font-size: 13px; text-align: right; color: var(--ink); }
 .rank-sub { font-size: 11px; color: var(--faint); margin-top: 10px; }
@@ -697,16 +822,16 @@ tbody tr:last-child td { border-bottom: none; }
 .err-detail th { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--stroke-strong); }
 .err-detail th.r, .err-detail td.r { text-align: right; }
 .err-detail td { padding: 9px 8px; font-size: 12.5px; border-bottom: 1px solid var(--stroke); }
-.err-detail td.code { font-family: "JetBrains Mono"; color: var(--blue); font-weight: 600; }
+.err-detail td.code { font-family: "JetBrains Mono"; color: var(--role-accent, var(--blue)); font-weight: 600; }
 
-.sys-chips { display: inline-flex; background: #f1f5fb; border: 1px solid var(--stroke); border-radius: 10px; padding: 3px; gap: 2px; }
+.sys-chips { display: inline-flex; background: var(--surface); border: 1px solid var(--stroke); border-radius: 10px; padding: 3px; gap: 2px; }
 .sys-chips button { border: none; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 7px; cursor: pointer; transition: 0.16s; font-family: inherit; }
-.sys-chips button.on { background: var(--card); color: var(--blue); box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12); }
+.sys-chips button.on { background: var(--card); color: var(--role-accent, var(--blue)); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
 .sys-scroll { overflow-x: auto; margin-top: 14px; }
 .sys-table { width: 100%; border-collapse: collapse; min-width: 1180px; }
 .sys-table th { text-align: left; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 10px; border-bottom: 1px solid var(--stroke-strong); white-space: nowrap; }
 .sys-table td { padding: 12px 10px; border-bottom: 1px solid var(--stroke); font-size: 12.5px; white-space: nowrap; color: var(--ink); }
-.sys-table tr:hover td { background: #f7fafe; }
+.sys-table tr:hover td { background: var(--surface); }
 .sys-table td.ok { color: var(--green); font-weight: 600; }
 .sys-table td.warn { color: var(--amber); font-weight: 600; }
 .sys-table td.off { color: var(--red); font-weight: 600; }

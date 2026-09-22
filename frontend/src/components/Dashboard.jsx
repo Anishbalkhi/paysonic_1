@@ -106,6 +106,8 @@ export default function Dashboard() {
   }
 
   const appClass = [
+    "app",
+    "paysonic-app",
     "app-dashboard",
     collapsed ? "collapsed" : "",
     mobileOpen ? "mobile-open" : "",
@@ -213,7 +215,11 @@ export default function Dashboard() {
       />
 
       <main className="main">
-        <Topbar />
+        <Topbar
+          onToggleMobileNav={() => setMobileOpen((v) => !v)}
+          title="Toll Operations Console"
+          crumb="NETC FASTag / Central Telemetry"
+        />
 
         {/* Dynamic Role Banner */}
         <div className="clearance-banner" style={{

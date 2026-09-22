@@ -1,132 +1,507 @@
 // ============================================================================
-// PAYSONIC MULTI-ROLE DESIGN SYSTEM (ROLE ACCENT SPECTRUM)
+// PAYSONIC MULTI-ROLE REVAMPED THEME ARCHITECTURE
+// High-Contrast Cyber Console & Terminal Shells (WCAG AAA Compliant)
 // ============================================================================
-// Canvas Rule: Base canvas remains clean light (#f4f7fb bg, #ffffff card, #0f172a ink).
-// The spectrum dynamically shifts brand accents, badges, active states, buttons,
-// headers, and sparklines according to active clearance.
 
-:root {
-  // Default / Master Admin (Emerald 700)
-  --role-primary: #15803d;
-  --role-primary-hover: #166534;
-  --role-soft: #f0fdf4;
-  --role-surface: #f0fdf4;
-  --role-border: #bbf7d0;
-  --role-accent: #22c55e;
-  --role-glow: rgba(34, 197, 94, 0.16);
+// ────────────────────────────────────────────────────────────────────────────
+// 1. MASTER ADMIN (master-admin) — Obsidian Matrix
+// Full dark console shell (#080C14), elevated panels (#111827),
+// glowing cyber emerald accents (#10B981), high-contrast mint status indicators.
+// ────────────────────────────────────────────────────────────────────────────
+:root,
+:root[data-role="master-admin"],
+html[data-role="master-admin"],
+body[data-role="master-admin"],
+.paysonic-app[data-role="master-admin"] {
+  --bg: #080c14;
+  --card: #111827;
+  --surface: #0e1524;
+  --surface-raised: #1f293d;
+
+  --ink: #f9fafb;
+  --body-text: #e5e7eb;
+  --muted: #9ca3af;
+  --faint: #6b7280;
+
+  --stroke: rgba(255, 255, 255, 0.08);
+  --stroke-strong: rgba(16, 185, 129, 0.35);
+
+  --role-primary: #10b981;
+  --role-primary-hover: #059669;
+  --role-soft: rgba(16, 185, 129, 0.12);
+  --role-surface: #111827;
+  --role-border: rgba(16, 185, 129, 0.4);
+  --role-accent: #34d399;
+  --role-glow: rgba(16, 185, 129, 0.28);
+
+  --spark-color: #10b981;
+  --topbar-accent-border: #10b981;
+  --sidebar-brand-badge: #064e3b;
+
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.7), 0 0 24px rgba(16, 185, 129, 0.12);
 }
 
-// 1. Master Admin - Unrestricted Root Governance
-[data-role="master-admin"] {
-  --role-primary: #15803d;
-  --role-primary-hover: #166534;
-  --role-soft: #f0fdf4;
-  --role-surface: #f0fdf4;
-  --role-border: #bbf7d0;
-  --role-accent: #22c55e;
-  --role-glow: rgba(34, 197, 94, 0.16);
-}
+// ────────────────────────────────────────────────────────────────────────────
+// 2. ADMIN (admin) — Deep Oceanic Command
+// Midnight navy shell (#0A1128), sleek steel blue cards (#1C2541),
+// glowing cobalt & neon azure accents (#38BDF8), bright cyan sparklines.
+// ────────────────────────────────────────────────────────────────────────────
+:root[data-role="admin"],
+html[data-role="admin"],
+body[data-role="admin"],
+.paysonic-app[data-role="admin"] {
+  --bg: #0a1128;
+  --card: #1c2541;
+  --surface: #131b31;
+  --surface-raised: #253256;
 
-// 2. Admin - Central Operations & NETC
-[data-role="admin"] {
-  --role-primary: #2563eb;
-  --role-primary-hover: #1d4ed8;
-  --role-soft: #eff6ff;
-  --role-surface: #eff6ff;
-  --role-border: #bfdbfe;
-  --role-accent: #3b82f6;
-  --role-glow: rgba(37, 99, 235, 0.16);
-}
+  --ink: #f8fafc;
+  --body-text: #e2e8f0;
+  --muted: #94a3b8;
+  --faint: #64748b;
 
-// 3. Plaza Admin - Local Plaza Lane Supervisor
-[data-role="plaza-admin"],
-[data-role="plaza-manager"] {
+  --stroke: rgba(56, 189, 248, 0.14);
+  --stroke-strong: rgba(56, 189, 248, 0.4);
+
   --role-primary: #0284c7;
   --role-primary-hover: #0369a1;
-  --role-soft: #f0f9ff;
-  --role-surface: #f0f9ff;
-  --role-border: #bae6fd;
+  --role-soft: rgba(56, 189, 248, 0.14);
+  --role-surface: #1c2541;
+  --role-border: rgba(56, 189, 248, 0.45);
   --role-accent: #38bdf8;
-  --role-glow: rgba(2, 132, 199, 0.16);
+  --role-glow: rgba(56, 189, 248, 0.3);
+
+  --spark-color: #38bdf8;
+  --topbar-accent-border: #38bdf8;
+  --sidebar-brand-badge: #0c4a6e;
+
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.75), 0 0 28px rgba(56, 189, 248, 0.15);
 }
 
-// 4. Concessionaire - Commercial Corridor Revenue
-[data-role="concessionaire"] {
-  --role-primary: #d97706;
-  --role-primary-hover: #b45309;
-  --role-soft: #fffbeb;
-  --role-surface: #fffbeb;
-  --role-border: #fde68a;
-  --role-accent: #f59e0b;
-  --role-glow: rgba(217, 119, 6, 0.16);
-}
+// ────────────────────────────────────────────────────────────────────────────
+// 3. PLAZA POS (plaza-pos / cashier) — Industrial Highway Terminal
+// High-vis brutalist theme with concrete slate surfaces (#1E293B),
+// stark high-contrast borders (2px solid #000000 / #334155),
+// safety traffic orange buttons (#EA580C), amber alerts (#F59E0B).
+// ────────────────────────────────────────────────────────────────────────────
+:root[data-role="plaza-pos"],
+:root[data-role="cashier"],
+html[data-role="plaza-pos"],
+html[data-role="cashier"],
+body[data-role="plaza-pos"],
+body[data-role="cashier"],
+.paysonic-app[data-role="plaza-pos"],
+.paysonic-app[data-role="cashier"] {
+  --bg: #111827;
+  --card: #1e293b;
+  --surface: #162030;
+  --surface-raised: #2a374f;
 
-// 5. Bank Auditor - Settlement, TRS & NPCI Recon
-[data-role="bank"],
-[data-role="bank-auditor"],
-[data-role="recon-officer"] {
-  --role-primary: #0d9488;
-  --role-primary-hover: #0f766e;
-  --role-soft: #f0fdfa;
-  --role-surface: #f0fdfa;
-  --role-border: #99f6e4;
-  --role-accent: #14b8a6;
-  --role-glow: rgba(13, 148, 136, 0.16);
-}
+  --ink: #ffffff;
+  --body-text: #f1f5f9;
+  --muted: #cbd5e1;
+  --faint: #94a3b8;
 
-// 6. Plaza POS - Lane POS Cashier Terminal
-[data-role="plaza-pos"],
-[data-role="cashier"] {
+  --stroke: #334155;
+  --stroke-strong: #ea580c;
+
   --role-primary: #ea580c;
   --role-primary-hover: #c2410c;
-  --role-soft: #fff7ed;
-  --role-surface: #fff7ed;
-  --role-border: #fed7aa;
+  --role-soft: rgba(234, 88, 12, 0.16);
+  --role-surface: #1e293b;
+  --role-border: #f97316;
   --role-accent: #f97316;
-  --role-glow: rgba(234, 88, 12, 0.16);
+  --role-glow: rgba(234, 88, 12, 0.35);
+
+  --spark-color: #f97316;
+  --topbar-accent-border: #ea580c;
+  --sidebar-brand-badge: #7c2d12;
+
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 26px rgba(234, 88, 12, 0.2);
 }
 
-// 7. Request Tag Details - FASTag Inquiry & Clearance
-[data-role="request-tag-details"],
-[data-role="tag-details"],
-[data-role="dispute-handler"],
-[data-role="compliance-auditor"] {
-  --role-primary: #7c3aed;
-  --role-primary-hover: #6d28d9;
-  --role-soft: #faf5ff;
-  --role-surface: #faf5ff;
-  --role-border: #e9d5ff;
-  --role-accent: #8b5cf6;
-  --role-glow: rgba(124, 58, 237, 0.16);
+// ────────────────────────────────────────────────────────────────────────────
+// 4. BANK AUDITOR (bank-auditor / bank / recon-officer) — Deep Jade & Titanium
+// Deep slate background (#0F172A), icy teal highlights (#14B8A6),
+// sharp financial ledger gridlines, and clean typography.
+// ────────────────────────────────────────────────────────────────────────────
+:root[data-role="bank-auditor"],
+:root[data-role="bank"],
+:root[data-role="recon-officer"],
+html[data-role="bank-auditor"],
+html[data-role="bank"],
+html[data-role="recon-officer"],
+body[data-role="bank-auditor"],
+body[data-role="bank"],
+body[data-role="recon-officer"],
+.paysonic-app[data-role="bank-auditor"],
+.paysonic-app[data-role="bank"],
+.paysonic-app[data-role="recon-officer"] {
+  --bg: #0b131e;
+  --card: #132233;
+  --surface: #0e1927;
+  --surface-raised: #1a2f47;
+
+  --ink: #f0fdfa;
+  --body-text: #ccfbf1;
+  --muted: #99f6e4;
+  --faint: #5eead4;
+
+  --stroke: rgba(20, 184, 166, 0.2);
+  --stroke-strong: rgba(20, 184, 166, 0.45);
+
+  --role-primary: #14b8a6;
+  --role-primary-hover: #0d9488;
+  --role-soft: rgba(20, 184, 166, 0.14);
+  --role-surface: #132233;
+  --role-border: rgba(20, 184, 166, 0.45);
+  --role-accent: #2dd4bf;
+  --role-glow: rgba(20, 184, 166, 0.32);
+
+  --spark-color: #14b8a6;
+  --topbar-accent-border: #14b8a6;
+  --sidebar-brand-badge: #134e4a;
+
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 38px -4px rgba(0, 0, 0, 0.8), 0 0 28px rgba(20, 184, 166, 0.16);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 5. TOLL PLAZA ADMIN (plaza-admin / plaza-manager) — Pacific Cyan Command
+// ────────────────────────────────────────────────────────────────────────────
+:root[data-role="plaza-admin"],
+:root[data-role="plaza-manager"],
+html[data-role="plaza-admin"],
+html[data-role="plaza-manager"],
+body[data-role="plaza-admin"],
+body[data-role="plaza-manager"],
+.paysonic-app[data-role="plaza-admin"],
+.paysonic-app[data-role="plaza-manager"] {
+  --bg: #08131e;
+  --card: #102336;
+  --surface: #0b1a29;
+  --surface-raised: #18334e;
+
+  --ink: #f0f9ff;
+  --body-text: #e0f2fe;
+  --muted: #bae6fd;
+  --faint: #7dd3fc;
+
+  --stroke: rgba(56, 189, 248, 0.18);
+  --stroke-strong: rgba(56, 189, 248, 0.45);
+
+  --role-primary: #0284c7;
+  --role-primary-hover: #0369a1;
+  --role-soft: rgba(2, 132, 199, 0.14);
+  --role-surface: #102336;
+  --role-border: rgba(56, 189, 248, 0.45);
+  --role-accent: #38bdf8;
+  --role-glow: rgba(2, 132, 199, 0.32);
+
+  --spark-color: #38bdf8;
+  --topbar-accent-border: #0284c7;
+  --sidebar-brand-badge: #0c4a6e;
+
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.75), 0 0 28px rgba(2, 132, 199, 0.18);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 6. CONCESSIONAIRE (concessionaire) — Industrial Amber & Carbon
+// ────────────────────────────────────────────────────────────────────────────
+:root[data-role="concessionaire"],
+html[data-role="concessionaire"],
+body[data-role="concessionaire"],
+.paysonic-app[data-role="concessionaire"] {
+  --bg: #0c0a09;
+  --card: #1c1917;
+  --surface: #141210;
+  --surface-raised: #292524;
+
+  --ink: #fffbeb;
+  --body-text: #fef3c7;
+  --muted: #fde68a;
+  --faint: #d97706;
+
+  --stroke: rgba(245, 158, 11, 0.18);
+  --stroke-strong: rgba(245, 158, 11, 0.4);
+
+  --role-primary: #d97706;
+  --role-primary-hover: #b45309;
+  --role-soft: rgba(217, 119, 6, 0.14);
+  --role-surface: #1c1917;
+  --role-border: rgba(245, 158, 11, 0.35);
+  --role-accent: #f59e0b;
+  --role-glow: rgba(217, 119, 6, 0.32);
+
+  --spark-color: #f59e0b;
+  --topbar-accent-border: #f59e0b;
+  --sidebar-brand-badge: #78350f;
+
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.8), 0 0 28px rgba(217, 119, 6, 0.18);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 7. REQUEST TAG DETAILS (request-tag-details / tag-details / dispute-handler)
+// Cyber Violet Clearance
+// ────────────────────────────────────────────────────────────────────────────
+:root[data-role="request-tag-details"],
+:root[data-role="tag-details"],
+:root[data-role="dispute-handler"],
+:root[data-role="compliance-auditor"],
+html[data-role="request-tag-details"],
+body[data-role="request-tag-details"],
+.paysonic-app[data-role="request-tag-details"] {
+  --bg: #0b0714;
+  --card: #1a102e;
+  --surface: #130a24;
+  --surface-raised: #281745;
+
+  --ink: #faf5ff;
+  --body-text: #f3e8ff;
+  --muted: #d8b4fe;
+  --faint: #a855f7;
+
+  --stroke: rgba(168, 85, 247, 0.2);
+  --stroke-strong: rgba(168, 85, 247, 0.45);
+
+  --role-primary: #8b5cf6;
+  --role-primary-hover: #7c3aed;
+  --role-soft: rgba(139, 92, 246, 0.15);
+  --role-surface: #1a102e;
+  --role-border: rgba(168, 85, 247, 0.42);
+  --role-accent: #a855f7;
+  --role-glow: rgba(139, 92, 246, 0.32);
+
+  --spark-color: #a855f7;
+  --topbar-accent-border: #8b5cf6;
+  --sidebar-brand-badge: #4c1d95;
+
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 38px rgba(0, 0, 0, 0.8), 0 0 28px rgba(139, 92, 246, 0.18);
 }
 
 // ============================================================================
-// SHELL & COMPONENT ATTACHMENTS FOR ROLE ACCENTS
+// GLOBAL COMPONENT ADAPTATIONS & UTILITY CLASSES
 // ============================================================================
 
-// 1. Dynamic Logo Mark
+// Base Document & Shell
+html,
+body {
+  background: var(--bg);
+  color: var(--body-text);
+  transition: background-color 0.28s ease, color 0.28s ease;
+}
+
+.paysonic-app,
+.app,
+.app-dashboard {
+  background: var(--bg);
+  color: var(--body-text);
+}
+
+.main {
+  background: var(--bg) !important;
+  color: var(--body-text) !important;
+}
+
+// 1. Dynamic Brand Logo Mark
 .brand-mark,
 .brand-logo-icon {
   background: linear-gradient(135deg, var(--role-primary), var(--role-accent)) !important;
-  box-shadow: 0 4px 14px var(--role-glow) !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px var(--role-glow) !important;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-// 2. Top Pill Clearance Badge & Indicators
+// 2. Sidebar Theming
+.sidebar {
+  background: var(--card) !important;
+  border-right: 1px solid var(--stroke) !important;
+  color: var(--body-text) !important;
+
+  .brand {
+    .brand-title {
+      color: var(--ink) !important;
+    }
+    .brand-sub {
+      color: var(--muted) !important;
+    }
+  }
+
+  .nav-item {
+    color: var(--muted) !important;
+
+    svg {
+      color: var(--faint) !important;
+    }
+
+    &:hover {
+      background: var(--surface) !important;
+      color: var(--ink) !important;
+
+      svg {
+        color: var(--role-accent) !important;
+      }
+    }
+
+    &.active,
+    &.active-sidebar-nav {
+      background: var(--role-soft) !important;
+      color: var(--role-accent) !important;
+      border: 1px solid var(--role-border) !important;
+      font-weight: 700;
+
+      svg {
+        color: var(--role-accent) !important;
+      }
+
+      &::before {
+        background: var(--role-primary) !important;
+      }
+    }
+  }
+
+  .nav-group.parent-active > .nav-item--toggle {
+    color: var(--role-accent) !important;
+    svg {
+      color: var(--role-accent) !important;
+    }
+  }
+
+  .nav-sub-item {
+    color: var(--muted) !important;
+
+    &:hover {
+      background: var(--surface) !important;
+      color: var(--ink) !important;
+    }
+
+    &.active {
+      color: var(--role-accent) !important;
+      font-weight: 600;
+
+      &::before {
+        background: var(--role-primary) !important;
+      }
+    }
+  }
+
+  .sidebar-foot {
+    border-top: 1px solid var(--stroke) !important;
+    background: transparent !important;
+
+    .avatar-row:hover {
+      background: var(--surface) !important;
+    }
+
+    .who-name {
+      color: var(--ink) !important;
+    }
+    .who-role {
+      color: var(--muted) !important;
+    }
+
+    .logout-btn {
+      background: var(--surface) !important;
+      border: 1px solid var(--stroke) !important;
+      color: var(--muted) !important;
+
+      &:hover {
+        background: #7f1d1d !important;
+        border-color: #ef4444 !important;
+        color: #fca5a5 !important;
+      }
+    }
+  }
+}
+
+// 3. Topbar Theming
+.topbar,
+.topbar-header-adaptive {
+  background: var(--card) !important;
+  border-bottom: 2px solid var(--topbar-accent-border) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+
+  .topbar-crumb-block {
+    .crumb {
+      color: var(--muted) !important;
+    }
+    .crumb-title {
+      color: var(--ink) !important;
+    }
+  }
+
+  .search-box {
+    background: var(--surface) !important;
+    border: 1px solid var(--stroke) !important;
+
+    input {
+      color: var(--ink) !important;
+      &::placeholder {
+        color: var(--faint) !important;
+      }
+    }
+  }
+
+  .notification-btn {
+    color: var(--muted) !important;
+    &:hover {
+      background: var(--surface) !important;
+      color: var(--ink) !important;
+    }
+  }
+
+  .mobile-hamburger-btn {
+    background: var(--surface) !important;
+    border: 1px solid var(--stroke) !important;
+    svg {
+      stroke: var(--ink) !important;
+    }
+  }
+
+  .topbar-user-menu {
+    background: var(--card) !important;
+    border: 1px solid var(--stroke-strong) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+
+    &::before {
+      background: var(--card) !important;
+      border-color: var(--stroke-strong) !important;
+    }
+
+    .tum-info {
+      border-bottom: 1px solid var(--stroke) !important;
+      .tum-name {
+        color: var(--ink) !important;
+      }
+      .tum-role {
+        color: var(--muted) !important;
+      }
+    }
+  }
+}
+
+// 4. Clearance Pill & Badges Utility Classes
 .clearance-pill,
+.clearance-badge,
 .role-indicator-badge,
 .sidebar .sidebar-role-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 4px 11px;
+  padding: 5px 12px !important;
   background: var(--role-soft) !important;
   border: 1px solid var(--role-border) !important;
-  color: var(--role-primary) !important;
+  color: var(--role-accent) !important;
   border-radius: 9999px;
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px var(--role-glow);
   transition: all 0.25s ease;
 
   .role-dot,
@@ -149,58 +524,180 @@
   flex-shrink: 0;
 }
 
-// 3. Banner Headers
+// 5. Dynamic Clearance Banner Header
 .clearance-banner {
   background: var(--role-soft) !important;
   border: 1px solid var(--role-border) !important;
-  box-shadow: 0 2px 10px var(--role-glow) !important;
-  border-radius: 12px;
-  transition: all 0.25s ease;
-}
+  box-shadow: 0 4px 20px var(--role-glow) !important;
+  border-radius: 14px;
+  transition: all 0.28s ease;
 
-// 4. Sidebar Active States
-.sidebar {
-  .nav-item.active,
-  .nav-sub-item.active {
-    background: var(--role-soft) !important;
-    color: var(--role-primary) !important;
-    font-weight: 600;
-
-    svg {
-      color: var(--role-primary) !important;
-    }
-
-    &::before {
-      background: var(--role-primary) !important;
-    }
-  }
-
-  .nav-group.parent-active > .nav-item--toggle {
-    color: var(--role-primary) !important;
-    svg {
-      color: var(--role-primary) !important;
-    }
-  }
-
-  .nav-sub-item.active::before {
-    background: var(--role-primary) !important;
+  .clearance-pill {
+    background: var(--card) !important;
+    border: 1px solid var(--role-border) !important;
+    color: var(--role-accent) !important;
   }
 }
 
-// 5. Primary Buttons
+// 6. 3D Toll Gantry Hero Revamped
+.hero {
+  border-radius: 22px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  border: 1px solid var(--stroke-strong) !important;
+  background: radial-gradient(circle at 85% 15%, var(--role-soft), transparent 55%),
+              linear-gradient(135deg, var(--card) 0%, var(--bg) 100%) !important;
+  box-shadow: var(--shadow-lg) !important;
+
+  .hero-scrim {
+    background: linear-gradient(
+      90deg,
+      var(--bg) 0%,
+      rgba(8, 12, 20, 0.75) 45%,
+      rgba(8, 12, 20, 0.08) 80%
+    ) !important;
+  }
+
+  .hero-lead {
+    .eyebrow {
+      color: var(--role-accent) !important;
+    }
+    h2 {
+      color: var(--muted) !important;
+    }
+    .big {
+      color: var(--ink) !important;
+      .cur {
+        color: var(--role-primary) !important;
+      }
+    }
+    .delta {
+      color: var(--role-accent) !important;
+      .chip {
+        background: var(--role-soft) !important;
+        border: 1px solid var(--role-border) !important;
+        color: var(--role-accent) !important;
+      }
+      small {
+        color: var(--muted) !important;
+      }
+    }
+  }
+
+  .hero-hint {
+    background: rgba(17, 24, 39, 0.85) !important;
+    border: 1px solid var(--stroke) !important;
+    color: var(--muted) !important;
+  }
+}
+
+.hstat {
+  background: var(--card) !important;
+  border: 1px solid var(--stroke) !important;
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: var(--shadow) !important;
+  backdrop-filter: blur(8px) !important;
+
+  .k {
+    color: var(--muted) !important;
+  }
+  .v {
+    color: var(--ink) !important;
+  }
+  .s {
+    color: var(--faint) !important;
+  }
+}
+
+// 7. KPI Metric Cards (Tilt Card & Standard)
+.card,
+.kpi-card,
+.kpi-metric-card {
+  background: var(--card) !important;
+  border: 1px solid var(--stroke) !important;
+  color: var(--ink) !important;
+  box-shadow: var(--shadow) !important;
+  transition: transform 0.15s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+
+  &:hover {
+    border-color: var(--role-border) !important;
+    box-shadow: var(--shadow-lg) !important;
+  }
+
+  .lbl {
+    color: var(--muted) !important;
+  }
+  .val {
+    color: var(--ink) !important;
+  }
+  .u {
+    color: var(--faint) !important;
+  }
+
+  &.active-trend {
+    border-color: var(--role-border) !important;
+    box-shadow: 0 4px 16px var(--role-glow) !important;
+  }
+}
+
+// 8. General Panels, Tables & Headings
+.panel {
+  background: var(--card) !important;
+  border: 1px solid var(--stroke) !important;
+  color: var(--body-text) !important;
+  box-shadow: var(--shadow) !important;
+
+  .panel-head {
+    h4 {
+      color: var(--ink) !important;
+    }
+    p {
+      color: var(--muted) !important;
+    }
+  }
+
+  table {
+    th {
+      background: var(--surface) !important;
+      color: var(--muted) !important;
+      border-bottom: 1px solid var(--stroke) !important;
+    }
+    td {
+      border-bottom: 1px solid var(--stroke) !important;
+      color: var(--body-text) !important;
+    }
+    tr:hover td {
+      background: var(--surface) !important;
+    }
+    .pid {
+      color: var(--role-accent) !important;
+    }
+    .pname {
+      color: var(--ink) !important;
+    }
+    .pdesc {
+      color: var(--muted) !important;
+    }
+  }
+}
+
+// 9. Buttons
 .btn-primary,
 button.btn-primary,
 .primary-btn {
   background: var(--role-primary) !important;
-  border-color: var(--role-primary) !important;
+  border: 1px solid var(--role-primary) !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px var(--role-glow) !important;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 3px 12px var(--role-glow) !important;
+  font-weight: 700;
+  transition: all 0.2s ease;
 
   &:hover {
     background: var(--role-primary-hover) !important;
     border-color: var(--role-primary-hover) !important;
-    box-shadow: 0 4px 12px var(--role-glow) !important;
+    box-shadow: 0 5px 16px var(--role-glow) !important;
+    transform: translateY(-1px);
   }
 
   &:active {
@@ -208,20 +705,40 @@ button.btn-primary,
   }
 }
 
-// 6. Metric Cards & Sparklines
-.metric-card.active-trend,
-.kpi-card.active-trend {
-  border-color: var(--role-border);
-  box-shadow: 0 4px 14px var(--role-glow);
-}
-
+// 10. Sparklines
+.sparkline-adaptive,
 .sparkline-role-trend {
-  stroke: var(--role-primary) !important;
+  stroke: var(--spark-color, var(--role-primary)) !important;
 }
 
-// Outline badge helper
-.badge-role-outline {
-  background: var(--role-soft) !important;
-  color: var(--role-primary) !important;
-  border: 1px solid var(--role-border) !important;
+// 11. Segments & Filter Chips
+.seg,
+.tm-tabs {
+  background: var(--surface) !important;
+  border: 1px solid var(--stroke) !important;
+
+  button {
+    color: var(--muted) !important;
+
+    &.on {
+      background: var(--card) !important;
+      color: var(--role-accent) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    }
+  }
+}
+
+.sys-chips {
+  background: var(--surface) !important;
+  border: 1px solid var(--stroke) !important;
+
+  button {
+    color: var(--muted) !important;
+
+    &.on {
+      background: var(--card) !important;
+      color: var(--role-accent) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    }
+  }
 }
