@@ -18,13 +18,16 @@ pnpm-debug.log*
 .env.*.local
 # Keep .env.development and .env.production committed (no secrets in them)
 
-# ─── Java / Maven Backend ─────────────────────────────────────
+# Java / Maven Backend
 backend/target/
-backend/.mvn/wrapper/dist/      # Downloaded Maven binaries (~30MB)
-backend/.mvn/repository/        # Local Maven repo cache
+backend/.mvn/wrapper/dist/
+backend/.mvn/repository/
 backend/*.jar
 !backend/mvnw
 !backend/mvnw.cmd
+
+# Scratch scripts & temporary directories
+scratch/
 
 # ─── Editor ───────────────────────────────────────────────────
 .vscode/*

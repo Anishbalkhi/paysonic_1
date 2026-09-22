@@ -1,0 +1,10 @@
+{
+  "asOn": "24 Aug 2025",
+  "rows": [
+    { "label": "Total Transactions", "color": "var(--blue)", "count": 2500, "amount": 1466600 },
+    { "label": "Settled Transactions", "color": "var(--green-2)", "count": 1500, "amount": 890000 },
+    { "label": "Unsettled Transactions", "color": "var(--amber)", "count": 1000, "amount": 576600 },
+    { "label": "Debit Adjustment", "color": "#94a3b8", "count": 0, "amount": 0 },
+    { "label": "Debit Adjustment (Pending)", "color": "var(--red)", "count": 12, "amount": 4320 }
+  ]
+}

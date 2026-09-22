@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import UserService from '../../services/user/UserService';
+import { useAuth } from '../../context/AuthContext';
 import {
   ROLE_NO_USER_TYPE,
   ALL_PLAZAS,
@@ -23,6 +24,23 @@ const VALID_ROLES = [
 ];
 
 export const UserList = () => {
+  const { currentUser } = useAuth();
+  const isMasterAdmin = currentUser?.role === 'Master Admin';
+  const isAdmin = currentUser?.role === 'Admin';
+  const isPlazaAdmin = currentUser?.role === 'Plaza Admin';
+
+  const canApprove = isMasterAdmin || isAdmin;
+  const canLock = isMasterAdmin || isAdmin;
+  const canDelete = isMasterAdmin || isAdmin;
+  const canBulkUpload = isMasterAdmin || isAdmin;
+
+  // Allowed roles when creating a new user
+  const allowedCreationRoles = isPlazaAdmin
+    ? ['Plaza POS', 'Request Tag Details']
+    : isAdmin
+    ? VALID_ROLES.filter(r => r !== 'Master Admin')
+    : VALID_ROLES;
+
   const [searchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -556,6 +574,16 @@ export const UserList = () => {
 
   // Filtered Users
   const filteredUsers = users.filter((u) => {
+    // If Plaza Admin, only show personnel from their plaza
+    if (isPlazaAdmin && currentUser?.assignedPlaza) {
+      const plazaKeywords = ['vashi', 'mumbai', 'airoli', 'pune', 'nashik', 'solapur', 'kolhapur'];
+      const userPlazaLower = (currentUser.assignedPlaza || '').toLowerCase();
+      const matchedKeyword = plazaKeywords.find(k => userPlazaLower.includes(k));
+      if (matchedKeyword && !u.plaza.toLowerCase().includes(matchedKeyword) && u.role !== 'Plaza Admin') {
+        return false;
+      }
+    }
+
     const matchesSearch =
       !searchQuery ||
       u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -600,22 +628,24 @@ export const UserList = () => {
           </p>
         </div>
         <div className="actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => {
-              setBulkErrors([]);
-              setBulkSuccessMsg('');
-              setUploadedFileName('');
-              setParsedCsvRows([]);
-              setIsBulkOpen(true);
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="2">
-              <path d="M12 3v12M7 8l5-5 5 5M5 21h14" />
-            </svg>
-            Bulk upload
-          </button>
+          {canBulkUpload && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setBulkErrors([]);
+                setBulkSuccessMsg('');
+                setUploadedFileName('');
+                setParsedCsvRows([]);
+                setIsBulkOpen(true);
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="2">
+                <path d="M12 3v12M7 8l5-5 5 5M5 21h14" />
+              </svg>
+              Bulk upload
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-primary"
@@ -627,6 +657,46 @@ export const UserList = () => {
             Add user
           </button>
         </div>
+      </div>
+
+      {/* Role Operational Scope Banner */}
+      <div style={{
+        margin: '0 0 20px 0',
+        padding: '12px 18px',
+        borderRadius: '10px',
+        background: isPlazaAdmin ? '#f0f9ff' : isAdmin ? '#eff6ff' : '#f0fdf4',
+        border: `1px solid ${isPlazaAdmin ? '#bae6fd' : isAdmin ? '#bfdbfe' : '#bbf7d0'}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{
+            fontSize: '11px',
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            padding: '3px 8px',
+            borderRadius: '6px',
+            background: isPlazaAdmin ? '#0284c7' : isAdmin ? '#2563eb' : '#16a34a',
+            color: '#ffffff',
+          }}>
+            {currentUser?.role || 'Admin'} Scope
+          </span>
+          <span style={{ fontSize: '13px', color: '#334155' }}>
+            {isPlazaAdmin
+              ? `Managing personnel for ${currentUser?.assignedPlaza || 'Assigned Plaza'}. Approval and account lock operations are reserved for Central Ops.`
+              : isAdmin
+              ? 'Central Operations Clearance: Managing users, plaza cashiers, and authorization credentials.'
+              : 'Master Governance Clearance: Full unrestricted authority over user provisioning, roles, and security.'}
+          </span>
+        </div>
+        {currentUser?.assignedPlaza && (
+          <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+            📍 Jurisdiction: {currentUser.assignedPlaza}
+          </span>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -759,7 +829,7 @@ export const UserList = () => {
                     </svg>
                   </button>
 
-                  {!approved && (
+                  {!approved && canApprove && (
                     <button
                       type="button"
                       className="icon-btn"
@@ -772,35 +842,39 @@ export const UserList = () => {
                     </button>
                   )}
 
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    title="Lock or unlock user"
-                    onClick={() => handleToggleLock(u.id)}
-                  >
-                    {u.locked ? (
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
-                        <rect x="4" y="10" width="16" height="10" rx="2" />
-                        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                      </svg>
-                    ) : (
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
-                        <rect x="4" y="10" width="16" height="10" rx="2" />
-                        <path d="M8 10V7a4 4 0 0 1 7.4-2" />
-                      </svg>
-                    )}
-                  </button>
+                  {canLock && (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      title="Lock or unlock user"
+                      onClick={() => handleToggleLock(u.id)}
+                    >
+                      {u.locked ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
+                          <rect x="4" y="10" width="16" height="10" rx="2" />
+                          <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                        </svg>
+                      ) : (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
+                          <rect x="4" y="10" width="16" height="10" rx="2" />
+                          <path d="M8 10V7a4 4 0 0 1 7.4-2" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
 
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    title="Delete user"
-                    onClick={() => handleDeleteUser(u.id)}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
-                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
-                    </svg>
-                  </button>
+                  {canDelete && !(isAdmin && u.role === 'Master Admin') && (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      title="Delete user"
+                      onClick={() => handleDeleteUser(u.id)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -949,7 +1023,7 @@ export const UserList = () => {
                         onBlur={() => handleBlur('role')}
                       >
                         <option value="">Select role</option>
-                        {VALID_ROLES.map((r) => (
+                        {allowedCreationRoles.map((r) => (
                           <option key={r}>{r}</option>
                         ))}
                       </select>

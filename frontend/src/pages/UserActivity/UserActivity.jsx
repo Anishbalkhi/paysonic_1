@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import UserActivityService from '../../services/userActivity/UserActivityService';
+import { useAuth } from '../../context/AuthContext';
 import KpiGrid from './components/KpiGrid';
 import LoginTrendChart from './components/LoginTrendChart';
 import ModuleBreakdown from './components/ModuleBreakdown';
@@ -13,6 +14,7 @@ import Loader from '../../components/Loader/Loader';
 import './UserActivity.scss';
 
 export const UserActivity = () => {
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'audit' | 'sessions' | 'logins'
   const [stats, setStats] = useState(null);
   const [breakdown, setBreakdown] = useState([]);
@@ -209,7 +211,7 @@ export const UserActivity = () => {
         {activeTab === 'sessions' && (
           <ActiveUsersTable
             activeUsers={activeUsers}
-            onForceLogout={handleForceLogout}
+            onForceLogout={currentUser?.role === 'Master Admin' ? handleForceLogout : null}
           />
         )}
 

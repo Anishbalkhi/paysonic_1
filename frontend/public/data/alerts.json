@@ -1,0 +1,47 @@
+[
+  {
+    "id": "a1",
+    "sev": "crit",
+    "icon": "off",
+    "title": "Plaza Daurala is offline",
+    "msg": "PLZ-5501 · no lane heartbeat for 14 min",
+    "time": "2 min ago",
+    "act": "View"
+  },
+  {
+    "id": "a2",
+    "sev": "warn",
+    "icon": "recon",
+    "title": "12 debit adjustments pending",
+    "msg": "₹4,320 awaiting reconciliation",
+    "time": "18 min ago",
+    "act": "Reconcile"
+  },
+  {
+    "id": "a3",
+    "sev": "warn",
+    "icon": "lane",
+    "title": "Kishangarh lane 4 degraded",
+    "msg": "PLZ-3055 · read latency above threshold",
+    "time": "32 min ago",
+    "act": "Inspect"
+  },
+  {
+    "id": "a4",
+    "sev": "warn",
+    "icon": "dispute",
+    "title": "3 disputes awaiting response",
+    "msg": "SLA breach in under 6 hours",
+    "time": "1 hr ago",
+    "act": "Review"
+  },
+  {
+    "id": "a5",
+    "sev": "info",
+    "icon": "batch",
+    "title": "Batch #2291 unsettled",
+    "msg": "1,000 txns · ₹5,76,600 ready to settle",
+    "time": "2 hr ago",
+    "act": "Settle"
+  }
+]

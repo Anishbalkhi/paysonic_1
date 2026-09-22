@@ -2,8 +2,8 @@
 
 .topbar {
   height: 64px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--surface, #ffffff);
+  border-bottom: 2px solid var(--topbar-accent-border, #22c55e);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -190,5 +190,113 @@
         font-size: 10px;
       }
     }
+  }
+}
+
+/* ── Topbar: User avatar + dropdown ─────────────────────── */
+.topbar-user {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.topbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--role-primary, #15803d);
+  color: #fff;
+  font-family: 'Manrope', 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  letter-spacing: 0.5px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+
+  &:hover {
+    border-color: var(--role-accent, #22c55e);
+    box-shadow: 0 0 0 3px var(--role-glow, rgba(34, 197, 94, 0.18));
+  }
+}
+
+.topbar-user-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+  padding: 8px;
+  min-width: 190px;
+  z-index: 200;
+  animation: menuPop 0.15s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 12px;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    border-left: 1px solid #e2e8f0;
+    transform: rotate(45deg);
+  }
+}
+
+@keyframes menuPop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.tum-info {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 6px;
+}
+
+.tum-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tum-role {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.tum-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.14s;
+  text-align: left;
+
+  &:hover {
+    background: #fef2f2;
   }
 }

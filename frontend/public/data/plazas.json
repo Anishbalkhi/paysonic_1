@@ -1,0 +1,8 @@
+[
+  { "id": "PLZ-1734", "name": "Kherki Daula", "desc": "NH-48 · 8 lanes", "status": "ok" },
+  { "id": "PLZ-2210", "name": "Manesar", "desc": "NH-48 · 6 lanes", "status": "ok" },
+  { "id": "PLZ-3055", "name": "Kishangarh", "desc": "NH-8 · 10 lanes", "status": "warn" },
+  { "id": "PLZ-4188", "name": "Shahjahanpur", "desc": "NH-48 · 12 lanes", "status": "ok" },
+  { "id": "PLZ-5501", "name": "Daurala", "desc": "NH-58 · 6 lanes", "status": "off" },
+  { "id": "PLZ-6742", "name": "Chandwaji", "desc": "NH-48 · 8 lanes", "status": "ok" }
+]

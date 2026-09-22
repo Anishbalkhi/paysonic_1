@@ -1,0 +1,40 @@
+{
+  "date": "24 Aug 2025",
+  "netRevenue": 1866400,
+  "deltaVsYesterday": 12.4,
+  "successRate": 91.4,
+  "throughput": 174,
+  "avgFare": 82,
+  "activeTollPlazas": 10,
+  "totalTollPlazas": 10,
+  "totalTransactions": 2500,
+  "successTransactions": 2285,
+  "successAmount": 1425000,
+  "pendingTransactions": 150,
+  "pendingAmount": 576600,
+  "failedTransactions": 65,
+  "failedAmount": 41600,
+  "yesterdayTransactions": 2043,
+  "yesterdayRevenue": 1660200,
+  "growth": 86,
+  "trends": {
+    "activePlazas": 0.0,
+    "totalTxn": 25.1,
+    "successTxn": 14.6,
+    "successAmount": 20.2,
+    "pendingTxn": -8.5,
+    "pendingAmount": -6.0,
+    "failedTxn": -3.2,
+    "failedAmount": -4.1
+  },
+  "sparklines": {
+    "activePlazas": [4, 4, 4, 4, 4, 4, 4],
+    "totalTxn": [9, 12, 10, 15, 18, 16, 22],
+    "successTxn": [12, 14, 13, 17, 19, 18, 24],
+    "successAmount": [10, 13, 12, 16, 20, 19, 25],
+    "pendingTxn": [20, 18, 19, 15, 14, 16, 13],
+    "pendingAmount": [18, 16, 14, 13, 11, 10, 8],
+    "failedTxn": [14, 12, 13, 10, 9, 11, 8],
+    "failedAmount": [11, 10, 12, 9, 8, 9, 7]
+  }
+}

@@ -1,0 +1,227 @@
+// ============================================================================
+// PAYSONIC MULTI-ROLE DESIGN SYSTEM (ROLE ACCENT SPECTRUM)
+// ============================================================================
+// Canvas Rule: Base canvas remains clean light (#f4f7fb bg, #ffffff card, #0f172a ink).
+// The spectrum dynamically shifts brand accents, badges, active states, buttons,
+// headers, and sparklines according to active clearance.
+
+:root {
+  // Default / Master Admin (Emerald 700)
+  --role-primary: #15803d;
+  --role-primary-hover: #166534;
+  --role-soft: #f0fdf4;
+  --role-surface: #f0fdf4;
+  --role-border: #bbf7d0;
+  --role-accent: #22c55e;
+  --role-glow: rgba(34, 197, 94, 0.16);
+}
+
+// 1. Master Admin - Unrestricted Root Governance
+[data-role="master-admin"] {
+  --role-primary: #15803d;
+  --role-primary-hover: #166534;
+  --role-soft: #f0fdf4;
+  --role-surface: #f0fdf4;
+  --role-border: #bbf7d0;
+  --role-accent: #22c55e;
+  --role-glow: rgba(34, 197, 94, 0.16);
+}
+
+// 2. Admin - Central Operations & NETC
+[data-role="admin"] {
+  --role-primary: #2563eb;
+  --role-primary-hover: #1d4ed8;
+  --role-soft: #eff6ff;
+  --role-surface: #eff6ff;
+  --role-border: #bfdbfe;
+  --role-accent: #3b82f6;
+  --role-glow: rgba(37, 99, 235, 0.16);
+}
+
+// 3. Plaza Admin - Local Plaza Lane Supervisor
+[data-role="plaza-admin"],
+[data-role="plaza-manager"] {
+  --role-primary: #0284c7;
+  --role-primary-hover: #0369a1;
+  --role-soft: #f0f9ff;
+  --role-surface: #f0f9ff;
+  --role-border: #bae6fd;
+  --role-accent: #38bdf8;
+  --role-glow: rgba(2, 132, 199, 0.16);
+}
+
+// 4. Concessionaire - Commercial Corridor Revenue
+[data-role="concessionaire"] {
+  --role-primary: #d97706;
+  --role-primary-hover: #b45309;
+  --role-soft: #fffbeb;
+  --role-surface: #fffbeb;
+  --role-border: #fde68a;
+  --role-accent: #f59e0b;
+  --role-glow: rgba(217, 119, 6, 0.16);
+}
+
+// 5. Bank Auditor - Settlement, TRS & NPCI Recon
+[data-role="bank"],
+[data-role="bank-auditor"],
+[data-role="recon-officer"] {
+  --role-primary: #0d9488;
+  --role-primary-hover: #0f766e;
+  --role-soft: #f0fdfa;
+  --role-surface: #f0fdfa;
+  --role-border: #99f6e4;
+  --role-accent: #14b8a6;
+  --role-glow: rgba(13, 148, 136, 0.16);
+}
+
+// 6. Plaza POS - Lane POS Cashier Terminal
+[data-role="plaza-pos"],
+[data-role="cashier"] {
+  --role-primary: #ea580c;
+  --role-primary-hover: #c2410c;
+  --role-soft: #fff7ed;
+  --role-surface: #fff7ed;
+  --role-border: #fed7aa;
+  --role-accent: #f97316;
+  --role-glow: rgba(234, 88, 12, 0.16);
+}
+
+// 7. Request Tag Details - FASTag Inquiry & Clearance
+[data-role="request-tag-details"],
+[data-role="tag-details"],
+[data-role="dispute-handler"],
+[data-role="compliance-auditor"] {
+  --role-primary: #7c3aed;
+  --role-primary-hover: #6d28d9;
+  --role-soft: #faf5ff;
+  --role-surface: #faf5ff;
+  --role-border: #e9d5ff;
+  --role-accent: #8b5cf6;
+  --role-glow: rgba(124, 58, 237, 0.16);
+}
+
+// ============================================================================
+// SHELL & COMPONENT ATTACHMENTS FOR ROLE ACCENTS
+// ============================================================================
+
+// 1. Dynamic Logo Mark
+.brand-mark,
+.brand-logo-icon {
+  background: linear-gradient(135deg, var(--role-primary), var(--role-accent)) !important;
+  box-shadow: 0 4px 14px var(--role-glow) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// 2. Top Pill Clearance Badge & Indicators
+.clearance-pill,
+.role-indicator-badge,
+.sidebar .sidebar-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 11px;
+  background: var(--role-soft) !important;
+  border: 1px solid var(--role-border) !important;
+  color: var(--role-primary) !important;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: all 0.25s ease;
+
+  .role-dot,
+  .clearance-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--role-accent) !important;
+    box-shadow: 0 0 0 2.5px var(--role-border) !important;
+    flex-shrink: 0;
+  }
+}
+
+.clearance-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--role-accent) !important;
+  box-shadow: 0 0 0 3px var(--role-border) !important;
+  flex-shrink: 0;
+}
+
+// 3. Banner Headers
+.clearance-banner {
+  background: var(--role-soft) !important;
+  border: 1px solid var(--role-border) !important;
+  box-shadow: 0 2px 10px var(--role-glow) !important;
+  border-radius: 12px;
+  transition: all 0.25s ease;
+}
+
+// 4. Sidebar Active States
+.sidebar {
+  .nav-item.active,
+  .nav-sub-item.active {
+    background: var(--role-soft) !important;
+    color: var(--role-primary) !important;
+    font-weight: 600;
+
+    svg {
+      color: var(--role-primary) !important;
+    }
+
+    &::before {
+      background: var(--role-primary) !important;
+    }
+  }
+
+  .nav-group.parent-active > .nav-item--toggle {
+    color: var(--role-primary) !important;
+    svg {
+      color: var(--role-primary) !important;
+    }
+  }
+
+  .nav-sub-item.active::before {
+    background: var(--role-primary) !important;
+  }
+}
+
+// 5. Primary Buttons
+.btn-primary,
+button.btn-primary,
+.primary-btn {
+  background: var(--role-primary) !important;
+  border-color: var(--role-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px var(--role-glow) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    background: var(--role-primary-hover) !important;
+    border-color: var(--role-primary-hover) !important;
+    box-shadow: 0 4px 12px var(--role-glow) !important;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+// 6. Metric Cards & Sparklines
+.metric-card.active-trend,
+.kpi-card.active-trend {
+  border-color: var(--role-border);
+  box-shadow: 0 4px 14px var(--role-glow);
+}
+
+.sparkline-role-trend {
+  stroke: var(--role-primary) !important;
+}
+
+// Outline badge helper
+.badge-role-outline {
+  background: var(--role-soft) !important;
+  color: var(--role-primary) !important;
+  border: 1px solid var(--role-border) !important;
+}

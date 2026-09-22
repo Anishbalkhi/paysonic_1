@@ -1,5 +1,6 @@
 @use 'variables' as *;
 @use 'common' as *;
+@use 'role-tokens' as *;
 
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
@@ -81,15 +82,10 @@ a {
   display: flex;
   flex-direction: column;
   background: var(--bg-page);
-  margin-left: 240px;
   min-height: 100vh;
 }
 
-@media (max-width: 980px) {
-  .main {
-    margin-left: 0;
-  }
-}
+
 
 .content-container {
   flex: 1;

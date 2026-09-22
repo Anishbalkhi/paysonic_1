@@ -1,0 +1,12 @@
+{
+  "total": 47,
+  "open": 23,
+  "accepted": 18,
+  "acceptedAmount": 94200,
+  "rejected": 6,
+  "breakdown": {
+    "withinTAT": 19,
+    "due24h": 4,
+    "breached": 0
+  }
+}

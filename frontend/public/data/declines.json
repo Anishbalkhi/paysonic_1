@@ -1,0 +1,16 @@
+{
+  "categories": [
+    { "name": "Blacklist / Low Balance Declined", "count": 28 },
+    { "name": "Unregistered Tag", "count": 14 },
+    { "name": "Duplicate Declines", "count": 9 },
+    { "name": "Maltag Declines", "count": 6 },
+    { "name": "Future Date Declines", "count": 3 },
+    { "name": "Error Codes Declined", "count": 11, "clickable": true }
+  ],
+  "errorCodes": [
+    { "code": "E-101", "desc": "Tag not read at gantry", "count": 5 },
+    { "code": "E-204", "desc": "Issuer bank timeout", "count": 3 },
+    { "code": "E-310", "desc": "Vehicle class mismatch", "count": 2 },
+    { "code": "E-417", "desc": "Duplicate settlement ref", "count": 1 }
+  ]
+}
