@@ -7,9 +7,11 @@
    ══════════════════════════════════════════════ */
 .login-page {
   display: flex;
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
 }
 
 /* ══════════════════════════════════════════════

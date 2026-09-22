@@ -105,11 +105,14 @@ export default function Dashboard() {
     }
   }
 
+  const isDesktop = typeof window === 'undefined' || window.innerWidth > 860;
+  const isDesktopCollapsed = collapsed && isDesktop;
+
   const appClass = [
     "app",
     "paysonic-app",
     "app-dashboard",
-    collapsed ? "collapsed" : "",
+    isDesktopCollapsed ? "collapsed" : "",
     mobileOpen ? "mobile-open" : "",
   ]
     .filter(Boolean)
@@ -210,7 +213,7 @@ export default function Dashboard() {
       <Sidebar
         isOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        isCollapsed={collapsed}
+        isCollapsed={isDesktopCollapsed}
         onToggleCollapse={toggleSidebar}
       />
 
@@ -221,8 +224,9 @@ export default function Dashboard() {
           crumb="NETC FASTag / Central Telemetry"
         />
 
-        {/* Dynamic Role Banner */}
-        <div className="clearance-banner" style={{
+        <div className="dashboard-content">
+          {/* Dynamic Role Banner */}
+          <div className="clearance-banner" style={{
           margin: '0 0 16px 0',
           padding: '12px 18px',
           background: 'var(--role-soft, #f0fdf4)',
@@ -347,7 +351,8 @@ export default function Dashboard() {
         <div className="foot">
           Paysonic · UAT Operations Console · Mode: {IS_DEV_DATA_MODE ? "DEV" : "PROD"}
         </div>
-      </main>
+      </div>
+    </main>
 
       <OperationsModal operation={activeOp} onClose={() => setActiveOp(null)} />
     </div>

@@ -136,3 +136,33 @@
     }
   }
 }
+
+@media (max-width: 768px) {
+  .product-detail-page {
+    padding: 16px 14px 48px;
+
+    &__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+
+      h1 {
+        font-size: 20px;
+      }
+    }
+
+    .features-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .key-input-row {
+      flex-direction: column;
+      gap: 10px;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}
