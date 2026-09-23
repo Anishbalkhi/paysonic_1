@@ -50,6 +50,20 @@ export const UserActivity = () => {
 
   useEffect(() => {
     loadData();
+
+    // Automatically re-sync live data when switching back to tab
+    const handleFocus = () => loadData();
+    window.addEventListener('focus', handleFocus);
+
+    // Heartbeat poll every 15s to keep live session and audit telemetry synchronized
+    const timer = setInterval(() => {
+      loadData();
+    }, 15000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(timer);
+    };
   }, []);
 
   const handleOpenExport = (ctx) => {
