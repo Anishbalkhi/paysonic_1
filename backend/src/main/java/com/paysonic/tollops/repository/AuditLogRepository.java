@@ -21,6 +21,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, String>, Jpa
     @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.status IN ('WARNING', 'FAILURE')")
     long countCriticalEvents();
 
+    long countByAction(String action);
+
     @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.timestamp >= :since")
     long countActivitiesSince(@Param("since") LocalDateTime since);
 

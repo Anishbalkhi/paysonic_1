@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import UserService from '../../services/user/UserService';
 import { useAuth } from '../../context/AuthContext';
+import { getDefaultRouteForUser } from '../../config/roleMenus';
 import {
   ROLE_NO_USER_TYPE,
   ALL_PLAZAS,
@@ -28,19 +29,95 @@ export const UserList = () => {
   const { currentUser } = useAuth();
   const isMasterAdmin = currentUser?.role === 'Master Admin';
   const isAdmin = currentUser?.role === 'Admin';
+  const isConcessionaire = currentUser?.role === 'Concessionaire';
   const isPlazaAdmin = currentUser?.role === 'Plaza Admin';
+  const isPosOrTag = currentUser?.role === 'Plaza POS' || currentUser?.role === 'Request Tag Details';
 
+  // Extract Concessionaire or Plaza Admin plazas
+  const concessionairePlazas = useMemo(() => {
+    if (!isConcessionaire) return [];
+    if (Array.isArray(currentUser?.plazas) && currentUser.plazas.length > 0) {
+      return currentUser.plazas;
+    }
+    if (currentUser?.assignedPlaza) {
+      return currentUser.assignedPlaza.split(',').map((p) => p.trim()).filter(Boolean);
+    }
+    return ['Mumbai-Pune Corridor (3 Plazas)', 'Vashi Creek Bridge', 'Airoli Bridge', 'Khed Shivapur'];
+  }, [currentUser, isConcessionaire]);
+
+  const plazaAdminPlaza = currentUser?.assignedPlaza || '';
+
+  // Creation permission (Image 1: Master Admin, Admin, Concessionaire, Plaza Admin)
+  const canCreate = isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin;
   const canApprove = isMasterAdmin || isAdmin;
-  const canLock = isMasterAdmin || isAdmin;
-  const canDelete = isMasterAdmin || isAdmin;
   const canBulkUpload = isMasterAdmin || isAdmin;
 
-  // Allowed roles when creating a new user
-  const allowedCreationRoles = isPlazaAdmin
-    ? ['Plaza POS', 'Request Tag Details']
-    : isAdmin
-    ? VALID_ROLES.filter(r => r !== 'Master Admin')
-    : VALID_ROLES;
+  // Allowed roles when creating a new user (Image 1 & 3: Hierarchy Matrix)
+  const allowedCreationRoles = useMemo(() => {
+    if (isMasterAdmin) {
+      return ['Master Admin', 'Admin', 'Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
+    }
+    if (isAdmin) {
+      return ['Admin', 'Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
+    }
+    if (isConcessionaire) {
+      return ['Plaza Admin', 'Request Tag Details', 'Plaza POS'];
+    }
+    if (isPlazaAdmin) {
+      return ['Request Tag Details', 'Plaza POS'];
+    }
+    return [];
+  }, [isMasterAdmin, isAdmin, isConcessionaire, isPlazaAdmin]);
+
+  // Allowed plaza options when creating/assigning
+  const allowedPlazasForActor = useMemo(() => {
+    if (isMasterAdmin || isAdmin) {
+      return ALL_PLAZAS;
+    }
+    if (isConcessionaire) {
+      return concessionairePlazas.length > 0 ? concessionairePlazas : ALL_PLAZAS;
+    }
+    if (isPlazaAdmin) {
+      return plazaAdminPlaza ? [plazaAdminPlaza] : ALL_PLAZAS;
+    }
+    return [];
+  }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza]);
+
+  // Hierarchy check: can actor edit/disable/delete this target user? (Image 1 & 3)
+  const canManageTargetUser = (targetUser) => {
+    if (!targetUser) return false;
+    if (isMasterAdmin) return true;
+    if (isAdmin) {
+      return targetUser.role !== 'Master Admin';
+    }
+    if (isConcessionaire) {
+      // Cannot manage Master Admin, Admin, or peer Concessionaires
+      if (['Master Admin', 'Admin', 'Concessionaire'].includes(targetUser.role)) {
+        return false;
+      }
+      // Must belong to one of the Concessionaire's plazas
+      const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
+      const targetPlazasList = (targetUser.plazas || []).map((p) => p.toLowerCase());
+      return concessionairePlazas.some((cp) => {
+        const cpLower = cp.toLowerCase();
+        return (
+          targetPlaza.includes(cpLower) ||
+          cpLower.includes(targetPlaza) ||
+          targetPlazasList.some((tp) => tp.includes(cpLower) || cpLower.includes(tp))
+        );
+      });
+    }
+    if (isPlazaAdmin) {
+      // Image 1: "Request tag and POS users it created"
+      const isAllowedRole = ['Request Tag Details', 'Plaza POS'].includes(targetUser.role);
+      const isCreator =
+        targetUser.createdBy &&
+        (targetUser.createdBy.toLowerCase() === currentUser?.id?.toLowerCase() ||
+          targetUser.createdBy.toLowerCase() === currentUser?.username?.toLowerCase());
+      return isAllowedRole && isCreator;
+    }
+    return false;
+  };
 
   const [searchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
@@ -113,8 +190,17 @@ export const UserList = () => {
   };
 
   const handleApproveUser = async (id) => {
-    const updated = await UserService.approveUser(id);
-    setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+    try {
+      const updated = await UserService.approveUser(id);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id ? { ...u, ...updated, approval: 'Approved', status: 'Active' } : u
+        )
+      );
+    } catch (err) {
+      console.error('Approval failed:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to approve user.');
+    }
   };
 
   const handleDeleteUser = async (id) => {
@@ -125,21 +211,28 @@ export const UserList = () => {
   // Modal Open Handlers
   const handleOpenAdd = () => {
     setEditingId(null);
+    const initialRole = allowedCreationRoles[0] || 'Plaza POS';
+    const initialPlaza = isPlazaAdmin
+      ? plazaAdminPlaza
+      : isConcessionaire
+      ? (concessionairePlazas[0] || '')
+      : '';
+
     setFormValues({
       username: '',
       email: '',
       contact: '',
       name: '',
-      role: '',
-      userType: '',
-      status: 'Active',
-      plaza: '',
+      role: initialRole,
+      userType: ROLE_NO_USER_TYPE.includes(initialRole) ? '—' : 'Toll Plaza',
+      status: 'Pending',
+      plaza: initialPlaza,
       password: '',
       confirmPassword: '',
     });
     setFormErrors({});
-    setSelectedPlazas([]);
-    setSelectedMenuIds([]);
+    setSelectedPlazas(isConcessionaire ? [initialPlaza] : []);
+    setSelectedMenuIds(getRoleMenuDefaults(initialRole));
     setOpenGroupIds({});
     setIsModalOpen(true);
   };
@@ -314,14 +407,28 @@ export const UserList = () => {
   };
 
   const handleToggleGroupAll = (group, checked) => {
-    const subIds = group.subs.map((s) => s.id);
+    const allIds = [group.id, ...group.subs.map((s) => s.id)];
     setSelectedMenuIds((prev) => {
       if (checked) {
-        const next = new Set([...prev, ...subIds]);
+        const next = new Set([...prev, ...allIds]);
         return Array.from(next);
       } else {
-        return prev.filter((item) => !subIds.includes(item));
+        return prev.filter((item) => !allIds.includes(item));
       }
+    });
+  };
+
+  const handleToggleSubItem = (group, subId, checked) => {
+    setSelectedMenuIds((prev) => {
+      let next = checked ? (prev.includes(subId) ? prev : [...prev, subId]) : prev.filter((item) => item !== subId);
+      const subIds = group.subs.map((s) => s.id);
+      const anySubChecked = subIds.some((sId) => next.includes(sId));
+      if (anySubChecked) {
+        if (!next.includes(group.id)) next.push(group.id);
+      } else {
+        next = next.filter((item) => item !== group.id);
+      }
+      return next;
     });
   };
 
@@ -395,7 +502,7 @@ export const UserList = () => {
           status: formValues.status,
           menuAccess: selectedMenuIds,
         });
-        setUsers((prev) => prev.map((u) => (u.id === editingId ? updated : u)));
+        setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, menuAccess: selectedMenuIds } : u)));
       } else {
         const created = await UserService.createUser({
           id: nextUserId(),
@@ -409,13 +516,13 @@ export const UserList = () => {
           assignedPlaza: plazaLabel,
           plaza: plazaLabel,
           plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
-          status: formValues.status || 'Active',
-          approval: 'Approved',
+          status: 'Pending',
+          approval: 'Pending',
           locked: false,
           avatarBg: '#3762F2',
           menuAccess: selectedMenuIds,
         });
-        setUsers((prev) => [created, ...prev]);
+        setUsers((prev) => [{ ...created, status: 'Pending', approval: 'Pending', menuAccess: selectedMenuIds }, ...prev]);
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -539,7 +646,7 @@ export const UserList = () => {
             : ROLE_NO_PLAZA.includes(row.role)
             ? 'Not applicable'
             : row.plaza.replace(/;/g, ', ') || 'Unassigned',
-          status: 'Active',
+          status: 'Pending',
           approval: 'Pending',
           locked: false,
           avatarBg: '#3762F2',
@@ -605,18 +712,50 @@ export const UserList = () => {
     }, 2200);
   };
 
-  // Filtered Users
-  const filteredUsers = users.filter((u) => {
-    // If Plaza Admin, only show personnel from their plaza
-    if (isPlazaAdmin && currentUser?.assignedPlaza) {
-      const plazaKeywords = ['vashi', 'mumbai', 'airoli', 'pune', 'nashik', 'solapur', 'kolhapur'];
-      const userPlazaLower = (currentUser.assignedPlaza || '').toLowerCase();
-      const matchedKeyword = plazaKeywords.find(k => userPlazaLower.includes(k));
-      if (matchedKeyword && !u.plaza.toLowerCase().includes(matchedKeyword) && u.role !== 'Plaza Admin') {
-        return false;
-      }
+  // Hierarchy Data Scoping (Image 1 & 2):
+  // Master Admin / Admin -> Any plaza (all users)
+  // Concessionaire -> Its own plazas only (all users under its plazas)
+  // Plaza Admin -> Its one assigned plaza only
+  // Request Tag / Plaza POS -> None
+  const hierarchyScopedUsers = useMemo(() => {
+    if (isMasterAdmin || isAdmin) {
+      return users;
     }
+    if (isConcessionaire) {
+      return users.filter((u) => {
+        if (u.id === currentUser?.id) return true;
+        // Don't show Master Admin or Admin
+        if (['Master Admin', 'Admin'].includes(u.role)) return false;
+        const targetPlaza = (u.plaza || u.assignedPlaza || '').toLowerCase();
+        const targetPlazasList = (u.plazas || []).map((p) => p.toLowerCase());
+        return concessionairePlazas.some((cp) => {
+          const cpLower = cp.toLowerCase();
+          return (
+            targetPlaza.includes(cpLower) ||
+            cpLower.includes(targetPlaza) ||
+            targetPlazasList.some((tp) => tp.includes(cpLower) || cpLower.includes(tp))
+          );
+        });
+      });
+    }
+    if (isPlazaAdmin) {
+      const myPlaza = (currentUser?.assignedPlaza || '').toLowerCase();
+      return users.filter((u) => {
+        if (u.id === currentUser?.id) return true;
+        if (['Master Admin', 'Admin', 'Concessionaire'].includes(u.role)) return false;
+        const targetPlaza = (u.plaza || u.assignedPlaza || '').toLowerCase();
+        return (
+          targetPlaza.includes(myPlaza) ||
+          myPlaza.includes(targetPlaza) ||
+          (u.plazas || []).some((p) => p.toLowerCase().includes(myPlaza) || myPlaza.includes(p.toLowerCase()))
+        );
+      });
+    }
+    return [];
+  }, [users, isMasterAdmin, isAdmin, isConcessionaire, isPlazaAdmin, concessionairePlazas, currentUser]);
 
+  // Filtered Users
+  const filteredUsers = hierarchyScopedUsers.filter((u) => {
     const matchesSearch =
       !searchQuery ||
       u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -628,8 +767,10 @@ export const UserList = () => {
 
     const matchesStatus =
       statusFilter === 'All statuses' ||
-      (statusFilter === 'Pending' && u.approval === 'Pending') ||
+      (statusFilter === 'Pending' && (u.approval === 'Pending' || u.status === 'Pending')) ||
       (statusFilter === 'Locked' && u.locked) ||
+      (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved') ||
+      (statusFilter === 'Inactive' && u.status === 'Inactive') ||
       u.status.toLowerCase() === statusFilter.toLowerCase();
 
     const matchesPlaza =
@@ -639,13 +780,38 @@ export const UserList = () => {
     return matchesSearch && matchesRole && matchesStatus && matchesPlaza;
   });
 
+  const activePlazasCoveredCount = useMemo(() => {
+    const plazaSet = new Set();
+    hierarchyScopedUsers.forEach((u) => {
+      if ((u.status === 'Active' || u.approval === 'Approved') && !u.locked) {
+        if (Array.isArray(u.plazas) && u.plazas.length > 0) {
+          u.plazas.forEach((p) => {
+            if (p && !['All plazas', 'Not applicable', 'Unassigned'].includes(p)) {
+              plazaSet.add(p.trim());
+            }
+          });
+        }
+        const plazaStr = u.assignedPlaza || u.plaza;
+        if (plazaStr && !['All plazas', 'Not applicable', 'Unassigned'].includes(plazaStr)) {
+          plazaStr.split(',').forEach((p) => {
+            const trimmed = p.trim();
+            if (trimmed && !['All plazas', 'Not applicable', 'Unassigned'].includes(trimmed)) {
+              plazaSet.add(trimmed);
+            }
+          });
+        }
+      }
+    });
+    return plazaSet.size;
+  }, [hierarchyScopedUsers]);
+
   // Role Dependent Computed Flags
   const role = formValues.role;
   const showUserType = role && !ROLE_NO_USER_TYPE.includes(role);
-  const isConcessionaire = role === 'Concessionaire';
+  const isFormConcessionaire = role === 'Concessionaire';
   const isAutoAllPlaza = ROLE_AUTO_ALL_PLAZA.includes(role);
   const isNoPlaza = ROLE_NO_PLAZA.includes(role);
-  const isSinglePlaza = role && !isConcessionaire && !isAutoAllPlaza && !isNoPlaza;
+  const isSinglePlaza = role && !isFormConcessionaire && !isAutoAllPlaza && !isNoPlaza;
 
   const defaultAccessGroups = role ? buildAccessGroups(role, true, selectedMenuIds) : [];
   const extraAccessGroups = role ? buildAccessGroups(role, false, selectedMenuIds) : [];
@@ -690,16 +856,18 @@ export const UserList = () => {
               Bulk upload
             </button>
           )}
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleOpenAdd}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add user
-          </button>
+          {canCreate && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleOpenAdd}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add user
+            </button>
+          )}
         </div>
       </div>
 
@@ -708,32 +876,33 @@ export const UserList = () => {
         margin: '0 0 20px 0',
         padding: '12px 18px',
         borderRadius: '10px',
-        background: isPlazaAdmin ? '#f0f9ff' : isAdmin ? '#eff6ff' : '#f0fdf4',
-        border: `1px solid ${isPlazaAdmin ? '#bae6fd' : isAdmin ? '#bfdbfe' : '#bbf7d0'}`,
+        background: isPlazaAdmin ? '#f8fafc' : isConcessionaire ? '#f5f3ff' : '#f0fdf4',
+        border: `1px solid ${isPlazaAdmin ? '#cbd5e1' : isConcessionaire ? '#ddd6fe' : '#bbf7d0'}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '12px',
+        gap: '12px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '18px' }}>{isPlazaAdmin ? '🛡️' : isConcessionaire ? '🏢' : '👑'}</span>
           <span style={{
             fontSize: '11px',
             fontWeight: '700',
             textTransform: 'uppercase',
             padding: '3px 8px',
             borderRadius: '6px',
-            background: isPlazaAdmin ? '#0284c7' : isAdmin ? '#2563eb' : '#16a34a',
+            background: isPlazaAdmin ? '#0284c7' : isConcessionaire ? '#7c3aed' : '#16a34a',
             color: '#ffffff',
           }}>
             {currentUser?.role || 'Admin'} Scope
           </span>
-          <span style={{ fontSize: '13px', color: '#334155' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
             {isPlazaAdmin
-              ? `Managing personnel for ${currentUser?.assignedPlaza || 'Assigned Plaza'}. Approval and account lock operations are reserved for Central Ops.`
-              : isAdmin
-              ? 'Central Operations Clearance: Managing users, plaza cashiers, and authorization credentials.'
-              : 'Master Governance Clearance: Full unrestricted authority over user provisioning, roles, and security.'}
+              ? `Managing POS & Tag personnel for ${currentUser?.assignedPlaza || 'assigned plaza'}.`
+              : isConcessionaire
+              ? `Managing personnel across assigned plazas: ${concessionairePlazas.length > 0 ? concessionairePlazas.join(', ') : (currentUser?.assignedPlaza || 'None')}`
+              : 'Central Governance Scope — Unrestricted access across all plazas, concessions & roles.'}
           </span>
         </div>
         {currentUser?.assignedPlaza && (
@@ -747,23 +916,23 @@ export const UserList = () => {
       <div className="stats">
         <div className="stat">
           <span>Total users</span>
-          <strong>{users.length}</strong>
+          <strong>{hierarchyScopedUsers.length}</strong>
         </div>
         <div className="stat">
           <span>Pending approval</span>
           <strong style={{ color: 'var(--warning-text)' }}>
-            {users.filter((u) => u.approval === 'Pending').length}
+            {hierarchyScopedUsers.filter((u) => u.approval === 'Pending').length}
           </strong>
         </div>
         <div className="stat">
           <span>Locked accounts</span>
           <strong style={{ color: 'var(--danger-text)' }}>
-            {users.filter((u) => u.locked).length}
+            {hierarchyScopedUsers.filter((u) => u.locked).length}
           </strong>
         </div>
         <div className="stat">
           <span>Active plazas covered</span>
-          <strong style={{ color: 'var(--success-text)' }}>5</strong>
+          <strong style={{ color: 'var(--success-text)' }}>{activePlazasCoveredCount}</strong>
         </div>
       </div>
 
@@ -861,17 +1030,19 @@ export const UserList = () => {
                 </div>
 
                 <div className="row-actions">
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    title="Edit user"
-                    onClick={() => handleOpenEdit(u.id)}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                    </svg>
-                  </button>
+                  {canManageTargetUser(u) && (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      title="Edit user"
+                      onClick={() => handleOpenEdit(u.id)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                      </svg>
+                    </button>
+                  )}
 
                   {!approved && canApprove && (
                     <button
@@ -886,7 +1057,7 @@ export const UserList = () => {
                     </button>
                   )}
 
-                  {canLock && (
+                  {canManageTargetUser(u) && (
                     <button
                       type="button"
                       className="icon-btn"
@@ -907,7 +1078,7 @@ export const UserList = () => {
                     </button>
                   )}
 
-                  {canDelete && !(isAdmin && u.role === 'Master Admin') && (
+                  {canManageTargetUser(u) && !(isAdmin && u.role === 'Master Admin') && (
                     <button
                       type="button"
                       className="icon-btn"
@@ -1106,15 +1277,25 @@ export const UserList = () => {
                       <label>
                         Active status <span className="req">*</span>
                       </label>
-                      <select
-                        value={formValues.status}
-                        onChange={(e) =>
-                          setFormValues({ ...formValues, status: e.target.value })
-                        }
-                      >
-                        <option>Active</option>
-                        <option>Inactive</option>
-                      </select>
+                      {editingId ? (
+                        <select
+                          value={formValues.status}
+                          onChange={(e) =>
+                            setFormValues({ ...formValues, status: e.target.value })
+                          }
+                        >
+                          <option>Active</option>
+                          <option>Inactive</option>
+                          <option>Pending</option>
+                        </select>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
+                          <span className="badge badge-pending">Pending Approval</span>
+                          <span style={{ fontSize: '12px', color: '#667085' }}>
+                            (Requires approval before activation)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1131,9 +1312,10 @@ export const UserList = () => {
                           setFormErrors((prev) => ({ ...prev, plaza: '' }));
                         }}
                         onBlur={() => handleBlur('plaza')}
+                        disabled={isPlazaAdmin}
                       >
                         <option value="">Select plaza</option>
-                        {ALL_PLAZAS.map((p) => (
+                        {allowedPlazasForActor.map((p) => (
                           <option key={p} value={p}>
                             {p}
                           </option>
@@ -1145,7 +1327,7 @@ export const UserList = () => {
                     </div>
                   )}
 
-                  {isConcessionaire && (
+                  {isFormConcessionaire && (
                     <div style={{ marginTop: '16px' }}>
                       <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--body-text)' }}>
                         Assign plazas <span className="req">*</span>
@@ -1260,7 +1442,7 @@ export const UserList = () => {
                                       <input
                                         type="checkbox"
                                         checked={isSubChecked}
-                                        onChange={(e) => handleToggleMenuId(s.id, e.target.checked)}
+                                        onChange={(e) => handleToggleSubItem(g, s.id, e.target.checked)}
                                       />
                                       <span>{s.label}</span>
                                     </label>
@@ -1334,7 +1516,7 @@ export const UserList = () => {
                                       <input
                                         type="checkbox"
                                         checked={isSubChecked}
-                                        onChange={(e) => handleToggleMenuId(s.id, e.target.checked)}
+                                        onChange={(e) => handleToggleSubItem(g, s.id, e.target.checked)}
                                       />
                                       <span>{s.label}</span>
                                     </label>

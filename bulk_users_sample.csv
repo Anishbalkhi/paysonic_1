@@ -1,1 +1,5 @@
-
+username,email,contact,role,user_type,plaza,name,password
+vikram.singh,vikram.singh@paysonic.com,9823456789,Plaza Admin,Toll Plaza,Mumbai Plaza NH-04,Vikram Singh,Pass@2026
+ananya.das,ananya.das@paysonic.com,9876543210,Concessionaire,EV,Pune Bypass Plaza,Ananya Das,Pass@2026
+rohit.verma,rohit.verma@paysonic.com,9834567890,Plaza POS,Toll Plaza,Nashik Toll Plaza,Rohit Verma,Pass@2026
+sunil.mehta,sunil.mehta@paysonic.com,9811223344,Request Tag Details,Toll Plaza,Kolhapur Plaza,Sunil Mehta,Pass@2026

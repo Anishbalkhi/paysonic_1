@@ -24,8 +24,8 @@ public class CreateUserRequest {
     private String userType = "Toll Plaza";
     private String assignedPlaza;
     private List<String> plazas;
-    private String status = "Active";
-    private String approval = "Approved";
+    private String status = "Pending";
+    private String approval = "Pending";
     private boolean locked = false;
     private String createdBy = "SYSTEM";
 

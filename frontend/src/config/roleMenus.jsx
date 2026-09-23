@@ -204,6 +204,18 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.dashboard,
     },
     {
+      id: 'user_management',
+      label: 'User Management',
+      icon: ICONS.users,
+      children: [
+        { label: 'A. Create User', path: '/users?action=create' },
+        { label: 'B. Approve User', path: '/users?tab=pending' },
+        { label: 'C. Assign User', path: '/users?action=assign' },
+        { label: 'D. Unlock/Lock User', path: '/users?tab=locked' },
+        { label: 'E. User Activity & Audit', path: '/activity' },
+      ],
+    },
+    {
       id: 'user_activity',
       label: 'User Activity & Audit',
       path: '/activity',
@@ -296,6 +308,16 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.dashboard,
     },
     {
+      id: 'user_management',
+      label: 'User Management',
+      icon: ICONS.users,
+      children: [
+        { label: 'A. Create User', path: '/users?action=create' },
+        { label: 'B. Unlock/Lock User', path: '/users?tab=locked' },
+        { label: 'C. User Activity & Audit', path: '/activity' },
+      ],
+    },
+    {
       id: 'tag_details',
       label: 'Tag Details',
       icon: ICONS.tag,
@@ -378,6 +400,16 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Dashboard',
       path: '/',
       icon: ICONS.dashboard,
+    },
+    {
+      id: 'user_management',
+      label: 'User Management',
+      icon: ICONS.users,
+      children: [
+        { label: 'A. Create User', path: '/users?action=create' },
+        { label: 'B. Unlock/Lock User', path: '/users?tab=locked' },
+        { label: 'C. User Activity & Audit', path: '/activity' },
+      ],
     },
     {
       id: 'tag_details',
@@ -537,8 +569,70 @@ export const ROLE_NAVIGATION_MAP = {
   ],
 };
 
+import { MENU_TREE, getRoleMenuDefaults } from '../pages/UserList/menuConfig';
+
 export const getRoleNavigation = (role) => {
   return ROLE_NAVIGATION_MAP[role] || ROLE_NAVIGATION_MAP['Admin'];
+};
+
+export const filterNavigationByPermissions = (sections, menuAccess) => {
+  if (!sections || !Array.isArray(sections)) return [];
+  // If no menuAccess is provided or user has none defined, use all sections
+  if (!menuAccess || !Array.isArray(menuAccess) || menuAccess.length === 0) {
+    return sections;
+  }
+
+  const allowedSet = new Set(menuAccess);
+
+  return sections
+    .map((item) => {
+      // Check top-level permission
+      const isParentAllowed =
+        allowedSet.has(item.id) ||
+        (item.id === 'user_activity' && (allowedSet.has('user_activity') || allowedSet.has('user_management')));
+
+      // If no children, it's a leaf item
+      if (!item.children || item.children.length === 0) {
+        return isParentAllowed ? item : null;
+      }
+
+      // If item has children, filter sub-items strictly by allowedSet
+      const filteredChildren = item.children.filter((child) => {
+        if (child.subId && allowedSet.has(child.subId)) return true;
+        if (child.id && allowedSet.has(child.id)) return true;
+
+        // Match child label against MENU_TREE sub-items
+        const cleanChildLabel = child.label.replace(/^[A-Z]\.\s*/, '').trim().toLowerCase();
+        const groupInTree = MENU_TREE.find((m) => m.id === item.id);
+        if (groupInTree && groupInTree.subs) {
+          const matchedSub = groupInTree.subs.find(
+            (s) => s.label.trim().toLowerCase() === cleanChildLabel
+          );
+          if (matchedSub) {
+            return allowedSet.has(matchedSub.id);
+          }
+        }
+
+        // If parent is explicitly allowed, keep child if no specific sub restrictions
+        return isParentAllowed;
+      });
+
+      // If parent is not allowed and has no allowed children, hide section completely
+      if (!isParentAllowed && filteredChildren.length === 0) {
+        return null;
+      }
+
+      // If parent had children and all were unchecked, hide section completely
+      if (item.children.length > 0 && filteredChildren.length === 0) {
+        return null;
+      }
+
+      return {
+        ...item,
+        children: filteredChildren,
+      };
+    })
+    .filter(Boolean);
 };
 
 export const getRoleSlug = (role) => {
@@ -568,16 +662,63 @@ export const getRoleSlug = (role) => {
   }
 };
 
-export const hasDashboardAccess = (role) => {
-  return ['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank'].includes(role);
+export const hasDashboardAccess = (userOrRole) => {
+  if (!userOrRole) return false;
+  if (typeof userOrRole === 'object') {
+    const role = userOrRole.role || 'Admin';
+    const roleHasAccess = ['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank'].includes(role);
+    if (!roleHasAccess) return false;
+    if (userOrRole.menuAccess && Array.isArray(userOrRole.menuAccess)) {
+      return userOrRole.menuAccess.includes('dashboard');
+    }
+    return true;
+  }
+  return ['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank'].includes(userOrRole);
+};
+
+export const hasMenuAccess = (user, menuId) => {
+  if (!user) return false;
+  const menuAccess = user.menuAccess || getRoleMenuDefaults(user.role);
+  if (!menuAccess || !Array.isArray(menuAccess)) return true;
+  if (menuId === 'user_activity') {
+    return menuAccess.includes('user_activity') || menuAccess.includes('user_management');
+  }
+  return menuAccess.includes(menuId);
+};
+
+export const getDefaultRouteForUser = (user) => {
+  if (!user) return '/login';
+  const role = user.role || 'Admin';
+  const menuAccess = user.menuAccess || getRoleMenuDefaults(role);
+
+  // If dashboard is permitted, go to '/'
+  if (hasDashboardAccess(user)) {
+    return '/';
+  }
+
+  // Filter sections to find the first accessible top-level or sub-route
+  const baseSections = getRoleNavigation(role);
+  const visible = filterNavigationByPermissions(baseSections, menuAccess);
+
+  for (const sec of visible) {
+    if (sec.path && !sec.path.startsWith('#') && sec.path !== '/') {
+      return sec.path;
+    }
+    if (sec.children && sec.children.length > 0) {
+      for (const ch of sec.children) {
+        if (ch.path && !ch.path.startsWith('#')) {
+          return ch.path;
+        }
+      }
+    }
+  }
+
+  return '/tag-details';
 };
 
 export const getDefaultRouteForRole = (role) => {
-  if (hasDashboardAccess(role)) {
-    return '/';
-  }
-  // Otherwise, open the just next page to dashboard after login
-  return '/tag-details';
+  return getDefaultRouteForUser({ role });
 };
+
 
 

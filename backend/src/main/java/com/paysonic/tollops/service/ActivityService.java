@@ -48,36 +48,37 @@ public class ActivityService {
         DashboardStatsDTO stats = new DashboardStatsDTO();
 
         long totalUsers = userRepository.count();
-        stats.setTotalUsers(totalUsers > 0 ? totalUsers : 148);
-        stats.setTotalUsersDelta(+5.2);
+        stats.setTotalUsers(totalUsers);
+        stats.setTotalUsersDelta(0.0);
 
         long activeCount = userSessionRepository.countByStatus("Active");
-        stats.setActiveUsers(activeCount > 0 ? activeCount : 8);
-        stats.setActiveUsersDelta(+12.5);
+        stats.setActiveUsers(activeCount);
+        stats.setActiveUsersDelta(0.0);
 
         long inactiveCount = userRepository.countByStatus("Inactive");
-        stats.setInactiveUsers(inactiveCount > 0 ? inactiveCount : 12);
-        stats.setInactiveUsersDelta(-2.1);
+        stats.setInactiveUsers(inactiveCount);
+        stats.setInactiveUsersDelta(0.0);
 
         long lockedCount = userRepository.countByLocked(true);
-        stats.setLockedUsers(lockedCount > 0 ? lockedCount : 2);
-        stats.setLockedUsersDelta(0);
+        stats.setLockedUsers(lockedCount);
+        stats.setLockedUsersDelta(0.0);
 
         LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
         long failedLogins = loginHistoryRepository.countFailedSince(startOfToday);
-        stats.setFailedLoginsToday(failedLogins > 0 ? failedLogins : 9);
-        stats.setFailedLoginsDelta(-10.0);
+        stats.setFailedLoginsToday(failedLogins);
+        stats.setFailedLoginsDelta(0.0);
 
         long activitiesToday = auditLogRepository.countActivitiesSince(startOfToday);
-        stats.setTotalActivitiesToday(activitiesToday > 0 ? activitiesToday : 152);
-        stats.setTotalActivitiesDelta(+18.4);
+        stats.setTotalActivitiesToday(activitiesToday);
+        stats.setTotalActivitiesDelta(0.0);
 
         long criticalEvents = auditLogRepository.countCriticalEvents();
-        stats.setCriticalSecurityEvents(criticalEvents > 0 ? criticalEvents : 14);
-        stats.setCriticalSecurityEventsDelta(-8.5);
+        stats.setCriticalSecurityEvents(criticalEvents);
+        stats.setCriticalSecurityEventsDelta(0.0);
 
-        stats.setExportsPerformed(6);
-        stats.setExportsPerformedDelta(+20.0);
+        long exportsPerformed = auditLogRepository.countByAction("EXPORT_AUDIT_LOG");
+        stats.setExportsPerformed(exportsPerformed);
+        stats.setExportsPerformedDelta(0.0);
 
         return stats;
     }
@@ -90,14 +91,23 @@ public class ActivityService {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d");
         LocalDate now = LocalDate.now();
+        LocalDateTime cutoff = now.minusDays(dayCount - 1).atStartOfDay();
+
+        List<LoginHistory> recentLogins = loginHistoryRepository.findByTimestampAfter(cutoff, Sort.by(Sort.Direction.ASC, "timestamp"));
 
         for (int i = dayCount - 1; i >= 0; i--) {
             LocalDate date = now.minusDays(i);
             labels.add(date.format(formatter));
 
-            int seed = (date.getDayOfMonth() * 17 + i * 23) % 50;
-            successful.add(110 + seed + (i % 3 == 0 ? 30 : 0));
-            failed.add(3 + (seed % 10));
+            long successCount = recentLogins.stream()
+                    .filter(lh -> lh.getTimestamp() != null && lh.getTimestamp().toLocalDate().isEqual(date) && "Success".equalsIgnoreCase(lh.getStatus()))
+                    .count();
+            long failCount = recentLogins.stream()
+                    .filter(lh -> lh.getTimestamp() != null && lh.getTimestamp().toLocalDate().isEqual(date) && "Failed".equalsIgnoreCase(lh.getStatus()))
+                    .count();
+
+            successful.add((int) successCount);
+            failed.add((int) failCount);
         }
 
         Map<String, List<Integer>> datasets = new HashMap<>();

@@ -16,11 +16,11 @@ export const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
 
       {/* Protected routes */}
-      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute requiredMenu="dashboard"><Home /></ProtectedRoute>} />
       <Route
         path="/tag-details"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredMenu="tag_details">
             <TagDetails />
           </ProtectedRoute>
         }
@@ -28,7 +28,10 @@ export const AppRoutes = () => {
       <Route
         path="/pass-issuance"
         element={
-          <ProtectedRoute allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Plaza POS']}>
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Plaza POS']}
+            requiredMenu="pass_issuance"
+          >
             <PassIssuance />
           </ProtectedRoute>
         }
@@ -36,7 +39,10 @@ export const AppRoutes = () => {
       <Route
         path="/users"
         element={
-          <ProtectedRoute allowedRoles={['Master Admin']}>
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Concessionaire', 'Plaza Admin']}
+            requiredMenu="user_management"
+          >
             <UserList />
           </ProtectedRoute>
         }
@@ -44,7 +50,10 @@ export const AppRoutes = () => {
       <Route
         path="/activity"
         element={
-          <ProtectedRoute allowedRoles={['Master Admin', 'Admin', 'Bank']}>
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Concessionaire', 'Bank', 'Plaza Admin']}
+            requiredMenu="user_activity"
+          >
             <UserActivity />
           </ProtectedRoute>
         }

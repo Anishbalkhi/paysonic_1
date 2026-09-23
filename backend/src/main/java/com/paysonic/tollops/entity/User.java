@@ -36,10 +36,10 @@ public class User {
     private String plazasJson;
 
     @Column(name = "status", length = 20, nullable = false)
-    private String status = "Active";
+    private String status = "Pending";
 
     @Column(name = "approval", length = 20, nullable = false)
-    private String approval = "Approved";
+    private String approval = "Pending";
 
     @Column(name = "locked", nullable = false)
     private boolean locked = false;
@@ -72,8 +72,8 @@ public class User {
         this.role = role;
         this.userType = userType != null ? userType : "Toll Plaza";
         this.assignedPlaza = assignedPlaza;
-        this.status = status != null ? status : "Active";
-        this.approval = approval != null ? approval : "Approved";
+        this.status = status != null ? status : "Pending";
+        this.approval = approval != null ? approval : "Pending";
         this.locked = locked;
         this.createdBy = createdBy != null ? createdBy : "SYSTEM";
         this.createdAt = LocalDateTime.now();

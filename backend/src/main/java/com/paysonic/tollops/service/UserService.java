@@ -72,7 +72,7 @@ public class UserService {
         user.setMobile(request.getMobile());
         user.setRole(request.getRole());
         user.setUserType(request.getUserType() != null ? request.getUserType() : "Toll Plaza");
-        user.setStatus(request.getStatus() != null ? request.getStatus() : "Active");
+        user.setStatus(request.getStatus() != null ? request.getStatus() : "Pending");
         user.setApproval(request.getApproval() != null ? request.getApproval() : "Pending");
         user.setLocked(request.isLocked());
         user.setCreatedBy(actorId != null ? actorId : (request.getCreatedBy() != null ? request.getCreatedBy() : "SYSTEM"));
@@ -82,15 +82,21 @@ public class UserService {
         // Role-based plaza assignment logic (Functional Spec v1.1 Section 5-6)
         applyPlazaRules(user, request.getRole(), request.getAssignedPlaza(), request.getPlazas());
 
+        // Hierarchy validation (Image 1 & 3: Business Logic Rules)
+        validateHierarchyAction(actorId, "CREATE", request.getRole(), request.getAssignedPlaza(), null);
+
         User saved = userRepository.save(user);
         return UserResponseDTO.fromEntity(saved, objectMapper);
     }
 
     @Auditable(module = "User Management", action = "UPDATE_USER", actionLabel = "Updated User Profile")
     @Transactional
-    public UserResponseDTO updateUser(String id, CreateUserRequest request) {
+    public UserResponseDTO updateUser(String id, CreateUserRequest request, String actorId) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
+
+        // Hierarchy validation: check if actor has authority to edit this target user
+        validateHierarchyAction(actorId, "MANAGE", request.getRole(), request.getAssignedPlaza(), user);
 
         if (request.getName() != null) user.setName(request.getName());
         if (request.getMobile() != null) user.setMobile(request.getMobile());
@@ -106,9 +112,12 @@ public class UserService {
 
     @Auditable(module = "User Management", action = "TOGGLE_LOCK", actionLabel = "Changed User Lock Status")
     @Transactional
-    public UserResponseDTO toggleLock(String id) {
+    public UserResponseDTO toggleLock(String id, String actorId) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
+
+        // Hierarchy validation: check if actor has authority to disable/lock this target user
+        validateHierarchyAction(actorId, "MANAGE", null, null, user);
 
         user.setLocked(!user.isLocked());
         User updated = userRepository.save(user);
@@ -128,6 +137,7 @@ public class UserService {
         }
 
         user.setApproval("Approved");
+        user.setStatus("Active");
         user.setApprovedBy(approverId != null ? approverId : "Sanjay Kulkarni (PSN0005)");
         User updated = userRepository.save(user);
         return UserResponseDTO.fromEntity(updated, objectMapper);
@@ -135,11 +145,71 @@ public class UserService {
 
     @Auditable(module = "User Management", action = "DELETE_USER", actionLabel = "Deleted User Profile")
     @Transactional
-    public void deleteUser(String id) {
-        if (!userRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id);
-        }
+    public void deleteUser(String id, String actorId) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
+
+        // Hierarchy validation: check if actor has authority to delete this target user
+        validateHierarchyAction(actorId, "MANAGE", null, null, user);
+
         userRepository.deleteById(id);
+    }
+
+    private void validateHierarchyAction(String actorId, String action, String targetRole, String targetPlaza, User targetUser) {
+        if (actorId == null || actorId.isBlank() || "SYSTEM".equalsIgnoreCase(actorId) || "OPS_MAKER".equalsIgnoreCase(actorId)) {
+            return;
+        }
+
+        User actor = userRepository.findById(actorId).orElse(null);
+        if (actor == null) return;
+
+        String actorRole = actor.getRole();
+        if ("Master Admin".equalsIgnoreCase(actorRole) || "Admin".equalsIgnoreCase(actorRole)) {
+            return; // Full access across all roles & plazas
+        }
+
+        if ("Concessionaire".equalsIgnoreCase(actorRole)) {
+            if ("CREATE".equalsIgnoreCase(action)) {
+                // Can create: Plaza admin, Request tag, Plaza POS
+                List<String> allowedRoles = List.of("Plaza Admin", "Request Tag Details", "Plaza POS");
+                if (targetRole == null || !allowedRoles.contains(targetRole)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Hierarchy Violation: Concessionaire can only create Plaza Admin, Request Tag, and POS users.");
+                }
+            } else if ("MANAGE".equalsIgnoreCase(action) && targetUser != null) {
+                // Cannot manage Master Admin, Admin, or peer Concessionaires
+                if (List.of("Master Admin", "Admin", "Concessionaire").contains(targetUser.getRole())) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Hierarchy Violation: Concessionaire cannot manage administrative or peer accounts.");
+                }
+            }
+            return;
+        }
+
+        if ("Plaza Admin".equalsIgnoreCase(actorRole)) {
+            if ("CREATE".equalsIgnoreCase(action)) {
+                // Can create: Request tag, Plaza POS
+                List<String> allowedRoles = List.of("Request Tag Details", "Plaza POS");
+                if (targetRole == null || !allowedRoles.contains(targetRole)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Hierarchy Violation: Plaza Admin can only create Request Tag and POS users.");
+                }
+            } else if ("MANAGE".equalsIgnoreCase(action) && targetUser != null) {
+                // Can only edit/disable Request tag and POS users it created
+                boolean isCreatedByActor = actorId.equalsIgnoreCase(targetUser.getCreatedBy());
+                boolean isPosOrTag = List.of("Request Tag Details", "Plaza POS").contains(targetUser.getRole());
+                if (!isCreatedByActor || !isPosOrTag) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Hierarchy Violation: Plaza Admin can only edit or disable Request Tag and POS users that it created.");
+                }
+            }
+            return;
+        }
+
+        if ("Plaza POS".equalsIgnoreCase(actorRole) || "Request Tag Details".equalsIgnoreCase(actorRole)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Hierarchy Violation: Terminal operational roles cannot create or manage user accounts.");
+        }
     }
 
     @Auditable(module = "User Management", action = "BULK_IMPORT", actionLabel = "Imported Users via CSV")
@@ -166,7 +236,7 @@ public class UserService {
                 }
 
                 String userId = "PSN" + String.format("%04d", (int)(Math.random() * 9000 + 1000));
-                User user = new User(userId, name, email, mobile, role, userType, assignedPlaza, "Active", "Pending", false, actorId);
+                User user = new User(userId, name, email, mobile, role, userType, assignedPlaza, "Pending", "Pending", false, actorId);
                 applyPlazaRules(user, role, assignedPlaza, null);
                 newUsers.add(user);
             }

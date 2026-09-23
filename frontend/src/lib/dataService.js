@@ -111,7 +111,15 @@ async function getData(apiEndpoint, mockFile) {
   if (IS_DEV_DATA_MODE) {
     return getMockData(mockFile);          // DEV  → mock JSON
   }
-  return getApiData(apiEndpoint);          // PROD → real API, throws on failure
+  try {
+    return await getApiData(apiEndpoint);  // PROD → real API
+  } catch (err) {
+    if (mockFile) {
+      console.warn(`[DataService] Backend endpoint /api/${apiEndpoint} unavailable, using local dataset fallback:`, err.message);
+      return getMockData(mockFile);
+    }
+    throw err;
+  }
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────

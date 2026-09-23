@@ -23,10 +23,14 @@ public class AuditTrailAspect {
     private static final Logger log = LoggerFactory.getLogger(AuditTrailAspect.class);
 
     private final AuditLogRepository auditLogRepository;
+    private final com.paysonic.tollops.repository.UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
-    public AuditTrailAspect(AuditLogRepository auditLogRepository, ObjectMapper objectMapper) {
+    public AuditTrailAspect(AuditLogRepository auditLogRepository,
+                            com.paysonic.tollops.repository.UserRepository userRepository,
+                            ObjectMapper objectMapper) {
         this.auditLogRepository = auditLogRepository;
+        this.userRepository = userRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -44,10 +48,17 @@ public class AuditTrailAspect {
 
         String actorId = (request != null && request.getHeader("X-Actor-ID") != null)
                 ? request.getHeader("X-Actor-ID")
-                : "PSN0005";
+                : "PSN0001";
 
-        String actorName = "Sanjay Kulkarni";
-        String actorRole = "Master Admin";
+        String actorName = "Administrator";
+        String actorRole = "Admin";
+        if (userRepository != null && actorId != null) {
+            var actorOpt = userRepository.findById(actorId);
+            if (actorOpt.isPresent()) {
+                actorName = actorOpt.get().getName();
+                actorRole = actorOpt.get().getRole();
+            }
+        }
         String ipAddress = request != null ? getClientIp(request) : "127.0.0.1";
 
         String beforeJson = null;

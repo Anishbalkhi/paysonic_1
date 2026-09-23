@@ -39,7 +39,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
   }, [auditEvents]);
 
   const filteredEvents = useMemo(() => {
-    const now = new Date('2026-09-21T13:45:00Z').getTime();
+    const now = Date.now();
 
     return auditEvents.filter((item) => {
       if (moduleFilter !== 'All modules' && item.module !== moduleFilter) return false;
@@ -58,17 +58,17 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
         const q = search.toLowerCase().trim();
         const ref = referenceFor(item);
         return (
-          item.id.toLowerCase().includes(q) ||
+          (item.id && item.id.toLowerCase().includes(q)) ||
           (item.correlationId && item.correlationId.toLowerCase().includes(q)) ||
           (ref.refId && ref.refId.toLowerCase().includes(q)) ||
-          item.target.toLowerCase().includes(q) ||
-          item.actionLabel.toLowerCase().includes(q) ||
+          (item.target && item.target.toLowerCase().includes(q)) ||
+          (item.actionLabel && item.actionLabel.toLowerCase().includes(q)) ||
           (item.action && item.action.toLowerCase().includes(q)) ||
-          item.actor.name.toLowerCase().includes(q) ||
-          item.actor.role.toLowerCase().includes(q) ||
-          (item.actor.ipAddress && item.actor.ipAddress.toLowerCase().includes(q)) ||
+          (item.actor?.name && item.actor.name.toLowerCase().includes(q)) ||
+          (item.actor?.role && item.actor.role.toLowerCase().includes(q)) ||
+          (item.actor?.ipAddress && item.actor.ipAddress.toLowerCase().includes(q)) ||
           (item.plaza && item.plaza.toLowerCase().includes(q)) ||
-          item.details.toLowerCase().includes(q)
+          (item.details && item.details.toLowerCase().includes(q))
         );
       }
       return true;

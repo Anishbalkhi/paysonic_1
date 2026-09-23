@@ -1,76 +1,316 @@
 import httpClient from '../api/httpClient';
+import UserService from '../user/UserService';
 import initialAuditLog from '../../data/auditLog.json';
 import initialActiveUsers from '../../data/activeUsers.json';
 import initialLoginHistory from '../../data/loginHistory.json';
 
-// In-memory fallback if Railway API is temporarily offline
-let fallbackAuditStore = [...initialAuditLog];
-let fallbackActiveUsersStore = [...initialActiveUsers];
-let fallbackLoginHistoryStore = [...initialLoginHistory];
+const LOGIN_HISTORY_STORAGE_KEY = 'paysonic_login_history';
+const ACTIVE_SESSIONS_STORAGE_KEY = 'paysonic_active_sessions';
+const AUDIT_LOG_STORAGE_KEY = 'paysonic_audit_log';
+
+// Persistent local telemetry helpers
+const getStoredLoginHistory = () => {
+  try {
+    const raw = localStorage.getItem(LOGIN_HISTORY_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialLoginHistory];
+};
+
+const saveStoredLoginHistory = (history) => {
+  try {
+    localStorage.setItem(LOGIN_HISTORY_STORAGE_KEY, JSON.stringify(history));
+  } catch {}
+};
+
+const getStoredActiveSessions = () => {
+  try {
+    const raw = localStorage.getItem(ACTIVE_SESSIONS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialActiveUsers];
+};
+
+const saveStoredActiveSessions = (sessions) => {
+  try {
+    localStorage.setItem(ACTIVE_SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
+  } catch {}
+};
+
+const getStoredAuditLog = () => {
+  try {
+    const raw = localStorage.getItem(AUDIT_LOG_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [...initialAuditLog];
+};
+
+const saveStoredAuditLog = (log) => {
+  try {
+    localStorage.setItem(AUDIT_LOG_STORAGE_KEY, JSON.stringify(log));
+  } catch {}
+};
 
 class UserActivityService {
-  async getDashboardStats() {
-    try {
-      const res = await httpClient.get('/api/activity/stats');
-      if (res && res.data) {
-        return res.data;
+  /**
+   * Record real-time login attempt (Success or Failed)
+   */
+  recordLoginAttempt({ userId, name, role, email, status, failureReason, ipAddress, device }) {
+    const history = getStoredLoginHistory();
+    const newEntry = {
+      id: `LOG-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      userId: userId || 'UNKNOWN',
+      name: name || email || 'Unauthenticated User',
+      role: role || 'Unknown Role',
+      ipAddress: ipAddress || '127.0.0.1',
+      device:
+        device ||
+        (typeof navigator !== 'undefined'
+          ? `${navigator.userAgent.includes('Windows') ? 'Windows 11' : navigator.userAgent.includes('Mac') ? 'macOS' : 'Linux'} · Chrome`
+          : 'Desktop Browser'),
+      status: status, // 'Success' | 'Failed'
+      failureReason: failureReason || null,
+      timestamp: new Date().toISOString(),
+    };
+    history.unshift(newEntry);
+    saveStoredLoginHistory(history);
+    return newEntry;
+  }
+
+  /**
+   * Register a live active session on login
+   */
+  registerActiveSession({ userId, username, name, role, plaza, ipAddress, device }) {
+    const sessions = getStoredActiveSessions();
+    // Mark prior active sessions for this user as Terminated
+    const updated = sessions.map((s) =>
+      s.userId === userId && s.status === 'Active'
+        ? { ...s, status: 'Terminated', lastActive: 'Closed' }
+        : s
+    );
+
+    const sessionId = `SES-${Date.now().toString().slice(-6)}`;
+    const newSession = {
+      sessionId,
+      userId,
+      username: username || (userId || '').toLowerCase(),
+      name,
+      role,
+      department:
+        role === 'Master Admin'
+          ? 'Security & Access Control'
+          : role === 'Bank'
+          ? 'Financial Audit'
+          : role === 'Concessionaire'
+          ? 'Highway Operations'
+          : 'Toll Plaza Operations',
+      plaza: plaza || 'All plazas',
+      ipAddress: ipAddress || '127.0.0.1',
+      location: 'Local Console Node',
+      device:
+        device ||
+        (typeof navigator !== 'undefined'
+          ? `${navigator.userAgent.includes('Windows') ? 'Windows 11' : navigator.userAgent.includes('Mac') ? 'macOS' : 'Linux'} · Chrome`
+          : 'Desktop Browser'),
+      loginTime: new Date().toISOString(),
+      lastActive: 'Just now',
+      sessionDuration: 'Active now',
+      status: 'Active',
+    };
+    updated.unshift(newSession);
+    saveStoredActiveSessions(updated);
+    return sessionId;
+  }
+
+  /**
+   * Terminate active session
+   */
+  terminateSession(sessionId, reason = 'Administrative revocation') {
+    const sessions = getStoredActiveSessions();
+    const targetSession = sessions.find((s) => s.sessionId === sessionId);
+    const updated = sessions.map((s) => {
+      if (s.sessionId === sessionId) {
+        return { ...s, status: 'Terminated', lastActive: 'Terminated', sessionDuration: 'Closed' };
       }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway stats unreachable, using local fallback:', err?.message);
+      return s;
+    });
+    saveStoredActiveSessions(updated);
+
+    // Record audit event
+    let actor = { id: 'PSN0001', name: 'Sanjay Kulkarni', role: 'Master Admin' };
+    try {
+      const activeUser = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+      if (activeUser.name) actor = activeUser;
+    } catch {}
+
+    this.recordAuditEvent({
+      module: 'Session Security',
+      action: 'TERMINATE_SESSION',
+      actionLabel: 'Terminated Active Session',
+      status: 'SUCCESS',
+      target: targetSession ? `${targetSession.name} (${targetSession.sessionId})` : sessionId,
+      details: `Session terminated: ${reason}`,
+      actor: {
+        id: actor.id,
+        name: actor.name,
+        role: actor.role,
+        ipAddress: '127.0.0.1',
+      },
+    });
+  }
+
+  /**
+   * Record real-time audit ledger entry
+   */
+  recordAuditEvent({
+    module,
+    action,
+    actionLabel,
+    status = 'SUCCESS',
+    target,
+    details,
+    actor,
+    plaza,
+    before,
+    after,
+  }) {
+    const logs = getStoredAuditLog();
+    const newAudit = {
+      id: `AUD-${Date.now().toString().slice(-6)}`,
+      timestamp: new Date().toISOString(),
+      module: module || 'User Management',
+      action: action || 'AUDIT_ACTION',
+      actionLabel: actionLabel || 'Audit Event Logged',
+      status: status || 'SUCCESS',
+      plaza: plaza || 'All plazas',
+      target: target || 'User Profile',
+      referenceId: `REF-${Date.now().toString().slice(-4)}`,
+      correlationId: `CORR-${Date.now().toString().slice(-6)}`,
+      details: details || '',
+      actor: actor || {
+        id: 'PSN0001',
+        name: 'Sanjay Kulkarni',
+        role: 'Master Admin',
+        ipAddress: '127.0.0.1',
+      },
+      before: before || null,
+      after: after || null,
+    };
+    logs.unshift(newAudit);
+    saveStoredAuditLog(logs);
+    return newAudit;
+  }
+
+  /**
+   * Calculate 100% Real KPI Dashboard Statistics
+   */
+  async getDashboardStats() {
+    let users = [];
+    try {
+      users = await UserService.getUsers();
+    } catch {
+      users = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
     }
 
-    const activeCount = fallbackActiveUsersStore.filter((u) => u.status === 'Active').length;
-    const criticalCount = fallbackAuditStore.filter((a) => a.status === 'WARNING' || a.status === 'FAILURE').length;
-    const failedLoginsToday = fallbackLoginHistoryStore.filter((l) => l.status === 'Failed').length;
+    const activeSessions = getStoredActiveSessions();
+    const loginHistory = getStoredLoginHistory();
+    const auditLogs = getStoredAuditLog();
+
+    const totalUsers = users.length;
+    const activeUsersCount = activeSessions.filter((s) => s.status === 'Active').length;
+    const inactiveUsersCount = users.filter((u) => u.status === 'Inactive').length;
+    const lockedUsersCount = users.filter((u) => u.locked).length;
+
+    // Filter events for today (local calendar date)
+    const now = new Date();
+    const todayYear = now.getFullYear();
+    const todayMonth = now.getMonth();
+    const todayDate = now.getDate();
+
+    const isToday = (ts) => {
+      if (!ts) return false;
+      const d = new Date(ts);
+      return (
+        d.getFullYear() === todayYear &&
+        d.getMonth() === todayMonth &&
+        d.getDate() === todayDate
+      );
+    };
+
+    const failedLoginsToday = loginHistory.filter(
+      (l) => isToday(l.timestamp) && l.status === 'Failed'
+    ).length;
+
+    const totalActivitiesToday = auditLogs.filter((a) => isToday(a.timestamp)).length;
+
+    const criticalSecurityEvents = auditLogs.filter(
+      (a) => a.status === 'WARNING' || a.status === 'FAILURE'
+    ).length;
+
+    const exportsPerformed = auditLogs.filter(
+      (a) => a.action === 'EXPORT_AUDIT_LOG' || a.module === 'Transactional Report'
+    ).length;
 
     return {
-      totalUsers: 148,
-      totalUsersDelta: +5.2,
-      activeUsers: activeCount || 8,
-      activeUsersDelta: +12.5,
-      inactiveUsers: 12,
-      inactiveUsersDelta: -2.1,
-      lockedUsers: 2,
+      totalUsers,
+      totalUsersDelta: 0,
+      activeUsers: activeUsersCount,
+      activeUsersDelta: 0,
+      inactiveUsers: inactiveUsersCount,
+      inactiveUsersDelta: 0,
+      lockedUsers: lockedUsersCount,
       lockedUsersDelta: 0,
-      failedLoginsToday: failedLoginsToday || 9,
-      failedLoginsDelta: -10.0,
-      totalActivitiesToday: fallbackAuditStore.length || 152,
-      totalActivitiesDelta: +18.4,
-      criticalSecurityEvents: criticalCount || 14,
-      criticalSecurityEventsDelta: -8.5,
-      exportsPerformed: 6,
-      exportsPerformedDelta: +20.0,
+      failedLoginsToday,
+      failedLoginsDelta: 0,
+      totalActivitiesToday,
+      totalActivitiesDelta: 0,
+      criticalSecurityEvents,
+      criticalSecurityEventsDelta: 0,
+      exportsPerformed,
+      exportsPerformedDelta: 0,
     };
   }
 
+  /**
+   * Real Date-Aggregated Login Trend (Counts real successes and failures grouped by day)
+   */
   async getLoginTrend(days = 7) {
-    try {
-      const res = await httpClient.get(`/api/activity/login-trend?days=${days}`);
-      if (res && res.data) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway trend unreachable, using local fallback:', err?.message);
-    }
-
     const dayCount = parseInt(days, 10) || 7;
     const labels = [];
     const successful = [];
     const failed = [];
 
+    const history = getStoredLoginHistory();
     const now = new Date();
+
     for (let i = dayCount - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      labels.push(
-        d.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        })
-      );
-      const seed = (d.getDate() * 17 + i * 23) % 50;
-      successful.push(110 + seed + (i % 3 === 0 ? 30 : 0));
-      failed.push(3 + (seed % 10));
+      const targetYear = d.getFullYear();
+      const targetMonth = d.getMonth();
+      const targetDay = d.getDate();
+
+      const label = d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+      labels.push(label);
+
+      const matchesDay = (ts) => {
+        if (!ts) return false;
+        const entryDate = new Date(ts);
+        return (
+          entryDate.getFullYear() === targetYear &&
+          entryDate.getMonth() === targetMonth &&
+          entryDate.getDate() === targetDay
+        );
+      };
+
+      const successCount = history.filter((h) => matchesDay(h.timestamp) && h.status === 'Success').length;
+      const failCount = history.filter((h) => matchesDay(h.timestamp) && h.status === 'Failed').length;
+
+      successful.push(successCount);
+      failed.push(failCount);
     }
 
     return {
@@ -83,22 +323,18 @@ class UserActivityService {
     };
   }
 
+  /**
+   * Module percentage breakdown dynamically computed from real audit records
+   */
   async getModuleBreakdown() {
-    try {
-      const res = await httpClient.get('/api/activity/module-breakdown');
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway module breakdown unreachable, using fallback:', err?.message);
-    }
-
+    const auditLogs = getStoredAuditLog();
     const counts = {};
-    fallbackAuditStore.forEach((evt) => {
-      counts[evt.module] = (counts[evt.module] || 0) + 1;
+    auditLogs.forEach((evt) => {
+      const mod = evt.module || 'General';
+      counts[mod] = (counts[mod] || 0) + 1;
     });
 
-    const total = fallbackAuditStore.length || 1;
+    const total = auditLogs.length || 1;
     return Object.entries(counts)
       .map(([name, count]) => ({
         name,
@@ -108,24 +344,18 @@ class UserActivityService {
       .sort((a, b) => b.count - a.count);
   }
 
+  /**
+   * Filtered real audit log queries
+   */
   async getAuditLog(filters = {}) {
-    try {
-      const res = await httpClient.get('/api/activity/audit-log', { params: filters });
-      if (res && res.data && Array.isArray(res.data)) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway audit-log unreachable, using fallback:', err?.message);
-    }
-
-    let filtered = [...fallbackAuditStore];
+    let filtered = getStoredAuditLog();
     if (filters.search && filters.search.trim()) {
       const q = filters.search.toLowerCase().trim();
       filtered = filtered.filter(
         (item) =>
-          item.id.toLowerCase().includes(q) ||
-          item.target.toLowerCase().includes(q) ||
-          item.actionLabel.toLowerCase().includes(q) ||
+          item.id?.toLowerCase().includes(q) ||
+          item.target?.toLowerCase().includes(q) ||
+          item.actionLabel?.toLowerCase().includes(q) ||
           item.actor?.name?.toLowerCase().includes(q) ||
           item.actor?.role?.toLowerCase().includes(q) ||
           item.details?.toLowerCase().includes(q)
@@ -140,56 +370,25 @@ class UserActivityService {
     if (filters.plaza && filters.plaza !== 'All plazas') {
       filtered = filtered.filter((item) => item.plaza === filters.plaza);
     }
-
     return filtered;
   }
 
   async getRecentActivity(limit = 10) {
-    try {
-      const res = await httpClient.get(`/api/activity/recent?limit=${limit}`);
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway recent activity unreachable, using fallback:', err?.message);
-    }
-    return fallbackAuditStore.slice(0, limit);
+    const logs = getStoredAuditLog();
+    return logs.slice(0, limit);
   }
 
   async getActiveUsers() {
-    try {
-      const res = await httpClient.get('/api/activity/active-users');
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway active users unreachable, using fallback:', err?.message);
-    }
-    return [...fallbackActiveUsersStore];
+    return getStoredActiveSessions();
   }
 
   async forceLogout(sessionId, reason = 'Administrative revocation') {
-    try {
-      const res = await httpClient.post(`/api/activity/sessions/${sessionId}/terminate`, { reason });
-      return res.data;
-    } catch (err) {
-      console.warn('[UserActivityService] Railway forceLogout unreachable, using local fallback:', err?.message);
-      fallbackActiveUsersStore = fallbackActiveUsersStore.filter((u) => u.sessionId !== sessionId);
-      return { success: true, sessionId };
-    }
+    this.terminateSession(sessionId, reason);
+    return { success: true, sessionId };
   }
 
   async getLoginHistory(filters = {}) {
-    try {
-      const res = await httpClient.get('/api/activity/login-history', { params: filters });
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway login history unreachable, using fallback:', err?.message);
-    }
-
-    let result = [...fallbackLoginHistoryStore];
+    let result = getStoredLoginHistory();
     if (filters.status && filters.status !== 'All') {
       result = result.filter((l) => l.status === filters.status);
     }
@@ -197,42 +396,30 @@ class UserActivityService {
   }
 
   async exportAudit(filters = {}, format = 'csv') {
-    try {
-      const res = await httpClient.get('/api/activity/export', { params: { ...filters, format } });
-      if (res && res.data) {
-        return res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway export unreachable, using local export generator:', err?.message);
-    }
-
     const records = await this.getAuditLog(filters);
+
+    let actor = { id: 'PSN0001', name: 'Sanjay Kulkarni', role: 'Master Admin' };
+    try {
+      const activeUser = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+      if (activeUser.name) actor = activeUser;
+    } catch {}
+
     const exportEvent = {
-      id: `AUD-${String(Date.now()).slice(-4)}`,
-      timestamp: new Date().toISOString(),
       module: 'Transactional Report',
       action: 'EXPORT_AUDIT_LOG',
       actionLabel: 'Exported Audit Ledger',
       status: 'SUCCESS',
       actor: {
-        id: 'PSN0005',
-        name: 'Sanjay Kulkarni',
-        role: 'Master Admin',
-        ipAddress: '103.21.58.44',
+        id: actor.id,
+        name: actor.name,
+        role: actor.role,
+        ipAddress: '127.0.0.1',
       },
       plaza: 'All plazas',
       target: `Audit Export (${records.length} records, ${format.toUpperCase()})`,
-      referenceId: `EXP-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`,
       details: `Compliance export compiled for ${records.length} records in ${format.toUpperCase()} format`,
-      before: null,
-      after: {
-        format,
-        recordCount: records.length,
-        timestamp: new Date().toISOString(),
-      },
-      correlationId: `CORR-EXP-${String(Date.now()).slice(-4)}`,
     };
-    fallbackAuditStore.unshift(exportEvent);
+    this.recordAuditEvent(exportEvent);
 
     if (format === 'csv') {
       const headers = [

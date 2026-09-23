@@ -3,7 +3,9 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Loader from '../Loader/Loader';
 
-export const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+import { hasMenuAccess, getDefaultRouteForUser } from '../../config/roleMenus';
+
+export const ProtectedRoute = ({ children, allowedRoles = [], requiredMenu = null }) => {
   const { currentUser, isAuthenticated, authChecked } = useAuth();
   const location = useLocation();
 
@@ -15,10 +17,26 @@ export const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Real-time security revocation: if user was deactivated, locked, or unapproved
+  if (currentUser.status === 'Inactive' || currentUser.locked || (currentUser.approval && currentUser.approval !== 'Approved')) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
   const isMasterAdmin = currentUser?.role === 'Master Admin';
-  const isAllowed = allowedRoles.length === 0 || isMasterAdmin || allowedRoles.includes(currentUser.role);
+
+  // Check role-level permission
+  const isRoleAllowed =
+    allowedRoles.length === 0 || isMasterAdmin || allowedRoles.includes(currentUser.role);
+
+  // Check menu/module-level permission strictly against user's assigned permissions
+  const isMenuAllowed =
+    !requiredMenu || hasMenuAccess(currentUser, requiredMenu);
+
+  const isAllowed = isRoleAllowed && isMenuAllowed;
 
   if (!isAllowed) {
+    const fallbackRoute = getDefaultRouteForUser(currentUser);
+
     return (
       <div style={{
         display: 'flex',
@@ -56,7 +74,7 @@ export const ProtectedRoute = ({ children, allowedRoles = [] }) => {
             Access Restricted
           </h2>
           <p style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5', marginBottom: '20px' }}>
-            Your role <strong style={{ color: '#0f172a' }}>{currentUser.role}</strong> does not have permission to view this section.
+            Your account <strong style={{ color: '#0f172a' }}>{currentUser.name}</strong> ({currentUser.role}) does not have permission to access this module.
           </p>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
             <button
@@ -71,9 +89,11 @@ export const ProtectedRoute = ({ children, allowedRoles = [] }) => {
                 fontWeight: '600',
                 fontSize: '13px',
               }}
-              onClick={() => window.location.href = '/'}
+              onClick={() => {
+                window.location.href = fallbackRoute;
+              }}
             >
-              Return to Dashboard
+              Continue to Authorized Section
             </button>
           </div>
         </div>

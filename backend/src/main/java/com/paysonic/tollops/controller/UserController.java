@@ -44,19 +44,24 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDTO> updateUser(
             @PathVariable String id,
-            @RequestBody CreateUserRequest request) {
-        return ResponseEntity.ok(userService.updateUser(id, request));
+            @RequestBody CreateUserRequest request,
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0001") String actorId) {
+        return ResponseEntity.ok(userService.updateUser(id, request, actorId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable String id) {
-        userService.deleteUser(id);
+    public ResponseEntity<Map<String, Object>> deleteUser(
+            @PathVariable String id,
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0001") String actorId) {
+        userService.deleteUser(id, actorId);
         return ResponseEntity.ok(Map.of("success", true, "id", id));
     }
 
     @PatchMapping("/{id}/lock")
-    public ResponseEntity<UserResponseDTO> toggleLock(@PathVariable String id) {
-        return ResponseEntity.ok(userService.toggleLock(id));
+    public ResponseEntity<UserResponseDTO> toggleLock(
+            @PathVariable String id,
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0001") String actorId) {
+        return ResponseEntity.ok(userService.toggleLock(id, actorId));
     }
 
     @PatchMapping("/{id}/approve")

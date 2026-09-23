@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getDefaultRouteForRole } from '../../config/roleMenus';
+import { getDefaultRouteForUser } from '../../config/roleMenus';
 import './Login.scss';
 
 export const Login = () => {
@@ -20,7 +20,7 @@ export const Login = () => {
 
   React.useEffect(() => {
     if (isAuthenticated && currentUser) {
-      const targetDestination = (from && from !== '/') ? from : getDefaultRouteForRole(currentUser.role);
+      const targetDestination = (from && from !== '/') ? from : getDefaultRouteForUser(currentUser);
       navigate(targetDestination, { replace: true });
     }
   }, [isAuthenticated, currentUser, navigate, from]);
@@ -33,9 +33,9 @@ export const Login = () => {
     setIsSubmitting(true);
     await new Promise(r => setTimeout(r, 700));
     try {
-      const session = login(identifier.trim(), password);
-      // Navigate to target: Dashboard if permitted, otherwise the just next page to dashboard (/tag-details)
-      const targetDestination = (from && from !== '/') ? from : getDefaultRouteForRole(session?.role);
+      const session = await login(identifier.trim(), password);
+      // Navigate to target: Dashboard if permitted, otherwise user's first allowed menu
+      const targetDestination = (from && from !== '/') ? from : getDefaultRouteForUser(session);
       navigate(targetDestination, { replace: true });
     } catch (err) {
       setError(err.message || 'Invalid credentials. Please try again.');

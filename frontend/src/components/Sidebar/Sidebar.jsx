@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getRoleNavigation } from '../../config/roleMenus';
+import { getRoleNavigation, filterNavigationByPermissions } from '../../config/roleMenus';
 import OperationsModal from '../OperationsModal/OperationsModal';
 import './Sidebar.scss';
 
@@ -62,8 +62,9 @@ export const Sidebar = ({
     border: '#dcfce7',
   };
 
-  // Fetch sections strictly configured for the user's role
-  const visibleSections = getRoleNavigation(userRole);
+  // Fetch sections strictly filtered by user's assigned permissions and role
+  const baseSections = getRoleNavigation(userRole);
+  const visibleSections = filterNavigationByPermissions(baseSections, currentUser?.menuAccess);
 
   return (
     <>
