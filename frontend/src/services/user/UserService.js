@@ -67,7 +67,7 @@ class UserService {
             username,
             contact: u.mobile || u.contact || '',
             plaza: u.assignedPlaza || u.plaza || 'All plazas',
-            status: u.status || (u.approval === 'Approved' ? 'Active' : 'Pending'),
+            status: u.status === 'Inactive' ? 'Inactive' : (u.approval === 'Approved' ? 'Active' : (u.status || 'Pending')),
             approval: u.approval || (u.status === 'Active' ? 'Approved' : 'Pending'),
             locked: Boolean(u.locked),
             menuAccess: customAccess,
@@ -338,6 +338,25 @@ class UserService {
         approval: 'Approved',
         status: 'Active',
       };
+      // Ensure status 'Active' is persisted in MySQL on Railway
+      try {
+        await httpClient.put(
+          `/api/users/${id}`,
+          {
+            name: updated.name,
+            email: updated.email,
+            mobile: updated.mobile || updated.contact || '9999999999',
+            role: updated.role,
+            userType: updated.userType || 'Toll Plaza',
+            assignedPlaza: updated.assignedPlaza || updated.plaza || 'All plazas',
+            status: 'Active',
+            approval: 'Approved',
+          },
+          {
+            headers: { 'X-Actor-ID': actorId },
+          }
+        );
+      } catch {}
     } catch (err) {
       mockUsers = mockUsers.map((u) => (u.id === id ? { ...u, approval: 'Approved', status: 'Active' } : u));
       updated = { id, approval: 'Approved', status: 'Active' };

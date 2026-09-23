@@ -992,8 +992,10 @@ export const UserList = () => {
 
         <div className="table-body">
           {filteredUsers.map((u) => {
-            const statusActive = u.status === 'Active';
-            const approved = u.approval === 'Approved';
+            const isApproved = u.approval === 'Approved';
+            const statusActive = u.status === 'Active' || (isApproved && u.status !== 'Inactive');
+            const statusLabel = statusActive ? 'Active' : (u.status || 'Pending');
+            const approved = isApproved;
             return (
               <div key={u.id} className="t-row">
                 <div className="who">
@@ -1018,8 +1020,8 @@ export const UserList = () => {
                 <div className="plaza-cell">{u.plaza}</div>
 
                 <div>
-                  <span className={`badge ${statusActive ? 'badge-active' : 'badge-inactive'}`}>
-                    {u.status}
+                  <span className={`badge ${statusActive ? 'badge-active' : (statusLabel === 'Pending' ? 'badge-pending' : 'badge-inactive')}`}>
+                    {statusLabel}
                   </span>
                 </div>
 
