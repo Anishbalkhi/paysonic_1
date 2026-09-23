@@ -3,7 +3,7 @@ import axios from 'axios';
 const apiBaseUrl =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
   (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL) ||
-  'http://localhost:8080';
+  'https://paysonic1-production.up.railway.app';
 
 const httpClient = axios.create({
   baseURL: apiBaseUrl,

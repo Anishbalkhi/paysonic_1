@@ -27,8 +27,14 @@ export default function Dashboard() {
   }, [roleSlug]);
 
   // ---- data state (comes from DataService: dev JSON or prod API) ----
-  const [data, setData] = useState(null);
+  // tier1Data: critical above-the-fold (dashboard stats) — loads first
+  // tier2Data: secondary panels (charts, tables) — loads after tier1 paints
+  const [tier1Data, setTier1Data] = useState(null);
+  const [tier2Data, setTier2Data] = useState(null);
   const [loadError, setLoadError] = useState(null);
+
+  // Convenience: merged view for panels that need both tiers
+  const data = tier1Data && tier2Data ? { ...tier1Data, ...tier2Data } : null;
 
   // ---- UI state ----
   const [collapsed, setCollapsed] = useState(false);
@@ -62,14 +68,29 @@ export default function Dashboard() {
     }
   }, []);
 
-  // ---- Fetch everything through DataService (dev JSON / prod API) ----
+  // ---- Tiered data fetching ----
+  // Tier 1 loads first so the page shell renders immediately.
+  // Tier 2 fires right after tier1 resolves — no artificial delay.
   useEffect(() => {
     let cancelled = false;
-    DataService.all()
-      .then((all) => {
+
+    // TIER 1 — critical stats (single API call)
+    DataService.tier1()
+      .then((t1) => {
         if (cancelled) return;
-        setData(all);
-        setAlerts(all.alerts || []);
+        setTier1Data(t1);
+
+        // TIER 2 — secondary panels (fired immediately after tier1 paints)
+        DataService.tier2()
+          .then((t2) => {
+            if (cancelled) return;
+            setTier2Data(t2);
+            setAlerts(t2.alerts || []);
+          })
+          .catch((err) => {
+            if (cancelled) return;
+            console.error("Dashboard tier2 load failed:", err);
+          });
       })
       .catch((err) => {
         if (cancelled) return;
@@ -77,10 +98,10 @@ export default function Dashboard() {
         setLoadError(err.message || "Failed to load dashboard data");
       });
 
-    // 30-second auto refresh, same as the original polling recommendation
+    // 30-second auto refresh of critical stats only
     const interval = setInterval(() => {
       DataService.dashboard()
-        .then((d) => setData((prev) => (prev ? { ...prev, dashboard: d } : prev)))
+        .then((d) => setTier1Data((prev) => (prev ? { ...prev, dashboard: d } : prev)))
         .catch((err) => console.error("Dashboard refresh failed:", err));
     }, 30000);
 
@@ -121,19 +142,21 @@ export default function Dashboard() {
   if (loadError) {
     return (
       <div className="status-msg">
-        Dashboard data load nahi ho paaya: {loadError}
+        Dashboard data load failed: {loadError}
         <br />
         Mode: {IS_DEV_DATA_MODE ? "DEV (JSON)" : "PROD (API)"}
       </div>
     );
   }
 
-  if (!data) {
-    return <div className="status-msg">Loading dashboard…</div>;
+  // Show full-page loader only if tier1 hasn't arrived yet
+  if (!tier1Data) {
+    return <DashboardSkeleton />;
   }
 
-  const d = data.dashboard;
-  const disp = data.disputes;
+  const d = tier1Data.dashboard;
+  // disp comes from tier2 — may be null while secondary data loads
+  const disp = tier2Data?.disputes ?? null;
 
   // Role banner configuration
   const ROLE_BANNER_INFO = {
@@ -318,32 +341,76 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {activeTab === "metrics" ? <MetricsKpis d={d} /> : <DisputeKpis disp={disp} />}
+            {/* Tier-1 KPI cards — always available */}
+            {activeTab === "metrics" ? (
+              <MetricsKpis d={d} />
+            ) : (
+              !tier2Data ? <PanelSkeleton rows={2} />
+              : disp      ? <DisputeKpis disp={disp} />
+              :              <PanelNotConnected label="Dispute Matrix" />
+            )}
 
+            {/* Tier-2 panels: skeleton → real data or 'not connected' */}
             <div className="grid-2" style={{ marginTop: 22 }}>
-              <TxnAnalyticsPanel
-                transactions={data.transactions}
-                range={chartRange}
-                onRangeChange={setChartRange}
-                canvasRef={chartCanvasRef}
-                chartInstanceRef={chartInstanceRef}
-                chartReady={scriptsReady.chart}
-              />
+              {!tier2Data ? (
+                <PanelSkeleton label="Transaction Analytics" height={260} />
+              ) : tier2Data.transactions ? (
+                <TxnAnalyticsPanel
+                  transactions={tier2Data.transactions}
+                  range={chartRange}
+                  onRangeChange={setChartRange}
+                  canvasRef={chartCanvasRef}
+                  chartInstanceRef={chartInstanceRef}
+                  chartReady={scriptsReady.chart}
+                />
+              ) : (
+                <PanelNotConnected label="Transaction Analytics" />
+              )}
               <GrowthPanel d={d} />
             </div>
 
             <div className="grid-2" style={{ marginTop: 16, gridTemplateColumns: "1.7fr 1fr" }}>
               <PeakHoursPanel />
-              <AlertsPanel alerts={alerts} setAlerts={setAlerts} />
+              {!tier2Data ? (
+                <PanelSkeleton label="Alerts &amp; Actions" rows={3} />
+              ) : tier2Data.alerts ? (
+                <AlertsPanel alerts={alerts} setAlerts={setAlerts} />
+              ) : (
+                <PanelNotConnected label="Alerts &amp; Actions" />
+              )}
             </div>
 
-            <DeclinesPanel declines={data.declines} errOpen={errOpen} setErrOpen={setErrOpen} />
+            {!tier2Data ? (
+              <PanelSkeleton label="Declined Transactions" rows={5} style={{ marginTop: 16 }} />
+            ) : tier2Data.declines ? (
+              <DeclinesPanel declines={tier2Data.declines} errOpen={errOpen} setErrOpen={setErrOpen} />
+            ) : (
+              <PanelNotConnected label="Declined Transactions" style={{ marginTop: 16 }} />
+            )}
 
-            <SystemsPanel systems={data.systems} sysFilter={sysFilter} setSysFilter={setSysFilter} />
+            {!tier2Data ? (
+              <PanelSkeleton label="Alert / API Status" rows={6} style={{ marginTop: 16 }} />
+            ) : tier2Data.systems ? (
+              <SystemsPanel systems={tier2Data.systems} sysFilter={sysFilter} setSysFilter={setSysFilter} />
+            ) : (
+              <PanelNotConnected label="Alert / API Status" style={{ marginTop: 16 }} />
+            )}
 
             <div className="grid-2" style={{ marginTop: 16, gridTemplateColumns: "1fr 1.35fr" }}>
-              <SettlementPanel settlement={data.settlement} />
-              <PlazaStatusPanel plazas={data.plazas} plazaQuery={plazaQuery} setPlazaQuery={setPlazaQuery} />
+              {!tier2Data ? (
+                <PanelSkeleton label="Settlement Summary" rows={4} />
+              ) : tier2Data.settlement ? (
+                <SettlementPanel settlement={tier2Data.settlement} />
+              ) : (
+                <PanelNotConnected label="Settlement Summary" />
+              )}
+              {!tier2Data ? (
+                <PanelSkeleton label="Plaza Status" rows={5} />
+              ) : tier2Data.plazas ? (
+                <PlazaStatusPanel plazas={tier2Data.plazas} plazaQuery={plazaQuery} setPlazaQuery={setPlazaQuery} />
+              ) : (
+                <PanelNotConnected label="Plaza Status" />
+              )}
             </div>
           </>
         )}
@@ -355,6 +422,84 @@ export default function Dashboard() {
     </main>
 
       <OperationsModal operation={activeOp} onClose={() => setActiveOp(null)} />
+    </div>
+  );
+}
+
+// ── Skeleton components for progressive loading ──────────────────────────────
+
+/** Full-page skeleton shown only while tier1 (dashboard stats) is in flight */
+function DashboardSkeleton() {
+  return (
+    <div className="app paysonic-app app-dashboard">
+      <div className="main">
+        <div className="dashboard-content">
+          {/* Banner skeleton */}
+          <div className="sk-banner sk-pulse" />
+          {/* Hero skeleton */}
+          <div className="sk-hero sk-pulse" />
+          {/* KPI cards skeleton */}
+          <div className="kpis">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="card sk-card sk-pulse" />
+            ))}
+          </div>
+          {/* Chart row skeleton */}
+          <div className="grid-2" style={{ marginTop: 22 }}>
+            <div className="panel sk-panel sk-pulse" style={{ height: 300 }} />
+            <div className="panel sk-panel sk-pulse" style={{ height: 300 }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Lightweight placeholder for a single panel while tier2 data loads */
+function PanelSkeleton({ label, rows = 4, height, style }) {
+  return (
+    <div className="panel sk-panel-wrap" style={style}>
+      {label && (
+        <div className="panel-head">
+          <div>
+            <h4 style={{ color: '#94a3b8' }}>{label}</h4>
+          </div>
+        </div>
+      )}
+      <div className="sk-rows">
+        {height ? (
+          <div className="sk-pulse" style={{ height, borderRadius: 8 }} />
+        ) : (
+          Array.from({ length: rows }).map((_, i) => (
+            <div key={i} className="sk-row sk-pulse" style={{ opacity: 1 - i * 0.15 }} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Shown in prod when a backend API endpoint is not yet implemented */
+function PanelNotConnected({ label, style }) {
+  return (
+    <div className="panel sk-panel-wrap" style={style}>
+      {label && (
+        <div className="panel-head">
+          <div><h4>{label}</h4></div>
+        </div>
+      )}
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', gap: 8, padding: '32px 16px',
+        color: 'var(--faint)', textAlign: 'center',
+      }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M18.364 5.636a9 9 0 1 1-12.728 0" />
+          <line x1="12" y1="3" x2="12" y2="12" />
+        </svg>
+        <span style={{ fontSize: 13, fontWeight: 600 }}>API endpoint not connected</span>
+        <span style={{ fontSize: 11 }}>This panel requires a backend endpoint that is not yet implemented.</span>
+      </div>
     </div>
   );
 }

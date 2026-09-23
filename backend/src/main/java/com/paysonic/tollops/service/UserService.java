@@ -154,12 +154,12 @@ public class UserService {
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).setTrim(true).build())) {
 
             for (CSVRecord record : csvParser) {
-                String name = record.get("name");
-                String email = record.get("email");
-                String mobile = record.get("mobile");
-                String role = record.get("role");
-                String userType = record.isMapped("userType") ? record.get("userType") : "Toll Plaza";
-                String assignedPlaza = record.isMapped("assignedPlaza") ? record.get("assignedPlaza") : "NH-44 Hyderabad";
+                String name = record.isMapped("name") ? record.get("name") : (record.isMapped("username") ? record.get("username") : "");
+                String email = record.isMapped("email") ? record.get("email") : "";
+                String mobile = record.isMapped("mobile") ? record.get("mobile") : (record.isMapped("contact") ? record.get("contact") : "");
+                String role = record.isMapped("role") ? record.get("role") : "";
+                String userType = record.isMapped("userType") ? record.get("userType") : (record.isMapped("user_type") ? record.get("user_type") : "Toll Plaza");
+                String assignedPlaza = record.isMapped("assignedPlaza") ? record.get("assignedPlaza") : (record.isMapped("plaza") ? record.get("plaza") : "All plazas");
 
                 if (name.isBlank() || email.isBlank() || mobile.isBlank() || role.isBlank()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Validation failed: missing required fields on row " + record.getRecordNumber());

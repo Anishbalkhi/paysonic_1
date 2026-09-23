@@ -784,3 +784,59 @@ tbody tr:last-child td { border-bottom: none; }
 .sys-table .sysid { font-family: "JetBrains Mono"; font-size: 11px; color: var(--faint); }
 
 .status-msg { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* ── Skeleton / Progressive Loading ─────────────────────────────────────── */
+@keyframes sk-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.sk-pulse {
+  background: linear-gradient(
+    90deg,
+    #edf1f7 25%,
+    #f4f7fb 50%,
+    #edf1f7 75%
+  );
+  background-size: 1200px 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+/* Full-page skeleton pieces */
+.sk-banner {
+  height: 48px;
+  margin: 0 0 16px 0;
+  border-radius: 12px;
+}
+
+.sk-hero {
+  height: 220px;
+  margin-bottom: 20px;
+  border-radius: 16px;
+}
+
+.sk-card {
+  min-height: 130px;
+}
+
+.sk-panel {
+  min-height: 200px;
+}
+
+/* Per-panel skeleton */
+.sk-panel-wrap {
+  /* inherits .panel styles */
+}
+
+.sk-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.sk-row {
+  height: 18px;
+  border-radius: 6px;
+}

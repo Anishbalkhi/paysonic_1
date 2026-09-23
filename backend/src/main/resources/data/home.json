@@ -1,81 +1,60 @@
 {
+  "date": "23 Sep 2026",
+  "netRevenue": 2845921,
+  "deltaVsYesterday": 12.4,
+  "successRate": 91.4,
+  "throughput": 174,
+  "avgFare": 82,
+  "activeTollPlazas": 10,
+  "totalTollPlazas": 10,
+  "totalTransactions": 94821,
+  "successTransactions": 86682,
+  "successAmount": 2604312,
+  "pendingTransactions": 5689,
+  "pendingAmount": 184721,
+  "failedTransactions": 2450,
+  "failedAmount": 56888,
+  "yesterdayTransactions": 87430,
+  "yesterdayRevenue": 2490210,
+  "growth": 86,
+  "activeUsers": 14280,
+  "systemUptime": 99.98,
   "summary": {
-    "totalRevenue": 2845920.50,
+    "totalRevenue": 2845921,
     "revenueGrowth": 14.8,
+    "totalTransactions": 94821,
     "transactionVolume": 94821,
     "volumeGrowth": 8.2,
     "activeUsers": 14280,
     "usersGrowth": 22.4,
-    "successRate": 99.42,
-    "successRateChange": 0.35
+    "successRate": 91.4,
+    "successRateChange": 0.35,
+    "systemUptime": 99.98
   },
-  "chartData": [
-    { "month": "Jan", "volume": 124000, "revenue": 182000 },
-    { "month": "Feb", "volume": 148000, "revenue": 210000 },
-    { "month": "Mar", "volume": 189000, "revenue": 254000 },
-    { "month": "Apr", "volume": 172000, "revenue": 235000 },
-    { "month": "May", "volume": 220000, "revenue": 310000 },
-    { "month": "Jun", "volume": 285000, "revenue": 395000 },
-    { "month": "Jul", "volume": 312000, "revenue": 440000 },
-    { "month": "Aug", "volume": 298000, "revenue": 418000 },
-    { "month": "Sep", "volume": 345000, "revenue": 490000 }
-  ],
-  "recentTransactions": [
-    {
-      "id": "TXN-88349",
-      "customer": "Aura Logistics Ltd",
-      "email": "billing@auralogistics.io",
-      "amount": 14250.00,
-      "currency": "USD",
-      "status": "completed",
-      "date": "2026-09-21T09:42:15Z",
-      "method": "Wire Transfer"
-    },
-    {
-      "id": "TXN-88348",
-      "customer": "Nexus Digital Studio",
-      "email": "finance@nexus.design",
-      "amount": 3499.00,
-      "currency": "USD",
-      "status": "completed",
-      "date": "2026-09-21T09:15:02Z",
-      "method": "Credit Card"
-    },
-    {
-      "id": "TXN-88347",
-      "customer": "Hyperion Labs",
-      "email": "payments@hyperion.ai",
-      "amount": 890.50,
-      "currency": "USD",
-      "status": "pending",
-      "date": "2026-09-21T08:55:40Z",
-      "method": "SEPA Direct Debit"
-    },
-    {
-      "id": "TXN-88346",
-      "customer": "Krypton Cloud Solutions",
-      "email": "accounting@krypton.io",
-      "amount": 28500.00,
-      "currency": "USD",
-      "status": "completed",
-      "date": "2026-09-21T07:22:11Z",
-      "method": "Crypto (USDC)"
-    },
-    {
-      "id": "TXN-88345",
-      "customer": "Vanguard Media Group",
-      "email": "invoices@vanguard.co",
-      "amount": 1200.00,
-      "currency": "USD",
-      "status": "failed",
-      "date": "2026-09-20T23:14:00Z",
-      "method": "Credit Card"
-    }
-  ],
+  "trends": {
+    "activePlazas": 0.0,
+    "totalTxn": 25.1,
+    "successTxn": 14.6,
+    "successAmount": 20.2,
+    "pendingTxn": -8.5,
+    "pendingAmount": -6.0,
+    "failedTxn": -3.2,
+    "failedAmount": -4.1
+  },
+  "sparklines": {
+    "activePlazas": [4, 4, 4, 4, 4, 4, 4],
+    "totalTxn":    [9, 12, 10, 15, 18, 16, 22],
+    "successTxn":  [12, 14, 13, 17, 19, 18, 24],
+    "successAmount":[10, 13, 12, 16, 20, 19, 25],
+    "pendingTxn":  [20, 18, 19, 15, 14, 16, 13],
+    "pendingAmount":[18, 16, 14, 13, 11, 10, 8],
+    "failedTxn":   [14, 12, 13, 10, 9, 11, 8],
+    "failedAmount": [11, 10, 12, 9, 8, 9, 7]
+  },
   "systemStatus": {
     "gatewayStatus": "Operational",
     "avgLatencyMs": 42,
-    "uptime": "99.99%",
+    "uptime": "99.98%",
     "apiCallsToday": 482931
   }
 }

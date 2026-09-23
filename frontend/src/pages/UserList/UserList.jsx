@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import UserService from '../../services/user/UserService';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -24,6 +24,7 @@ const VALID_ROLES = [
 ];
 
 export const UserList = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const isMasterAdmin = currentUser?.role === 'Master Admin';
   const isAdmin = currentUser?.role === 'Admin';
@@ -77,7 +78,10 @@ export const UserList = () => {
   const [bulkErrors, setBulkErrors] = useState([]);
   const [bulkSuccessMsg, setBulkSuccessMsg] = useState('');
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploadedFileSize, setUploadedFileSize] = useState('');
   const [parsedCsvRows, setParsedCsvRows] = useState([]);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  const [bulkUploadProgress, setBulkUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -559,17 +563,46 @@ export const UserList = () => {
       return;
     }
 
-    for (const u of parsedCsvRows) {
-      await UserService.createUser(u);
+    setIsBulkUploading(true);
+    setBulkUploadProgress(0);
+    setBulkErrors([]);
+    setBulkSuccessMsg('');
+
+    const savedUsers = [];
+    const commitErrors = [];
+
+    for (let i = 0; i < parsedCsvRows.length; i++) {
+      const u = parsedCsvRows[i];
+      try {
+        const created = await UserService.createUser(u);
+        savedUsers.push(created);
+      } catch (err) {
+        commitErrors.push(`Failed to import ${u.name || u.username}: ${err?.message || 'Server error'}`);
+      }
+      setBulkUploadProgress(Math.round(((i + 1) / parsedCsvRows.length) * 100));
     }
-    setUsers((prev) => [...parsedCsvRows, ...prev]);
-    setBulkSuccessMsg(`Successfully imported and queued ${parsedCsvRows.length} user accounts!`);
+
+    setIsBulkUploading(false);
+
+    if (commitErrors.length > 0) {
+      setBulkErrors(commitErrors);
+    }
+
+    // Refresh live users directly from Railway backend database
+    const freshUsers = await UserService.getUsers();
+    setUsers(freshUsers);
+
+    setBulkSuccessMsg(
+      `✓ Successfully saved ${savedUsers.length} user accounts to live Railway database!`
+    );
     setParsedCsvRows([]);
     setTimeout(() => {
       setIsBulkOpen(false);
       setBulkSuccessMsg('');
       setUploadedFileName('');
-    }, 1500);
+      setUploadedFileSize('');
+      setBulkUploadProgress(0);
+    }, 2200);
   };
 
   // Filtered Users
@@ -628,6 +661,17 @@ export const UserList = () => {
           </p>
         </div>
         <div className="actions">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => navigate('/activity')}
+            title="View User Activity, Live Sessions & Audit Trail"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="2">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Activity &amp; Audit Trail
+          </button>
           {canBulkUpload && (
             <button
               type="button"
@@ -1444,19 +1488,55 @@ export const UserList = () => {
               />
 
               <div
-                className="dropzone"
-                style={{ cursor: 'pointer' }}
-                onClick={() => fileInputRef.current?.click()}
+                className={`dropzone ${uploadedFileName ? 'dropzone--has-file' : ''}`}
+                style={{ cursor: isBulkUploading ? 'not-allowed' : 'pointer' }}
+                onClick={() => !isBulkUploading && fileInputRef.current?.click()}
               >
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#98A2B3" strokeWidth="1.6">
-                  <path d="M12 16V4M7 9l5-5 5 5" />
-                  <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
-                </svg>
-                <strong>
-                  {uploadedFileName ? `Selected: ${uploadedFileName}` : 'Drag and drop your .csv file here'}
-                </strong>
-                <span>or click to browse from your computer</span>
+                {uploadedFileName ? (
+                  <div className="dropzone-file-card">
+                    <div className="file-icon-wrap">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                      </svg>
+                    </div>
+                    <div className="file-meta">
+                      <strong className="file-name">{uploadedFileName}</strong>
+                      <span className="file-specs">{uploadedFileSize} · CSV Data Sheet</span>
+                    </div>
+                    <span className="change-chip">Change file</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="dropzone-upload-icon">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.8">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    </div>
+                    <strong>Drag and drop your .csv file here</strong>
+                    <span>or click to browse from your computer</span>
+                  </>
+                )}
               </div>
+
+              {/* Live Railway DB Upload Progress Indicator */}
+              {isBulkUploading && (
+                <div className="bulk-progress-panel">
+                  <div className="progress-info">
+                    <span>
+                      <span className="live-pulsar" /> Writing users to Railway Live Database...
+                    </span>
+                    <strong>{bulkUploadProgress}%</strong>
+                  </div>
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${bulkUploadProgress}%` }} />
+                  </div>
+                </div>
+              )}
 
               {bulkErrors.length > 0 && (
                 <div className="csv-error-box">
@@ -1470,17 +1550,23 @@ export const UserList = () => {
               )}
 
               {bulkSuccessMsg && (
-                <div className="csv-success-box">{bulkSuccessMsg}</div>
+                <div className="csv-success-box">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  {bulkSuccessMsg}
+                </div>
               )}
 
-              {parsedCsvRows.length > 0 && (
-                <div className="csv-success-box">
-                  ✓ {parsedCsvRows.length} user rows validated successfully and ready to import!
+              {parsedCsvRows.length > 0 && !isBulkUploading && !bulkSuccessMsg && (
+                <div className="csv-preview-box">
+                  <span className="preview-pill">✓ Verified</span>
+                  <span>{parsedCsvRows.length} user rows validated &amp; ready to commit to Railway database.</span>
                 </div>
               )}
 
               <div className="callout">
-                Required columns: username, email, contact, role, user_type, plaza, name, password
+                <strong>Required columns:</strong> username, email, contact, role, user_type, plaza, name, password
               </div>
             </div>
 
@@ -1489,6 +1575,7 @@ export const UserList = () => {
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => setIsBulkOpen(false)}
+                disabled={isBulkUploading}
               >
                 Cancel
               </button>
@@ -1496,8 +1583,23 @@ export const UserList = () => {
                 type="button"
                 className="btn btn-primary"
                 onClick={handleCommitBulkUpload}
+                disabled={isBulkUploading || parsedCsvRows.length === 0}
               >
-                Upload &amp; validate
+                {isBulkUploading ? (
+                  <>
+                    <span className="btn-spinner" />
+                    Committing to DB...
+                  </>
+                ) : (
+                  <>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Commit {parsedCsvRows.length > 0 ? `(${parsedCsvRows.length})` : ''} to Railway DB
+                  </>
+                )}
               </button>
             </div>
           </div>

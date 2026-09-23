@@ -90,7 +90,14 @@ export const ROLE_NAVIGATION_MAP = {
         { label: 'B. Approve User', path: '/users?tab=pending' },
         { label: 'C. Assign User', path: '/users?action=assign' },
         { label: 'D. Unlock/Lock User', path: '/users?tab=locked' },
+        { label: 'E. User Activity & Audit', path: '/activity' },
       ],
+    },
+    {
+      id: 'user_activity',
+      label: 'User Activity & Audit',
+      path: '/activity',
+      icon: ICONS.users,
     },
     {
       id: 'tag_details',
@@ -195,6 +202,12 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Dashboard',
       path: '/',
       icon: ICONS.dashboard,
+    },
+    {
+      id: 'user_activity',
+      label: 'User Activity & Audit',
+      path: '/activity',
+      icon: ICONS.users,
     },
     {
       id: 'tag_details',
@@ -486,6 +499,12 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Dashboard',
       path: '/',
       icon: ICONS.dashboard,
+    },
+    {
+      id: 'user_activity',
+      label: 'User Activity & Audit',
+      path: '/activity',
+      icon: ICONS.users,
     },
     {
       id: 'recon_management',
