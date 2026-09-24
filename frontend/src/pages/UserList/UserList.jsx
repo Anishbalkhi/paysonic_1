@@ -123,8 +123,16 @@ export const UserList = () => {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All roles');
-  const [statusFilter, setStatusFilter] = useState('All statuses');
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get('tab') === 'pending' ? 'Pending' : 'All statuses'
+  );
   const [plazaFilter, setPlazaFilter] = useState('All plazas');
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'pending') {
+      setStatusFilter('Pending');
+    }
+  }, [searchParams]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -262,8 +270,8 @@ export const UserList = () => {
       userType: u.userType && u.userType !== '—' ? u.userType : '',
       status: u.status || 'Active',
       plaza: u.role !== 'Concessionaire' ? u.plaza : '',
-      password: '',
-      confirmPassword: '',
+      password: u.password || 'Paysonic@2026',
+      confirmPassword: u.password || 'Paysonic@2026',
     });
     setFormErrors({});
 
@@ -500,6 +508,7 @@ export const UserList = () => {
           plaza: plazaLabel,
           plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
           status: formValues.status,
+          password: formValues.password || 'Paysonic@2026',
           menuAccess: selectedMenuIds,
         });
         setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, menuAccess: selectedMenuIds } : u)));
@@ -518,6 +527,7 @@ export const UserList = () => {
           plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
           status: 'Pending',
           approval: 'Pending',
+          password: formValues.password || 'Paysonic@2026',
           locked: false,
           avatarBg: '#3762F2',
           menuAccess: selectedMenuIds,
@@ -681,7 +691,10 @@ export const UserList = () => {
     for (let i = 0; i < parsedCsvRows.length; i++) {
       const u = parsedCsvRows[i];
       try {
-        const created = await UserService.createUser(u);
+        const created = await UserService.createUser({
+          ...u,
+          password: u.password || 'Paysonic@2026',
+        });
         savedUsers.push(created);
       } catch (err) {
         commitErrors.push(`Failed to import ${u.name || u.username}: ${err?.message || 'Server error'}`);
@@ -714,18 +727,27 @@ export const UserList = () => {
 
   // Hierarchy Data Scoping (Image 1 & 2):
   // Master Admin / Admin -> Any plaza (all users)
-  // Concessionaire -> Its own plazas only (all users under its plazas)
-  // Plaza Admin -> Its one assigned plaza only
-  // Request Tag / Plaza POS -> None
+  // Concessionaire -> Its own plazas only + users it created
+  // Plaza Admin -> Its one assigned plaza only + users it created (to catch newly created pending users)
+  // Request Tag / Plaza POS -> None (no access to user management)
   const hierarchyScopedUsers = useMemo(() => {
     if (isMasterAdmin || isAdmin) {
       return users;
     }
     if (isConcessionaire) {
       return users.filter((u) => {
+        // Always include own profile
         if (u.id === currentUser?.id) return true;
-        // Don't show Master Admin or Admin
+        // Never show Master Admin or Admin to Concessionaire
         if (['Master Admin', 'Admin'].includes(u.role)) return false;
+        // Never show peer Concessionaires
+        if (u.role === 'Concessionaire' && u.id !== currentUser?.id) return false;
+        // Show users created by this Concessionaire
+        if (u.createdBy && (
+          u.createdBy === currentUser?.id ||
+          u.createdBy?.toLowerCase() === currentUser?.email?.toLowerCase()
+        )) return true;
+        // Show users in their assigned plazas
         const targetPlaza = (u.plaza || u.assignedPlaza || '').toLowerCase();
         const targetPlazasList = (u.plazas || []).map((p) => p.toLowerCase());
         return concessionairePlazas.some((cp) => {
@@ -741,16 +763,28 @@ export const UserList = () => {
     if (isPlazaAdmin) {
       const myPlaza = (currentUser?.assignedPlaza || '').toLowerCase();
       return users.filter((u) => {
+        // Always include own profile
         if (u.id === currentUser?.id) return true;
-        if (['Master Admin', 'Admin', 'Concessionaire'].includes(u.role)) return false;
-        const targetPlaza = (u.plaza || u.assignedPlaza || '').toLowerCase();
-        return (
-          targetPlaza.includes(myPlaza) ||
-          myPlaza.includes(targetPlaza) ||
-          (u.plazas || []).some((p) => p.toLowerCase().includes(myPlaza) || myPlaza.includes(p.toLowerCase()))
-        );
+        // Never show Master Admin, Admin, or Concessionaire to Plaza Admin
+        if (['Master Admin', 'Admin', 'Concessionaire', 'Plaza Admin'].includes(u.role) && u.id !== currentUser?.id) return false;
+        // Show users the Plaza Admin created (important for pending approval cases)
+        if (u.createdBy && (
+          u.createdBy === currentUser?.id ||
+          u.createdBy?.toLowerCase() === currentUser?.email?.toLowerCase()
+        )) return true;
+        // Show users in their assigned plaza (if plaza is set)
+        if (myPlaza) {
+          const targetPlaza = (u.plaza || u.assignedPlaza || '').toLowerCase();
+          return (
+            targetPlaza.includes(myPlaza) ||
+            myPlaza.includes(targetPlaza) ||
+            (u.plazas || []).some((p) => p.toLowerCase().includes(myPlaza) || myPlaza.includes(p.toLowerCase()))
+          );
+        }
+        return false;
       });
     }
+    // Plaza POS and Request Tag Details have no user management access
     return [];
   }, [users, isMasterAdmin, isAdmin, isConcessionaire, isPlazaAdmin, concessionairePlazas, currentUser]);
 
@@ -914,17 +948,35 @@ export const UserList = () => {
 
       {/* Stats Cards */}
       <div className="stats">
-        <div className="stat">
+        <div
+          className="stat"
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            setStatusFilter('All statuses');
+            setRoleFilter('All roles');
+          }}
+          title="Filter: All users"
+        >
           <span>Total users</span>
           <strong>{hierarchyScopedUsers.length}</strong>
         </div>
-        <div className="stat">
+        <div
+          className="stat"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setStatusFilter(statusFilter === 'Pending' ? 'All statuses' : 'Pending')}
+          title="Filter: Pending approvals"
+        >
           <span>Pending approval</span>
           <strong style={{ color: 'var(--warning-text)' }}>
             {hierarchyScopedUsers.filter((u) => u.approval === 'Pending').length}
           </strong>
         </div>
-        <div className="stat">
+        <div
+          className="stat"
+          style={{ cursor: 'pointer' }}
+          onClick={() => setStatusFilter(statusFilter === 'Locked' ? 'All statuses' : 'Locked')}
+          title="Filter: Locked accounts"
+        >
           <span>Locked accounts</span>
           <strong style={{ color: 'var(--danger-text)' }}>
             {hierarchyScopedUsers.filter((u) => u.locked).length}

@@ -66,4 +66,8 @@ public class CreateUserRequest {
 
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+
+    private String password = "Paysonic@2026";
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 }

@@ -39,8 +39,6 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
   }, [auditEvents]);
 
   const filteredEvents = useMemo(() => {
-    const now = Date.now();
-
     return auditEvents.filter((item) => {
       if (moduleFilter !== 'All modules' && item.module !== moduleFilter) return false;
       if (actionFilter !== 'All actions' && item.actionLabel !== actionFilter) return false;
@@ -48,10 +46,14 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
 
       if (dateFilter !== 'all') {
         const itemTime = new Date(item.timestamp).getTime();
-        const diffHours = (now - itemTime) / (1000 * 60 * 60);
-        if (dateFilter === 'today' && diffHours > 24) return false;
-        if (dateFilter === '7d' && diffHours > 24 * 7) return false;
-        if (dateFilter === '30d' && diffHours > 24 * 30) return false;
+        const now = Date.now();
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const startOfTodayMs = startOfToday.getTime();
+
+        if (dateFilter === 'today' && itemTime < startOfTodayMs) return false;
+        if (dateFilter === '7d'  && itemTime < now - 7  * 24 * 60 * 60 * 1000) return false;
+        if (dateFilter === '30d' && itemTime < now - 30 * 24 * 60 * 60 * 1000) return false;
       }
 
       if (search.trim()) {

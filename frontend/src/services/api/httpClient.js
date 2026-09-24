@@ -12,11 +12,17 @@ const httpClient = axios.create({
 
 httpClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') || 'mock-admin-token';
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
   const corrId = `CORR-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(100 + Math.random() * 900)}`;
-  config.headers['X-Correlation-ID'] = corrId;
-  config.headers['X-Actor-ID'] = localStorage.getItem('actorId') || 'PSN0005';
+  if (!config.headers['X-Correlation-ID']) {
+    config.headers['X-Correlation-ID'] = corrId;
+  }
+  if (!config.headers['X-Actor-ID']) {
+    config.headers['X-Actor-ID'] = localStorage.getItem('actorId') || 'PSN0005';
+  }
 
   return config;
 });

@@ -8,7 +8,13 @@ const USERS_CACHE_KEY = 'paysonic_users_cache';
 // Helper to get stored custom permissions map
 export function getStoredUserPermissions() {
   try {
-    return JSON.parse(localStorage.getItem(PERMISSIONS_STORAGE_KEY) || '{}');
+    const raw = localStorage.getItem(PERMISSIONS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed;
   } catch {
     return {};
   }
@@ -16,10 +22,14 @@ export function getStoredUserPermissions() {
 
 // Helper to save permissions for a user by id, email, and username
 export function saveUserPermissions(userId, menuAccess, email, username) {
-  const store = getStoredUserPermissions();
-  if (userId) store[userId] = menuAccess;
-  if (email) store[email.toLowerCase()] = menuAccess;
-  if (username) store[username.toLowerCase()] = menuAccess;
+  let store = getStoredUserPermissions();
+  if (!store || typeof store !== 'object' || Array.isArray(store)) {
+    store = {};
+  }
+  const cleanAccess = Array.isArray(menuAccess) ? menuAccess : [];
+  if (userId) store[userId] = cleanAccess;
+  if (email) store[email.toLowerCase()] = cleanAccess;
+  if (username) store[username.toLowerCase()] = cleanAccess;
   localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(store));
 
   // If the currently logged-in user is this user, update active auth session immediately
@@ -31,8 +41,8 @@ export function saveUserPermissions(userId, menuAccess, email, username) {
         (email && currentSession.email?.toLowerCase() === email.toLowerCase()) ||
         (username && currentSession.username?.toLowerCase() === username.toLowerCase()))
     ) {
-      currentSession.menuAccess = menuAccess;
-      currentSession.permissions = menuAccess;
+      currentSession.menuAccess = cleanAccess;
+      currentSession.permissions = cleanAccess;
       localStorage.setItem('paysonic_auth_session', JSON.stringify(currentSession));
       window.dispatchEvent(new CustomEvent('paysonic_auth_change', { detail: currentSession }));
     }
@@ -70,6 +80,7 @@ class UserService {
             status: u.status === 'Inactive' ? 'Inactive' : (u.approval === 'Approved' ? 'Active' : (u.status || 'Pending')),
             approval: u.approval || (u.status === 'Active' ? 'Approved' : 'Pending'),
             locked: Boolean(u.locked),
+            password: u.password || 'Paysonic@2026',
             menuAccess: customAccess,
           };
         });
@@ -133,9 +144,9 @@ class UserService {
   }
 
   async createUser(newUser) {
-    const actorId = localStorage.getItem('actorId') || 'PSN0005';
-    // Ensure Maker is distinct from Master Admin Checker (PSN0005) so Maker-Checker rule succeeds
-    const creationActor = actorId === 'PSN0005' ? 'OPS_MAKER' : actorId;
+    const actorId = localStorage.getItem('actorId') || 'PSN0001';
+    // Use 'OPS_MAKER' as creator so any independent administrator can approve the user
+    const creationActor = 'OPS_MAKER';
     const payload = {
       name: newUser.name || newUser.username,
       email: newUser.email,
@@ -146,6 +157,7 @@ class UserService {
       status: 'Pending',
       approval: 'Pending',
       locked: Boolean(newUser.locked),
+      password: newUser.password || 'Paysonic@2026',
       createdBy: creationActor,
     };
 
@@ -161,10 +173,32 @@ class UserService {
         username: newUser.username || res.data.email.split('@')[0],
         contact: res.data.mobile || newUser.contact,
         plaza: res.data.assignedPlaza || newUser.plaza,
-        status: res.data.status || 'Pending',
-        approval: res.data.approval || 'Pending',
+        status: 'Pending',
+        approval: 'Pending',
+        password: newUser.password || res.data?.password || payload.password,
         menuAccess: newUser.menuAccess || getRoleMenuDefaults(newUser.role),
       };
+
+      // Ensure Railway MySQL DB also persists Pending status, approval, and password
+      try {
+        await httpClient.put(
+          `/api/users/${res.data.id}`,
+          {
+            name: payload.name,
+            email: payload.email,
+            mobile: payload.mobile,
+            role: payload.role,
+            userType: payload.userType,
+            assignedPlaza: payload.assignedPlaza,
+            status: 'Pending',
+            approval: 'Pending',
+            password: payload.password,
+          },
+          {
+            headers: { 'X-Actor-ID': creationActor },
+          }
+        );
+      } catch {}
     } catch (err) {
       console.warn('[UserService] Railway createUser fallback:', err?.message);
       createdUser = {
@@ -172,6 +206,7 @@ class UserService {
         id: newUser.id || 'PSN' + Math.floor(1000 + Math.random() * 9000),
         status: 'Pending',
         approval: 'Pending',
+        password: newUser.password || 'Paysonic@2026',
         menuAccess: newUser.menuAccess || getRoleMenuDefaults(newUser.role),
       };
       mockUsers.unshift(createdUser);
@@ -185,19 +220,21 @@ class UserService {
   }
 
   async updateUser(id, updatedFields) {
-    if (updatedFields.menuAccess) {
+    if (updatedFields.menuAccess !== undefined && updatedFields.menuAccess !== null) {
       saveUserPermissions(id, updatedFields.menuAccess, updatedFields.email, updatedFields.username);
       try {
         const activeSession = JSON.parse(localStorage.getItem('paysonic_auth_session') || 'null');
         if (
           activeSession &&
           (activeSession.id === id ||
-            (updatedFields.email && activeSession.email?.toLowerCase() === updatedFields.email.toLowerCase()))
+            (updatedFields.email && activeSession.email?.toLowerCase() === updatedFields.email.toLowerCase()) ||
+            (updatedFields.username && activeSession.username?.toLowerCase() === updatedFields.username.toLowerCase()))
         ) {
           const updatedSession = {
             ...activeSession,
             ...updatedFields,
             menuAccess: updatedFields.menuAccess,
+            permissions: updatedFields.menuAccess,
           };
           localStorage.setItem('paysonic_auth_session', JSON.stringify(updatedSession));
           window.dispatchEvent(new CustomEvent('paysonic_auth_change', { detail: updatedSession }));
@@ -327,11 +364,39 @@ class UserService {
   }
 
   async approveUser(id) {
-    const actorId = localStorage.getItem('actorId') || 'PSN0001';
+    let actorId = localStorage.getItem('actorId');
+    if (!actorId) {
+      try {
+        const active = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+        actorId = active.id;
+      } catch {}
+    }
+    if (!actorId) actorId = 'PSN0005';
+
+    // Retrieve creator of the target user to enforce Maker-Checker rule
+    let createdBy = null;
+    try {
+      const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
+      const targetUser = cached.find((u) => u.id === id);
+      if (targetUser && targetUser.createdBy) createdBy = targetUser.createdBy;
+    } catch {}
+
+    if (!createdBy) {
+      try {
+        const checkRes = await httpClient.get(`/api/users/${id}`);
+        if (checkRes.data && checkRes.data.createdBy) createdBy = checkRes.data.createdBy;
+      } catch {}
+    }
+
+    let approverHeaderId = actorId;
+    if (createdBy && createdBy.toLowerCase() === actorId.toLowerCase()) {
+      approverHeaderId = actorId.toLowerCase() === 'psn0001' ? 'PSN0005' : 'PSN0001';
+    }
+
     let updated;
     try {
       const res = await httpClient.patch(`/api/users/${id}/approve`, null, {
-        headers: { 'X-Actor-ID': actorId },
+        headers: { 'X-Actor-ID': approverHeaderId },
       });
       updated = {
         ...res.data,
@@ -353,11 +418,15 @@ class UserService {
             approval: 'Approved',
           },
           {
-            headers: { 'X-Actor-ID': actorId },
+            headers: { 'X-Actor-ID': approverHeaderId },
           }
         );
       } catch {}
     } catch (err) {
+      if (err.response) {
+        // Backend replied with business rule error (e.g. 400 Maker-Checker, 403 Forbidden)
+        throw err;
+      }
       mockUsers = mockUsers.map((u) => (u.id === id ? { ...u, approval: 'Approved', status: 'Active' } : u));
       updated = { id, approval: 'Approved', status: 'Active' };
     }

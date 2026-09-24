@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `status` VARCHAR(20) NOT NULL DEFAULT 'Active',
     `approval` VARCHAR(20) NOT NULL DEFAULT 'Approved',
     `locked` BOOLEAN NOT NULL DEFAULT FALSE,
+    `password` VARCHAR(120) NOT NULL DEFAULT 'Paysonic@2026',
     `avatar` VARCHAR(255) NULL,
     `last_active` DATETIME NULL,
     `created_by` VARCHAR(50) NOT NULL DEFAULT 'SYSTEM',

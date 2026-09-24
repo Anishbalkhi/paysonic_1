@@ -19,6 +19,7 @@ export const UserActivity = () => {
   const [stats, setStats] = useState(null);
   const [breakdown, setBreakdown] = useState([]);
   const [auditEvents, setAuditEvents] = useState([]);
+  const [recentEvents, setRecentEvents] = useState([]);  // dedicated feed for Overview tab
   const [activeUsers, setActiveUsers] = useState([]);
   const [loginHistory, setLoginHistory] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -29,16 +30,18 @@ export const UserActivity = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [s, b, a, u, l] = await Promise.all([
+      const [s, b, a, r, u, l] = await Promise.all([
         UserActivityService.getDashboardStats(),
         UserActivityService.getModuleBreakdown(),
         UserActivityService.getAuditLog(),
+        UserActivityService.getRecentActivity(8),
         UserActivityService.getActiveUsers(),
         UserActivityService.getLoginHistory(),
       ]);
       setStats(s);
       setBreakdown(b);
       setAuditEvents(a);
+      setRecentEvents(r);
       setActiveUsers(u);
       setLoginHistory(l);
     } catch (err) {
@@ -72,24 +75,28 @@ export const UserActivity = () => {
   };
 
   const handleExportComplete = async () => {
-    // Refresh audit events and stats so the logged export event appears immediately
-    const [a, s] = await Promise.all([
+    // Refresh audit events, recent feed, and stats so the logged export event appears immediately
+    const [a, r, s] = await Promise.all([
       UserActivityService.getAuditLog(),
+      UserActivityService.getRecentActivity(8),
       UserActivityService.getDashboardStats(),
     ]);
     setAuditEvents(a);
+    setRecentEvents(r);
     setStats(s);
   };
 
   const handleForceLogout = async (sessionId, reason) => {
     await UserActivityService.forceLogout(sessionId, reason);
-    const [u, a, s] = await Promise.all([
+    const [u, a, r, s] = await Promise.all([
       UserActivityService.getActiveUsers(),
       UserActivityService.getAuditLog(),
+      UserActivityService.getRecentActivity(8),
       UserActivityService.getDashboardStats(),
     ]);
     setActiveUsers(u);
     setAuditEvents(a);
+    setRecentEvents(r);
     setStats(s);
   };
 
@@ -205,9 +212,9 @@ export const UserActivity = () => {
               <ModuleBreakdown breakdown={breakdown} />
             </div>
 
-            {/* Bottom: Recent Activity Stream */}
+            {/* Bottom: Recent Activity Stream — dedicated optimised endpoint */}
             <RecentActivityTable
-              events={auditEvents}
+              events={recentEvents}
               onSelectEvent={setSelectedEvent}
               onViewAll={() => setActiveTab('audit')}
             />

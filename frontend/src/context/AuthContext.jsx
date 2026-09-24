@@ -26,15 +26,20 @@ export const AuthProvider = ({ children }) => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.menuAccess) {
-          const perms = getStoredUserPermissions();
-          parsed.menuAccess =
-            perms[parsed.id] ||
-            (parsed.email && perms[parsed.email.toLowerCase()]) ||
-            getRoleMenuDefaults(parsed.role);
+        const perms = getStoredUserPermissions();
+        const userCustomPerms =
+          perms[parsed.id] ||
+          (parsed.email && perms[parsed.email.toLowerCase()]) ||
+          (parsed.username && perms[parsed.username.toLowerCase()]);
+
+        if (userCustomPerms) {
+          parsed.menuAccess = userCustomPerms;
+          parsed.permissions = userCustomPerms;
+        } else if (!parsed.menuAccess) {
+          parsed.menuAccess = getRoleMenuDefaults(parsed.role);
           parsed.permissions = parsed.menuAccess;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         setCurrentUser(parsed);
       } else {
         setCurrentUser(null);
@@ -70,9 +75,14 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // If user was deactivated or locked, revoke session immediately
-        if (liveRecord.locked || liveRecord.status === 'Inactive') {
-          console.warn('[AuthContext] Active user is locked or deactivated. Revoking session.');
+        // If user was deactivated, locked, or is pending approval — revoke session immediately
+        if (
+          liveRecord.locked ||
+          liveRecord.status === 'Inactive' ||
+          liveRecord.approval !== 'Approved' ||
+          liveRecord.status === 'Pending'
+        ) {
+          console.warn('[AuthContext] Active user is locked, deactivated, or pending approval. Revoking session.');
           logout();
           return;
         }
@@ -154,13 +164,16 @@ export const AuthProvider = ({ children }) => {
     const trimmed = (rawIdentifier || '').trim().toLowerCase();
 
     // Fetch live users directly from Railway MySQL database
+    // SECURITY: Always prioritize live DB; cache is only used when DB is genuinely unreachable
     let allUsers = [];
+    let usingCacheFallback = false;
     try {
       allUsers = await UserService.getUsers();
     } catch (err) {
       console.warn('[AuthContext] Railway unreachable, falling back to cached live users:', err?.message);
       try {
         allUsers = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+        usingCacheFallback = true;
       } catch {}
     }
 
@@ -172,7 +185,7 @@ export const AuthProvider = ({ children }) => {
         (u.email && u.email.toLowerCase().split('@')[0] === trimmed)
     );
 
-    // If user is not found in Railway database
+    // If user is not found in Railway database (or cache)
     if (!match) {
       UserActivityService.recordLoginAttempt({
         userId: 'UNKNOWN',
@@ -183,6 +196,28 @@ export const AuthProvider = ({ children }) => {
         failureReason: 'User is not found in database',
       });
       throw new Error('User is not found.');
+    }
+
+    // SECURITY: When using cache fallback, warn and apply extra strictness.
+    // If the cached record shows the user was Inactive or Pending, deny login.
+    // This prevents deleted users (who may still be in cache) from gaining access.
+    if (usingCacheFallback) {
+      if (
+        match.status === 'Inactive' ||
+        match.locked ||
+        match.approval !== 'Approved' ||
+        match.status === 'Pending'
+      ) {
+        UserActivityService.recordLoginAttempt({
+          userId: match.id,
+          email: match.email,
+          name: match.name,
+          role: match.role,
+          status: 'Failed',
+          failureReason: 'Access denied: account not active (offline validation)',
+        });
+        throw new Error('Access denied: Your account does not meet active user requirements. Please try again when the server is reachable.');
+      }
     }
 
     if (match.locked) {
@@ -217,6 +252,23 @@ export const AuthProvider = ({ children }) => {
         failureReason: 'Account inactive: profile disabled',
       });
       throw new Error('Account inactive: Your profile is currently disabled.');
+    }
+
+    // ── Real Database Password Verification ──
+    // Compares entered password directly with the user's password stored in the database.
+    const expectedPassword = String(match.password || 'Paysonic@2026').trim();
+    const enteredPassword = String(password || '').trim();
+
+    if (!enteredPassword || enteredPassword !== expectedPassword) {
+      UserActivityService.recordLoginAttempt({
+        userId: match.id,
+        email: match.email,
+        name: match.name,
+        role: match.role,
+        status: 'Failed',
+        failureReason: 'Invalid password: authentication credential mismatch',
+      });
+      throw new Error('Invalid password. Please check your credentials and try again.');
     }
 
     // Record SUCCESSFUL login attempt

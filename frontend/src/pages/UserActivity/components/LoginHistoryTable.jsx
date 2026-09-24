@@ -7,23 +7,54 @@ const DATE_RANGE_OPTIONS = [
   { label: 'Past 30 Days', value: '30d' },
 ];
 
+// Railway returns timestamps without a timezone designator, e.g. '2026-09-21T13:30:00'
+// Some browsers treat these as local time and others as invalid. Normalise by
+// appending 'Z' (UTC) when no offset is present so parsing is always consistent.
+const parseTs = (ts) => {
+  if (!ts) return null;
+  if (ts instanceof Date) return ts;
+  if (typeof ts === 'number') return new Date(ts);
+  const s = String(ts).trim();
+  const direct = new Date(s);
+  if (!isNaN(direct.getTime())) return direct;
+  if (!/[Z+]/.test(s.slice(10))) {
+    const withZ = new Date(s.replace(' ', 'T') + 'Z');
+    if (!isNaN(withZ.getTime())) return withZ;
+  }
+  return null;
+};
+
+const formatDate = (ts) => {
+  const d = parseTs(ts);
+  if (!d || isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
 export const LoginHistoryTable = ({ history = [] }) => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('all');
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    const now = new Date('2026-09-21T13:45:00Z').getTime(); // Reference point aligned with current application date
+    const now = Date.now(); // Always relative to real current time
 
     return history.filter((item) => {
       if (statusFilter !== 'All' && item.status !== statusFilter) return false;
 
       if (dateFilter !== 'all') {
-        const itemTime = new Date(item.lastLogin || item.timestamp).getTime();
-        const diffHours = (now - itemTime) / (1000 * 60 * 60);
-        if (dateFilter === 'today' && diffHours > 24) return false;
-        if (dateFilter === '7d' && diffHours > 24 * 7) return false;
-        if (dateFilter === '30d' && diffHours > 24 * 30) return false;
+        const itemTime = (parseTs(item.lastLogin || item.timestamp) || new Date(0)).getTime();
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const startOfTodayMs = startOfToday.getTime();
+        if (dateFilter === 'today' && itemTime < startOfTodayMs) return false;
+        if (dateFilter === '7d'  && itemTime < now - 7  * 24 * 60 * 60 * 1000) return false;
+        if (dateFilter === '30d' && itemTime < now - 30 * 24 * 60 * 60 * 1000) return false;
       }
 
       if (search.trim()) {
@@ -151,13 +182,7 @@ export const LoginHistoryTable = ({ history = [] }) => {
                 filtered.map((item) => (
                   <tr key={item.id}>
                     <td className="time-cell">
-                      {new Date(item.lastLogin || item.timestamp).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                      })}
+                      {formatDate(item.lastLogin || item.timestamp)}
                     </td>
                     <td>
                       <div className="user-info-cell">
@@ -184,15 +209,7 @@ export const LoginHistoryTable = ({ history = [] }) => {
                       </span>
                     </td>
                     <td className="time-cell">
-                      {item.lastLogout
-                        ? new Date(item.lastLogout).toLocaleString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true,
-                          })
-                        : 'Active session'}
+                      {item.lastLogout ? formatDate(item.lastLogout) : 'Active session'}
                     </td>
                     <td>
                       <div className="network-cell">

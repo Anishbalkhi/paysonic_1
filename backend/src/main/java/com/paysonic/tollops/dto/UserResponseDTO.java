@@ -23,6 +23,7 @@ public class UserResponseDTO {
     private String approval;
     private boolean locked;
     private String avatar;
+    private String password;
     
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime lastActive;
@@ -46,6 +47,7 @@ public class UserResponseDTO {
         dto.setApproval(user.getApproval());
         dto.setLocked(user.isLocked());
         dto.setAvatar(user.getAvatar());
+        dto.setPassword(user.getPassword() != null && !user.getPassword().isBlank() ? user.getPassword() : "Paysonic@2026");
         dto.setLastActive(user.getLastActive());
         dto.setCreatedBy(user.getCreatedBy());
         dto.setApprovedBy(user.getApprovedBy());
@@ -111,4 +113,7 @@ public class UserResponseDTO {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 }

@@ -93,7 +93,18 @@ export const AuditDetailDrawer = ({ event, onClose }) => {
               </div>
               <div className="meta-item">
                 <span className="label">Client / Device</span>
-                <span className="value">{event.device || event.actor?.device || 'Not captured'}</span>
+                <span className="value" style={{ fontFamily: 'monospace', fontSize: '12.5px' }}>
+                  {event.device || event.actor?.device || (
+                    event.actor?.ipAddress
+                      ? `Origin: ${event.actor.ipAddress}`
+                      : 'Not captured'
+                  )}
+                </span>
+                <span className="sub">
+                  {event.device || event.actor?.device
+                    ? 'Reported browser/OS'
+                    : 'Device telemetry not stored at audit level'}
+                </span>
               </div>
               <div className="meta-item">
                 <span className="label">Module</span>

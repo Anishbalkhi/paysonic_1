@@ -59,7 +59,21 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void seedUsers() {
-        if (userRepository.count() > 0) return;
+        if (userRepository.count() > 0) {
+            List<User> existing = userRepository.findAll();
+            boolean changed = false;
+            for (User u : existing) {
+                if (u.getPassword() == null || u.getPassword().isBlank()) {
+                    u.setPassword("Paysonic@2026");
+                    changed = true;
+                }
+            }
+            if (changed) {
+                userRepository.saveAll(existing);
+                log.info("Backfilled default passwords for existing users.");
+            }
+            return;
+        }
 
         try {
             ClassPathResource res = new ClassPathResource("data/userList.json");
@@ -79,6 +93,7 @@ public class DataLoader implements CommandLineRunner {
                         u.setStatus(n.has("status") ? n.get("status").asText() : "Active");
                         u.setApproval(n.has("approval") ? n.get("approval").asText() : "Approved");
                         u.setLocked(n.has("locked") && n.get("locked").asBoolean());
+                        u.setPassword(n.has("password") ? n.get("password").asText() : "Paysonic@2026");
                         u.setAvatar(n.has("avatar") ? n.get("avatar").asText() : null);
                         u.setCreatedBy("SYSTEM");
                         u.setApprovedBy("Sanjay Kulkarni");

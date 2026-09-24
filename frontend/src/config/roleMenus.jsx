@@ -577,12 +577,25 @@ export const getRoleNavigation = (role) => {
 
 export const filterNavigationByPermissions = (sections, menuAccess) => {
   if (!sections || !Array.isArray(sections)) return [];
-  // If no menuAccess is provided or user has none defined, use all sections
-  if (!menuAccess || !Array.isArray(menuAccess) || menuAccess.length === 0) {
+  // If no menuAccess is defined at all (null/undefined), show all sections as fallback
+  if (menuAccess === null || menuAccess === undefined) {
     return sections;
+  }
+  // If menuAccess is explicitly empty, return no sections
+  if (!Array.isArray(menuAccess) || menuAccess.length === 0) {
+    return [];
   }
 
   const allowedSet = new Set(menuAccess);
+
+  const normalize = (str) =>
+    (str || '')
+      .replace(/^[A-Z]\.\s*/, '')
+      .replace(/\s*\/\s*/g, '/')
+      .replace(/\s+/g, ' ')
+      .replace(/s$/i, '')
+      .trim()
+      .toLowerCase();
 
   return sections
     .map((item) => {
@@ -591,39 +604,48 @@ export const filterNavigationByPermissions = (sections, menuAccess) => {
         allowedSet.has(item.id) ||
         (item.id === 'user_activity' && (allowedSet.has('user_activity') || allowedSet.has('user_management')));
 
-      // If no children, it's a leaf item
+      // If no children, it's a leaf item (e.g. Dashboard) — only show if parent is explicitly allowed
       if (!item.children || item.children.length === 0) {
         return isParentAllowed ? item : null;
       }
 
-      // If item has children, filter sub-items strictly by allowedSet
-      const filteredChildren = item.children.filter((child) => {
-        if (child.subId && allowedSet.has(child.subId)) return true;
-        if (child.id && allowedSet.has(child.id)) return true;
-
-        // Match child label against MENU_TREE sub-items
-        const cleanChildLabel = child.label.replace(/^[A-Z]\.\s*/, '').trim().toLowerCase();
-        const groupInTree = MENU_TREE.find((m) => m.id === item.id);
-        if (groupInTree && groupInTree.subs) {
-          const matchedSub = groupInTree.subs.find(
-            (s) => s.label.trim().toLowerCase() === cleanChildLabel
-          );
-          if (matchedSub) {
-            return allowedSet.has(matchedSub.id);
-          }
-        }
-
-        // If parent is explicitly allowed, keep child if no specific sub restrictions
-        return isParentAllowed;
-      });
-
-      // If parent is not allowed and has no allowed children, hide section completely
-      if (!isParentAllowed && filteredChildren.length === 0) {
+      // If parent module itself is not allowed in permissions, hide the entire group
+      if (!isParentAllowed) {
         return null;
       }
 
-      // If parent had children and all were unchecked, hide section completely
-      if (item.children.length > 0 && filteredChildren.length === 0) {
+      // If item has children, filter sub-items STRICTLY by allowedSet
+      const filteredChildren = item.children.filter((child) => {
+        // Direct match by explicit subId or child id
+        if (child.subId && allowedSet.has(child.subId)) return true;
+        if (child.id && allowedSet.has(child.id)) return true;
+
+        // User activity link fallback
+        if (child.path === '/activity' || (child.label && child.label.toLowerCase().includes('user activity'))) {
+          return allowedSet.has('user_activity') || allowedSet.has('user_management');
+        }
+
+        // Match child label against MENU_TREE sub-items for permission lookup
+        const cleanChildLabel = normalize(child.label);
+        const groupInTree = MENU_TREE.find((m) => m.id === item.id);
+        if (groupInTree && groupInTree.subs && groupInTree.subs.length > 0) {
+          const matchedSub = groupInTree.subs.find(
+            (s) => normalize(s.label) === cleanChildLabel
+          );
+          if (matchedSub) {
+            // Sub-item found in config — enforce its specific permission
+            return allowedSet.has(matchedSub.id);
+          }
+          // Sub-item not in config — deny by default (strict enforcement)
+          return false;
+        }
+
+        // No sub-items defined for this parent in MENU_TREE — allow if parent is allowed
+        return true;
+      });
+
+      // If all sub-items were filtered out, hide section completely
+      if (filteredChildren.length === 0) {
         return null;
       }
 

@@ -1,12 +1,32 @@
 /**
  * Paysonic Audit Reference Utility
- * Maps audit events and module actions to canonical entity references
+ * Maps audit events and module actions to canonical entity references.
+ *
+ * Railway's AOP aspect writes target = module name (e.g. "User Management")
+ * for all records. The actual entity ID lives in event.before:
+ *   - DELETE/TOGGLE/APPROVE: before is a raw string  e.g. "PSN0001"
+ *   - CREATE/UPDATE:         before is an object     e.g. { id: "PSN0001", ... }
+ * We extract from there when target is the generic module name.
  */
+
+// Attempt to extract a real entity ID from the before/after payloads
+const extractEntityId = (event) => {
+  const before = event.before;
+  const after  = event.after;
+  // String form: DELETE_USER, TOGGLE_LOCK, APPROVE_USER store userId as raw string in before
+  if (typeof before === 'string' && before.trim()) return before.trim();
+  // Object form: CREATE_USER / UPDATE_USER store the entity under before.id
+  if (before && typeof before === 'object' && before.id) return before.id;
+  // Fallback: check after.id
+  if (after && typeof after === 'object' && after.id) return after.id;
+  return null;
+};
 
 export const referenceFor = (event) => {
   if (!event) return { refId: 'N/A', label: 'General', type: 'system' };
 
-  if (event.referenceId) {
+  // If referenceId is already a meaningful value (not the generic module name), use it
+  if (event.referenceId && event.referenceId !== event.module) {
     return {
       refId: event.referenceId,
       label: event.target || event.referenceId,
@@ -18,9 +38,20 @@ export const referenceFor = (event) => {
   const id = event.id ? String(event.id).replace(/\D/g, '') : '0000';
 
   if (mod.includes('user')) {
-    const userMatch = (event.target || '').match(/PSN\d+/i);
-    const ref = userMatch ? userMatch[0].toUpperCase() : `PSN${id.padStart(4, '0').slice(-4)}`;
-    return { refId: ref, label: 'User Account', type: 'user' };
+    // Try to get real entity ID: first from before/after payloads, then from target
+    const entityId =
+      extractEntityId(event) ||
+      ((event.target || '').match(/PSN\w+/i) || [])[0] ||
+      `PSN${id.padStart(4, '0').slice(-4)}`;
+    return { refId: String(entityId).toUpperCase(), label: 'User Account', type: 'user' };
+  }
+
+  if (mod.includes('session') || (event.action || '').toLowerCase().includes('logout')) {
+    const sesId =
+      extractEntityId(event) ||
+      ((event.target || '').match(/SES-[\w]+/i) || [])[0] ||
+      `SES-${id.slice(-6)}`;
+    return { refId: String(sesId).toUpperCase(), label: 'Session', type: 'session' };
   }
 
   if (mod.includes('dispute')) {
@@ -35,8 +66,9 @@ export const referenceFor = (event) => {
     return { refId: `VIO-${id.slice(-5) || '99120'}`, label: 'Violation Record', type: 'violation' };
   }
 
-  if (mod.includes('transaction')) {
-    return { refId: `TXN-${id.slice(-6) || '748291'}`, label: 'Payment Txn', type: 'transaction' };
+  if (mod.includes('transaction') || mod.includes('report')) {
+    const expId = extractEntityId(event) || `TXN-${id.slice(-6) || '748291'}`;
+    return { refId: String(expId).toUpperCase(), label: 'Report / Export', type: 'transaction' };
   }
 
   if (mod.includes('tag')) {

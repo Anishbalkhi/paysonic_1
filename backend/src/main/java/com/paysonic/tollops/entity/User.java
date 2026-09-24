@@ -44,6 +44,9 @@ public class User {
     @Column(name = "locked", nullable = false)
     private boolean locked = false;
 
+    @Column(name = "password", length = 120, nullable = false)
+    private String password = "Paysonic@2026";
+
     @Column(name = "avatar", length = 255)
     private String avatar;
 
@@ -136,6 +139,9 @@ public class User {
 
     public String getApprovedBy() { return approvedBy; }
     public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password != null && !password.isBlank() ? password : "Paysonic@2026"; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

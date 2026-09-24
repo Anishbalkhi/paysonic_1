@@ -72,15 +72,19 @@ public class UserService {
         user.setMobile(request.getMobile());
         user.setRole(request.getRole());
         user.setUserType(request.getUserType() != null ? request.getUserType() : "Toll Plaza");
-        user.setStatus(request.getStatus() != null ? request.getStatus() : "Pending");
-        user.setApproval(request.getApproval() != null ? request.getApproval() : "Pending");
-        user.setLocked(request.isLocked());
+        // SECURITY: Always force Pending status on new user creation — never trust client values.
+        // Users must go through the approval workflow to become Active.
+        user.setStatus("Pending");
+        user.setApproval("Pending");
+        user.setLocked(false);
         user.setCreatedBy(actorId != null ? actorId : (request.getCreatedBy() != null ? request.getCreatedBy() : "SYSTEM"));
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
         // Role-based plaza assignment logic (Functional Spec v1.1 Section 5-6)
         applyPlazaRules(user, request.getRole(), request.getAssignedPlaza(), request.getPlazas());
+
+        user.setPassword(request.getPassword() != null && !request.getPassword().isBlank() ? request.getPassword() : "Paysonic@2026");
 
         // Hierarchy validation (Image 1 & 3: Business Logic Rules)
         validateHierarchyAction(actorId, "CREATE", request.getRole(), request.getAssignedPlaza(), null);
@@ -103,6 +107,9 @@ public class UserService {
         if (request.getRole() != null) user.setRole(request.getRole());
         if (request.getUserType() != null) user.setUserType(request.getUserType());
         if (request.getStatus() != null) user.setStatus(request.getStatus());
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(request.getPassword());
+        }
 
         applyPlazaRules(user, user.getRole(), request.getAssignedPlaza(), request.getPlazas());
 
