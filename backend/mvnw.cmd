@@ -77,7 +77,7 @@ set JAVA_CMD=%JAVA_HOME%/bin/java
 set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
 
 @REM Download the maven-wrapper.jar if it does not exist
-set WRAPPER_JAR="%_MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.jar"
+set WRAPPER_JAR=%_MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.jar
 
 if exist %WRAPPER_JAR% goto runWithJar
 

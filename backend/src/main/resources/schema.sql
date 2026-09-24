@@ -3,9 +3,6 @@
 -- Modules: User Management (v1.1) & User Activity / Audit Trail (v1.0)
 -- ==============================================================================
 
-CREATE DATABASE IF NOT EXISTS `paysonic_tollops` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `paysonic_tollops`;
-
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS `users` (
     `id` VARCHAR(32) NOT NULL,
