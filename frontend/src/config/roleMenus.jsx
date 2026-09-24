@@ -84,14 +84,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'user_management',
       label: 'User Management',
+      path: '/users',
       icon: ICONS.users,
-      children: [
-        { label: 'A. Create User', path: '/users?action=create' },
-        { label: 'B. Approve User', path: '/users?tab=pending' },
-        { label: 'C. Assign User', path: '/users?action=assign' },
-        { label: 'D. Unlock/Lock User', path: '/users?tab=locked' },
-        { label: 'E. User Activity & Audit', path: '/activity' },
-      ],
     },
     {
       id: 'user_activity',
@@ -206,14 +200,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'user_management',
       label: 'User Management',
+      path: '/users',
       icon: ICONS.users,
-      children: [
-        { label: 'A. Create User', path: '/users?action=create' },
-        { label: 'B. Approve User', path: '/users?tab=pending' },
-        { label: 'C. Assign User', path: '/users?action=assign' },
-        { label: 'D. Unlock/Lock User', path: '/users?tab=locked' },
-        { label: 'E. User Activity & Audit', path: '/activity' },
-      ],
     },
     {
       id: 'user_activity',
@@ -310,12 +298,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'user_management',
       label: 'User Management',
+      path: '/users',
       icon: ICONS.users,
-      children: [
-        { label: 'A. Create User', path: '/users?action=create' },
-        { label: 'B. Unlock/Lock User', path: '/users?tab=locked' },
-        { label: 'C. User Activity & Audit', path: '/activity' },
-      ],
     },
     {
       id: 'tag_details',
@@ -404,12 +388,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'user_management',
       label: 'User Management',
+      path: '/users',
       icon: ICONS.users,
-      children: [
-        { label: 'A. Create User', path: '/users?action=create' },
-        { label: 'B. Unlock/Lock User', path: '/users?tab=locked' },
-        { label: 'C. User Activity & Audit', path: '/activity' },
-      ],
     },
     {
       id: 'tag_details',
