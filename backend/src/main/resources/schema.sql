@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `user_type` VARCHAR(50) NOT NULL DEFAULT 'Toll Plaza',
     `assigned_plaza` VARCHAR(100) NULL,
     `plazas_json` TEXT NULL,
+    `menu_access_json` TEXT NULL,
     `status` VARCHAR(20) NOT NULL DEFAULT 'Active',
     `approval` VARCHAR(20) NOT NULL DEFAULT 'Approved',
     `locked` BOOLEAN NOT NULL DEFAULT FALSE,

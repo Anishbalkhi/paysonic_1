@@ -19,6 +19,7 @@ public class UserResponseDTO {
     private String userType;
     private String assignedPlaza;
     private List<String> plazas = new ArrayList<>();
+    private List<String> menuAccess = new ArrayList<>();
     private String status;
     private String approval;
     private boolean locked;
@@ -63,6 +64,14 @@ public class UserResponseDTO {
             dto.setPlazas(List.of(user.getAssignedPlaza()));
         }
 
+        if (user.getMenuAccessJson() != null && !user.getMenuAccessJson().isBlank()) {
+            try {
+                dto.setMenuAccess(objectMapper.readValue(user.getMenuAccessJson(), new TypeReference<List<String>>() {}));
+            } catch (Exception e) {
+                dto.setMenuAccess(new ArrayList<>());
+            }
+        }
+
         return dto;
     }
 
@@ -89,6 +98,9 @@ public class UserResponseDTO {
 
     public List<String> getPlazas() { return plazas; }
     public void setPlazas(List<String> plazas) { this.plazas = plazas; }
+
+    public List<String> getMenuAccess() { return menuAccess; }
+    public void setMenuAccess(List<String> menuAccess) { this.menuAccess = menuAccess; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

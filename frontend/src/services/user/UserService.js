@@ -65,12 +65,17 @@ class UserService {
         const users = res.data.map((u) => {
           const username = u.username || (u.email ? u.email.split('@')[0] : u.id);
           const email = u.email || '';
-          const customAccess =
-            perms[u.id] ||
-            perms[email.toLowerCase()] ||
-            perms[username.toLowerCase()] ||
-            u.menuAccess ||
-            getRoleMenuDefaults(u.role);
+          const hasDbPermissions = Array.isArray(u.menuAccess) && u.menuAccess.length > 0;
+          const customAccess = hasDbPermissions
+            ? u.menuAccess
+            : perms[u.id] ||
+              perms[email.toLowerCase()] ||
+              perms[username.toLowerCase()] ||
+              getRoleMenuDefaults(u.role);
+
+          if (hasDbPermissions) {
+            saveUserPermissions(u.id, u.menuAccess, email, username);
+          }
 
           return {
             ...u,
@@ -159,6 +164,7 @@ class UserService {
       locked: Boolean(newUser.locked),
       password: newUser.password || 'Paysonic@2026',
       createdBy: creationActor,
+      menuAccess: newUser.menuAccess,
     };
 
     let createdUser;
@@ -179,7 +185,7 @@ class UserService {
         menuAccess: newUser.menuAccess || getRoleMenuDefaults(newUser.role),
       };
 
-      // Ensure Railway MySQL DB also persists Pending status, approval, and password
+      // Ensure Railway MySQL DB also persists Pending status, approval, password, and menuAccess
       try {
         await httpClient.put(
           `/api/users/${res.data.id}`,
@@ -193,6 +199,7 @@ class UserService {
             status: 'Pending',
             approval: 'Pending',
             password: payload.password,
+            menuAccess: payload.menuAccess,
           },
           {
             headers: { 'X-Actor-ID': creationActor },

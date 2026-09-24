@@ -70,4 +70,8 @@ public class CreateUserRequest {
     private String password = "Paysonic@2026";
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    private List<String> menuAccess;
+    public List<String> getMenuAccess() { return menuAccess; }
+    public void setMenuAccess(List<String> menuAccess) { this.menuAccess = menuAccess; }
 }

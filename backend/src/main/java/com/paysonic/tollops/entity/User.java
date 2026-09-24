@@ -35,6 +35,9 @@ public class User {
     @Column(name = "plazas_json", columnDefinition = "TEXT")
     private String plazasJson;
 
+    @Column(name = "menu_access_json", columnDefinition = "TEXT")
+    private String menuAccessJson;
+
     @Column(name = "status", length = 20, nullable = false)
     private String status = "Pending";
 
@@ -118,6 +121,9 @@ public class User {
 
     public String getPlazasJson() { return plazasJson; }
     public void setPlazasJson(String plazasJson) { this.plazasJson = plazasJson; }
+
+    public String getMenuAccessJson() { return menuAccessJson; }
+    public void setMenuAccessJson(String menuAccessJson) { this.menuAccessJson = menuAccessJson; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

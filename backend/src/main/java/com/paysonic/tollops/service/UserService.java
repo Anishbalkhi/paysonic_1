@@ -86,6 +86,12 @@ public class UserService {
 
         user.setPassword(request.getPassword() != null && !request.getPassword().isBlank() ? request.getPassword() : "Paysonic@2026");
 
+        if (request.getMenuAccess() != null) {
+            try {
+                user.setMenuAccessJson(objectMapper.writeValueAsString(request.getMenuAccess()));
+            } catch (Exception ignored) {}
+        }
+
         // Hierarchy validation (Image 1 & 3: Business Logic Rules)
         validateHierarchyAction(actorId, "CREATE", request.getRole(), request.getAssignedPlaza(), null);
 
@@ -109,6 +115,12 @@ public class UserService {
         if (request.getStatus() != null) user.setStatus(request.getStatus());
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(request.getPassword());
+        }
+
+        if (request.getMenuAccess() != null) {
+            try {
+                user.setMenuAccessJson(objectMapper.writeValueAsString(request.getMenuAccess()));
+            } catch (Exception ignored) {}
         }
 
         applyPlazaRules(user, user.getRole(), request.getAssignedPlaza(), request.getPlazas());
