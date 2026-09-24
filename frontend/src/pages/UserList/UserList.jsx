@@ -119,6 +119,64 @@ export const UserList = () => {
     return false;
   };
 
+  // Hierarchy check: can current actor approve this target user?
+  const canApproveTargetUser = (targetUser) => {
+    if (!targetUser) return false;
+    // Already approved users do not need approval
+    if (targetUser.approval === 'Approved') return false;
+
+    // Maker-Checker Rule: Account creator CANNOT approve their own onboarding request
+    const isCreator =
+      targetUser.createdBy &&
+      (targetUser.createdBy.toLowerCase() === currentUser?.id?.toLowerCase() ||
+        targetUser.createdBy.toLowerCase() === currentUser?.username?.toLowerCase() ||
+        targetUser.createdBy.toLowerCase() === currentUser?.email?.toLowerCase());
+    if (isCreator) return false;
+
+    // Cannot approve own account
+    if (targetUser.id === currentUser?.id || targetUser.email?.toLowerCase() === currentUser?.email?.toLowerCase()) {
+      return false;
+    }
+
+    // Master Admin can approve all subordinate roles
+    if (isMasterAdmin) return true;
+
+    // Admin can approve anyone except Master Admin
+    if (isAdmin) {
+      return targetUser.role !== 'Master Admin';
+    }
+
+    // Concessionaire can approve Plaza Admin, Request Tag Details, and Plaza POS within their plazas
+    if (isConcessionaire) {
+      if (!['Plaza Admin', 'Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
+        return false;
+      }
+      const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
+      const targetPlazasList = (targetUser.plazas || []).map((p) => p.toLowerCase());
+      return concessionairePlazas.some((cp) => {
+        const cpLower = cp.toLowerCase();
+        return (
+          targetPlaza.includes(cpLower) ||
+          cpLower.includes(targetPlaza) ||
+          targetPlazasList.some((tp) => tp.includes(cpLower) || cpLower.includes(tp))
+        );
+      });
+    }
+
+    // Plaza Admin can approve Request Tag Details and Plaza POS within their plaza
+    if (isPlazaAdmin) {
+      if (!['Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
+        return false;
+      }
+      const myPlaza = (currentUser?.assignedPlaza || '').toLowerCase();
+      if (!myPlaza) return false;
+      const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
+      return targetPlaza.includes(myPlaza) || myPlaza.includes(targetPlaza);
+    }
+
+    return false;
+  };
+
   const [searchParams] = useSearchParams();
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -496,6 +554,10 @@ export const UserList = () => {
 
     try {
       if (editingId) {
+        const existing = users.find((u) => u.id === editingId);
+        const isCurrentlyPending = existing && existing.approval !== 'Approved';
+        const finalStatus = isCurrentlyPending ? 'Pending' : (formValues.status || 'Active');
+
         const updated = await UserService.updateUser(editingId, {
           name: formValues.name || 'Updated User',
           username: formValues.username || 'user',
@@ -507,11 +569,11 @@ export const UserList = () => {
           assignedPlaza: plazaLabel,
           plaza: plazaLabel,
           plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
-          status: formValues.status,
+          status: finalStatus,
           password: formValues.password || 'Paysonic@2026',
           menuAccess: selectedMenuIds,
         });
-        setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, menuAccess: selectedMenuIds } : u)));
+        setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, status: finalStatus, menuAccess: selectedMenuIds } : u)));
       } else {
         const created = await UserService.createUser({
           id: nextUserId(),
@@ -531,6 +593,7 @@ export const UserList = () => {
           locked: false,
           avatarBg: '#3762F2',
           menuAccess: selectedMenuIds,
+          createdBy: currentUser?.id || 'PSN0001',
         });
         setUsers((prev) => [{ ...created, status: 'Pending', approval: 'Pending', menuAccess: selectedMenuIds }, ...prev]);
       }
@@ -1045,8 +1108,8 @@ export const UserList = () => {
         <div className="table-body">
           {filteredUsers.map((u) => {
             const isApproved = u.approval === 'Approved';
-            const statusActive = u.status === 'Active' || (isApproved && u.status !== 'Inactive');
-            const statusLabel = statusActive ? 'Active' : (u.status || 'Pending');
+            const statusLabel = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
+            const statusActive = statusLabel === 'Active';
             const approved = isApproved;
             return (
               <div key={u.id} className="t-row">
@@ -1079,7 +1142,7 @@ export const UserList = () => {
 
                 <div>
                   <span className={`badge ${approved ? 'badge-approved' : 'badge-pending'}`}>
-                    {u.approval}
+                    {approved ? 'Approved' : 'Pending'}
                   </span>
                 </div>
 
@@ -1098,11 +1161,11 @@ export const UserList = () => {
                     </button>
                   )}
 
-                  {!approved && canApprove && (
+                  {canApproveTargetUser(u) && (
                     <button
                       type="button"
                       className="icon-btn"
-                      title="Approve user"
+                      title="Approve user (hierarchy approval)"
                       onClick={() => handleApproveUser(u.id)}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#067647" strokeWidth="2.2">
@@ -1331,7 +1394,14 @@ export const UserList = () => {
                       <label>
                         Active status <span className="req">*</span>
                       </label>
-                      {editingId ? (
+                      {editingId && users.find((x) => x.id === editingId)?.approval !== 'Approved' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
+                          <span className="badge badge-pending">Pending Approval</span>
+                          <span style={{ fontSize: '12px', color: '#667085' }}>
+                            (Requires hierarchy approval to activate)
+                          </span>
+                        </div>
+                      ) : editingId ? (
                         <select
                           value={formValues.status}
                           onChange={(e) =>
@@ -1340,13 +1410,12 @@ export const UserList = () => {
                         >
                           <option>Active</option>
                           <option>Inactive</option>
-                          <option>Pending</option>
                         </select>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
                           <span className="badge badge-pending">Pending Approval</span>
                           <span style={{ fontSize: '12px', color: '#667085' }}>
-                            (Requires approval before activation)
+                            (Requires hierarchy approval before activation)
                           </span>
                         </div>
                       )}

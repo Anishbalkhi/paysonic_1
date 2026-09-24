@@ -112,7 +112,14 @@ public class UserService {
         if (request.getMobile() != null) user.setMobile(request.getMobile());
         if (request.getRole() != null) user.setRole(request.getRole());
         if (request.getUserType() != null) user.setUserType(request.getUserType());
-        if (request.getStatus() != null) user.setStatus(request.getStatus());
+        if (request.getStatus() != null) {
+            // Unapproved users cannot be switched to Active without hierarchy approval
+            if ("Pending".equalsIgnoreCase(user.getApproval()) && "Active".equalsIgnoreCase(request.getStatus())) {
+                user.setStatus("Pending");
+            } else {
+                user.setStatus(request.getStatus());
+            }
+        }
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(request.getPassword());
         }
@@ -155,6 +162,9 @@ public class UserService {
                     "Maker-Checker Violation: Account creator cannot approve their own user onboarding request.");
         }
 
+        // Hierarchy validation: check if approver has authority to approve this target user
+        validateHierarchyAction(approverId, "APPROVE", user.getRole(), user.getAssignedPlaza(), user);
+
         user.setApproval("Approved");
         user.setStatus("Active");
         user.setApprovedBy(approverId != null ? approverId : "Sanjay Kulkarni (PSN0005)");
@@ -183,8 +193,17 @@ public class UserService {
         if (actor == null) return;
 
         String actorRole = actor.getRole();
-        if ("Master Admin".equalsIgnoreCase(actorRole) || "Admin".equalsIgnoreCase(actorRole)) {
+        if ("Master Admin".equalsIgnoreCase(actorRole)) {
             return; // Full access across all roles & plazas
+        }
+
+        if ("Admin".equalsIgnoreCase(actorRole)) {
+            // Cannot create, manage, or approve Master Admin
+            if ("Master Admin".equalsIgnoreCase(targetRole) || (targetUser != null && "Master Admin".equalsIgnoreCase(targetUser.getRole()))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Hierarchy Violation: Admin cannot create, manage, or approve Master Admin accounts.");
+            }
+            return;
         }
 
         if ("Concessionaire".equalsIgnoreCase(actorRole)) {
@@ -195,11 +214,16 @@ public class UserService {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "Hierarchy Violation: Concessionaire can only create Plaza Admin, Request Tag, and POS users.");
                 }
-            } else if ("MANAGE".equalsIgnoreCase(action) && targetUser != null) {
-                // Cannot manage Master Admin, Admin, or peer Concessionaires
+            } else if (("MANAGE".equalsIgnoreCase(action) || "APPROVE".equalsIgnoreCase(action)) && targetUser != null) {
+                // Cannot manage or approve Master Admin, Admin, or peer Concessionaires
                 if (List.of("Master Admin", "Admin", "Concessionaire").contains(targetUser.getRole())) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                            "Hierarchy Violation: Concessionaire cannot manage administrative or peer accounts.");
+                            "Hierarchy Violation: Concessionaire cannot manage or approve administrative or peer accounts.");
+                }
+                List<String> allowedRoles = List.of("Plaza Admin", "Request Tag Details", "Plaza POS");
+                if (!allowedRoles.contains(targetUser.getRole())) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Hierarchy Violation: Concessionaire can only approve or manage Plaza Admin, Request Tag, and POS users.");
                 }
             }
             return;
@@ -213,6 +237,13 @@ public class UserService {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "Hierarchy Violation: Plaza Admin can only create Request Tag and POS users.");
                 }
+            } else if ("APPROVE".equalsIgnoreCase(action) && targetUser != null) {
+                // Plaza Admin can approve subordinate roles: Request Tag Details, Plaza POS
+                List<String> allowedRoles = List.of("Request Tag Details", "Plaza POS");
+                if (!allowedRoles.contains(targetUser.getRole())) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Hierarchy Violation: Plaza Admin can only approve Request Tag and POS users.");
+                }
             } else if ("MANAGE".equalsIgnoreCase(action) && targetUser != null) {
                 // Can only edit/disable Request tag and POS users it created
                 boolean isCreatedByActor = actorId.equalsIgnoreCase(targetUser.getCreatedBy());
@@ -225,9 +256,9 @@ public class UserService {
             return;
         }
 
-        if ("Plaza POS".equalsIgnoreCase(actorRole) || "Request Tag Details".equalsIgnoreCase(actorRole)) {
+        if ("Plaza POS".equalsIgnoreCase(actorRole) || "Request Tag Details".equalsIgnoreCase(actorRole) || "Bank".equalsIgnoreCase(actorRole)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Hierarchy Violation: Terminal operational roles cannot create or manage user accounts.");
+                    "Hierarchy Violation: Terminal operational and bank roles cannot create, manage, or approve user accounts.");
         }
     }
 

@@ -79,7 +79,7 @@ set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
 @REM Download the maven-wrapper.jar if it does not exist
 set WRAPPER_JAR=%_MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.jar
 
-if exist %WRAPPER_JAR% goto runWithJar
+if exist "%WRAPPER_JAR%" goto runWithJar
 
 FOR /F "usebackq tokens=1,2 delims==" %%A IN ("%_MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.properties") DO (
     IF "%%A"=="wrapperUrl" set WRAPPER_URL=%%B
@@ -88,10 +88,10 @@ FOR /F "usebackq tokens=1,2 delims==" %%A IN ("%_MAVEN_PROJECTBASEDIR%\.mvn\wrap
 echo Downloading Maven Wrapper JAR from: %WRAPPER_URL%
 "%JAVA_CMD%" -classpath "%_MAVEN_PROJECTBASEDIR%\.mvn\wrapper" ^
     "-Dmaven.user.home=%_MAVEN_PROJECTBASEDIR%\.mvn\repository" ^
-    org.apache.maven.wrapper.Downloader "%WRAPPER_URL%" %WRAPPER_JAR% 2>NUL
+    org.apache.maven.wrapper.Downloader "%WRAPPER_URL%" "%WRAPPER_JAR%" 2>NUL
 
-IF NOT exist %WRAPPER_JAR% (
-    PowerShell -Command "Invoke-WebRequest -Uri '%WRAPPER_URL%' -OutFile %WRAPPER_JAR%"
+IF NOT exist "%WRAPPER_JAR%" (
+    PowerShell -Command "Invoke-WebRequest -Uri '%WRAPPER_URL%' -OutFile '%WRAPPER_JAR%'"
 )
 
 :runWithJar

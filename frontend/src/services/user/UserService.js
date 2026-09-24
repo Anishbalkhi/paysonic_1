@@ -77,13 +77,17 @@ class UserService {
             saveUserPermissions(u.id, u.menuAccess, email, username);
           }
 
+          const isApproved = u.approval === 'Approved';
+          const status = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
+          const approval = isApproved ? 'Approved' : 'Pending';
+
           return {
             ...u,
             username,
             contact: u.mobile || u.contact || '',
             plaza: u.assignedPlaza || u.plaza || 'All plazas',
-            status: u.status === 'Inactive' ? 'Inactive' : (u.approval === 'Approved' ? 'Active' : (u.status || 'Pending')),
-            approval: u.approval || (u.status === 'Active' ? 'Approved' : 'Pending'),
+            status,
+            approval,
             locked: Boolean(u.locked),
             password: u.password || 'Paysonic@2026',
             menuAccess: customAccess,
@@ -102,6 +106,9 @@ class UserService {
     }
 
     const fallbackUsers = mockUsers.map((u) => {
+      const isApproved = u.approval === 'Approved';
+      const status = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
+      const approval = isApproved ? 'Approved' : 'Pending';
       const customAccess =
         perms[u.id] ||
         (u.email && perms[u.email.toLowerCase()]) ||
@@ -110,6 +117,8 @@ class UserService {
         getRoleMenuDefaults(u.role);
       return {
         ...u,
+        status,
+        approval,
         menuAccess: customAccess,
       };
     });
