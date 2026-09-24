@@ -311,15 +311,24 @@ public class UserService {
             user.setAssignedPlaza("None (Bank Scope)");
             user.setPlazasJson("[]");
         } else if ("Concessionaire".equalsIgnoreCase(role)) {
+            List<String> raw = new ArrayList<>();
             if (plazaList != null && !plazaList.isEmpty()) {
-                user.setAssignedPlaza(String.join(", ", plazaList));
-                try {
-                    user.setPlazasJson(objectMapper.writeValueAsString(plazaList));
-                } catch (Exception ignored) {}
+                raw.addAll(plazaList);
+            } else if (singlePlaza != null && !singlePlaza.isBlank()) {
+                raw.add(singlePlaza);
             } else {
-                user.setAssignedPlaza(singlePlaza != null ? singlePlaza : "NH-44 Hyderabad");
-                user.setPlazasJson("[\"" + user.getAssignedPlaza() + "\"]");
+                raw.add("NH-44 Hyderabad");
             }
+            List<String> flattened = raw.stream()
+                    .flatMap(p -> Arrays.stream(p.split(",")))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList());
+            user.setAssignedPlaza(String.join(", ", flattened));
+            try {
+                user.setPlazasJson(objectMapper.writeValueAsString(flattened));
+            } catch (Exception ignored) {}
         } else {
             // Toll Plaza, EV, Parking, Fuel, Other: Single plaza
             String plaza = (singlePlaza != null && !singlePlaza.isBlank()) ? singlePlaza : "NH-44 Hyderabad";

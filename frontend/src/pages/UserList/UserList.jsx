@@ -33,16 +33,31 @@ export const UserList = () => {
   const isPlazaAdmin = currentUser?.role === 'Plaza Admin';
   const isPosOrTag = currentUser?.role === 'Plaza POS' || currentUser?.role === 'Request Tag Details';
 
-  // Extract Concessionaire or Plaza Admin plazas
+  // Extract Concessionaire or Plaza Admin plazas as individual items
   const concessionairePlazas = useMemo(() => {
     if (!isConcessionaire) return [];
+    const list = [];
     if (Array.isArray(currentUser?.plazas) && currentUser.plazas.length > 0) {
-      return currentUser.plazas;
+      currentUser.plazas.forEach((p) => {
+        if (typeof p === 'string') {
+          p.split(',').forEach((sub) => {
+            const trimmed = sub.trim();
+            if (trimmed) list.push(trimmed);
+          });
+        }
+      });
     }
-    if (currentUser?.assignedPlaza) {
-      return currentUser.assignedPlaza.split(',').map((p) => p.trim()).filter(Boolean);
+    const plazaString = currentUser?.assignedPlaza || currentUser?.plaza || '';
+    if (plazaString) {
+      plazaString.split(',').forEach((p) => {
+        const trimmed = p.trim();
+        if (trimmed) list.push(trimmed);
+      });
     }
-    return ['Mumbai-Pune Corridor (3 Plazas)', 'Vashi Creek Bridge', 'Airoli Bridge', 'Khed Shivapur'];
+    const unique = [...new Set(list)];
+    return unique.length > 0
+      ? unique
+      : ['Mumbai Plaza NH-04', 'Pune Bypass Plaza', 'Nashik Toll Plaza', 'Solapur Plaza NH-65'];
   }, [currentUser, isConcessionaire]);
 
   const plazaAdminPlaza = currentUser?.assignedPlaza || '';
@@ -78,10 +93,16 @@ export const UserList = () => {
       return concessionairePlazas.length > 0 ? concessionairePlazas : ALL_PLAZAS;
     }
     if (isPlazaAdmin) {
-      return plazaAdminPlaza ? [plazaAdminPlaza] : ALL_PLAZAS;
+      const list = [];
+      const plazaString = plazaAdminPlaza || currentUser?.assignedPlaza || currentUser?.plaza || '';
+      plazaString.split(',').forEach((p) => {
+        const trimmed = p.trim();
+        if (trimmed) list.push(trimmed);
+      });
+      return list.length > 0 ? [...new Set(list)] : ALL_PLAZAS;
     }
     return [];
-  }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza]);
+  }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza, currentUser]);
 
   // Hierarchy check: can actor edit/disable/delete this target user? (Image 1 & 3)
   const canManageTargetUser = (targetUser) => {
@@ -279,7 +300,7 @@ export const UserList = () => {
     setEditingId(null);
     const initialRole = allowedCreationRoles[0] || 'Plaza POS';
     const initialPlaza = isPlazaAdmin
-      ? plazaAdminPlaza
+      ? (plazaAdminPlaza ? plazaAdminPlaza.split(',')[0].trim() : '')
       : isConcessionaire
       ? (concessionairePlazas[0] || '')
       : '';

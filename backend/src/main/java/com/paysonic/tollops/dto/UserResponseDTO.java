@@ -7,7 +7,9 @@ import com.paysonic.tollops.entity.User;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UserResponseDTO {
 
@@ -54,15 +56,24 @@ public class UserResponseDTO {
         dto.setApprovedBy(user.getApprovedBy());
         dto.setCreatedAt(user.getCreatedAt());
 
+        List<String> rawPlazas = new ArrayList<>();
         if (user.getPlazasJson() != null && !user.getPlazasJson().isBlank()) {
             try {
-                dto.setPlazas(objectMapper.readValue(user.getPlazasJson(), new TypeReference<List<String>>() {}));
+                rawPlazas = objectMapper.readValue(user.getPlazasJson(), new TypeReference<List<String>>() {});
             } catch (Exception e) {
-                dto.setPlazas(List.of(user.getAssignedPlaza() != null ? user.getAssignedPlaza() : "All plazas"));
+                if (user.getAssignedPlaza() != null) rawPlazas = List.of(user.getAssignedPlaza());
             }
         } else if (user.getAssignedPlaza() != null) {
-            dto.setPlazas(List.of(user.getAssignedPlaza()));
+            rawPlazas = List.of(user.getAssignedPlaza());
         }
+
+        List<String> cleanPlazas = rawPlazas.stream()
+                .flatMap(p -> Arrays.stream(p.split(",")))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+        dto.setPlazas(cleanPlazas);
 
         if (user.getMenuAccessJson() != null && !user.getMenuAccessJson().isBlank()) {
             try {
