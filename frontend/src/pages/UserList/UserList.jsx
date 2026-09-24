@@ -68,12 +68,15 @@ export const UserList = () => {
   const canBulkUpload = isMasterAdmin || isAdmin;
 
   // Allowed roles when creating a new user (Image 1 & 3: Hierarchy Matrix)
+  // Strict hierarchy rule: You can only create roles STRICTLY below your own level
   const allowedCreationRoles = useMemo(() => {
     if (isMasterAdmin) {
-      return ['Master Admin', 'Admin', 'Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
+      // Master Admin cannot create Master Admin, only subordinate roles
+      return ['Admin', 'Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
     }
     if (isAdmin) {
-      return ['Admin', 'Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
+      // Admin cannot create Admin or Master Admin, only subordinate roles
+      return ['Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
     }
     if (isConcessionaire) {
       return ['Plaza Admin', 'Request Tag Details', 'Plaza POS'];
@@ -104,18 +107,47 @@ export const UserList = () => {
     return [];
   }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza, currentUser]);
 
-  // Hierarchy check: can actor edit/disable/delete this target user? (Image 1 & 3)
+  // Strict hierarchy level map
+  // Level 1: Master Admin
+  // Level 2: Admin
+  // Level 3: Bank, Concessionaire
+  // Level 4: Plaza Admin
+  // Level 5: Plaza POS, Request Tag Details
+  const ROLE_HIERARCHY_LEVEL = {
+    'Master Admin': 1,
+    'Admin': 2,
+    'Bank': 3,
+    'Concessionaire': 3,
+    'Plaza Admin': 4,
+    'Plaza POS': 5,
+    'Request Tag Details': 5,
+  };
+
+  // Check if target user is on same level or upper level in hierarchy
+  const isSameOrUpperLevel = (targetUser) => {
+    if (!targetUser) return false;
+    const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
+    const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
+    return targetLevel <= myLevel;
+  };
+
+  // Hierarchy check: can actor edit/disable this target user?
+  // Strict rule: CANNOT make any changes (edit, lock) to same or higher level in hierarchy
   const canManageTargetUser = (targetUser) => {
     if (!targetUser) return false;
+    // Cannot manage yourself
+    if (targetUser.id === currentUser?.id) return false;
+
+    const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
+    const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
+
+    // Must be strictly lower level (higher number = lower in hierarchy)
+    if (targetLevel <= myLevel) return false;
+
     if (isMasterAdmin) return true;
-    if (isAdmin) {
-      return targetUser.role !== 'Master Admin';
-    }
+    if (isAdmin) return true;
+
     if (isConcessionaire) {
-      // Cannot manage Master Admin, Admin, or peer Concessionaires
-      if (['Master Admin', 'Admin', 'Concessionaire'].includes(targetUser.role)) {
-        return false;
-      }
       // Must belong to one of the Concessionaire's plazas
       const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
       const targetPlazasList = (targetUser.plazas || []).map((p) => p.toLowerCase());
@@ -128,6 +160,7 @@ export const UserList = () => {
         );
       });
     }
+
     if (isPlazaAdmin) {
       // Image 1: "Request tag and POS users it created"
       const isAllowedRole = ['Request Tag Details', 'Plaza POS'].includes(targetUser.role);
@@ -140,21 +173,9 @@ export const UserList = () => {
     return false;
   };
 
-  // Strict hierarchy level map — used for delete permission
-  // Rule: you can only delete users STRICTLY below your level (not same, not above)
-  const ROLE_HIERARCHY_LEVEL = {
-    'Master Admin': 1,
-    'Admin': 2,
-    'Bank': 3,
-    'Concessionaire': 3,
-    'Plaza Admin': 4,
-    'Plaza POS': 5,
-    'Request Tag Details': 5,
-  };
-
+  // Strict hierarchy rule: CANNOT delete same level or higher level users
   const canDeleteTargetUser = (targetUser) => {
     if (!targetUser) return false;
-    // Cannot delete yourself
     if (targetUser.id === currentUser?.id) return false;
 
     const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
@@ -164,7 +185,6 @@ export const UserList = () => {
     if (targetLevel <= myLevel) return false;
 
     // Also apply the existing canManageTargetUser scope checks
-    // (e.g. Concessionaire can only manage their plaza users)
     return canManageTargetUser(targetUser);
   };
 
@@ -173,6 +193,11 @@ export const UserList = () => {
     if (!targetUser) return false;
     // Already approved users do not need approval
     if (targetUser.approval === 'Approved') return false;
+
+    // Strict hierarchy: cannot approve same or higher level users
+    const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
+    const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
+    if (targetLevel <= myLevel) return false;
 
     // Maker-Checker Rule: Account creator CANNOT approve their own onboarding request
     const isCreator =
@@ -190,9 +215,9 @@ export const UserList = () => {
     // Master Admin can approve all subordinate roles
     if (isMasterAdmin) return true;
 
-    // Admin can approve anyone except Master Admin
+    // Admin can approve subordinate roles below Level 2
     if (isAdmin) {
-      return targetUser.role !== 'Master Admin';
+      return targetLevel > 2;
     }
 
     // Concessionaire can approve Plaza Admin, Request Tag Details, and Plaza POS within their plazas
@@ -248,6 +273,7 @@ export const UserList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [viewingUser, setViewingUser] = useState(null); // (i) Hierarchy Protected View-Only Modal
 
   // Form State
   const [formValues, setFormValues] = useState({
@@ -1209,6 +1235,26 @@ export const UserList = () => {
                 </div>
 
                 <div className="row-actions">
+                  {/* (i) Info icon: Shown for users on the SAME LEVEL or UPPER LEVEL in hierarchy */}
+                  {isSameOrUpperLevel(u) && (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      title="View user details (Hierarchy protected: Same/Upper level - View only)"
+                      onClick={() => setViewingUser(u)}
+                      style={{
+                        color: '#2563eb',
+                        background: '#eff6ff',
+                        borderColor: '#bfdbfe',
+                      }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4M12 8h.01" />
+                      </svg>
+                    </button>
+                  )}
+
                   {canManageTargetUser(u) && (
                     <button
                       type="button"
@@ -2061,6 +2107,214 @@ export const UserList = () => {
                     Yes, Delete
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View User Details (Hierarchy Protected View-Only Modal) */}
+      {viewingUser && (
+        <div
+          className="overlay open"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            padding: '16px',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setViewingUser(null);
+          }}
+        >
+          <div
+            className="modal"
+            style={{
+              maxWidth: '560px',
+              width: '100%',
+              borderRadius: '16px',
+              background: '#ffffff',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              className="modal-head"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '18px 24px',
+                borderBottom: '1px solid #e5e7eb',
+                background: '#f8fafc',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#2563eb',
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4M12 8h.01" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#111827' }}>User Details</h2>
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>
+                    User ID: <strong>{viewingUser.id}</strong> · View-Only Mode
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setViewingUser(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  borderRadius: '6px',
+                  color: '#6b7280',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+
+            <div style={{ padding: '20px 24px', maxHeight: '70vh', overflowY: 'auto' }}>
+              {/* Hierarchy Notice Banner */}
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  gap: '10px',
+                  alignItems: 'flex-start',
+                  marginBottom: '20px',
+                }}
+              >
+                <span style={{ fontSize: '18px', lineHeight: 1 }}>🛡️</span>
+                <div style={{ fontSize: '12.5px', color: '#1e40af', lineHeight: 1.5 }}>
+                  <strong>Hierarchy Protected:</strong> This user holds the role of <strong>{viewingUser.role}</strong> (Level {ROLE_HIERARCHY_LEVEL[viewingUser.role] || '—'}), which is at the same or upper level compared to your role (<strong>{currentUser?.role}</strong>, Level {ROLE_HIERARCHY_LEVEL[currentUser?.role] || '—'}). Under organizational governance rules, modifications and deletion are restricted.
+                </div>
+              </div>
+
+              {/* User Fields Grid */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '16px',
+                  fontSize: '13px',
+                }}
+              >
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Full Name</div>
+                  <div style={{ fontWeight: 600, color: '#111827' }}>{viewingUser.name || '—'}</div>
+                </div>
+
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Username</div>
+                  <div style={{ fontWeight: 600, color: '#111827' }}>{viewingUser.username || '—'}</div>
+                </div>
+
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Role & Level</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontWeight: 600, color: '#111827' }}>{viewingUser.role}</span>
+                    <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1d4ed8', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                      Level {ROLE_HIERARCHY_LEVEL[viewingUser.role] || '—'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Email Address</div>
+                  <div style={{ color: '#111827' }}>{viewingUser.email || (viewingUser.username ? `${viewingUser.username}@paysonic.com` : '—')}</div>
+                </div>
+
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Contact Number</div>
+                  <div style={{ color: '#111827' }}>{viewingUser.contact || viewingUser.mobile || '+91 98234 56789'}</div>
+                </div>
+
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Plaza Assignment</div>
+                  <div style={{ color: '#111827' }}>{viewingUser.assignedPlaza || viewingUser.plaza || 'All Plazas (National)'}</div>
+                </div>
+
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Status</div>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      background: viewingUser.status === 'Active' ? '#ecfdf5' : '#fef2f2',
+                      color: viewingUser.status === 'Active' ? '#047857' : '#b91c1c',
+                    }}
+                  >
+                    {viewingUser.status || 'Active'}
+                  </span>
+                </div>
+
+                <div style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+                  <div style={{ color: '#6b7280', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Approval Status</div>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      background: viewingUser.approval === 'Approved' ? '#ecfdf5' : '#fffbeb',
+                      color: viewingUser.approval === 'Approved' ? '#047857' : '#b45309',
+                    }}
+                  >
+                    {viewingUser.approval || 'Approved'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: '14px 24px',
+                background: '#f8fafc',
+                borderTop: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setViewingUser(null)}
+                style={{ minWidth: '90px' }}
+              >
+                Close
               </button>
             </div>
           </div>

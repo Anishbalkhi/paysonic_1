@@ -194,14 +194,26 @@ public class UserService {
 
         String actorRole = actor.getRole();
         if ("Master Admin".equalsIgnoreCase(actorRole)) {
-            return; // Full access across all roles & plazas
+            // Master Admin cannot delete or manage peer Master Admin accounts
+            if (targetUser != null && "Master Admin".equalsIgnoreCase(targetUser.getRole())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Hierarchy Violation: Master Admin cannot modify or delete peer Master Admin accounts.");
+            }
+            if ("CREATE".equalsIgnoreCase(action) && "Master Admin".equalsIgnoreCase(targetRole)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Hierarchy Violation: Master Admin cannot create peer Master Admin accounts.");
+            }
+            return; // Full access across all subordinate roles & plazas
         }
 
         if ("Admin".equalsIgnoreCase(actorRole)) {
-            // Cannot create, manage, or approve Master Admin
-            if ("Master Admin".equalsIgnoreCase(targetRole) || (targetUser != null && "Master Admin".equalsIgnoreCase(targetUser.getRole()))) {
+            // Cannot create, manage, approve, or delete Master Admin or Admin accounts
+            boolean isMasterOrAdminTarget = "Master Admin".equalsIgnoreCase(targetRole)
+                    || "Admin".equalsIgnoreCase(targetRole)
+                    || (targetUser != null && ("Master Admin".equalsIgnoreCase(targetUser.getRole()) || "Admin".equalsIgnoreCase(targetUser.getRole())));
+            if (isMasterOrAdminTarget) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                        "Hierarchy Violation: Admin cannot create, manage, or approve Master Admin accounts.");
+                        "Hierarchy Violation: Admin cannot create, modify, approve, or delete Admin or Master Admin accounts.");
             }
             return;
         }
