@@ -216,6 +216,9 @@ export const UserList = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, name } of user to delete
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [editingId, setEditingId] = useState(null);
 
   // Form State
@@ -291,8 +294,18 @@ export const UserList = () => {
   };
 
   const handleDeleteUser = async (id) => {
-    await UserService.deleteUser(id);
-    setUsers((prev) => prev.filter((u) => u.id !== id));
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await UserService.deleteUser(id);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setDeleteConfirm(null);
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to delete user. Please try again.';
+      setDeleteError(msg);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Modal Open Handlers
@@ -1216,12 +1229,12 @@ export const UserList = () => {
                     </button>
                   )}
 
-                  {canManageTargetUser(u) && !(isAdmin && u.role === 'Master Admin') && (
+                  {canManageTargetUser(u) && !(isAdmin && (u.role === 'Master Admin' || u.role === 'Admin')) && (
                     <button
                       type="button"
                       className="icon-btn"
                       title="Delete user"
-                      onClick={() => handleDeleteUser(u.id)}
+                      onClick={() => setDeleteConfirm({ id: u.id, name: u.name || u.username })}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
                         <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
@@ -1924,6 +1937,100 @@ export const UserList = () => {
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                     Commit {parsedCsvRows.length > 0 ? `(${parsedCsvRows.length})` : ''} to Railway DB
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="overlay open" style={{ zIndex: 9999 }}>
+          <div className="modal" style={{ maxWidth: '420px', padding: '0' }}>
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px 16px',
+              borderBottom: '1px solid #fee2e2',
+              background: 'linear-gradient(135deg, #fff5f5 0%, #fff 100%)',
+              borderRadius: '12px 12px 0 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              <div style={{
+                width: '40px', height: '40px', borderRadius: '10px',
+                background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="2">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+                </svg>
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#111827' }}>Delete User</h2>
+                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#6b7280' }}>This action cannot be undone</p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '20px 24px' }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>
+                Are you sure you want to delete{' '}
+                <strong style={{ color: '#111827' }}>{deleteConfirm.name}</strong>?
+                <br />
+                <span style={{ color: '#9ca3af', fontSize: '13px' }}>All data associated with this user will be permanently removed.</span>
+              </p>
+            </div>
+
+            {/* Error message */}
+            {deleteError && (
+              <div style={{ padding: '0 24px 8px', color: '#b91c1c', fontSize: '13px', background: '#fff5f5', borderTop: '1px solid #fecaca', paddingTop: '10px' }}>
+                ⚠️ {deleteError}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div style={{
+              padding: '12px 24px 20px',
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'flex-end',
+            }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => { setDeleteConfirm(null); setDeleteError(''); }}
+                disabled={isDeleting}
+                style={{ minWidth: '90px' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => handleDeleteUser(deleteConfirm.id)}
+                disabled={isDeleting}
+                style={{
+                  minWidth: '110px',
+                  background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  boxShadow: '0 2px 8px rgba(185,28,28,0.3)',
+                  opacity: isDeleting ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                {isDeleting ? (
+                  <><span className="btn-spinner" style={{ borderTopColor: '#fff' }} /> Deleting...</>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
+                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+                    </svg>
+                    Yes, Delete
                   </>
                 )}
               </button>

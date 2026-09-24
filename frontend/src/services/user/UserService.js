@@ -296,6 +296,16 @@ class UserService {
   }
 
   async deleteUser(id) {
+    // Get actor ID from active session
+    let actorId = localStorage.getItem('actorId');
+    if (!actorId) {
+      try {
+        const active = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+        actorId = active.id;
+      } catch {}
+    }
+    if (!actorId) actorId = 'PSN0001';
+
     // 1. Remove from cache and stored permissions immediately
     try {
       const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
@@ -339,7 +349,9 @@ class UserService {
     mockUsers = mockUsers.filter((u) => u.id !== id);
 
     try {
-      const res = await httpClient.delete(`/api/users/${id}`);
+      const res = await httpClient.delete(`/api/users/${id}`, {
+        headers: { 'X-Actor-ID': actorId },
+      });
       return res.data;
     } catch (err) {
       console.warn('[UserService] Railway delete fallback:', err?.message);
