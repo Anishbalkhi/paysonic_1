@@ -9,8 +9,9 @@ import {
   ROLE_AUTO_ALL_PLAZA,
   ROLE_NO_PLAZA,
   ROLE_MENU_DEFAULTS,
-  buildAccessGroups,
+  MENU_TREE,
   getRoleMenuDefaults,
+  getAllMenuIds,
 } from './menuConfig';
 import './UserList.scss';
 
@@ -68,14 +69,11 @@ export const UserList = () => {
   const canBulkUpload = isMasterAdmin || isAdmin;
 
   // Allowed roles when creating a new user (Image 1 & 3: Hierarchy Matrix)
-  // Strict hierarchy rule: You can only create roles STRICTLY below your own level
   const allowedCreationRoles = useMemo(() => {
     if (isMasterAdmin) {
-      // Master Admin cannot create Master Admin, only subordinate roles
-      return ['Admin', 'Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
+      return ['Master Admin', 'Admin', 'Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
     }
     if (isAdmin) {
-      // Admin cannot create Admin or Master Admin, only subordinate roles
       return ['Bank', 'Concessionaire', 'Plaza Admin', 'Plaza POS', 'Request Tag Details'];
     }
     if (isConcessionaire) {
@@ -549,7 +547,7 @@ export const UserList = () => {
     );
   };
 
-  // Menu Access Toggles
+  // Menu Access Toggles & Quick Actions
   const handleToggleMenuId = (id, checked) => {
     setSelectedMenuIds((prev) => {
       if (checked) {
@@ -561,11 +559,11 @@ export const UserList = () => {
   };
 
   const handleToggleGroupAll = (group, checked) => {
-    const allIds = [group.id, ...group.subs.map((s) => s.id)];
+    const subIds = (group.subs || []).map((s) => s.id);
+    const allIds = [group.id, ...subIds];
     setSelectedMenuIds((prev) => {
       if (checked) {
-        const next = new Set([...prev, ...allIds]);
-        return Array.from(next);
+        return Array.from(new Set([...prev, ...allIds]));
       } else {
         return prev.filter((item) => !allIds.includes(item));
       }
@@ -574,16 +572,49 @@ export const UserList = () => {
 
   const handleToggleSubItem = (group, subId, checked) => {
     setSelectedMenuIds((prev) => {
-      let next = checked ? (prev.includes(subId) ? prev : [...prev, subId]) : prev.filter((item) => item !== subId);
-      const subIds = group.subs.map((s) => s.id);
+      let next = checked
+        ? (prev.includes(subId) ? prev : [...prev, subId])
+        : prev.filter((item) => item !== subId);
+
+      const subIds = (group.subs || []).map((s) => s.id);
       const anySubChecked = subIds.some((sId) => next.includes(sId));
       if (anySubChecked) {
-        if (!next.includes(group.id)) next.push(group.id);
+        if (!next.includes(group.id)) next = [...next, group.id];
       } else {
         next = next.filter((item) => item !== group.id);
       }
       return next;
     });
+  };
+
+  const handleSelectAllMenus = () => {
+    const all = [];
+    MENU_TREE.forEach((m) => {
+      all.push(m.id);
+      (m.subs || []).forEach((s) => all.push(s.id));
+    });
+    setSelectedMenuIds(all);
+  };
+
+  const handleDeselectAllMenus = () => {
+    setSelectedMenuIds([]);
+  };
+
+  const handleResetToRoleDefaults = () => {
+    if (formValues.role) {
+      setSelectedMenuIds([...getRoleMenuDefaults(formValues.role)]);
+    }
+  };
+
+  const handleToggleAllExpand = () => {
+    const anyClosed = MENU_TREE.some((m) => m.subs && m.subs.length > 0 && !openGroupIds[m.id]);
+    const nextState = {};
+    MENU_TREE.forEach((m) => {
+      if (m.subs && m.subs.length > 0) {
+        nextState[m.id] = anyClosed;
+      }
+    });
+    setOpenGroupIds(nextState);
   };
 
   const toggleGroupOpen = (groupId) => {
@@ -998,8 +1029,30 @@ export const UserList = () => {
   const isNoPlaza = ROLE_NO_PLAZA.includes(role);
   const isSinglePlaza = role && !isFormConcessionaire && !isAutoAllPlaza && !isNoPlaza;
 
-  const defaultAccessGroups = role ? buildAccessGroups(role, true, selectedMenuIds) : [];
-  const extraAccessGroups = role ? buildAccessGroups(role, false, selectedMenuIds) : [];
+  const roleDefaults = useMemo(() => getRoleMenuDefaults(role), [role]);
+  const defaultSet = useMemo(() => new Set(roleDefaults), [roleDefaults]);
+
+  const totalAvailableMenus = useMemo(() => {
+    let count = 0;
+    MENU_TREE.forEach((m) => {
+      count += m.subs && m.subs.length > 0 ? m.subs.length : 1;
+    });
+    return count;
+  }, []);
+
+  const selectedCount = useMemo(() => {
+    let count = 0;
+    MENU_TREE.forEach((m) => {
+      if (!m.subs || m.subs.length === 0) {
+        if (selectedMenuIds.includes(m.id)) count++;
+      } else {
+        m.subs.forEach((s) => {
+          if (selectedMenuIds.includes(s.id)) count++;
+        });
+      }
+    });
+    return count;
+  }, [selectedMenuIds]);
 
   return (
     <div className="user-management-content">
@@ -1617,152 +1670,141 @@ export const UserList = () => {
                   <div className="section-divider">
                     <div className="section-label">Menu &amp; module access</div>
                     <div className="hint" style={{ margin: '6px 0 4px' }}>
-                      Auto-selected from the role permission matrix. Untick anything this user shouldn't have, or add extra access below.
+                      Auto-selected from the role permission matrix. Customize access for this user by ticking or unticking modules and sub-features.
                     </div>
 
-                    {/* Default Access */}
-                    <div className="access-block">
-                      <div className="access-block-head">Default access for this role</div>
-                      <div className="access-tree">
-                        {defaultAccessGroups.map((g) => {
-                          if (g.leaf) {
-                            const isChecked = selectedMenuIds.includes(g.id);
-                            return (
-                              <label key={g.id} className="access-leaf">
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={(e) => handleToggleMenuId(g.id, e.target.checked)}
-                                />
-                                <span>{g.label}</span>
-                              </label>
-                            );
-                          }
-                          const allChecked = g.subs.every((s) => selectedMenuIds.includes(s.id));
-                          const isOpen = !!openGroupIds[g.id];
-                          return (
-                            <div key={g.id} className={`access-group ${isOpen ? 'open' : ''}`}>
-                              <div
-                                className="access-group-head"
-                                onClick={() => toggleGroupOpen(g.id)}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={allChecked}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => handleToggleGroupAll(g, e.target.checked)}
-                                />
-                                <span>{g.label}</span>
-                                <svg
-                                  className="caret"
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <path d="M9 18l6-6-6-6" />
-                                </svg>
-                              </div>
-                              <div className="access-group-subs">
-                                {g.subs.map((s) => {
-                                  const isSubChecked = selectedMenuIds.includes(s.id);
-                                  return (
-                                    <label key={s.id} className="access-subrow">
-                                      <input
-                                        type="checkbox"
-                                        checked={isSubChecked}
-                                        onChange={(e) => handleToggleSubItem(g, s.id, e.target.checked)}
-                                      />
-                                      <span>{s.label}</span>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
+                    {/* Quick action bar */}
+                    <div className="access-actions-bar">
+                      <div className="access-actions-left">
+                        <button
+                          type="button"
+                          className="access-quick-btn primary"
+                          onClick={handleResetToRoleDefaults}
+                          title="Restore default permissions for this role"
+                        >
+                          Reset to Role Defaults
+                        </button>
+                        <button
+                          type="button"
+                          className="access-quick-btn"
+                          onClick={handleSelectAllMenus}
+                          title="Grant full access to all modules and sub-items"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          type="button"
+                          className="access-quick-btn"
+                          onClick={handleDeselectAllMenus}
+                          title="Deselect all modules"
+                        >
+                          Clear All
+                        </button>
+                        <button
+                          type="button"
+                          className="access-quick-btn"
+                          onClick={handleToggleAllExpand}
+                          title="Expand or collapse all modules"
+                        >
+                          {MENU_TREE.some((m) => m.subs && m.subs.length > 0 && !openGroupIds[m.id])
+                            ? 'Expand All'
+                            : 'Collapse All'}
+                        </button>
                       </div>
-                      {defaultAccessGroups.length === 0 && (
-                        <div className="hint" style={{ padding: '10px 0' }}>
-                          No default menu items for this role yet.
-                        </div>
-                      )}
+                      <div className="access-count-summary">
+                        <strong>{selectedCount}</strong> of <strong>{totalAvailableMenus}</strong> items enabled
+                      </div>
                     </div>
 
-                    {/* Additional Access */}
-                    <div className="access-block" style={{ marginTop: '16px' }}>
-                      <div className="access-block-head">Additional access available</div>
-                      <div className="hint" style={{ margin: '2px 0 10px' }}>
-                        Not part of this role by default — tick any of these to grant extra access to this specific user.
-                      </div>
-                      <div className="access-tree">
-                        {extraAccessGroups.map((g) => {
-                          if (g.leaf) {
-                            const isChecked = selectedMenuIds.includes(g.id);
-                            return (
-                              <label key={g.id} className="access-leaf">
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={(e) => handleToggleMenuId(g.id, e.target.checked)}
-                                />
-                                <span>{g.label}</span>
-                              </label>
-                            );
-                          }
-                          const allChecked = g.subs.every((s) => selectedMenuIds.includes(s.id));
-                          const isOpen = !!openGroupIds[g.id];
+                    {/* Unified Access Tree */}
+                    <div className="access-tree">
+                      {MENU_TREE.map((m) => {
+                        if (!m.subs || m.subs.length === 0) {
+                          const isChecked = selectedMenuIds.includes(m.id);
+                          const isDefault = defaultSet.has(m.id);
                           return (
-                            <div key={g.id} className={`access-group ${isOpen ? 'open' : ''}`}>
-                              <div
-                                className="access-group-head"
-                                onClick={() => toggleGroupOpen(g.id)}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={allChecked}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onChange={(e) => handleToggleGroupAll(g, e.target.checked)}
-                                />
-                                <span>{g.label}</span>
-                                <svg
-                                  className="caret"
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <path d="M9 18l6-6-6-6" />
-                                </svg>
-                              </div>
-                              <div className="access-group-subs">
-                                {g.subs.map((s) => {
-                                  const isSubChecked = selectedMenuIds.includes(s.id);
-                                  return (
-                                    <label key={s.id} className="access-subrow">
-                                      <input
-                                        type="checkbox"
-                                        checked={isSubChecked}
-                                        onChange={(e) => handleToggleSubItem(g, s.id, e.target.checked)}
-                                      />
-                                      <span>{s.label}</span>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                            <label key={m.id} className="access-leaf">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => handleToggleMenuId(m.id, e.target.checked)}
+                              />
+                              <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{m.label}</span>
+                              <span className={`access-pill ${isDefault ? 'default' : 'extra'}`}>
+                                {isDefault ? 'Default' : '+ Extra'}
+                              </span>
+                            </label>
                           );
-                        })}
-                      </div>
-                      {extraAccessGroups.length === 0 && (
-                        <div className="hint" style={{ padding: '10px 0' }}>
-                          This role already has access to every module — nothing extra to add.
-                        </div>
-                      )}
+                        }
+
+                        const subCount = m.subs.length;
+                        const checkedSubs = m.subs.filter((s) => selectedMenuIds.includes(s.id));
+                        const allChecked = checkedSubs.length === subCount;
+                        const noneChecked = checkedSubs.length === 0;
+                        const isPartiallyChecked = !allChecked && !noneChecked;
+                        const isOpen = !!openGroupIds[m.id];
+
+                        return (
+                          <div key={m.id} className={`access-group ${isOpen ? 'open' : ''}`}>
+                            <div
+                              className="access-group-head"
+                              onClick={() => toggleGroupOpen(m.id)}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={allChecked}
+                                ref={(el) => {
+                                  if (el) el.indeterminate = isPartiallyChecked;
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => handleToggleGroupAll(m, e.target.checked)}
+                              />
+                              <span>{m.label}</span>
+                              <span
+                                className={`access-status-badge ${
+                                  allChecked ? 'full' : noneChecked ? 'none' : 'partial'
+                                }`}
+                              >
+                                {allChecked
+                                  ? 'Full Access'
+                                  : noneChecked
+                                  ? 'No Access'
+                                  : `${checkedSubs.length}/${subCount} Enabled`}
+                              </span>
+                              <svg
+                                className="caret"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path d="M9 18l6-6-6-6" />
+                              </svg>
+                            </div>
+                            <div className="access-group-subs">
+                              {m.subs.map((s) => {
+                                const isSubChecked = selectedMenuIds.includes(s.id);
+                                const isSubDefault = defaultSet.has(s.id);
+                                return (
+                                  <label key={s.id} className="access-subrow">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSubChecked}
+                                      onChange={(e) => handleToggleSubItem(m, s.id, e.target.checked)}
+                                    />
+                                    <span>{s.label}</span>
+                                    <span className={`access-pill ${isSubDefault ? 'default' : 'extra'}`}>
+                                      {isSubDefault ? 'Default' : '+ Extra'}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
