@@ -140,6 +140,34 @@ export const UserList = () => {
     return false;
   };
 
+  // Strict hierarchy level map — used for delete permission
+  // Rule: you can only delete users STRICTLY below your level (not same, not above)
+  const ROLE_HIERARCHY_LEVEL = {
+    'Master Admin': 1,
+    'Admin': 2,
+    'Bank': 3,
+    'Concessionaire': 3,
+    'Plaza Admin': 4,
+    'Plaza POS': 5,
+    'Request Tag Details': 5,
+  };
+
+  const canDeleteTargetUser = (targetUser) => {
+    if (!targetUser) return false;
+    // Cannot delete yourself
+    if (targetUser.id === currentUser?.id) return false;
+
+    const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
+    const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
+
+    // Must be strictly lower level (higher number = lower in hierarchy)
+    if (targetLevel <= myLevel) return false;
+
+    // Also apply the existing canManageTargetUser scope checks
+    // (e.g. Concessionaire can only manage their plaza users)
+    return canManageTargetUser(targetUser);
+  };
+
   // Hierarchy check: can current actor approve this target user?
   const canApproveTargetUser = (targetUser) => {
     if (!targetUser) return false;
@@ -1229,7 +1257,7 @@ export const UserList = () => {
                     </button>
                   )}
 
-                  {canManageTargetUser(u) && !(isAdmin && (u.role === 'Master Admin' || u.role === 'Admin')) && (
+                  {canDeleteTargetUser(u) && (
                     <button
                       type="button"
                       className="icon-btn"
