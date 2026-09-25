@@ -1,6 +1,10 @@
 import httpClient from '../api/httpClient';
 import initialMockData from '../../data/userList.json';
-import { getRoleMenuDefaults } from '../../pages/UserList/menuConfig';
+import {
+  getRoleMenuDefaults,
+  parseUserTypeWithPermissions,
+  buildUserTypeWithPermissions,
+} from '../../pages/UserList/menuConfig';
 
 const PERMISSIONS_STORAGE_KEY = 'paysonic_user_permissions';
 const USERS_CACHE_KEY = 'paysonic_users_cache';
@@ -94,16 +98,24 @@ class UserService {
             (username && overrides[username.toLowerCase()]) ||
             {};
 
+          // Parse encoded permissions bitmask from userType if present
+          const parsedUserType = parseUserTypeWithPermissions(u.userType);
+          const cleanUserType = userOverride.userType || parsedUserType.cleanUserType || u.userType || '—';
+
           const hasDbPermissions = Array.isArray(u.menuAccess) && u.menuAccess.length > 0;
+          const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess) && parsedUserType.menuAccess.length > 0;
+
           const customAccess =
             userOverride.menuAccess ||
+            (hasEncodedPermissions ? parsedUserType.menuAccess : null) ||
+            (hasDbPermissions ? u.menuAccess : null) ||
             perms[u.id] ||
             (email && perms[email.toLowerCase()]) ||
             (username && perms[username.toLowerCase()]) ||
-            (hasDbPermissions ? u.menuAccess : getRoleMenuDefaults(userOverride.role || u.role));
+            getRoleMenuDefaults(userOverride.role || u.role);
 
-          if (hasDbPermissions && !perms[u.id]) {
-            saveUserPermissions(u.id, u.menuAccess, email, username);
+          if ((hasEncodedPermissions || hasDbPermissions) && !perms[u.id]) {
+            saveUserPermissions(u.id, customAccess, email, username);
           }
 
           const rawApproval = userOverride.approval || u.approval;
@@ -122,7 +134,7 @@ class UserService {
             mobile: userOverride.mobile || userOverride.contact || u.mobile || u.contact || '',
             plaza: userOverride.plaza || userOverride.assignedPlaza || u.assignedPlaza || u.plaza || 'All plazas',
             role: userOverride.role || u.role,
-            userType: userOverride.userType || u.userType || '—',
+            userType: cleanUserType,
             status,
             approval,
             locked: userOverride.locked !== undefined ? Boolean(userOverride.locked) : Boolean(u.locked),
@@ -195,22 +207,36 @@ class UserService {
       const res = await httpClient.get(`/api/users/${id}`);
       if (res && res.data) {
         const u = res.data;
+        const parsedUserType = parseUserTypeWithPermissions(u.userType);
+        const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess) && parsedUserType.menuAccess.length > 0;
         const customAccess =
+          (hasEncodedPermissions ? parsedUserType.menuAccess : null) ||
           perms[u.id] ||
           (u.email && perms[u.email.toLowerCase()]) ||
           u.menuAccess ||
           getRoleMenuDefaults(u.role);
-        return { ...u, menuAccess: customAccess };
+        return {
+          ...u,
+          userType: parsedUserType.cleanUserType,
+          menuAccess: customAccess,
+        };
       }
     } catch (err) {
       const found = mockUsers.find((u) => u.id === id);
       if (found) {
+        const parsedUserType = parseUserTypeWithPermissions(found.userType);
+        const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess) && parsedUserType.menuAccess.length > 0;
         const customAccess =
+          (hasEncodedPermissions ? parsedUserType.menuAccess : null) ||
           perms[found.id] ||
           (found.email && perms[found.email.toLowerCase()]) ||
           found.menuAccess ||
           getRoleMenuDefaults(found.role);
-        return Promise.resolve({ ...found, menuAccess: customAccess });
+        return Promise.resolve({
+          ...found,
+          userType: parsedUserType.cleanUserType,
+          menuAccess: customAccess,
+        });
       }
     }
     return Promise.resolve(null);
@@ -220,15 +246,20 @@ class UserService {
     const actorId = localStorage.getItem('actorId') || 'PSN0001';
     // Use 'OPS_MAKER' as creator so any independent administrator can approve the user
     const creationActor = 'OPS_MAKER';
+    const cleanUserType = newUser.userType
+      ? parseUserTypeWithPermissions(newUser.userType).cleanUserType
+      : 'Toll Plaza';
+    const userTypeToSend = buildUserTypeWithPermissions(cleanUserType, newUser.menuAccess);
+
     const payload = {
       name: newUser.name || newUser.username,
       email: newUser.email,
       mobile: newUser.contact || newUser.mobile || '9999999999',
       role: newUser.role,
-      userType: newUser.userType || 'Toll Plaza',
+      userType: userTypeToSend,
       assignedPlaza: newUser.plaza || newUser.assignedPlaza || 'All plazas',
-      status: 'Pending',
-      approval: 'Pending',
+      status: newUser.status || 'Pending',
+      approval: newUser.approval || 'Pending',
       locked: Boolean(newUser.locked),
       password: newUser.password || 'Paysonic@2026',
       createdBy: creationActor,
@@ -247,13 +278,14 @@ class UserService {
         username: newUser.username || res.data.email.split('@')[0],
         contact: res.data.mobile || newUser.contact,
         plaza: res.data.assignedPlaza || newUser.plaza,
-        status: 'Pending',
-        approval: 'Pending',
+        status: newUser.status || 'Pending',
+        approval: newUser.approval || 'Pending',
         password: newUser.password || res.data?.password || payload.password,
+        userType: cleanUserType,
         menuAccess: newUser.menuAccess || getRoleMenuDefaults(newUser.role),
       };
 
-      // Ensure Railway MySQL DB also persists Pending status, approval, password, and menuAccess
+      // Ensure Railway MySQL DB also persists status, approval, password, and encoded userType
       try {
         await httpClient.put(
           `/api/users/${res.data.id}`,
@@ -264,8 +296,8 @@ class UserService {
             role: payload.role,
             userType: payload.userType,
             assignedPlaza: payload.assignedPlaza,
-            status: 'Pending',
-            approval: 'Pending',
+            status: payload.status,
+            approval: payload.approval,
             password: payload.password,
             menuAccess: payload.menuAccess,
           },
@@ -279,9 +311,10 @@ class UserService {
       createdUser = {
         ...newUser,
         id: newUser.id || 'PSN' + Math.floor(1000 + Math.random() * 9000),
-        status: 'Pending',
-        approval: 'Pending',
+        status: newUser.status || 'Pending',
+        approval: newUser.approval || 'Pending',
         password: newUser.password || 'Paysonic@2026',
+        userType: cleanUserType,
         menuAccess: newUser.menuAccess || getRoleMenuDefaults(newUser.role),
       };
       mockUsers.unshift(createdUser);
@@ -344,22 +377,38 @@ class UserService {
       } catch {}
     }
 
+    // Format userType payload to include menuAccess bitmask
+    const cleanUserType = updatedFields.userType !== undefined
+      ? parseUserTypeWithPermissions(updatedFields.userType).cleanUserType
+      : undefined;
+    const userTypeToSend = updatedFields.menuAccess !== undefined
+      ? buildUserTypeWithPermissions(cleanUserType || updatedFields.userType, updatedFields.menuAccess)
+      : (cleanUserType !== undefined ? cleanUserType : updatedFields.userType);
+
+    const payloadToSend = {
+      ...updatedFields,
+      ...(userTypeToSend !== undefined ? { userType: userTypeToSend } : {}),
+    };
+
     let resultUser;
     try {
-      const res = await httpClient.put(`/api/users/${id}`, updatedFields, {
+      const res = await httpClient.put(`/api/users/${id}`, payloadToSend, {
         headers: { 'X-Actor-ID': actorId },
       });
       const returned = res.data;
+      const parsedReturned = parseUserTypeWithPermissions(returned.userType);
       resultUser = {
         ...returned,
         ...updatedFields,
-        menuAccess: updatedFields.menuAccess || returned.menuAccess,
+        userType: cleanUserType || parsedReturned.cleanUserType || returned.userType,
+        menuAccess: updatedFields.menuAccess || parsedReturned.menuAccess || returned.menuAccess,
       };
     } catch (err) {
       console.warn('[UserService] Railway updateUser fallback:', err?.message);
       resultUser = {
         id,
         ...updatedFields,
+        userType: cleanUserType || updatedFields.userType,
       };
     }
 

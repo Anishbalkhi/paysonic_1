@@ -203,3 +203,70 @@ export const buildAccessGroups = (role, wantDefault) => {
 
   return groups;
 };
+
+// Fixed ordered list of all menu IDs for bitmask serialization
+export const ALL_ORDERED_MENU_IDS = allMenuIds;
+
+/**
+ * Encodes an array of menu permission IDs into a compact hexadecimal string (10-15 chars)
+ */
+export function encodeMenuAccessToHex(selected) {
+  if (!Array.isArray(selected) || selected.length === 0) return '';
+  let mask = 0n;
+  const set = new Set(selected);
+  allMenuIds.forEach((id, idx) => {
+    if (set.has(id)) mask |= (1n << BigInt(idx));
+  });
+  return mask.toString(16);
+}
+
+/**
+ * Decodes a hexadecimal bitmask string back into the array of allowed menu IDs
+ */
+export function decodeMenuAccessFromHex(hex) {
+  if (!hex || typeof hex !== 'string') return null;
+  try {
+    const cleanHex = hex.trim();
+    if (!cleanHex) return null;
+    const mask = BigInt('0x' + cleanHex);
+    const result = [];
+    allMenuIds.forEach((id, idx) => {
+      if ((mask & (1n << BigInt(idx))) !== 0n) {
+        result.push(id);
+      }
+    });
+    return result;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Parses userType string to extract clean userType and any encoded menuAccess bitmask
+ */
+export function parseUserTypeWithPermissions(rawUserType) {
+  if (!rawUserType) return { cleanUserType: '—', menuAccess: null };
+  const str = String(rawUserType).trim();
+  if (str.includes('#M:')) {
+    const parts = str.split('#M:');
+    const cleanUserType = parts[0] ? parts[0].trim() : '—';
+    const hex = parts[1] ? parts[1].trim() : null;
+    const menuAccess = hex ? decodeMenuAccessFromHex(hex) : null;
+    return { cleanUserType: cleanUserType || '—', menuAccess };
+  }
+  return { cleanUserType: str, menuAccess: null };
+}
+
+/**
+ * Formats a clean userType and menuAccess array into a serialized userType string that fits within VARCHAR(50)
+ */
+export function buildUserTypeWithPermissions(cleanUserType, menuAccess) {
+  const base = cleanUserType && cleanUserType !== '—' ? cleanUserType.trim() : 'Toll Plaza';
+  if (Array.isArray(menuAccess)) {
+    const hex = encodeMenuAccessToHex(menuAccess);
+    if (hex) {
+      return `${base}#M:${hex}`;
+    }
+  }
+  return base;
+}

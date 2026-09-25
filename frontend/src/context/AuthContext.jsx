@@ -91,9 +91,9 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           const perms = getStoredUserPermissions();
           const assignedPermissions =
+            liveRecord.menuAccess ||
             perms[liveRecord.id] ||
             (liveRecord.email && perms[liveRecord.email.toLowerCase()]) ||
-            liveRecord.menuAccess ||
             getRoleMenuDefaults(liveRecord.role);
 
           const updatedSession = {
@@ -292,10 +292,10 @@ export const AuthProvider = ({ children }) => {
     // Retrieve customized permissions for this specific user
     const perms = getStoredUserPermissions();
     const assignedPermissions =
+      match.menuAccess ||
       perms[match.id] ||
       (match.email && perms[match.email.toLowerCase()]) ||
       (match.username && perms[match.username.toLowerCase()]) ||
-      match.menuAccess ||
       getRoleMenuDefaults(match.role);
 
     const sessionData = {

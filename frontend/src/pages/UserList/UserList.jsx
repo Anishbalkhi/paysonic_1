@@ -12,6 +12,7 @@ import {
   MENU_TREE,
   getRoleMenuDefaults,
   getAllMenuIds,
+  parseUserTypeWithPermissions,
 } from './menuConfig';
 import './UserList.scss';
 
@@ -426,7 +427,9 @@ export const UserList = () => {
       contact: u.contact || '9823456789',
       name: u.name || '',
       role: u.role || '',
-      userType: u.userType && u.userType !== '—' ? u.userType : '',
+      userType: parseUserTypeWithPermissions(u.userType).cleanUserType !== '—'
+        ? parseUserTypeWithPermissions(u.userType).cleanUserType
+        : '',
       status: u.status || 'Active',
       plaza: u.role !== 'Concessionaire' ? u.plaza : '',
       password: u.password || 'Paysonic@2026',
@@ -1286,7 +1289,7 @@ export const UserList = () => {
                 <div className="role-cell">
                   <strong>{u.role}</strong>
                   <span>
-                    {u.userType} · {getMenuAccessCount(u)} menu items
+                    {parseUserTypeWithPermissions(u.userType).cleanUserType} · {getMenuAccessCount(u)} menu items
                   </span>
                 </div>
 
