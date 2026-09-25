@@ -64,10 +64,73 @@ export const UserList = () => {
 
   const plazaAdminPlaza = currentUser?.assignedPlaza || '';
 
-  // Creation permission (Image 1: Master Admin, Admin, Concessionaire, Plaza Admin)
-  const canCreate = isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin;
-  const canApprove = isMasterAdmin || isAdmin;
-  const canBulkUpload = isMasterAdmin || isAdmin;
+  // Operational permissions based on currentUser.menuAccess
+  const currentUserPerms = useMemo(() => {
+    if (isMasterAdmin) return null; // full system authority
+    if (Array.isArray(currentUser?.menuAccess) && currentUser.menuAccess.length > 0) {
+      return new Set(currentUser.menuAccess);
+    }
+    return new Set(getRoleMenuDefaults(currentUser?.role));
+  }, [isMasterAdmin, currentUser]);
+
+  const hasMenuPerm = (permId) => {
+    if (isMasterAdmin) return true;
+    if (!currentUserPerms) return true;
+    return currentUserPerms.has(permId);
+  };
+
+  // Sub-action permissions under User Management
+  const hasCreateUserPerm = hasMenuPerm('user_management_create_user');
+  const hasApproveUserPerm = hasMenuPerm('user_management_approve_user');
+  const hasAssignUserPerm = hasMenuPerm('user_management_assign_user');
+  const hasLockUnlockPerm = hasMenuPerm('user_management_lock_unlock_user');
+
+  // Creation & approval permissions: role allowed AND actor possesses specific permission
+  const canCreate = (isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin) && hasCreateUserPerm;
+  const canApprove = (isMasterAdmin || isAdmin) && hasApproveUserPerm;
+  const canBulkUpload = (isMasterAdmin || isAdmin) && hasCreateUserPerm;
+
+  // Available menu tree that this actor is permitted to delegate
+  // Master Admin can delegate all modules.
+  // Other roles can ONLY delegate modules and sub-items that they themselves possess!
+  const delegatableMenuTree = useMemo(() => {
+    if (isMasterAdmin) return MENU_TREE;
+
+    const actorPerms = currentUserPerms || new Set(getRoleMenuDefaults(currentUser?.role));
+
+    return MENU_TREE.map((group) => {
+      // Leaf module (no sub-items)
+      if (!group.subs || group.subs.length === 0) {
+        return actorPerms.has(group.id) ? group : null;
+      }
+
+      // Group module: actor must possess the group permission
+      if (!actorPerms.has(group.id)) {
+        return null;
+      }
+
+      // Only show sub-items that the actor has permission for
+      const availableSubs = group.subs.filter((s) => actorPerms.has(s.id));
+      if (availableSubs.length === 0) {
+        return null;
+      }
+
+      return {
+        ...group,
+        subs: availableSubs,
+      };
+    }).filter(Boolean);
+  }, [isMasterAdmin, currentUserPerms, currentUser?.role]);
+
+  // Set of all menu IDs that this actor is authorized to delegate
+  const delegatableIdSet = useMemo(() => {
+    const ids = new Set();
+    delegatableMenuTree.forEach((m) => {
+      ids.add(m.id);
+      (m.subs || []).forEach((s) => ids.add(s.id));
+    });
+    return ids;
+  }, [delegatableMenuTree]);
 
   // Allowed roles when creating a new user (Image 1 & 3: Hierarchy Matrix)
   const allowedCreationRoles = useMemo(() => {
@@ -202,6 +265,8 @@ export const UserList = () => {
   // Hierarchy check: can current actor approve this target user?
   const canApproveTargetUser = (targetUser) => {
     if (!targetUser) return false;
+    // Must possess 'user_management_approve_user' permission
+    if (!hasApproveUserPerm) return false;
     // Already approved users do not need approval
     if (targetUser.approval === 'Approved' && targetUser.status === 'Active') return false;
 
@@ -378,6 +443,7 @@ export const UserList = () => {
 
   // Modal Open Handlers
   const handleOpenAdd = () => {
+    if (!canCreate) return;
     setEditingId(null);
     const initialRole = allowedCreationRoles[0] || 'Plaza POS';
     const initialPlaza = isPlazaAdmin
@@ -400,7 +466,9 @@ export const UserList = () => {
     });
     setFormErrors({});
     setSelectedPlazas(isConcessionaire ? [initialPlaza] : []);
-    setSelectedMenuIds(getRoleMenuDefaults(initialRole));
+    const initialDefaults = getRoleMenuDefaults(initialRole);
+    const initialSubset = isMasterAdmin ? initialDefaults : initialDefaults.filter((id) => delegatableIdSet.has(id));
+    setSelectedMenuIds(initialSubset);
     setOpenGroupIds({});
     setIsModalOpen(true);
   };
@@ -408,14 +476,14 @@ export const UserList = () => {
   useEffect(() => {
     const action = searchParams.get('action');
     const tab = searchParams.get('tab');
-    if (action === 'create') {
+    if (action === 'create' && canCreate) {
       handleOpenAdd();
     } else if (tab === 'pending') {
       setStatusFilter('Pending');
     } else if (tab === 'locked') {
       setStatusFilter('Locked');
     }
-  }, [searchParams]);
+  }, [searchParams, canCreate]);
 
   const handleOpenEdit = (id) => {
     const u = users.find((x) => x.id === id);
@@ -556,7 +624,9 @@ export const UserList = () => {
 
   const handleRoleChange = (newRole) => {
     setFormValues((prev) => ({ ...prev, role: newRole }));
-    setSelectedMenuIds([...getRoleMenuDefaults(newRole)]);
+    const defaults = getRoleMenuDefaults(newRole);
+    const filtered = isMasterAdmin ? defaults : defaults.filter((id) => delegatableIdSet.has(id));
+    setSelectedMenuIds(filtered);
   };
 
   const togglePlazaChip = (plaza) => {
@@ -606,12 +676,7 @@ export const UserList = () => {
   };
 
   const handleSelectAllMenus = () => {
-    const all = [];
-    MENU_TREE.forEach((m) => {
-      all.push(m.id);
-      (m.subs || []).forEach((s) => all.push(s.id));
-    });
-    setSelectedMenuIds(all);
+    setSelectedMenuIds(Array.from(delegatableIdSet));
   };
 
   const handleDeselectAllMenus = () => {
@@ -620,14 +685,16 @@ export const UserList = () => {
 
   const handleResetToRoleDefaults = () => {
     if (formValues.role) {
-      setSelectedMenuIds([...getRoleMenuDefaults(formValues.role)]);
+      const defaults = getRoleMenuDefaults(formValues.role);
+      const filtered = isMasterAdmin ? defaults : defaults.filter((id) => delegatableIdSet.has(id));
+      setSelectedMenuIds(filtered);
     }
   };
 
   const handleToggleAllExpand = () => {
-    const anyClosed = MENU_TREE.some((m) => m.subs && m.subs.length > 0 && !openGroupIds[m.id]);
+    const anyClosed = delegatableMenuTree.some((m) => m.subs && m.subs.length > 0 && !openGroupIds[m.id]);
     const nextState = {};
-    MENU_TREE.forEach((m) => {
+    delegatableMenuTree.forEach((m) => {
       if (m.subs && m.subs.length > 0) {
         nextState[m.id] = anyClosed;
       }
@@ -690,9 +757,31 @@ export const UserList = () => {
       : formValues.userType || 'Toll Plaza';
 
     try {
+      // Enforce delegation authority: actor can only grant permissions they hold
+      let finalMenuAccess = selectedMenuIds;
+      if (!isMasterAdmin) {
+        if (editingId) {
+          const existingUser = users.find((u) => u.id === editingId);
+          // Preserve any existing permissions that actor cannot manage (e.g. granted by higher admin)
+          const existingUnmanaged = (existingUser?.menuAccess || []).filter((id) => !delegatableIdSet.has(id));
+          const actorManagedPicks = selectedMenuIds.filter((id) => delegatableIdSet.has(id));
+          finalMenuAccess = Array.from(new Set([...existingUnmanaged, ...actorManagedPicks]));
+        } else {
+          finalMenuAccess = selectedMenuIds.filter((id) => delegatableIdSet.has(id));
+        }
+      }
+
+      // Plaza assignment authority: if actor doesn't hold 'Assign User', preserve existing plaza
+      const existingUser = editingId ? users.find((u) => u.id === editingId) : null;
+      const finalPlazaLabel = (editingId && !hasAssignUserPerm && existingUser)
+        ? (existingUser.assignedPlaza || existingUser.plaza || plazaLabel)
+        : plazaLabel;
+      const finalPlazas = (editingId && !hasAssignUserPerm && existingUser)
+        ? (existingUser.plazas || [finalPlazaLabel])
+        : (isConcessionaire ? selectedPlazas : [finalPlazaLabel]);
+
       if (editingId) {
-        const existing = users.find((u) => u.id === editingId);
-        const isCurrentlyPending = existing && existing.approval !== 'Approved';
+        const isCurrentlyPending = existingUser && existingUser.approval !== 'Approved';
         const finalStatus = isCurrentlyPending ? 'Pending' : (formValues.status || 'Active');
 
         const updated = await UserService.updateUser(editingId, {
@@ -703,14 +792,14 @@ export const UserList = () => {
           contact: formValues.contact,
           role: role || 'Plaza Admin',
           userType,
-          assignedPlaza: plazaLabel,
-          plaza: plazaLabel,
-          plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
+          assignedPlaza: finalPlazaLabel,
+          plaza: finalPlazaLabel,
+          plazas: finalPlazas,
           status: finalStatus,
           password: formValues.password || 'Paysonic@2026',
-          menuAccess: selectedMenuIds,
+          menuAccess: finalMenuAccess,
         });
-        setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, status: finalStatus, menuAccess: selectedMenuIds } : u)));
+        setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, status: finalStatus, menuAccess: finalMenuAccess } : u)));
       } else {
         const initialStatus = isMasterAdmin && formValues.status === 'Active' ? 'Active' : 'Pending';
         const initialApproval = isMasterAdmin && formValues.status === 'Active' ? 'Approved' : 'Pending';
@@ -723,18 +812,18 @@ export const UserList = () => {
           contact: formValues.contact,
           role: role || 'Plaza Admin',
           userType,
-          assignedPlaza: plazaLabel,
-          plaza: plazaLabel,
-          plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
+          assignedPlaza: finalPlazaLabel,
+          plaza: finalPlazaLabel,
+          plazas: finalPlazas,
           status: initialStatus,
           approval: initialApproval,
           password: formValues.password || 'Paysonic@2026',
           locked: false,
           avatarBg: '#3762F2',
-          menuAccess: selectedMenuIds,
+          menuAccess: finalMenuAccess,
           createdBy: currentUser?.id || 'PSN0001',
         });
-        setUsers((prev) => [{ ...created, status: initialStatus, approval: initialApproval, menuAccess: selectedMenuIds }, ...prev]);
+        setUsers((prev) => [{ ...created, status: initialStatus, approval: initialApproval, menuAccess: finalMenuAccess }, ...prev]);
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -1049,20 +1138,23 @@ export const UserList = () => {
   const isNoPlaza = ROLE_NO_PLAZA.includes(role);
   const isSinglePlaza = role && !isFormConcessionaire && !isAutoAllPlaza && !isNoPlaza;
 
-  const roleDefaults = useMemo(() => getRoleMenuDefaults(role), [role]);
+  const roleDefaults = useMemo(() => {
+    const raw = getRoleMenuDefaults(role);
+    return isMasterAdmin ? raw : raw.filter((id) => delegatableIdSet.has(id));
+  }, [role, isMasterAdmin, delegatableIdSet]);
   const defaultSet = useMemo(() => new Set(roleDefaults), [roleDefaults]);
 
   const totalAvailableMenus = useMemo(() => {
     let count = 0;
-    MENU_TREE.forEach((m) => {
+    delegatableMenuTree.forEach((m) => {
       count += m.subs && m.subs.length > 0 ? m.subs.length : 1;
     });
     return count;
-  }, []);
+  }, [delegatableMenuTree]);
 
   const selectedCount = useMemo(() => {
     let count = 0;
-    MENU_TREE.forEach((m) => {
+    delegatableMenuTree.forEach((m) => {
       if (!m.subs || m.subs.length === 0) {
         if (selectedMenuIds.includes(m.id)) count++;
       } else {
@@ -1072,7 +1164,7 @@ export const UserList = () => {
       }
     });
     return count;
-  }, [selectedMenuIds]);
+  }, [delegatableMenuTree, selectedMenuIds]);
 
   return (
     <div className="user-management-content">
@@ -1355,7 +1447,7 @@ export const UserList = () => {
                     </button>
                   )}
 
-                  {canManageTargetUser(u) && (
+                  {canManageTargetUser(u) && hasLockUnlockPerm && (
                     <button
                       type="button"
                       className="icon-btn"
@@ -1642,15 +1734,21 @@ export const UserList = () => {
                     <div className="field" style={{ marginTop: '16px', maxWidth: '340px' }}>
                       <label>
                         Assign plaza <span className="req">*</span>
+                        {!hasAssignUserPerm && (
+                          <span style={{ fontSize: '11px', color: '#b45309', marginLeft: '6px', fontWeight: 400 }}>
+                            🔒 (Requires 'Assign User' permission to modify)
+                          </span>
+                        )}
                       </label>
                       <select
                         value={formValues.plaza}
                         onChange={(e) => {
+                          if (!hasAssignUserPerm) return;
                           setFormValues({ ...formValues, plaza: e.target.value });
                           setFormErrors((prev) => ({ ...prev, plaza: '' }));
                         }}
                         onBlur={() => handleBlur('plaza')}
-                        disabled={isPlazaAdmin}
+                        disabled={isPlazaAdmin || !hasAssignUserPerm}
                       >
                         <option value="">Select plaza</option>
                         {allowedPlazasForActor.map((p) => (
@@ -1669,6 +1767,11 @@ export const UserList = () => {
                     <div style={{ marginTop: '16px' }}>
                       <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--body-text)' }}>
                         Assign plazas <span className="req">*</span>
+                        {!hasAssignUserPerm && (
+                          <span style={{ fontSize: '11px', color: '#b45309', marginLeft: '6px', fontWeight: 400 }}>
+                            🔒 (Requires 'Assign User' permission to modify)
+                          </span>
+                        )}
                       </label>
                       <div className="hint" style={{ margin: '2px 0 8px' }}>
                         Concessionaire accounts can be assigned more than one plaza.
@@ -1681,7 +1784,9 @@ export const UserList = () => {
                               key={p}
                               type="button"
                               className={`chip ${picked ? 'picked' : ''}`}
+                              disabled={!hasAssignUserPerm}
                               onClick={() => {
+                                if (!hasAssignUserPerm) return;
                                 togglePlazaChip(p);
                                 setFormErrors((prev) => ({ ...prev, plaza: '' }));
                               }}
@@ -1760,7 +1865,7 @@ export const UserList = () => {
                           onClick={handleToggleAllExpand}
                           title="Expand or collapse all modules"
                         >
-                          {MENU_TREE.some((m) => m.subs && m.subs.length > 0 && !openGroupIds[m.id])
+                          {delegatableMenuTree.some((m) => m.subs && m.subs.length > 0 && !openGroupIds[m.id])
                             ? 'Expand All'
                             : 'Collapse All'}
                         </button>
@@ -1772,7 +1877,7 @@ export const UserList = () => {
 
                     {/* Unified Access Tree */}
                     <div className="access-tree">
-                      {MENU_TREE.map((m) => {
+                      {delegatableMenuTree.map((m) => {
                         if (!m.subs || m.subs.length === 0) {
                           const isChecked = selectedMenuIds.includes(m.id);
                           const isDefault = defaultSet.has(m.id);
