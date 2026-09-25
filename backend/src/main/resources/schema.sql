@@ -93,3 +93,86 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     INDEX `idx_audit_reference_id` (`reference_id`),
     INDEX `idx_audit_correlation_id` (`correlation_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. Concessionaires Table
+CREATE TABLE IF NOT EXISTS `concessionaires` (
+    `id` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(120) NOT NULL,
+    `address` VARCHAR(255) NULL,
+    `mail` VARCHAR(120) NULL,
+    `contact` VARCHAR(30) NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. Plazas Table
+CREATE TABLE IF NOT EXISTS `plazas` (
+    `id` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(120) NOT NULL,
+    `org_id` VARCHAR(50) NULL,
+    `agency_id` VARCHAR(50) NULL,
+    `concessionaire_id` VARCHAR(32) NULL,
+    `category` VARCHAR(50) NOT NULL DEFAULT 'Toll',
+    `base_pricing` VARCHAR(50) NOT NULL DEFAULT 'Distance Based',
+    `plaza_interface` VARCHAR(50) NOT NULL DEFAULT 'API',
+    `subtype` VARCHAR(50) NOT NULL DEFAULT 'National',
+    `authority` VARCHAR(50) NOT NULL DEFAULT 'NHAI',
+    `state` VARCHAR(80) NULL,
+    `city` VARCHAR(80) NULL,
+    `activation_date` VARCHAR(30) NULL,
+    `geo_code` VARCHAR(80) NULL,
+    `scheme_rule` VARCHAR(50) NULL,
+    `scheme_duration` VARCHAR(50) NULL,
+    `status` VARCHAR(30) NOT NULL DEFAULT 'Active',
+    `public_key` TEXT NULL,
+    `contact_address` VARCHAR(255) NULL,
+    `contact_no` VARCHAR(30) NULL,
+    `contact_mail` VARCHAR(120) NULL,
+    `mdr_json` TEXT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_plazas_concessionaire` (`concessionaire_id`),
+    INDEX `idx_plazas_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. Lanes Table
+CREATE TABLE IF NOT EXISTS `lanes` (
+    `id` VARCHAR(64) NOT NULL,
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `lane_id` VARCHAR(32) NOT NULL,
+    `direction` VARCHAR(20) NOT NULL DEFAULT 'North',
+    `type` VARCHAR(20) NOT NULL DEFAULT 'Entry',
+    `mode` VARCHAR(30) NOT NULL DEFAULT 'Normal',
+    `category` VARCHAR(30) NOT NULL DEFAULT 'Hybrid',
+    `status` VARCHAR(30) NOT NULL DEFAULT 'Open',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_lanes_plaza_id` (`plaza_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 8. Plaza Callbacks Table
+CREATE TABLE IF NOT EXISTS `plaza_callbacks` (
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `callbacks_json` LONGTEXT NOT NULL,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`plaza_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 9. Plaza Toll Fare Matrix Table
+CREATE TABLE IF NOT EXISTS `plaza_fares` (
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `fares_json` LONGTEXT NOT NULL,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`plaza_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 10. Plaza CCH Mapping Table
+CREATE TABLE IF NOT EXISTS `plaza_cch` (
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `cch_json` LONGTEXT NOT NULL,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`plaza_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

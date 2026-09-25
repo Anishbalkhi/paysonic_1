@@ -106,12 +106,18 @@ export const MENU_TREE = [
     id: 'on_boarding',
     label: 'On Boarding',
     subs: [
+      { id: 'on_boarding_view_plaza', label: 'View Plaza' },
+      { id: 'on_boarding_add_concessionaire', label: 'Add Concessionaire' },
+      { id: 'on_boarding_add_plaza', label: 'Add Plaza' },
+      { id: 'on_boarding_lane_details', label: 'Lane Details' },
+      { id: 'on_boarding_callback_url', label: 'Callback URLs' },
+      { id: 'on_boarding_fare_mapping', label: 'Fare Mapping' },
+      { id: 'on_boarding_cch_mapping', label: 'CCH Mapping' },
       { id: 'on_boarding_on_boarding_approver', label: 'On Boarding Approver' },
       { id: 'on_boarding_view_group', label: 'View Group' },
       { id: 'on_boarding_view_company', label: 'View Company' },
       { id: 'on_boarding_view_division', label: 'View Division' },
       { id: 'on_boarding_viewproject', label: 'ViewProject' },
-      { id: 'on_boarding_view_plaza', label: 'View Plaza' },
       { id: 'on_boarding_plaza_doc_upload_file', label: 'Plaza Doc Upload File' },
       { id: 'on_boarding_approve_palza_upload', label: 'Approve Palza Upload' }
     ]
@@ -129,7 +135,8 @@ export const ROLE_MENU_DEFAULTS = {
     'violation_management', 'violation_management_violation_dashboard', 'violation_management_violation_validate', 'violation_management_violation_settlement_report', 'violation_management_violation_raw_file', 'violation_management_violation_bulk_action',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_settled_transaction', 'transactional_report_toll_fare_report', 'transactional_report_transaction_search',
     'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval',
-    'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_settlement_summary', 'summary_report_pass_summary'
+    'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_settlement_summary', 'summary_report_pass_summary',
+    'on_boarding', 'on_boarding_view_plaza', 'on_boarding_add_concessionaire', 'on_boarding_add_plaza', 'on_boarding_lane_details', 'on_boarding_callback_url', 'on_boarding_fare_mapping', 'on_boarding_cch_mapping'
   ],
   'Plaza Admin': [
     'dashboard',
@@ -140,7 +147,8 @@ export const ROLE_MENU_DEFAULTS = {
     'violation_management', 'violation_management_violation_dashboard', 'violation_management_view_violation', 'violation_management_violation_settlement_report',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_settled_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
     'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_settlement_summary', 'summary_report_pass_summary',
-    'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval'
+    'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval',
+    'on_boarding', 'on_boarding_view_plaza', 'on_boarding_lane_details', 'on_boarding_callback_url', 'on_boarding_fare_mapping', 'on_boarding_cch_mapping'
   ],
   Concessionaire: [
     'dashboard',
@@ -151,7 +159,8 @@ export const ROLE_MENU_DEFAULTS = {
     'violation_management', 'violation_management_violation_dashboard', 'violation_management_view_violation', 'violation_management_violation_settlement_report',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_settled_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
     'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_settlement_summary', 'summary_report_pass_summary',
-    'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval'
+    'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval',
+    'on_boarding', 'on_boarding_view_plaza', 'on_boarding_add_concessionaire', 'on_boarding_add_plaza', 'on_boarding_lane_details', 'on_boarding_callback_url', 'on_boarding_fare_mapping', 'on_boarding_cch_mapping'
   ],
   'Plaza POS': [
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',

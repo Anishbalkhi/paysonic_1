@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -331,7 +332,7 @@ public class UserService {
             }
             List<String> flattened = raw.stream()
                     .flatMap(p -> Arrays.stream(p.split(",")))
-                    .map(String::trim)
+                    .map(s -> s.trim())
                     .filter(s -> !s.isBlank())
                     .distinct()
                     .collect(Collectors.toList());

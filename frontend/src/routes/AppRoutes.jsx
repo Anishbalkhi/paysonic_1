@@ -7,6 +7,7 @@ import ProductDetail from '../pages/ProductDetail/ProductDetail';
 import UserActivity from '../pages/UserActivity/UserActivity';
 import TagDetails from '../pages/TagDetails/TagDetails';
 import PassIssuance from '../pages/PassIssuance/PassIssuance';
+import Onboarding from '../pages/Onboarding/Onboarding';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -36,6 +37,18 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Concessionaire', 'Plaza Admin']}
+            requiredMenu="on_boarding"
+          >
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/on-boarding" element={<Navigate to="/onboarding" replace />} />
       <Route
         path="/users"
         element={
