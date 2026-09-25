@@ -98,8 +98,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Tag Details',
       icon: ICONS.tag,
       children: [
-        { label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
-        { label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
+        { subId: 'tag_details_request_tag_details', label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
+        { subId: 'tag_details_blacklist_search_history', label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
       ],
     },
     {
@@ -107,11 +107,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Recon Management',
       icon: ICONS.recon,
       children: [
-        { label: 'A. Upload Recon File', path: '#upload-recon' },
-        { label: 'B. Recon File Status', path: '#recon-status' },
-        { label: 'C. TRS Report', path: '#trs-report' },
-        { label: 'D. Cycle Wise Report', path: '#cycle-wise-report' },
-        { label: 'E. Violation Settlement Report', path: '#violation-settlement-recon' },
+        { subId: 'recon_management_upload_recon_file', label: 'A. Upload Recon File', path: '#upload-recon' },
+        { subId: 'recon_management_recon_file_status', label: 'B. Recon File Status', path: '#recon-status' },
+        { subId: 'recon_management_trs_report', label: 'C. TRS Report', path: '#trs-report' },
+        { subId: 'recon_management_cycle_wise_report', label: 'D. Cycle Wise Report', path: '#cycle-wise-report' },
+        { subId: 'recon_management_violation_settlement_report', label: 'E. Violation Settlement Report', path: '#violation-settlement-recon' },
       ],
     },
     {
@@ -119,11 +119,13 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Dispute Handling',
       icon: ICONS.dispute,
       children: [
-        { label: 'A. Dispute Dashboard', path: '#dispute-dashboard' },
-        { label: 'B. Dispute File Upload', path: '#dispute-file-upload' },
-        { label: 'C. Dispute File Status', path: '#dispute-file-status' },
-        { label: 'D. Chargeback Assign', path: '#chargeback-assign' },
-        { label: 'E. Dispute Detail Report', path: '#dispute-detail-report' },
+        { subId: 'dispute_handling_dispute_dashboard', label: 'A. Dispute Dashboard', path: '#dispute-dashboard' },
+        { subId: 'dispute_handling_dispute_file_upload', label: 'B. Dispute File Upload', path: '#dispute-file-upload' },
+        { subId: 'dispute_handling_dispute_file_status', label: 'C. Dispute File Status', path: '#dispute-file-status' },
+        { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '#chargeback-assign' },
+        { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '#validate-dispute' },
+        { subId: 'dispute_handling_approve_dispute', label: 'F. Approve Dispute', path: '#approve-dispute' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'G. Dispute Detail Report', path: '#dispute-detail-report' },
       ],
     },
     {
@@ -131,11 +133,12 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { label: 'A. Violation Dashboard', path: '#violation-dashboard' },
-        { label: 'B. Violation Validate', path: '#violation-validate' },
-        { label: 'C. Violation Settlement Report', path: '#violation-settlement-report' },
-        { label: 'D. Violation Raw File', path: '#violation-raw-file' },
-        { label: 'E. Violation Bulk Action', path: '#violation-bulk-action' },
+        { subId: 'violation_management_violation_dashboard', label: 'A. Violation Dashboard', path: '#violation-dashboard' },
+        { subId: 'violation_management_violation_validate', label: 'B. Violation Validate', path: '#violation-validate' },
+        { subId: 'violation_management_view_violation', label: 'C. View Violation', path: '#view-violation' },
+        { subId: 'violation_management_violation_settlement_report', label: 'D. Violation Settlement Report', path: '#violation-settlement-report' },
+        { subId: 'violation_management_violation_raw_file', label: 'E. Violation Raw File', path: '#violation-raw-file' },
+        { subId: 'violation_management_violation_bulk_action', label: 'F. Violation Bulk Action', path: '#violation-bulk-action' },
       ],
     },
     {
@@ -143,11 +146,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Transactional Report',
       icon: ICONS.report,
       children: [
-        { label: 'A. Transaction Report', path: '#transaction-report' },
-        { label: 'B. Rejected Transaction', path: '#rejected-transaction' },
-        { label: 'C. Settled Transaction', path: '#settled-transaction' },
-        { label: 'D. Toll Fare Report', path: '#toll-fare-report' },
-        { label: 'E. Transaction Search', path: '#transaction-search' },
+        { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '#transaction-report' },
+        { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '#rejected-transaction' },
+        { subId: 'transactional_report_settled_transaction', label: 'C. Settled Transaction', path: '#settled-transaction' },
+        { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '#toll-fare-report' },
+        { subId: 'transactional_report_transaction_search', label: 'E. Transaction Search', path: '#transaction-search' },
       ],
     },
     {
@@ -155,11 +158,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Pass Issuance',
       icon: ICONS.pass,
       children: [
-        { label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
-        { label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
-        { label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
-        { label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
-        { label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
+        { subId: 'pass_issuance_pass_issuance', label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
+        { subId: 'pass_issuance_pass_issuance_approval', label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
+        { subId: 'pass_issuance_pass_issuance_view', label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
+        { subId: 'pass_issuance_view_customer', label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
+        { subId: 'pass_issuance_customer_approval', label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
       ],
     },
     {
@@ -167,10 +170,10 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Summary Report',
       icon: ICONS.summary,
       children: [
-        { label: 'A. Transaction Summary', path: '#transaction-summary' },
-        { label: 'B. NHAI Traffic Report', path: '#nhai-traffic-report' },
-        { label: 'C. Settlement Summary', path: '#settlement-summary' },
-        { label: 'D. Pass Summary', path: '#pass-summary' },
+        { subId: 'summary_report_transaction_summary', label: 'A. Transaction Summary', path: '#transaction-summary' },
+        { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '#nhai-traffic-report' },
+        { subId: 'summary_report_settlement_summary', label: 'C. Settlement Summary', path: '#settlement-summary' },
+        { subId: 'summary_report_pass_summary', label: 'D. Pass Summary', path: '#pass-summary' },
       ],
     },
     {
@@ -178,14 +181,14 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'On Boarding',
       icon: ICONS.onboarding,
       children: [
-        { label: 'A. On Boarding Approver', path: '#on-boarding-approver' },
-        { label: 'B. View Group', path: '#view-group' },
-        { label: 'C. View Company', path: '#view-company' },
-        { label: 'D. View Division', path: '#view-division' },
-        { label: 'E. ViewProject', path: '#view-project' },
-        { label: 'F. View Plaza', path: '#view-plaza' },
-        { label: 'G. Plaza Doc Upload File', path: '#plaza-doc-upload-file' },
-        { label: 'H. Approve Plaza Upload', path: '#approve-plaza-upload' },
+        { subId: 'on_boarding_on_boarding_approver', label: 'A. On Boarding Approver', path: '#on-boarding-approver' },
+        { subId: 'on_boarding_view_group', label: 'B. View Group', path: '#view-group' },
+        { subId: 'on_boarding_view_company', label: 'C. View Company', path: '#view-company' },
+        { subId: 'on_boarding_view_division', label: 'D. View Division', path: '#view-division' },
+        { subId: 'on_boarding_viewproject', label: 'E. ViewProject', path: '#view-project' },
+        { subId: 'on_boarding_view_plaza', label: 'F. View Plaza', path: '#view-plaza' },
+        { subId: 'on_boarding_plaza_doc_upload_file', label: 'G. Plaza Doc Upload File', path: '#plaza-doc-upload-file' },
+        { subId: 'on_boarding_approve_palza_upload', label: 'H. Approve Plaza Upload', path: '#approve-plaza-upload' },
       ],
     },
   ],
@@ -579,12 +582,11 @@ export const filterNavigationByPermissions = (sections, menuAccess) => {
 
   return sections
     .map((item) => {
-      // Check top-level permission
-      const isParentAllowed =
-        allowedSet.has(item.id) ||
-        (item.id === 'user_activity' && (allowedSet.has('user_activity') || allowedSet.has('user_management')));
+      // Check top-level permission strictly against allowedSet
+      const isParentAllowed = allowedSet.has(item.id);
 
-      // If no children, it's a leaf item (e.g. Dashboard) — only show if parent is explicitly allowed
+      // If no children, it's a leaf item (e.g. Dashboard, User Management, User Activity)
+      // Only show if parent is explicitly allowed
       if (!item.children || item.children.length === 0) {
         return isParentAllowed ? item : null;
       }
@@ -600,11 +602,6 @@ export const filterNavigationByPermissions = (sections, menuAccess) => {
         if (child.subId && allowedSet.has(child.subId)) return true;
         if (child.id && allowedSet.has(child.id)) return true;
 
-        // User activity link fallback
-        if (child.path === '/activity' || (child.label && child.label.toLowerCase().includes('user activity'))) {
-          return allowedSet.has('user_activity') || allowedSet.has('user_management');
-        }
-
         // Match child label against MENU_TREE sub-items for permission lookup
         const cleanChildLabel = normalize(child.label);
         const groupInTree = MENU_TREE.find((m) => m.id === item.id);
@@ -613,15 +610,13 @@ export const filterNavigationByPermissions = (sections, menuAccess) => {
             (s) => normalize(s.label) === cleanChildLabel
           );
           if (matchedSub) {
-            // Sub-item found in config — enforce its specific permission
             return allowedSet.has(matchedSub.id);
           }
-          // Sub-item not in config — deny by default (strict enforcement)
           return false;
         }
 
-        // No sub-items defined for this parent in MENU_TREE — allow if parent is allowed
-        return true;
+        // If no sub-items defined in MENU_TREE, allow if parent is allowed
+        return isParentAllowed;
       });
 
       // If all sub-items were filtered out, hide section completely
@@ -682,9 +677,6 @@ export const hasMenuAccess = (user, menuId) => {
   if (!user) return false;
   const menuAccess = user.menuAccess || getRoleMenuDefaults(user.role);
   if (!menuAccess || !Array.isArray(menuAccess)) return true;
-  if (menuId === 'user_activity') {
-    return menuAccess.includes('user_activity') || menuAccess.includes('user_management');
-  }
   return menuAccess.includes(menuId);
 };
 

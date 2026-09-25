@@ -124,17 +124,25 @@ export const UserList = () => {
   // Check if target user is on same level or upper level in hierarchy
   const isSameOrUpperLevel = (targetUser) => {
     if (!targetUser) return false;
-    const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
-    const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
-    return targetLevel <= myLevel;
+    // For non-Master Admin, enforce same or upper level view-only protection
+    if (!isMasterAdmin) {
+      const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
+      const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
+      return targetLevel <= myLevel;
+    }
+    // Master Admin can edit and manage all users. Show info icon for own profile or for viewing
+    return targetUser.id === currentUser?.id;
   };
 
   // Hierarchy check: can actor edit/disable this target user?
-  // Strict rule: CANNOT make any changes (edit, lock) to same or higher level in hierarchy
+  // Master Admin has full management authority across all roles & plazas
   const canManageTargetUser = (targetUser) => {
     if (!targetUser) return false;
-    // Cannot manage yourself
+    // Cannot manage yourself in User Management
     if (targetUser.id === currentUser?.id) return false;
+
+    // Master Admin can edit and configure any user in the system (including other Master Admins)
+    if (isMasterAdmin) return true;
 
     const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
     const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
@@ -142,7 +150,6 @@ export const UserList = () => {
     // Must be strictly lower level (higher number = lower in hierarchy)
     if (targetLevel <= myLevel) return false;
 
-    if (isMasterAdmin) return true;
     if (isAdmin) return true;
 
     if (isConcessionaire) {
@@ -176,6 +183,11 @@ export const UserList = () => {
     if (!targetUser) return false;
     if (targetUser.id === currentUser?.id) return false;
 
+    // Master Admin can delete any user except themselves and peer Master Admins
+    if (isMasterAdmin) {
+      return targetUser.role !== 'Master Admin';
+    }
+
     const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
     const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
 
@@ -190,28 +202,31 @@ export const UserList = () => {
   const canApproveTargetUser = (targetUser) => {
     if (!targetUser) return false;
     // Already approved users do not need approval
-    if (targetUser.approval === 'Approved') return false;
+    if (targetUser.approval === 'Approved' && targetUser.status === 'Active') return false;
+
+    // Cannot approve own account
+    if (targetUser.id === currentUser?.id || (targetUser.email && targetUser.email.toLowerCase() === currentUser?.email?.toLowerCase())) {
+      return false;
+    }
+
+    // Master Admin authority:
+    // Master Admin CAN approve any pending user in the system, INCLUDING newly created Master Admins!
+    if (isMasterAdmin) {
+      return targetUser.approval === 'Pending' || targetUser.status === 'Pending';
+    }
 
     // Strict hierarchy: cannot approve same or higher level users
     const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
     const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
     if (targetLevel <= myLevel) return false;
 
-    // Maker-Checker Rule: Account creator CANNOT approve their own onboarding request
+    // Maker-Checker Rule: Account creator CANNOT approve their own onboarding request (for subordinate roles)
     const isCreator =
       targetUser.createdBy &&
       (targetUser.createdBy.toLowerCase() === currentUser?.id?.toLowerCase() ||
         targetUser.createdBy.toLowerCase() === currentUser?.username?.toLowerCase() ||
         targetUser.createdBy.toLowerCase() === currentUser?.email?.toLowerCase());
     if (isCreator) return false;
-
-    // Cannot approve own account
-    if (targetUser.id === currentUser?.id || targetUser.email?.toLowerCase() === currentUser?.email?.toLowerCase()) {
-      return false;
-    }
-
-    // Master Admin can approve all subordinate roles
-    if (isMasterAdmin) return true;
 
     // Admin can approve subordinate roles below Level 2
     if (isAdmin) {
@@ -694,6 +709,8 @@ export const UserList = () => {
         });
         setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, status: finalStatus, menuAccess: selectedMenuIds } : u)));
       } else {
+        const initialStatus = isMasterAdmin && formValues.status === 'Active' ? 'Active' : 'Pending';
+        const initialApproval = isMasterAdmin && formValues.status === 'Active' ? 'Approved' : 'Pending';
         const created = await UserService.createUser({
           id: nextUserId(),
           name: formValues.name || 'New user',
@@ -706,15 +723,15 @@ export const UserList = () => {
           assignedPlaza: plazaLabel,
           plaza: plazaLabel,
           plazas: isConcessionaire ? selectedPlazas : [plazaLabel],
-          status: 'Pending',
-          approval: 'Pending',
+          status: initialStatus,
+          approval: initialApproval,
           password: formValues.password || 'Paysonic@2026',
           locked: false,
           avatarBg: '#3762F2',
           menuAccess: selectedMenuIds,
           createdBy: currentUser?.id || 'PSN0001',
         });
-        setUsers((prev) => [{ ...created, status: 'Pending', approval: 'Pending', menuAccess: selectedMenuIds }, ...prev]);
+        setUsers((prev) => [{ ...created, status: initialStatus, approval: initialApproval, menuAccess: selectedMenuIds }, ...prev]);
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -1556,11 +1573,35 @@ export const UserList = () => {
                         Active status <span className="req">*</span>
                       </label>
                       {editingId && users.find((x) => x.id === editingId)?.approval !== 'Approved' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '10px' }}>
                           <span className="badge badge-pending">Pending Approval</span>
-                          <span style={{ fontSize: '12px', color: '#667085' }}>
-                            (Requires hierarchy approval to activate)
-                          </span>
+                          {canApproveTargetUser(users.find((x) => x.id === editingId)) ? (
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await handleApproveUser(editingId);
+                                setFormValues((prev) => ({ ...prev, status: 'Active' }));
+                              }}
+                              style={{
+                                background: '#ecfdf5',
+                                color: '#047857',
+                                border: '1px solid #a7f3d0',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ✓ Approve &amp; Activate Now
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '12px', color: '#667085' }}>
+                              (Requires hierarchy approval to activate)
+                            </span>
+                          )}
                         </div>
                       ) : editingId ? (
                         <select
@@ -1571,6 +1612,16 @@ export const UserList = () => {
                         >
                           <option>Active</option>
                           <option>Inactive</option>
+                        </select>
+                      ) : isMasterAdmin ? (
+                        <select
+                          value={formValues.status}
+                          onChange={(e) =>
+                            setFormValues({ ...formValues, status: e.target.value })
+                          }
+                        >
+                          <option value="Active">Active (Auto-Approved by Master Admin)</option>
+                          <option value="Pending">Pending Approval</option>
                         </select>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
@@ -2347,9 +2398,32 @@ export const UserList = () => {
                 background: '#f8fafc',
                 borderTop: '1px solid #e5e7eb',
                 display: 'flex',
-                justifyContent: 'flex-end',
+                justifyContent: canApproveTargetUser(viewingUser) ? 'space-between' : 'flex-end',
+                alignItems: 'center',
               }}
             >
+              {canApproveTargetUser(viewingUser) && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    await handleApproveUser(viewingUser.id);
+                    setViewingUser(null);
+                  }}
+                  style={{
+                    background: '#059669',
+                    borderColor: '#059669',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Approve User
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-secondary"

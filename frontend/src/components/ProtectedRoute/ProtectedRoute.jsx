@@ -28,11 +28,11 @@ export const ProtectedRoute = ({ children, allowedRoles = [], requiredMenu = nul
   const isRoleAllowed =
     allowedRoles.length === 0 || isMasterAdmin || allowedRoles.includes(currentUser.role);
 
-  // Check menu/module-level permission strictly against user's assigned permissions
-  const isMenuAllowed =
-    !requiredMenu || hasMenuAccess(currentUser, requiredMenu);
-
-  const isAllowed = isRoleAllowed && isMenuAllowed;
+  // If a specific menu is required: user must have explicit menu access permission!
+  // If user was granted explicit menu access by an administrator, grant access!
+  const isAllowed = requiredMenu
+    ? hasMenuAccess(currentUser, requiredMenu)
+    : isRoleAllowed;
 
   if (!isAllowed) {
     const fallbackRoute = getDefaultRouteForUser(currentUser);

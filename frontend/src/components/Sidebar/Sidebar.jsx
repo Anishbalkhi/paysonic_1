@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getRoleNavigation, filterNavigationByPermissions } from '../../config/roleMenus';
+import { getRoleMenuDefaults } from '../../pages/UserList/menuConfig';
 import OperationsModal from '../OperationsModal/OperationsModal';
 import './Sidebar.scss';
 
@@ -62,9 +63,13 @@ export const Sidebar = ({
     border: '#dcfce7',
   };
 
-  // Fetch sections strictly filtered by user's assigned permissions and role
-  const baseSections = getRoleNavigation(userRole);
-  const visibleSections = filterNavigationByPermissions(baseSections, currentUser?.menuAccess);
+  // Fetch sections strictly filtered by user's assigned permissions.
+  // When customized menuAccess is present, evaluate against all system modules so any
+  // permissions granted by the creator are shown, and any removed permissions are hidden.
+  const allSystemSections = getRoleNavigation('Master Admin');
+  const baseSections = Array.isArray(currentUser?.menuAccess) ? allSystemSections : getRoleNavigation(userRole);
+  const userPermissions = Array.isArray(currentUser?.menuAccess) ? currentUser.menuAccess : getRoleMenuDefaults(userRole);
+  const visibleSections = filterNavigationByPermissions(baseSections, userPermissions);
 
   return (
     <>

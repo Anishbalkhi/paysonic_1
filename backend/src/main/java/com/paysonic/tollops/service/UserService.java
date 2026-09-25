@@ -156,8 +156,8 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
 
-        // Enforce Maker-Checker Rule (Section 4): Creator cannot approve their own account
-        if (approverId != null && approverId.equalsIgnoreCase(user.getCreatedBy())) {
+        // Enforce Maker-Checker Rule (Section 4): Creator cannot approve their own account unless Master Admin onboarding
+        if (approverId != null && approverId.equalsIgnoreCase(user.getCreatedBy()) && !"Master Admin".equalsIgnoreCase(user.getRole())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Maker-Checker Violation: Account creator cannot approve their own user onboarding request.");
         }
@@ -194,14 +194,15 @@ public class UserService {
 
         String actorRole = actor.getRole();
         if ("Master Admin".equalsIgnoreCase(actorRole)) {
-            // Master Admin cannot delete or manage peer Master Admin accounts
             if (targetUser != null && "Master Admin".equalsIgnoreCase(targetUser.getRole())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                        "Hierarchy Violation: Master Admin cannot modify or delete peer Master Admin accounts.");
+                if ("DELETE".equalsIgnoreCase(action)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Hierarchy Violation: Master Admin cannot delete peer Master Admin accounts.");
+                }
+                return; // Allowed: Master Admin can approve, edit, and configure peer Master Admin accounts
             }
             if ("CREATE".equalsIgnoreCase(action) && "Master Admin".equalsIgnoreCase(targetRole)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                        "Hierarchy Violation: Master Admin cannot create peer Master Admin accounts.");
+                return; // Allowed: Master Admin can create another Master Admin
             }
             return; // Full access across all subordinate roles & plazas
         }
