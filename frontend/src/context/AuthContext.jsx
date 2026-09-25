@@ -91,10 +91,12 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           const perms = getStoredUserPermissions();
           const assignedPermissions =
-            liveRecord.menuAccess ||
-            perms[liveRecord.id] ||
-            (liveRecord.email && perms[liveRecord.email.toLowerCase()]) ||
-            getRoleMenuDefaults(liveRecord.role);
+            (liveRecord.menuAccess !== undefined && liveRecord.menuAccess !== null)
+              ? liveRecord.menuAccess
+              : perms[liveRecord.id] ||
+                (liveRecord.email && perms[liveRecord.email.toLowerCase()]) ||
+                (liveRecord.username && perms[liveRecord.username.toLowerCase()]) ||
+                getRoleMenuDefaults(liveRecord.role);
 
           const updatedSession = {
             ...active,
@@ -111,6 +113,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     validateLiveSession();
+    // Re-check whenever tab gains focus or on a gentle interval so permission changes reflect immediately
+    const handleFocus = () => validateLiveSession();
+    const syncInterval = setInterval(validateLiveSession, 12000);
+    window.addEventListener('focus', handleFocus);
 
     // Listen for real-time permission and profile updates across tabs/components
     const handleAuthChange = (e) => {
@@ -141,6 +147,8 @@ export const AuthProvider = ({ children }) => {
             logout();
           }
         } catch {}
+      } else if (e.key === 'paysonic_user_permissions' || e.key === 'paysonic_users_cache') {
+        validateLiveSession();
       }
     };
 
@@ -150,6 +158,8 @@ export const AuthProvider = ({ children }) => {
 
     return () => {
       isMounted = false;
+      clearInterval(syncInterval);
+      window.removeEventListener('focus', handleFocus);
       window.removeEventListener('paysonic_auth_change', handleAuthChange);
       window.removeEventListener('paysonic_user_revoked', handleUserRevoked);
       window.removeEventListener('storage', handleStorage);
@@ -292,11 +302,12 @@ export const AuthProvider = ({ children }) => {
     // Retrieve customized permissions for this specific user
     const perms = getStoredUserPermissions();
     const assignedPermissions =
-      match.menuAccess ||
-      perms[match.id] ||
-      (match.email && perms[match.email.toLowerCase()]) ||
-      (match.username && perms[match.username.toLowerCase()]) ||
-      getRoleMenuDefaults(match.role);
+      (match.menuAccess !== undefined && match.menuAccess !== null)
+        ? match.menuAccess
+        : perms[match.id] ||
+          (match.email && perms[match.email.toLowerCase()]) ||
+          (match.username && perms[match.username.toLowerCase()]) ||
+          getRoleMenuDefaults(match.role);
 
     const sessionData = {
       ...match,

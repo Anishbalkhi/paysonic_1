@@ -511,9 +511,12 @@ export const UserList = () => {
       setSelectedPlazas([]);
     }
 
+    const parsedPerms = parseUserTypeWithPermissions(u.userType);
     const currentMenu =
       u.menuAccess !== null && u.menuAccess !== undefined
         ? u.menuAccess
+        : parsedPerms.menuAccess !== null && parsedPerms.menuAccess !== undefined
+        ? parsedPerms.menuAccess
         : getRoleMenuDefaults(u.role);
     setSelectedMenuIds([...currentMenu]);
     setOpenGroupIds({});

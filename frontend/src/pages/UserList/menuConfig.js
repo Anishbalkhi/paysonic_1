@@ -251,6 +251,9 @@ export function parseUserTypeWithPermissions(rawUserType) {
     const parts = str.split('#M:');
     const cleanUserType = parts[0] ? parts[0].trim() : '—';
     const hex = parts[1] ? parts[1].trim() : null;
+    if (hex === '0' || hex === 'none' || hex === '') {
+      return { cleanUserType: cleanUserType || '—', menuAccess: [] };
+    }
     const menuAccess = hex ? decodeMenuAccessFromHex(hex) : null;
     return { cleanUserType: cleanUserType || '—', menuAccess };
   }
@@ -263,6 +266,9 @@ export function parseUserTypeWithPermissions(rawUserType) {
 export function buildUserTypeWithPermissions(cleanUserType, menuAccess) {
   const base = cleanUserType && cleanUserType !== '—' ? cleanUserType.trim() : 'Toll Plaza';
   if (Array.isArray(menuAccess)) {
+    if (menuAccess.length === 0) {
+      return `${base}#M:0`;
+    }
     const hex = encodeMenuAccessToHex(menuAccess);
     if (hex) {
       return `${base}#M:${hex}`;
@@ -270,3 +276,4 @@ export function buildUserTypeWithPermissions(cleanUserType, menuAccess) {
   }
   return base;
 }
+

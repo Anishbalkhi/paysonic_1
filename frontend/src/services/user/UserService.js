@@ -102,19 +102,22 @@ class UserService {
           const parsedUserType = parseUserTypeWithPermissions(u.userType);
           const cleanUserType = userOverride.userType || parsedUserType.cleanUserType || u.userType || '—';
 
-          const hasDbPermissions = Array.isArray(u.menuAccess) && u.menuAccess.length > 0;
-          const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess) && parsedUserType.menuAccess.length > 0;
+          const hasDbPermissions = Array.isArray(u.menuAccess);
+          const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess);
 
           const customAccess =
-            userOverride.menuAccess ||
-            (hasEncodedPermissions ? parsedUserType.menuAccess : null) ||
-            (hasDbPermissions ? u.menuAccess : null) ||
-            perms[u.id] ||
-            (email && perms[email.toLowerCase()]) ||
-            (username && perms[username.toLowerCase()]) ||
-            getRoleMenuDefaults(userOverride.role || u.role);
+            userOverride.menuAccess !== undefined
+              ? userOverride.menuAccess
+              : hasEncodedPermissions
+              ? parsedUserType.menuAccess
+              : hasDbPermissions
+              ? u.menuAccess
+              : perms[u.id] ||
+                (email && perms[email.toLowerCase()]) ||
+                (username && perms[username.toLowerCase()]) ||
+                getRoleMenuDefaults(userOverride.role || u.role);
 
-          if ((hasEncodedPermissions || hasDbPermissions) && !perms[u.id]) {
+          if (hasEncodedPermissions || hasDbPermissions) {
             saveUserPermissions(u.id, customAccess, email, username);
           }
 
