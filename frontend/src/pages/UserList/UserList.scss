@@ -281,6 +281,35 @@
   }
 }
 
+.btn-table-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08);
+
+  &:hover {
+    background: #059669;
+    color: #ffffff;
+    border-color: #059669;
+    box-shadow: 0 2px 5px rgba(5, 150, 105, 0.25);
+    transform: translateY(-1px);
+  }
+
+  svg {
+    stroke: currentColor;
+    stroke-width: 2.6;
+  }
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;

@@ -1397,9 +1397,27 @@ export const UserList = () => {
                 </div>
 
                 <div>
-                  <span className={`badge ${approved ? 'badge-approved' : 'badge-pending'}`}>
-                    {approved ? 'Approved' : 'Pending'}
-                  </span>
+                  {approved ? (
+                    <span className="badge badge-approved">
+                      Approved
+                    </span>
+                  ) : canApproveTargetUser(u) ? (
+                    <button
+                      type="button"
+                      className="btn-table-approve"
+                      onClick={() => handleApproveUser(u.id)}
+                      title="Approve user according to hierarchy authority"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Approve
+                    </button>
+                  ) : (
+                    <span className="badge badge-pending">
+                      Pending
+                    </span>
+                  )}
                 </div>
 
                 <div className="row-actions">
@@ -1702,15 +1720,27 @@ export const UserList = () => {
                           )}
                         </div>
                       ) : editingId ? (
-                        <select
-                          value={formValues.status}
-                          onChange={(e) =>
-                            setFormValues({ ...formValues, status: e.target.value })
-                          }
-                        >
-                          <option>Active</option>
-                          <option>Inactive</option>
-                        </select>
+                        // Target user is Approved: show Active / Inactive options according to hierarchy
+                        canManageTargetUser(users.find((x) => x.id === editingId)) ? (
+                          <select
+                            value={formValues.status}
+                            onChange={(e) =>
+                              setFormValues({ ...formValues, status: e.target.value })
+                            }
+                          >
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                          </select>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
+                            <span className={`badge ${formValues.status === 'Active' ? 'badge-active' : 'badge-inactive'}`}>
+                              {formValues.status}
+                            </span>
+                            <span style={{ fontSize: '12px', color: '#667085' }}>
+                              🔒 (Only higher hierarchy authority can change Active/Inactive status)
+                            </span>
+                          </div>
+                        )
                       ) : isMasterAdmin ? (
                         <select
                           value={formValues.status}
