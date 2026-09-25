@@ -281,50 +281,55 @@ export const UserList = () => {
       return targetUser.approval === 'Pending' || targetUser.status === 'Pending';
     }
 
-    // Strict hierarchy: cannot approve same or higher level users
-    const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
-    const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
-    if (targetLevel <= myLevel) return false;
-
-    // Maker-Checker Rule: Account creator CANNOT approve their own onboarding request (for subordinate roles)
+    // 1. The person who created the user CAN approve the user
     const isCreator =
       targetUser.createdBy &&
       (targetUser.createdBy.toLowerCase() === currentUser?.id?.toLowerCase() ||
         targetUser.createdBy.toLowerCase() === currentUser?.username?.toLowerCase() ||
         targetUser.createdBy.toLowerCase() === currentUser?.email?.toLowerCase());
-    if (isCreator) return false;
 
-    // Admin can approve subordinate roles below Level 2
-    if (isAdmin) {
-      return targetLevel > 2;
+    if (isCreator) {
+      return true;
     }
 
-    // Concessionaire can approve Plaza Admin, Request Tag Details, and Plaza POS within their plazas
-    if (isConcessionaire) {
-      if (!['Plaza Admin', 'Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
-        return false;
-      }
-      const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
-      const targetPlazasList = (targetUser.plazas || []).map((p) => p.toLowerCase());
-      return concessionairePlazas.some((cp) => {
-        const cpLower = cp.toLowerCase();
-        return (
-          targetPlaza.includes(cpLower) ||
-          cpLower.includes(targetPlaza) ||
-          targetPlazasList.some((tp) => tp.includes(cpLower) || cpLower.includes(tp))
-        );
-      });
-    }
+    // 2. Any person who is upper in hierarchy than the target user CAN approve the user
+    const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
+    const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
 
-    // Plaza Admin can approve Request Tag Details and Plaza POS within their plaza
-    if (isPlazaAdmin) {
-      if (!['Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
-        return false;
+    // Must be strictly upper in hierarchy (lower level number = higher in hierarchy)
+    if (myLevel < targetLevel) {
+      // Admin (Level 2) can approve subordinate roles below Level 2
+      if (isAdmin) return true;
+
+      // Concessionaire (Level 4) can approve Plaza Admin, Request Tag Details, and Plaza POS within their plazas
+      if (isConcessionaire) {
+        if (!['Plaza Admin', 'Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
+          return false;
+        }
+        const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
+        const targetPlazasList = (targetUser.plazas || []).map((p) => p.toLowerCase());
+        return concessionairePlazas.some((cp) => {
+          const cpLower = cp.toLowerCase();
+          return (
+            targetPlaza.includes(cpLower) ||
+            cpLower.includes(targetPlaza) ||
+            targetPlazasList.some((tp) => tp.includes(cpLower) || cpLower.includes(tp))
+          );
+        });
       }
-      const myPlaza = (currentUser?.assignedPlaza || '').toLowerCase();
-      if (!myPlaza) return false;
-      const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
-      return targetPlaza.includes(myPlaza) || myPlaza.includes(targetPlaza);
+
+      // Plaza Admin (Level 5) can approve Request Tag Details and Plaza POS within their plaza
+      if (isPlazaAdmin) {
+        if (!['Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
+          return false;
+        }
+        const myPlaza = (currentUser?.assignedPlaza || '').toLowerCase();
+        if (!myPlaza) return false;
+        const targetPlaza = (targetUser.plaza || targetUser.assignedPlaza || '').toLowerCase();
+        return targetPlaza.includes(myPlaza) || myPlaza.includes(targetPlaza);
+      }
+
+      return true;
     }
 
     return false;

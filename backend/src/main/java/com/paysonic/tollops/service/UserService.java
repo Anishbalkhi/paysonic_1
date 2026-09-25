@@ -156,14 +156,11 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
 
-        // Enforce Maker-Checker Rule (Section 4): Creator cannot approve their own account unless Master Admin onboarding
-        if (approverId != null && approverId.equalsIgnoreCase(user.getCreatedBy()) && !"Master Admin".equalsIgnoreCase(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Maker-Checker Violation: Account creator cannot approve their own user onboarding request.");
+        // Hierarchy validation: check if approver has authority to approve this target user (creator or upper in hierarchy)
+        boolean isCreator = approverId != null && approverId.equalsIgnoreCase(user.getCreatedBy());
+        if (!isCreator) {
+            validateHierarchyAction(approverId, "APPROVE", user.getRole(), user.getAssignedPlaza(), user);
         }
-
-        // Hierarchy validation: check if approver has authority to approve this target user
-        validateHierarchyAction(approverId, "APPROVE", user.getRole(), user.getAssignedPlaza(), user);
 
         user.setApproval("Approved");
         user.setStatus("Active");
