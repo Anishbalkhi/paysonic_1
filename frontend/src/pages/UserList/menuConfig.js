@@ -1,11 +1,31 @@
 export const ROLE_NO_USER_TYPE = ['Master Admin', 'Admin', 'Bank'];
-export const ALL_PLAZAS = [
+
+export const BASE_PLAZAS = [
   'Mumbai Plaza NH-04',
   'Pune Bypass Plaza',
   'Nashik Toll Plaza',
   'Solapur Plaza NH-65',
   'Kolhapur Plaza'
 ];
+
+/**
+ * Returns merged plaza list combining baseline plazas + any dynamically onboarded plazas.
+ */
+export function getDynamicAllPlazas() {
+  try {
+    const raw = localStorage.getItem('paysonic_onboarding_data_v2');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.plazas && Array.isArray(parsed.plazas)) {
+        const onboardedNames = parsed.plazas.map((p) => p.name || p.id).filter(Boolean);
+        return [...new Set([...BASE_PLAZAS, ...onboardedNames])];
+      }
+    }
+  } catch {}
+  return BASE_PLAZAS;
+}
+
+export const ALL_PLAZAS = BASE_PLAZAS;
 export const ROLE_AUTO_ALL_PLAZA = ['Master Admin', 'Admin'];
 export const ROLE_NO_PLAZA = ['Bank'];
 

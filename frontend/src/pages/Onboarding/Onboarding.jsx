@@ -42,220 +42,17 @@ const CALLBACK_APIS = [
   'TagDetailsAPI',
 ];
 
-const STORAGE_KEY = 'paysonic_onboarding_data_v1';
+const STORAGE_KEY = 'paysonic_onboarding_data_v2';
 
-// Seed initial data
-const getInitialData = () => {
-  const concessionaires = [
-    {
-      id: 'CON-1001',
-      name: 'GMR HIGHWAYS',
-      address: 'Plot 12, DLF Cyber City, Gurugram',
-      mail: 'ops@gmrhighways.com',
-      contact: '9811022330',
-    },
-    {
-      id: 'CON-1002',
-      name: 'IRB INFRA',
-      address: 'IRB Complex, Mumbai-Pune Expressway, Pune',
-      mail: 'ops@irbinfra.com',
-      contact: '9822011445',
-    },
-    {
-      id: 'CON-1003',
-      name: 'L&T INFRASTRUCTURE CONCESSIONS',
-      address: 'L&T House, Ballard Estate, Mumbai',
-      mail: 'tollops@ltidpl.com',
-      contact: '9820033221',
-    },
-  ];
-
-  const seedPlazas = [
-    {
-      id: '203451',
-      name: 'KHERKI DAULA',
-      orgId: 'PYSN',
-      agencyId: 'NHAI1',
-      concessionaireId: 'CON-1001',
-      category: 'Toll',
-      basePricing: 'Distance Based',
-      plazaInterface: 'API',
-      subtype: 'National',
-      authority: 'NHAI',
-      state: 'HARYANA',
-      city: 'GURUGRAM',
-      activationDate: '2026-09-17',
-      geoCode: '28.4089,76.9647',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1v6G2V\n-----END PUBLIC KEY-----',
-      contactAddress: 'NH-48, Kherki Daula Toll Plaza, Gurugram, Haryana',
-      contactNo: '9811022330',
-      contactMail: 'kherki.daula@gmrhighways.com',
-      mdr: { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: '220450',
-      name: 'MANESAR',
-      orgId: 'PYSN',
-      agencyId: 'NHAI1',
-      concessionaireId: 'CON-1001',
-      category: 'Toll',
-      basePricing: 'Distance Based',
-      plazaInterface: 'API',
-      subtype: 'National',
-      authority: 'NHAI',
-      state: 'HARYANA',
-      city: 'GURUGRAM',
-      activationDate: '2026-09-15',
-      geoCode: '28.3540,76.9350',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'Sector 8, IMT Manesar, Gurugram',
-      contactNo: '9811022331',
-      contactMail: 'manesar.ops@gmrhighways.com',
-      mdr: { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: '238800',
-      name: 'JAIPUR BYPASS',
-      orgId: 'PYSN',
-      agencyId: 'NHAI2',
-      concessionaireId: 'CON-1001',
-      category: 'Toll',
-      basePricing: 'Point Based',
-      plazaInterface: 'API',
-      subtype: 'State',
-      authority: 'NHAI',
-      state: 'RAJASTHAN',
-      city: 'JAIPUR',
-      activationDate: '2026-09-03',
-      geoCode: '26.9124,75.7873',
-      schemeRule: 'Single Single',
-      schemeDuration: 'Same Day Midnight',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'Jaipur Bypass Toll Plaza, NH-52',
-      contactNo: '9829011223',
-      contactMail: 'jaipur.bypass@gmrhighways.com',
-      mdr: { bankFee: '0.85', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: '305500',
-      name: 'KISHANGARH',
-      orgId: 'PYSN',
-      agencyId: 'IHM1',
-      concessionaireId: 'CON-1002',
-      category: 'Toll',
-      basePricing: 'Distance Based',
-      plazaInterface: 'SFTP',
-      subtype: 'National',
-      authority: 'IHMCL',
-      state: 'RAJASTHAN',
-      city: 'KISHANGARH',
-      activationDate: '2026-08-11',
-      geoCode: '26.5833,74.8667',
-      schemeRule: '3rd Journey DP',
-      schemeDuration: '24 Hrs',
-      status: 'Pending Approval',
-      publicKey: '',
-      contactAddress: 'NH-48, Kishangarh Expressway, Ajmer',
-      contactNo: '9822011446',
-      contactMail: 'kishangarh@irbinfra.com',
-      mdr: { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: '418800',
-      name: 'SHAHJAHANPUR',
-      orgId: 'PYSN',
-      agencyId: 'NHAI3',
-      concessionaireId: 'CON-1002',
-      category: 'Toll',
-      basePricing: 'Custom Based',
-      plazaInterface: 'API',
-      subtype: 'National',
-      authority: 'NHAI',
-      state: 'RAJASTHAN',
-      city: 'SHAHJAHANPUR',
-      activationDate: '2026-09-22',
-      geoCode: '27.8829,79.9110',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Draft',
-      publicKey: '',
-      contactAddress: 'NH-48, Shahjahanpur Border Toll Plaza',
-      contactNo: '9822011447',
-      contactMail: 'shahjahanpur@irbinfra.com',
-      mdr: { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-  ];
-
-  const dirs = ['North', 'South'];
-  const types = ['Entry', 'Exit'];
-  const modes = ['Normal', 'Maintenance'];
-  const cats = ['Hybrid', 'Dedicated', 'Handheld'];
-  const stats = ['Open', 'Covered'];
-
-  const lanes = [];
-  seedPlazas.forEach((p, pi) => {
-    const count = 6;
-    for (let i = 1; i <= count; i++) {
-      lanes.push({
-        plazaId: p.id,
-        laneId: `L${p.id.slice(-3)}${String(i).padStart(2, '0')}`,
-        direction: dirs[i % 2],
-        type: types[i % 2],
-        mode: i === count ? 'Maintenance' : 'Normal',
-        category: cats[i % 3],
-        status: i === count && pi === 3 ? 'Covered' : 'Open',
-      });
-    }
-  });
-
-  const callbacks = {};
-  const fares = {};
-  const cch = {};
-
-  seedPlazas.forEach((p) => {
-    callbacks[p.id] = {};
-    CALLBACK_APIS.forEach((api) => {
-      callbacks[p.id][api] = `https://api.paysonic.in/${p.id.toLowerCase()}/${api.toLowerCase()}`;
-    });
-
-    fares[p.id] = {};
-    VEHICLE_CLASSES.forEach((vc, i) => {
-      const base = 50 + i * 25;
-      fares[p.id][vc.id] = {
-        single: base,
-        ret: Math.round(base * 1.5),
-        local10: Math.round(base * 0.4),
-        local20: Math.round(base * 0.6),
-        district: Math.round(base * 20),
-        monthly: Math.round(base * 40),
-      };
-    });
-
-    cch[p.id] = {};
-    VEHICLE_CLASSES.forEach((vc, i) => {
-      cch[p.id][vc.id] = {
-        current: 100 + i * 5,
-        new: '',
-      };
-    });
-  });
-
-  return {
-    concessionaires,
-    plazas: seedPlazas,
-    lanes,
-    callbacks,
-    fares,
-    cch,
-  };
-};
+// Clean initial data structure — stores only original data created or fetched
+const getInitialData = () => ({
+  concessionaires: [],
+  plazas: [],
+  lanes: [],
+  callbacks: {},
+  fares: {},
+  cch: {},
+});
 
 export const Onboarding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1066,15 +863,15 @@ export const Onboarding = () => {
             type="button"
             className="btn-secondary"
             onClick={() => {
-              if (window.confirm('Reset all onboarding records back to initial mock seed data?')) {
+              if (window.confirm('Clear all local onboarding records? Only original data will remain.')) {
                 const fresh = getInitialData();
                 setStore(fresh);
-                setSelectedPlazaId(fresh.plazas[0]?.id || '');
-                showToast('Reset to default mock seed data', 'info');
+                setSelectedPlazaId('');
+                showToast('Cleared all local onboarding records', 'info');
               }
             }}
           >
-            ↺ Reset Seed Data
+            ↺ Clear Local Data
           </button>
           <button
             type="button"
@@ -1499,19 +1296,27 @@ export const Onboarding = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {store.concessionaires.map((c) => (
-                      <tr key={c.id}>
-                        <td>
-                          <code className="id-code">{c.id}</code>
+                    {store.concessionaires.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="empty-cell" style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                          No concessionaires onboarded yet. Fill out the form on the left to add one.
                         </td>
-                        <td>
-                          <strong>{c.name}</strong>
-                          <div className="sub-detail">{c.address}</div>
-                        </td>
-                        <td>{c.mail}</td>
-                        <td>{c.contact}</td>
                       </tr>
-                    ))}
+                    ) : (
+                      store.concessionaires.map((c) => (
+                        <tr key={c.id}>
+                          <td>
+                            <code className="id-code">{c.id}</code>
+                          </td>
+                          <td>
+                            <strong>{c.name}</strong>
+                            <div className="sub-detail">{c.address}</div>
+                          </td>
+                          <td>{c.mail}</td>
+                          <td>{c.contact}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1950,11 +1755,15 @@ export const Onboarding = () => {
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
               >
-                {store.plazas.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.id}) · {p.status}
-                  </option>
-                ))}
+                {store.plazas.length === 0 ? (
+                  <option value="">No plazas onboarded yet</option>
+                ) : (
+                  store.plazas.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.id}) · {p.status}
+                    </option>
+                  ))
+                )}
               </select>
               {selectedPlazaObject && (
                 <span className="scope-meta">
@@ -2070,11 +1879,15 @@ export const Onboarding = () => {
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
               >
-                {store.plazas.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.id})
-                  </option>
-                ))}
+                {store.plazas.length === 0 ? (
+                  <option value="">No plazas onboarded yet</option>
+                ) : (
+                  store.plazas.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.id})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div className="scope-actions">
@@ -2162,11 +1975,15 @@ export const Onboarding = () => {
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
               >
-                {store.plazas.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.id})
-                  </option>
-                ))}
+                {store.plazas.length === 0 ? (
+                  <option value="">No plazas onboarded yet</option>
+                ) : (
+                  store.plazas.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.id})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div className="scope-actions">
@@ -2313,11 +2130,15 @@ export const Onboarding = () => {
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
               >
-                {store.plazas.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.id})
-                  </option>
-                ))}
+                {store.plazas.length === 0 ? (
+                  <option value="">No plazas onboarded yet</option>
+                ) : (
+                  store.plazas.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.id})
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>

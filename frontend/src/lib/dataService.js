@@ -130,8 +130,23 @@ export const DataService = {
   alerts:      () => getData('alerts',       'alerts.json'),
   systems:     () => getData('systems',      'systems.json'),
   declines:    () => getData('declines',     'declines.json'),
-  settlement:  () => getData('settlement',   'settlement.json'),
-  plazas:      () => getData('plazas',       'plazas.json'),
+  plazas: async () => {
+    try {
+      const raw = localStorage.getItem('paysonic_onboarding_data_v2');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.plazas && Array.isArray(parsed.plazas) && parsed.plazas.length > 0) {
+          return parsed.plazas.map((p) => ({
+            id: p.id,
+            name: p.name,
+            desc: `${p.authority || p.state || 'Toll'} · ${p.city || p.subtype || ''}`,
+            status: p.status === 'Active' ? 'ok' : p.status === 'Suspended' ? 'off' : 'warn',
+          }));
+        }
+      }
+    } catch {}
+    return getData('plazas', 'plazas.json');
+  },
 
   // TIER 1: critical above-the-fold data — paint shell immediately
   async tier1() {

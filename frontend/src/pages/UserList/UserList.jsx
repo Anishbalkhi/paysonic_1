@@ -6,6 +6,7 @@ import { getDefaultRouteForUser } from '../../config/roleMenus';
 import {
   ROLE_NO_USER_TYPE,
   ALL_PLAZAS,
+  getDynamicAllPlazas,
   ROLE_AUTO_ALL_PLAZA,
   ROLE_NO_PLAZA,
   ROLE_MENU_DEFAULTS,
@@ -149,13 +150,17 @@ export const UserList = () => {
     return [];
   }, [isMasterAdmin, isAdmin, isConcessionaire, isPlazaAdmin]);
 
+  const currentAllPlazas = useMemo(() => {
+    return getDynamicAllPlazas();
+  }, [showModal]);
+
   // Allowed plaza options when creating/assigning
   const allowedPlazasForActor = useMemo(() => {
     if (isMasterAdmin || isAdmin) {
-      return ALL_PLAZAS;
+      return currentAllPlazas;
     }
     if (isConcessionaire) {
-      return concessionairePlazas.length > 0 ? concessionairePlazas : ALL_PLAZAS;
+      return concessionairePlazas.length > 0 ? concessionairePlazas : currentAllPlazas;
     }
     if (isPlazaAdmin) {
       const list = [];
@@ -164,10 +169,10 @@ export const UserList = () => {
         const trimmed = p.trim();
         if (trimmed) list.push(trimmed);
       });
-      return list.length > 0 ? [...new Set(list)] : ALL_PLAZAS;
+      return list.length > 0 ? [...new Set(list)] : currentAllPlazas;
     }
     return [];
-  }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza, currentUser]);
+  }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza, currentUser, currentAllPlazas]);
 
   // Strict hierarchy level map
   // Level 1: Master Admin
@@ -1815,7 +1820,7 @@ export const UserList = () => {
                         Concessionaire accounts can be assigned more than one plaza.
                       </div>
                       <div className="chips">
-                        {ALL_PLAZAS.map((p) => {
+                        {allowedPlazasForActor.map((p) => {
                           const picked = selectedPlazas.includes(p);
                           return (
                             <button

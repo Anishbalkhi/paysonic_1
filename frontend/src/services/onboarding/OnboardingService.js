@@ -14,7 +14,7 @@
 import httpClient from '../api/httpClient';
 import UserActivityService from '../userActivity/UserActivityService';
 
-const STORAGE_KEY = 'paysonic_onboarding_data_v1';
+const STORAGE_KEY = 'paysonic_onboarding_data_v2';
 
 // ─── Local storage helpers ────────────────────────────────────────────────────
 
@@ -508,6 +508,18 @@ class OnboardingService {
   // ============================================================
   // AUDIT — View events (read-only helper for completeness)
   // ============================================================
+
+  /**
+   * Synchronously retrieve current onboarded plaza names from local store/cache.
+   * Enables dynamic sync with User Management plaza dropdown and other views.
+   */
+  getPlazaNames() {
+    const local = getLocalStore();
+    if (local?.plazas && Array.isArray(local.plazas)) {
+      return local.plazas.map((p) => p.name || p.id).filter(Boolean);
+    }
+    return [];
+  }
 
   /**
    * Load full onboarding store from Railway / Backend Database.

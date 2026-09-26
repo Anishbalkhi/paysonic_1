@@ -238,10 +238,9 @@ public class DataLoader implements CommandLineRunner {
     // ─── Real Database Seeding for Plaza Onboarding ─────────────────────────────
 
     private void seedOnboardingData() {
-        if (plazaRepository.count() > 0) {
-            log.info("Plazas already exist in database (count: {}), skipping seed.", plazaRepository.count());
-            return;
-        }
+        // Clean initial state: Onboarding stores only original data created or fetched
+        log.info("Onboarding module ready: stores only original user-created/fetched data.");
+        if (true) return;
 
         try {
             log.info("Seeding real production Onboarding data into database...");
