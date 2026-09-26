@@ -150,30 +150,6 @@ export const UserList = () => {
     return [];
   }, [isMasterAdmin, isAdmin, isConcessionaire, isPlazaAdmin]);
 
-  const currentAllPlazas = useMemo(() => {
-    return getDynamicAllPlazas();
-  }, []);
-
-  // Allowed plaza options when creating/assigning
-  const allowedPlazasForActor = useMemo(() => {
-    if (isMasterAdmin || isAdmin) {
-      return currentAllPlazas;
-    }
-    if (isConcessionaire) {
-      return concessionairePlazas.length > 0 ? concessionairePlazas : currentAllPlazas;
-    }
-    if (isPlazaAdmin) {
-      const list = [];
-      const plazaString = plazaAdminPlaza || currentUser?.assignedPlaza || currentUser?.plaza || '';
-      plazaString.split(',').forEach((p) => {
-        const trimmed = p.trim();
-        if (trimmed) list.push(trimmed);
-      });
-      return list.length > 0 ? [...new Set(list)] : currentAllPlazas;
-    }
-    return [];
-  }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza, currentUser, currentAllPlazas]);
-
   // Strict hierarchy level map
   // Level 1: Master Admin
   // Level 2: Admin
@@ -191,27 +167,59 @@ export const UserList = () => {
   };
 
   // Check if target user is on same level or upper level in hierarchy
+  // Check if target user is on same level or upper level in hierarchy
   const isSameOrUpperLevel = (targetUser) => {
     if (!targetUser) return false;
+    const isRootMasterAdmin = currentUser?.email?.toLowerCase() === 'masteradmin@paysonic.com';
+
+    // Root Master Admin (masteradmin@paysonic.com) has full management authority over other accounts
+    if (isRootMasterAdmin) {
+      return targetUser.id === currentUser?.id || targetUser.email?.toLowerCase() === currentUser?.email?.toLowerCase();
+    }
+
+    // For any other user, masteradmin@paysonic.com is strictly protected view-only
+    if (targetUser.email?.toLowerCase() === 'masteradmin@paysonic.com') {
+      return true;
+    }
+
     // For non-Master Admin, enforce same or upper level view-only protection
     if (!isMasterAdmin) {
       const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
       const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
       return targetLevel <= myLevel;
     }
-    // Master Admin can edit and manage all users. Show info icon for own profile or for viewing
+
+    // Peer Master Admin protection for non-root Master Admins
+    if (targetUser.role === 'Master Admin') {
+      return true;
+    }
+
     return targetUser.id === currentUser?.id;
   };
 
   // Hierarchy check: can actor edit/disable this target user?
-  // Master Admin has full management authority across all roles & plazas
+  // Root Master Admin (masteradmin@paysonic.com) has full management authority across all roles & plazas
   const canManageTargetUser = (targetUser) => {
     if (!targetUser) return false;
     // Cannot manage yourself in User Management
-    if (targetUser.id === currentUser?.id) return false;
+    if (targetUser.id === currentUser?.id || (targetUser.email && targetUser.email.toLowerCase() === currentUser?.email?.toLowerCase())) {
+      return false;
+    }
 
-    // Master Admin can edit and configure any user in the system (including other Master Admins)
-    if (isMasterAdmin) return true;
+    const isRootMasterAdmin = currentUser?.email?.toLowerCase() === 'masteradmin@paysonic.com';
+
+    // Target is masteradmin@paysonic.com: only masteradmin themselves can manage, others cannot
+    if (targetUser.email?.toLowerCase() === 'masteradmin@paysonic.com' && !isRootMasterAdmin) {
+      return false;
+    }
+
+    // Root Master Admin can edit and configure any other user in the system (including other Master Admins)
+    if (isRootMasterAdmin) return true;
+
+    // Other Master Admins can manage subordinate users, but cannot edit peer Master Admins
+    if (isMasterAdmin) {
+      return targetUser.role !== 'Master Admin';
+    }
 
     const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
     const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
@@ -247,14 +255,28 @@ export const UserList = () => {
     return false;
   };
 
-  // Strict hierarchy rule: CANNOT delete same level or higher level users
+  // Strict hierarchy rule: ONLY masteradmin@paysonic.com can delete Master Admin accounts
   const canDeleteTargetUser = (targetUser) => {
     if (!targetUser) return false;
-    if (targetUser.id === currentUser?.id) return false;
+    // Cannot delete your own currently logged-in account
+    if (
+      targetUser.id === currentUser?.id ||
+      (targetUser.email && targetUser.email.toLowerCase() === currentUser?.email?.toLowerCase())
+    ) {
+      return false;
+    }
 
-    // Master Admin can delete any user except themselves and peer Master Admins
+    const isRootMasterAdmin = currentUser?.email?.toLowerCase() === 'masteradmin@paysonic.com';
+
+    // If target user is a Master Admin:
+    // ONLY masteradmin@paysonic.com can delete Master Admin accounts
+    if (targetUser.role === 'Master Admin') {
+      return isRootMasterAdmin;
+    }
+
+    // Master Admin can delete any subordinate user
     if (isMasterAdmin) {
-      return targetUser.role !== 'Master Admin';
+      return true;
     }
 
     const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
@@ -354,6 +376,43 @@ export const UserList = () => {
       setStatusFilter('Pending');
     }
   }, [searchParams]);
+
+  // Authentic DB plazas dynamically merged with any active DB user plazas
+  const currentAllPlazas = useMemo(() => {
+    const list = [...getDynamicAllPlazas()];
+    if (Array.isArray(users)) {
+      users.forEach((u) => {
+        if (Array.isArray(u.plazas)) {
+          u.plazas.forEach((p) => {
+            if (p && p !== 'All plazas' && p !== 'Not applicable' && p !== 'None (Bank Scope)' && !list.includes(p)) {
+              list.push(p);
+            }
+          });
+        }
+      });
+    }
+    return list;
+  }, [users]);
+
+  // Allowed plaza options when creating/assigning
+  const allowedPlazasForActor = useMemo(() => {
+    if (isMasterAdmin || isAdmin) {
+      return currentAllPlazas;
+    }
+    if (isConcessionaire) {
+      return concessionairePlazas.length > 0 ? concessionairePlazas : currentAllPlazas;
+    }
+    if (isPlazaAdmin) {
+      const list = [];
+      const plazaString = plazaAdminPlaza || currentUser?.assignedPlaza || currentUser?.plaza || '';
+      plazaString.split(',').forEach((p) => {
+        const trimmed = p.trim();
+        if (trimmed) list.push(trimmed);
+      });
+      return list.length > 0 ? [...new Set(list)] : currentAllPlazas;
+    }
+    return [];
+  }, [isMasterAdmin, isAdmin, isConcessionaire, concessionairePlazas, isPlazaAdmin, plazaAdminPlaza, currentUser, currentAllPlazas]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -2459,7 +2518,7 @@ export const UserList = () => {
               >
                 <span style={{ fontSize: '18px', lineHeight: 1 }}>🛡️</span>
                 <div style={{ fontSize: '12.5px', color: '#1e40af', lineHeight: 1.5 }}>
-                  <strong>Hierarchy Protected:</strong> This user holds the role of <strong>{viewingUser.role}</strong> (Level {ROLE_HIERARCHY_LEVEL[viewingUser.role] || '—'}), which is at the same or upper level compared to your role (<strong>{currentUser?.role}</strong>, Level {ROLE_HIERARCHY_LEVEL[currentUser?.role] || '—'}). Under organizational governance rules, modifications and deletion are restricted.
+                  <strong>Hierarchy Protected:</strong> This user holds the role of <strong>{viewingUser.role}</strong> (Level {ROLE_HIERARCHY_LEVEL[viewingUser.role] || '—'}), which is at the same or upper level compared to your role (<strong>{currentUser?.role}</strong>, Level {ROLE_HIERARCHY_LEVEL[currentUser?.role] || '—'}). Under organizational governance rules, Master Admin accounts can only be modified or deleted by <strong>masteradmin@paysonic.com</strong>.
                 </div>
               </div>
 

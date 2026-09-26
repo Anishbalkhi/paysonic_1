@@ -132,7 +132,7 @@ export const DataService = {
   declines:    () => getData('declines',     'declines.json'),
   plazas: async () => {
     try {
-      const raw = localStorage.getItem('paysonic_onboarding_data_v2');
+      const raw = localStorage.getItem('paysonic_onboarding_data_v3');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.plazas && Array.isArray(parsed.plazas) && parsed.plazas.length > 0) {

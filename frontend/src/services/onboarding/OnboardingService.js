@@ -14,7 +14,7 @@
 import httpClient from '../api/httpClient';
 import UserActivityService from '../userActivity/UserActivityService';
 
-const STORAGE_KEY = 'paysonic_onboarding_data_v2';
+const STORAGE_KEY = 'paysonic_onboarding_data_v3';
 
 // ─── Local storage helpers ────────────────────────────────────────────────────
 

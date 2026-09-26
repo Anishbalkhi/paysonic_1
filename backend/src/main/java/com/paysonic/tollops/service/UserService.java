@@ -194,8 +194,11 @@ public class UserService {
         if ("Master Admin".equalsIgnoreCase(actorRole)) {
             if (targetUser != null && "Master Admin".equalsIgnoreCase(targetUser.getRole())) {
                 if ("DELETE".equalsIgnoreCase(action)) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                            "Hierarchy Violation: Master Admin cannot delete peer Master Admin accounts.");
+                    boolean isRoot = "masteradmin@paysonic.com".equalsIgnoreCase(actor.getEmail());
+                    if (!isRoot) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                                "Hierarchy Violation: Only root Master Admin (masteradmin@paysonic.com) can delete Master Admin accounts.");
+                    }
                 }
                 return; // Allowed: Master Admin can approve, edit, and configure peer Master Admin accounts
             }
