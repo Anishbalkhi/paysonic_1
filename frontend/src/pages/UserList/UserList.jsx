@@ -637,22 +637,6 @@ export const UserList = () => {
       }
     }
 
-    if (name === 'password' && (!editingId || value)) {
-      const pwRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-      if (!value) {
-        error = 'Password is required';
-      } else if (!pwRegex.test(value)) {
-        error = 'Min 8 chars, 1 uppercase, 1 number, 1 special character required';
-      }
-    }
-
-    if (name === 'confirmPassword' && (!editingId || formValues.password)) {
-      if (!value) {
-        error = 'Please confirm your password';
-      } else if (value !== formValues.password) {
-        error = 'Passwords do not match';
-      }
-    }
 
     if (name === 'name') {
       if (!value || !value.trim()) {
@@ -795,8 +779,6 @@ export const UserList = () => {
       plaza: formValues.role === 'Concessionaire'
         ? (selectedPlazas.length === 0 ? 'Please select at least one plaza' : '')
         : validateField('plaza', formValues.plaza),
-      password: validateField('password', formValues.password),
-      confirmPassword: validateField('confirmPassword', formValues.confirmPassword),
     };
 
     const hasError = Object.values(errors).some(Boolean);
@@ -945,12 +927,12 @@ export const UserList = () => {
     }
 
     const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
-    const expected = ['username', 'email', 'contact', 'role', 'user_type', 'plaza', 'name', 'password'];
+    const expected = ['username', 'email', 'contact', 'role', 'user_type', 'plaza', 'name'];
     const hasAllHeaders = expected.every((h) => headers.includes(h));
 
     if (!hasAllHeaders) {
       setBulkErrors([
-        `Invalid header format. Expected columns: ${expected.join(', ')}`,
+        `Invalid header format. Expected columns: ${expected.join(', ')} (password optional)`,
       ]);
       return;
     }
@@ -1002,7 +984,7 @@ export const UserList = () => {
       }
 
       const pwRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-      if (!row.password || !pwRegex.test(row.password)) {
+      if (row.password && !pwRegex.test(row.password)) {
         errors.push(`Row ${rowNum}: Password does not meet security requirements.`);
       }
 
@@ -2069,80 +2051,6 @@ export const UserList = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Security */}
-                <div className="section-divider">
-                  <div className="section-label">Security</div>
-                  <div className="form-grid" style={{ marginTop: '14px' }}>
-                    <div className="field">
-                      <label>
-                        Set password <span className="req">*</span>
-                      </label>
-                      <div className="pw-wrap">
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Min 8 chars, 1 upper, 1 number, 1 symbol"
-                          value={formValues.password}
-                          onChange={(e) =>
-                            setFormValues({ ...formValues, password: e.target.value })
-                          }
-                          onBlur={() => handleBlur('password')}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          aria-label="Show or hide password"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        </button>
-                      </div>
-                      {formErrors.password && (
-                        <span className="field-error">{formErrors.password}</span>
-                      )}
-                    </div>
-
-                    <div className="field">
-                      <label>
-                        Confirm password <span className="req">*</span>
-                      </label>
-                      <div className="pw-wrap">
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          placeholder="Re-enter password"
-                          value={formValues.confirmPassword}
-                          onChange={(e) =>
-                            setFormValues({ ...formValues, confirmPassword: e.target.value })
-                          }
-                          onBlur={() => handleBlur('confirmPassword')}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          aria-label="Show or hide confirm password"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        </button>
-                      </div>
-                      {formErrors.confirmPassword && (
-                        <span className="field-error">{formErrors.confirmPassword}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="note-box" style={{ marginTop: '14px' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 16v-4M12 8h.01" />
-                    </svg>
-                    Passwords need one uppercase letter, one number, one special character and 8+ characters.
-                  </div>
-                </div>
               </div>
 
               <div className="modal-foot">
@@ -2282,7 +2190,7 @@ export const UserList = () => {
               )}
 
               <div className="callout">
-                <strong>Required columns:</strong> username, email, contact, role, user_type, plaza, name, password
+                <strong>Required columns:</strong> username, email, contact, role, user_type, plaza, name (password optional, default: Paysonic@2026)
               </div>
             </div>
 
