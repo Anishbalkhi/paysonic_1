@@ -24,7 +24,17 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+    public ResponseEntity<?> getAllUsers(
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false, defaultValue = "10") int size,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "plaza", required = false) String plaza) {
+        if (page != null) {
+            int pageSize = Math.min(Math.max(size, 1), 10); // strictly maximum 10 records per page
+            return ResponseEntity.ok(userService.getPagedUsers(page, pageSize, search, role, status, plaza));
+        }
         return ResponseEntity.ok(userService.getAllUsers());
     }
 

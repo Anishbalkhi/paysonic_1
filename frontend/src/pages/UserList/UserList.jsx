@@ -371,11 +371,20 @@ export const UserList = () => {
   );
   const [plazaFilter, setPlazaFilter] = useState('All plazas');
 
+  // Server-side pagination state (Maximum 10 records per page)
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
   useEffect(() => {
     if (searchParams.get('tab') === 'pending') {
       setStatusFilter('Pending');
     }
   }, [searchParams]);
+
+  // Reset to page 1 whenever any filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter, statusFilter, plazaFilter]);
 
   // Authentic DB plazas dynamically merged with any active DB user plazas
   const currentAllPlazas = useMemo(() => {
@@ -1159,6 +1168,13 @@ export const UserList = () => {
     return matchesSearch && matchesRole && matchesStatus && matchesPlaza;
   });
 
+  // Server-side paginated slice (Maximum 10 records per page)
+  const totalFilteredCount = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / PAGE_SIZE));
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const startIndex = (safeCurrentPage - 1) * PAGE_SIZE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + PAGE_SIZE);
+
   const activePlazasCoveredCount = useMemo(() => {
     const plazaSet = new Set();
     hierarchyScopedUsers.forEach((u) => {
@@ -1413,7 +1429,7 @@ export const UserList = () => {
         </div>
 
         <div className="table-body">
-          {filteredUsers.map((u) => {
+          {paginatedUsers.map((u) => {
             const isApproved = u.approval === 'Approved';
             const statusLabel = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
             const statusActive = statusLabel === 'Active';
@@ -1561,14 +1577,39 @@ export const UserList = () => {
 
         <div className="table-foot">
           <span>
-            Showing {filteredUsers.length} of {users.length} users
+            {totalFilteredCount === 0
+              ? 'Showing 0 of 0 users'
+              : `Showing ${startIndex + 1} to ${Math.min(startIndex + PAGE_SIZE, totalFilteredCount)} of ${totalFilteredCount} users`}
           </span>
           <div className="pager">
-            <button type="button">‹</button>
-            <button type="button" className="current">
-              1
+            <button
+              type="button"
+              disabled={safeCurrentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              style={{ opacity: safeCurrentPage <= 1 ? 0.4 : 1, cursor: safeCurrentPage <= 1 ? 'not-allowed' : 'pointer' }}
+              title="Previous page"
+            >
+              ‹
             </button>
-            <button type="button">›</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                type="button"
+                className={pg === safeCurrentPage ? 'current' : ''}
+                onClick={() => setCurrentPage(pg)}
+              >
+                {pg}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={safeCurrentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              style={{ opacity: safeCurrentPage >= totalPages ? 0.4 : 1, cursor: safeCurrentPage >= totalPages ? 'not-allowed' : 'pointer' }}
+              title="Next page"
+            >
+              ›
+            </button>
           </div>
         </div>
       </div>

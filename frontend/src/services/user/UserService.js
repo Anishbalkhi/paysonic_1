@@ -81,102 +81,46 @@ export function saveUserPermissions(userId, menuAccess, email, username) {
 let mockUsers = [...initialMockData];
 
 class UserService {
-  async getUsers() {
+  _mapUsers(rawList) {
+    if (!Array.isArray(rawList)) return [];
     const perms = getStoredUserPermissions();
     const overrides = getStoredProfileOverrides();
 
-    try {
-      const res = await httpClient.get('/api/users');
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        // Map Railway database schema to frontend representation with permissions & overrides
-        const users = res.data.map((u) => {
-          const username = u.username || (u.email ? u.email.split('@')[0] : u.id);
-          const email = u.email || '';
-          const userOverride =
-            overrides[u.id] ||
-            (email && overrides[email.toLowerCase()]) ||
-            (username && overrides[username.toLowerCase()]) ||
-            {};
-
-          // Parse encoded permissions bitmask from userType if present
-          const parsedUserType = parseUserTypeWithPermissions(u.userType);
-          const cleanUserType = userOverride.userType || parsedUserType.cleanUserType || u.userType || '—';
-
-          const hasDbPermissions = Array.isArray(u.menuAccess);
-          const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess);
-
-          const customAccess =
-            userOverride.menuAccess !== undefined
-              ? userOverride.menuAccess
-              : hasEncodedPermissions
-              ? parsedUserType.menuAccess
-              : hasDbPermissions
-              ? u.menuAccess
-              : perms[u.id] ||
-                (email && perms[email.toLowerCase()]) ||
-                (username && perms[username.toLowerCase()]) ||
-                getRoleMenuDefaults(userOverride.role || u.role);
-
-          if (hasEncodedPermissions || hasDbPermissions) {
-            saveUserPermissions(u.id, customAccess, email, username);
-          }
-
-          const rawApproval = userOverride.approval || u.approval;
-          const isApproved = rawApproval === 'Approved';
-          const status = userOverride.status || (isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending');
-          const approval = isApproved ? 'Approved' : 'Pending';
-
-          return {
-            ...u,
-            ...userOverride,
-            id: u.id,
-            name: userOverride.name || u.name,
-            username: userOverride.username || username,
-            email: userOverride.email || email,
-            contact: userOverride.contact || userOverride.mobile || u.mobile || u.contact || '',
-            mobile: userOverride.mobile || userOverride.contact || u.mobile || u.contact || '',
-            plaza: userOverride.plaza || userOverride.assignedPlaza || u.assignedPlaza || u.plaza || 'All plazas',
-            role: userOverride.role || u.role,
-            userType: cleanUserType,
-            status,
-            approval,
-            locked: userOverride.locked !== undefined ? Boolean(userOverride.locked) : Boolean(u.locked),
-            password: userOverride.password || u.password || 'Paysonic@2026',
-            menuAccess: customAccess,
-          };
-        });
-
-        // Cache users list for authentication lookup
-        try {
-          localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(users));
-        } catch {}
-
-        return users;
-      }
-    } catch (err) {
-      console.warn('[UserService] Railway API unreachable, using local fallback:', err?.message);
-    }
-
-    const fallbackUsers = mockUsers.map((u) => {
+    return rawList.map((u) => {
+      const username = u.username || (u.email ? u.email.split('@')[0] : u.id);
       const email = u.email || '';
-      const username = u.username || '';
       const userOverride =
         overrides[u.id] ||
         (email && overrides[email.toLowerCase()]) ||
         (username && overrides[username.toLowerCase()]) ||
         {};
 
+      const parsedUserType = parseUserTypeWithPermissions(u.userType);
+      const cleanUserType = userOverride.userType || parsedUserType.cleanUserType || u.userType || '—';
+
+      const hasDbPermissions = Array.isArray(u.menuAccess);
+      const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess);
+
+      const customAccess =
+        userOverride.menuAccess !== undefined
+          ? userOverride.menuAccess
+          : hasEncodedPermissions
+          ? parsedUserType.menuAccess
+          : hasDbPermissions
+          ? u.menuAccess
+          : perms[u.id] ||
+            (email && perms[email.toLowerCase()]) ||
+            (username && perms[username.toLowerCase()]) ||
+            getRoleMenuDefaults(userOverride.role || u.role);
+
+      if (hasEncodedPermissions || hasDbPermissions) {
+        saveUserPermissions(u.id, customAccess, email, username);
+      }
+
       const rawApproval = userOverride.approval || u.approval;
       const isApproved = rawApproval === 'Approved';
       const status = userOverride.status || (isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending');
       const approval = isApproved ? 'Approved' : 'Pending';
-      const customAccess =
-        userOverride.menuAccess ||
-        perms[u.id] ||
-        (email && perms[email.toLowerCase()]) ||
-        (username && perms[username.toLowerCase()]) ||
-        u.menuAccess ||
-        getRoleMenuDefaults(userOverride.role || u.role);
 
       return {
         ...u,
@@ -189,6 +133,7 @@ class UserService {
         mobile: userOverride.mobile || userOverride.contact || u.mobile || u.contact || '',
         plaza: userOverride.plaza || userOverride.assignedPlaza || u.assignedPlaza || u.plaza || 'All plazas',
         role: userOverride.role || u.role,
+        userType: cleanUserType,
         status,
         approval,
         locked: userOverride.locked !== undefined ? Boolean(userOverride.locked) : Boolean(u.locked),
@@ -196,12 +141,68 @@ class UserService {
         menuAccess: customAccess,
       };
     });
+  }
 
+  async getUsers() {
+    try {
+      const res = await httpClient.get('/api/users');
+      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+        const users = this._mapUsers(res.data);
+        try {
+          localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(users));
+        } catch {}
+        return users;
+      }
+    } catch (err) {
+      console.warn('[UserService] Railway API unreachable, using local fallback:', err?.message);
+    }
+
+    const fallbackUsers = this._mapUsers(mockUsers);
     try {
       localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(fallbackUsers));
     } catch {}
 
     return Promise.resolve(fallbackUsers);
+  }
+
+  /**
+   * Server-side paginated user retrieval.
+   * Maximum 10 records per page.
+   */
+  async getPagedUsers({ page = 0, size = 10, search = '', role = '', status = '', plaza = '' } = {}) {
+    const cappedSize = Math.min(Math.max(size, 1), 10);
+    try {
+      const params = { page, size: cappedSize };
+      if (search) params.search = search;
+      if (role && role !== 'All roles') params.role = role;
+      if (status && status !== 'All statuses') params.status = status;
+      if (plaza && plaza !== 'All plazas') params.plaza = plaza;
+
+      const res = await httpClient.get('/api/users', { params });
+      if (res && res.data && res.data.content) {
+        const users = this._mapUsers(res.data.content);
+        return {
+          users,
+          totalElements: res.data.totalElements ?? users.length,
+          totalPages: res.data.totalPages ?? 1,
+          currentPage: res.data.currentPage ?? page,
+          pageSize: cappedSize,
+        };
+      }
+    } catch (err) {
+      console.warn('[UserService] getPagedUsers server call failed, using local slice:', err?.message);
+    }
+
+    const allUsers = await this.getUsers();
+    const from = page * cappedSize;
+    const pagedSlice = allUsers.slice(from, from + cappedSize);
+    return {
+      users: pagedSlice,
+      totalElements: allUsers.length,
+      totalPages: Math.max(1, Math.ceil(allUsers.length / cappedSize)),
+      currentPage: page,
+      pageSize: cappedSize,
+    };
   }
 
   async getUserById(id) {

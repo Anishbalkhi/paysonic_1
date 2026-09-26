@@ -23,8 +23,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class UserService {
@@ -47,6 +49,64 @@ public class UserService {
                 .stream()
                 .map(user -> UserResponseDTO.fromEntity(user, objectMapper))
                 .collect(Collectors.toList());
+    }
+
+    public Map<String, Object> getPagedUsers(int page, int size, String search, String role, String status, String plaza) {
+        List<User> all = userRepository.findAll();
+
+        Stream<User> stream = all.stream();
+
+        if (search != null && !search.isBlank()) {
+            String s = search.toLowerCase().trim();
+            stream = stream.filter(u ->
+                    (u.getName() != null && u.getName().toLowerCase().contains(s)) ||
+                    (u.getUsername() != null && u.getUsername().toLowerCase().contains(s)) ||
+                    (u.getId() != null && u.getId().toLowerCase().contains(s)) ||
+                    (u.getEmail() != null && u.getEmail().toLowerCase().contains(s))
+            );
+        }
+        if (role != null && !role.isBlank() && !"All roles".equalsIgnoreCase(role)) {
+            stream = stream.filter(u -> u.getRole() != null && u.getRole().equalsIgnoreCase(role));
+        }
+        if (status != null && !status.isBlank() && !"All statuses".equalsIgnoreCase(status)) {
+            if ("Pending".equalsIgnoreCase(status)) {
+                stream = stream.filter(u -> "Pending".equalsIgnoreCase(u.getApproval()) || "Pending".equalsIgnoreCase(u.getStatus()));
+            } else if ("Locked".equalsIgnoreCase(status)) {
+                stream = stream.filter(User::isLocked);
+            } else if ("Active".equalsIgnoreCase(status)) {
+                stream = stream.filter(u -> "Active".equalsIgnoreCase(u.getStatus()) && "Approved".equalsIgnoreCase(u.getApproval()) && !u.isLocked());
+            } else if ("Inactive".equalsIgnoreCase(status)) {
+                stream = stream.filter(u -> "Inactive".equalsIgnoreCase(u.getStatus()));
+            } else {
+                stream = stream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(status));
+            }
+        }
+        if (plaza != null && !plaza.isBlank() && !"All plazas".equalsIgnoreCase(plaza)) {
+            String p = plaza.toLowerCase();
+            stream = stream.filter(u ->
+                    (u.getAssignedPlaza() != null && u.getAssignedPlaza().toLowerCase().contains(p)) ||
+                    (u.getPlazasJson() != null && u.getPlazasJson().toLowerCase().contains(p))
+            );
+        }
+
+        List<User> filtered = stream.collect(Collectors.toList());
+        int totalElements = filtered.size();
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        if (totalPages == 0) totalPages = 1;
+
+        int fromIndex = Math.min(page * size, totalElements);
+        int toIndex = Math.min(fromIndex + size, totalElements);
+        List<UserResponseDTO> pageContent = filtered.subList(fromIndex, toIndex).stream()
+                .map(u -> UserResponseDTO.fromEntity(u, objectMapper))
+                .collect(Collectors.toList());
+
+        return Map.of(
+                "content", pageContent,
+                "totalElements", totalElements,
+                "totalPages", totalPages,
+                "currentPage", page,
+                "pageSize", size
+        );
     }
 
     public UserResponseDTO getUserById(String id) {
