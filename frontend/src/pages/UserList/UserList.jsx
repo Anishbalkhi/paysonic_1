@@ -152,7 +152,7 @@ export const UserList = () => {
 
   const currentAllPlazas = useMemo(() => {
     return getDynamicAllPlazas();
-  }, [showModal]);
+  }, []);
 
   // Allowed plaza options when creating/assigning
   const allowedPlazasForActor = useMemo(() => {
