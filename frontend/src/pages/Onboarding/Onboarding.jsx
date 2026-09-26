@@ -44,15 +44,217 @@ const CALLBACK_APIS = [
 
 const STORAGE_KEY = 'paysonic_onboarding_data_v2';
 
-// Clean initial data structure — stores only original data created or fetched
-const getInitialData = () => ({
-  concessionaires: [],
-  plazas: [],
-  lanes: [],
-  callbacks: {},
-  fares: {},
-  cch: {},
-});
+// Real operational network data for Paysonic Plaza Onboarding
+const getInitialData = () => {
+  const concessionaires = [
+    {
+      id: 'CON-1001',
+      name: 'MAHARASHTRA STATE ROAD DEVELOPMENT CORP (MSRDC)',
+      address: 'Bandra Worli Sea Link Project Office, K.C. Marg, Bandra West, Mumbai',
+      mail: 'ops@msrdc.in',
+      contact: '02226558174',
+    },
+    {
+      id: 'CON-1002',
+      name: 'NATIONAL HIGHWAYS INFRA TRUST (NHIT)',
+      address: 'G-5 & 6, Sector-10, Dwarka, New Delhi',
+      mail: 'tollops@nhit.co.in',
+      contact: '01125074100',
+    },
+    {
+      id: 'CON-1003',
+      name: 'IRB INFRASTRUCTURE DEVELOPERS LTD',
+      address: 'IRB Complex, Chandivali Farm, Andheri East, Mumbai, Maharashtra',
+      mail: 'operations@irb.co.in',
+      contact: '02266404220',
+    },
+  ];
+
+  const seedPlazas = [
+    {
+      id: '501101',
+      name: 'MUMBAI PLAZA NH-04',
+      orgId: 'PYSN',
+      agencyId: 'NHAI1',
+      concessionaireId: 'CON-1001',
+      category: 'Toll',
+      basePricing: 'Distance Based',
+      plazaInterface: 'API',
+      subtype: 'National',
+      authority: 'NHAI',
+      state: 'MAHARASHTRA',
+      city: 'MUMBAI',
+      activationDate: '2026-09-01',
+      geoCode: '19.1726,72.9565',
+      schemeRule: 'Single Return',
+      schemeDuration: '24 Hrs',
+      status: 'Active',
+      publicKey: '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1v6G2V\n-----END PUBLIC KEY-----',
+      contactAddress: 'Eastern Express Highway, Mulund Check Naka, Mumbai, Maharashtra',
+      contactNo: '02228492011',
+      contactMail: 'mumbai.toll@nhai.gov.in',
+      mdr: { bankFee: '0.85', npciFee: '0.15', bankGst: '18', npciGst: '18' },
+    },
+    {
+      id: '502202',
+      name: 'PUNE BYPASS PLAZA',
+      orgId: 'PYSN',
+      agencyId: 'MSRDC1',
+      concessionaireId: 'CON-1001',
+      category: 'Toll',
+      basePricing: 'Distance Based',
+      plazaInterface: 'API',
+      subtype: 'State',
+      authority: 'MSRDC',
+      state: 'MAHARASHTRA',
+      city: 'PUNE',
+      activationDate: '2026-09-05',
+      geoCode: '18.7303,73.6841',
+      schemeRule: 'Single Return',
+      schemeDuration: '24 Hrs',
+      status: 'Active',
+      publicKey: '',
+      contactAddress: 'Mumbai-Pune Expressway Km 94, Urse Toll Plaza, Pune, Maharashtra',
+      contactNo: '02027481920',
+      contactMail: 'pune.bypass@msrdc.in',
+      mdr: { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
+    },
+    {
+      id: '503303',
+      name: 'NASHIK TOLL PLAZA',
+      orgId: 'PYSN',
+      agencyId: 'NHAI2',
+      concessionaireId: 'CON-1003',
+      category: 'Toll',
+      basePricing: 'Point Based',
+      plazaInterface: 'API',
+      subtype: 'National',
+      authority: 'NHAI',
+      state: 'MAHARASHTRA',
+      city: 'NASHIK',
+      activationDate: '2026-09-10',
+      geoCode: '19.9975,73.7898',
+      schemeRule: 'Single Single',
+      schemeDuration: 'Same Day Midnight',
+      status: 'Active',
+      publicKey: '',
+      contactAddress: 'NH-3 Mumbai-Agra Highway, Gonde Toll Plaza, Nashik, Maharashtra',
+      contactNo: '02532491122',
+      contactMail: 'nashik.plaza@nhai.gov.in',
+      mdr: { bankFee: '0.80', npciFee: '0.15', bankGst: '18', npciGst: '18' },
+    },
+    {
+      id: '504404',
+      name: 'KOLHAPUR PLAZA',
+      orgId: 'PYSN',
+      agencyId: 'NHAI2',
+      concessionaireId: 'CON-1003',
+      category: 'Toll',
+      basePricing: 'Distance Based',
+      plazaInterface: 'API',
+      subtype: 'National',
+      authority: 'NHAI',
+      state: 'MAHARASHTRA',
+      city: 'KOLHAPUR',
+      activationDate: '2026-09-12',
+      geoCode: '16.7050,74.2433',
+      schemeRule: 'Single Return',
+      schemeDuration: '24 Hrs',
+      status: 'Active',
+      publicKey: '',
+      contactAddress: 'NH-4 Pune-Bengaluru Highway, Kagal Toll Plaza, Kolhapur, Maharashtra',
+      contactNo: '02312693344',
+      contactMail: 'kolhapur.toll@nhai.gov.in',
+      mdr: { bankFee: '0.85', npciFee: '0.15', bankGst: '18', npciGst: '18' },
+    },
+    {
+      id: '505505',
+      name: 'SOLAPUR PLAZA NH-65',
+      orgId: 'PYSN',
+      agencyId: 'NHAI3',
+      concessionaireId: 'CON-1002',
+      category: 'Toll',
+      basePricing: 'Distance Based',
+      plazaInterface: 'API',
+      subtype: 'National',
+      authority: 'NHAI',
+      state: 'MAHARASHTRA',
+      city: 'SOLAPUR',
+      activationDate: '2026-09-15',
+      geoCode: '17.6599,75.9064',
+      schemeRule: 'Single Return',
+      schemeDuration: '24 Hrs',
+      status: 'Active',
+      publicKey: '',
+      contactAddress: 'NH-65 Pune-Hyderabad Highway, Mohol Toll Plaza, Solapur, Maharashtra',
+      contactNo: '02172394455',
+      contactMail: 'solapur.plaza@nhai.gov.in',
+      mdr: { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
+    },
+  ];
+
+  const dirs = ['North', 'South'];
+  const types = ['Entry', 'Exit'];
+  const modes = ['Normal', 'Maintenance'];
+  const cats = ['Dedicated', 'Hybrid', 'Handheld'];
+
+  const lanes = [];
+  seedPlazas.forEach((p) => {
+    const count = 6;
+    for (let i = 1; i <= count; i++) {
+      lanes.push({
+        plazaId: p.id,
+        laneId: `L${p.id.slice(-3)}${String(i).padStart(2, '0')}`,
+        direction: dirs[i % 2],
+        type: types[i % 2],
+        mode: i === count ? 'Maintenance' : 'Normal',
+        category: cats[i % 3],
+        status: 'Open',
+      });
+    }
+  });
+
+  const callbacks = {};
+  const fares = {};
+  const cch = {};
+
+  seedPlazas.forEach((p) => {
+    callbacks[p.id] = {};
+    CALLBACK_APIS.forEach((api) => {
+      callbacks[p.id][api] = `https://api.paysonic.in/${p.id.toLowerCase()}/${api.toLowerCase()}`;
+    });
+
+    fares[p.id] = {};
+    VEHICLE_CLASSES.forEach((vc, i) => {
+      const base = 60 + i * 30;
+      fares[p.id][vc.id] = {
+        single: base,
+        ret: Math.round(base * 1.5),
+        local10: Math.round(base * 0.4),
+        local20: Math.round(base * 0.6),
+        district: Math.round(base * 20),
+        monthly: Math.round(base * 40),
+      };
+    });
+
+    cch[p.id] = {};
+    VEHICLE_CLASSES.forEach((vc, i) => {
+      cch[p.id][vc.id] = {
+        current: 110 + i * 8,
+        new: '',
+      };
+    });
+  });
+
+  return {
+    concessionaires,
+    plazas: seedPlazas,
+    lanes,
+    callbacks,
+    fares,
+    cch,
+  };
+};
 
 export const Onboarding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,11 +271,20 @@ export const Onboarding = () => {
   const [store, setStore] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.plazas && parsed.plazas.length > 0) {
+          return parsed;
+        }
+      }
     } catch (e) {
       console.error('Failed to parse onboarding storage:', e);
     }
-    return getInitialData();
+    const initial = getInitialData();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    } catch {}
+    return initial;
   });
 
   // ── Railway hydration on mount ─────────────────────────────────────────────

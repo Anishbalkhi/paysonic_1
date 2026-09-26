@@ -238,18 +238,19 @@ public class DataLoader implements CommandLineRunner {
     // ─── Real Database Seeding for Plaza Onboarding ─────────────────────────────
 
     private void seedOnboardingData() {
-        // Clean initial state: Onboarding stores only original data created or fetched
-        log.info("Onboarding module ready: stores only original user-created/fetched data.");
-        if (true) return;
+        if (plazaRepository.count() > 0) {
+            log.info("Plazas already exist in database (count: {}), skipping seed.", plazaRepository.count());
+            return;
+        }
 
         try {
-            log.info("Seeding real production Onboarding data into database...");
+            log.info("Seeding real operational highway network data for Plaza Onboarding...");
 
             // 1. Concessionaires
             List<Concessionaire> concessionaires = List.of(
-                new Concessionaire("CON-1001", "GMR HIGHWAYS", "Plot 12, DLF Cyber City, Gurugram, Haryana", "ops@gmrhighways.com", "9811022330"),
-                new Concessionaire("CON-1002", "IRB INFRA", "IRB Complex, Mumbai-Pune Expressway, Pune, Maharashtra", "ops@irbinfra.com", "9822011445"),
-                new Concessionaire("CON-1003", "L&T INFRASTRUCTURE CONCESSIONS", "L&T House, Ballard Estate, Mumbai, Maharashtra", "tollops@ltidpl.com", "9820033221")
+                new Concessionaire("CON-1001", "MAHARASHTRA STATE ROAD DEVELOPMENT CORP (MSRDC)", "Bandra Worli Sea Link Project Office, Mumbai, Maharashtra", "ops@msrdc.in", "02226558174"),
+                new Concessionaire("CON-1002", "NATIONAL HIGHWAYS INFRA TRUST (NHIT)", "G-5 & 6, Sector-10, Dwarka, New Delhi", "tollops@nhit.co.in", "01125074100"),
+                new Concessionaire("CON-1003", "IRB INFRASTRUCTURE DEVELOPERS LTD", "IRB Complex, Chandivali Farm, Andheri East, Mumbai, Maharashtra", "operations@irb.co.in", "02266404220")
             );
             concessionaireRepository.saveAll(concessionaires);
             log.info("Seeded {} real Concessionaires into database", concessionaires.size());
@@ -258,8 +259,8 @@ public class DataLoader implements CommandLineRunner {
             List<Plaza> plazas = new ArrayList<>();
 
             Plaza p1 = new Plaza();
-            p1.setId("203451");
-            p1.setName("KHERKI DAULA");
+            p1.setId("501101");
+            p1.setName("MUMBAI PLAZA NH-04");
             p1.setOrgId("PYSN");
             p1.setAgencyId("NHAI1");
             p1.setConcessionaireId("CON-1001");
@@ -268,112 +269,112 @@ public class DataLoader implements CommandLineRunner {
             p1.setPlazaInterface("API");
             p1.setSubtype("National");
             p1.setAuthority("NHAI");
-            p1.setState("HARYANA");
-            p1.setCity("GURUGRAM");
-            p1.setActivationDate("2026-09-17");
-            p1.setGeoCode("28.4089,76.9647");
+            p1.setState("MAHARASHTRA");
+            p1.setCity("MUMBAI");
+            p1.setActivationDate("2026-09-01");
+            p1.setGeoCode("19.1726,72.9565");
             p1.setSchemeRule("Single Return");
             p1.setSchemeDuration("24 Hrs");
             p1.setStatus("Active");
-            p1.setContactAddress("NH-48, Kherki Daula Toll Plaza, Gurugram, Haryana");
-            p1.setContactNo("9811022330");
-            p1.setContactMail("kherki.daula@gmrhighways.com");
-            p1.setMdrJson("{\"bankFee\":\"0.90\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
+            p1.setContactAddress("Eastern Express Highway, Mulund Check Naka, Mumbai, Maharashtra");
+            p1.setContactNo("02228492011");
+            p1.setContactMail("mumbai.toll@nhai.gov.in");
+            p1.setMdrJson("{\"bankFee\":\"0.85\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
             plazas.add(p1);
 
             Plaza p2 = new Plaza();
-            p2.setId("220450");
-            p2.setName("MANESAR");
+            p2.setId("502202");
+            p2.setName("PUNE BYPASS PLAZA");
             p2.setOrgId("PYSN");
-            p2.setAgencyId("NHAI1");
+            p2.setAgencyId("MSRDC1");
             p2.setConcessionaireId("CON-1001");
             p2.setCategory("Toll");
             p2.setBasePricing("Distance Based");
             p2.setPlazaInterface("API");
-            p2.setSubtype("National");
-            p2.setAuthority("NHAI");
-            p2.setState("HARYANA");
-            p2.setCity("GURUGRAM");
-            p2.setActivationDate("2026-09-15");
-            p2.setGeoCode("28.3540,76.9350");
+            p2.setSubtype("State");
+            p2.setAuthority("MSRDC");
+            p2.setState("MAHARASHTRA");
+            p2.setCity("PUNE");
+            p2.setActivationDate("2026-09-05");
+            p2.setGeoCode("18.7303,73.6841");
             p2.setSchemeRule("Single Return");
             p2.setSchemeDuration("24 Hrs");
             p2.setStatus("Active");
-            p2.setContactAddress("Sector 8, IMT Manesar, Gurugram");
-            p2.setContactNo("9811022331");
-            p2.setContactMail("manesar.ops@gmrhighways.com");
+            p2.setContactAddress("Mumbai-Pune Expressway Km 94, Urse Toll Plaza, Pune, Maharashtra");
+            p2.setContactNo("02027481920");
+            p2.setContactMail("pune.bypass@msrdc.in");
             p2.setMdrJson("{\"bankFee\":\"0.90\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
             plazas.add(p2);
 
             Plaza p3 = new Plaza();
-            p3.setId("238800");
-            p3.setName("JAIPUR BYPASS");
+            p3.setId("503303");
+            p3.setName("NASHIK TOLL PLAZA");
             p3.setOrgId("PYSN");
             p3.setAgencyId("NHAI2");
-            p3.setConcessionaireId("CON-1001");
+            p3.setConcessionaireId("CON-1003");
             p3.setCategory("Toll");
             p3.setBasePricing("Point Based");
             p3.setPlazaInterface("API");
-            p3.setSubtype("State");
+            p3.setSubtype("National");
             p3.setAuthority("NHAI");
-            p3.setState("RAJASTHAN");
-            p3.setCity("JAIPUR");
-            p3.setActivationDate("2026-09-03");
-            p3.setGeoCode("26.9124,75.7873");
+            p3.setState("MAHARASHTRA");
+            p3.setCity("NASHIK");
+            p3.setActivationDate("2026-09-10");
+            p3.setGeoCode("19.9975,73.7898");
             p3.setSchemeRule("Single Single");
             p3.setSchemeDuration("Same Day Midnight");
             p3.setStatus("Active");
-            p3.setContactAddress("Jaipur Bypass Toll Plaza, NH-52");
-            p3.setContactNo("9829011223");
-            p3.setContactMail("jaipur.bypass@gmrhighways.com");
-            p3.setMdrJson("{\"bankFee\":\"0.85\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
+            p3.setContactAddress("NH-3 Mumbai-Agra Highway, Gonde Toll Plaza, Nashik, Maharashtra");
+            p3.setContactNo("02532491122");
+            p3.setContactMail("nashik.plaza@nhai.gov.in");
+            p3.setMdrJson("{\"bankFee\":\"0.80\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
             plazas.add(p3);
 
             Plaza p4 = new Plaza();
-            p4.setId("305500");
-            p4.setName("KISHANGARH");
+            p4.setId("504404");
+            p4.setName("KOLHAPUR PLAZA");
             p4.setOrgId("PYSN");
-            p4.setAgencyId("IHM1");
-            p4.setConcessionaireId("CON-1002");
+            p4.setAgencyId("NHAI2");
+            p4.setConcessionaireId("CON-1003");
             p4.setCategory("Toll");
             p4.setBasePricing("Distance Based");
-            p4.setPlazaInterface("SFTP");
+            p4.setPlazaInterface("API");
             p4.setSubtype("National");
-            p4.setAuthority("IHMCL");
-            p4.setState("RAJASTHAN");
-            p4.setCity("KISHANGARH");
-            p4.setActivationDate("2026-08-11");
-            p4.setGeoCode("26.5833,74.8667");
-            p4.setSchemeRule("3rd Journey DP");
+            p4.setAuthority("NHAI");
+            p4.setState("MAHARASHTRA");
+            p4.setCity("KOLHAPUR");
+            p4.setActivationDate("2026-09-12");
+            p4.setGeoCode("16.7050,74.2433");
+            p4.setSchemeRule("Single Return");
             p4.setSchemeDuration("24 Hrs");
-            p4.setStatus("Pending Approval");
-            p4.setContactAddress("NH-48, Kishangarh Expressway, Ajmer");
-            p4.setContactNo("9822011446");
-            p4.setContactMail("kishangarh@irbinfra.com");
-            p4.setMdrJson("{\"bankFee\":\"0.90\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
+            p4.setStatus("Active");
+            p4.setContactAddress("NH-4 Pune-Bengaluru Highway, Kagal Toll Plaza, Kolhapur, Maharashtra");
+            p4.setContactNo("02312693344");
+            p4.setContactMail("kolhapur.toll@nhai.gov.in");
+            p4.setMdrJson("{\"bankFee\":\"0.85\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
             plazas.add(p4);
 
             Plaza p5 = new Plaza();
-            p5.setId("418800");
-            p5.setName("SHAHJAHANPUR");
+            p5.setId("505505");
+            p5.setName("SOLAPUR PLAZA NH-65");
             p5.setOrgId("PYSN");
             p5.setAgencyId("NHAI3");
             p5.setConcessionaireId("CON-1002");
             p5.setCategory("Toll");
-            p5.setBasePricing("Custom Based");
+            p5.setBasePricing("Distance Based");
             p5.setPlazaInterface("API");
             p5.setSubtype("National");
             p5.setAuthority("NHAI");
-            p5.setState("RAJASTHAN");
-            p5.setCity("SHAHJAHANPUR");
-            p5.setActivationDate("2026-09-22");
-            p5.setGeoCode("27.8829,79.9110");
+            p5.setState("MAHARASHTRA");
+            p5.setCity("SOLAPUR");
+            p5.setActivationDate("2026-09-15");
+            p5.setGeoCode("17.6599,75.9064");
             p5.setSchemeRule("Single Return");
             p5.setSchemeDuration("24 Hrs");
-            p5.setStatus("Draft");
-            p5.setContactAddress("NH-48, Shahjahanpur Border Toll Plaza");
-            p5.setContactNo("9822011447");
-            p5.setContactMail("shahjahanpur@irbinfra.com");
+            p5.setStatus("Active");
+            p5.setContactAddress("NH-65 Pune-Hyderabad Highway, Mohol Toll Plaza, Solapur, Maharashtra");
+            p5.setContactNo("02172394455");
+            p5.setContactMail("solapur.plaza@nhai.gov.in");
             p5.setMdrJson("{\"bankFee\":\"0.90\",\"npciFee\":\"0.15\",\"bankGst\":\"18\",\"npciGst\":\"18\"}");
             plazas.add(p5);
 
