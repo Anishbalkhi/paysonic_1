@@ -237,7 +237,7 @@ public class UserService {
                     "Hierarchy Violation: A user cannot approve their own registration account.");
         }
 
-        User approver = userRepository.findById(approverId).orElse(null);
+        User approver = findActor(approverId);
 
         // Hierarchy validation: check if approver has authority to approve this target user
         validateHierarchyAction(approverId, "APPROVE", user.getRole(), user.getAssignedPlaza(), user);
@@ -263,12 +263,20 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    private User findActor(String actorId) {
+        if (actorId == null || actorId.isBlank()) return null;
+        return userRepository.findById(actorId)
+                .or(() -> userRepository.findByEmailIgnoreCase(actorId))
+                .or(() -> userRepository.findByNameIgnoreCase(actorId))
+                .orElse(null);
+    }
+
     private void validateHierarchyAction(String actorId, String action, String targetRole, String targetPlaza, User targetUser) {
         if (actorId == null || actorId.isBlank() || "SYSTEM".equalsIgnoreCase(actorId) || "OPS_MAKER".equalsIgnoreCase(actorId)) {
             return;
         }
 
-        User actor = userRepository.findById(actorId).orElse(null);
+        User actor = findActor(actorId);
         if (actor == null) return;
 
         String actorRole = actor.getRole();
@@ -390,16 +398,20 @@ public class UserService {
 
     private boolean hasApprovePermission(User actor) {
         if (actor == null) return false;
-        if ("Master Admin".equalsIgnoreCase(actor.getRole())) return true;
+        String role = actor.getRole();
+        if ("Master Admin".equalsIgnoreCase(role)
+                || "Admin".equalsIgnoreCase(role)
+                || "Concessionaire".equalsIgnoreCase(role)
+                || "Plaza Admin".equalsIgnoreCase(role)) {
+            return true;
+        }
         if (actor.getMenuAccessJson() != null && !actor.getMenuAccessJson().isBlank()) {
             try {
                 List<String> perms = objectMapper.readValue(actor.getMenuAccessJson(), new TypeReference<List<String>>() {});
                 return perms.contains("user_management_approve_user");
             } catch (Exception ignored) {}
         }
-        return "Admin".equalsIgnoreCase(actor.getRole())
-                || "Concessionaire".equalsIgnoreCase(actor.getRole())
-                || "Plaza Admin".equalsIgnoreCase(actor.getRole());
+        return false;
     }
 
     private List<String> getUserPlazas(User user) {
@@ -421,6 +433,9 @@ public class UserService {
     private boolean hasPlazaOverlap(User actor, User targetUser, String targetPlaza) {
         if (actor == null) return false;
         List<String> actorPlazas = getUserPlazas(actor);
+        if (actorPlazas.isEmpty()) {
+            return true;
+        }
         if (actorPlazas.stream().anyMatch(p -> "All plazas".equalsIgnoreCase(p))) {
             return true;
         }
