@@ -1791,16 +1791,13 @@ export const UserList = () => {
                           {canApproveTargetUser(users.find((x) => x.id === editingId)) ? (
                             <button
                               type="button"
-                              className="btn btn-sm"
+                              className="btn btn-sm btn-table-approve"
                               onClick={async (e) => {
                                 e.preventDefault();
                                 await handleApproveUser(editingId);
                                 setFormValues((prev) => ({ ...prev, status: 'Active' }));
                               }}
                               style={{
-                                background: '#ecfdf5',
-                                color: '#047857',
-                                border: '1px solid #a7f3d0',
                                 padding: '4px 10px',
                                 borderRadius: '6px',
                                 fontSize: '12px',
@@ -1811,7 +1808,7 @@ export const UserList = () => {
                               ✓ Approve &amp; Activate Now
                             </button>
                           ) : (
-                            <span style={{ fontSize: '12px', color: '#667085' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-soft, #9AA5B4)' }}>
                               (Requires hierarchy approval to activate)
                             </span>
                           )}
@@ -1833,7 +1830,7 @@ export const UserList = () => {
                             <span className={`badge ${formValues.status === 'Active' ? 'badge-active' : 'badge-inactive'}`}>
                               {formValues.status}
                             </span>
-                            <span style={{ fontSize: '12px', color: '#667085' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-soft, #9AA5B4)' }}>
                               🔒 (Only higher hierarchy authority can change Active/Inactive status)
                             </span>
                           </div>
@@ -1851,7 +1848,7 @@ export const UserList = () => {
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
                           <span className="badge badge-pending">Pending Approval</span>
-                          <span style={{ fontSize: '12px', color: '#667085' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-soft, #9AA5B4)' }}>
                             (Requires hierarchy approval before activation)
                           </span>
                         </div>

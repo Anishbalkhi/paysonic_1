@@ -824,14 +824,20 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  background: var(--card, #ffffff);
 
   &-head {
     display: flex;
     align-items: center;
     gap: 9px;
     padding: 9px 10px;
-    background: #F9FAFB;
+    background: var(--surface-raised, #F9FAFB);
     cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--blue-soft, #f1f5f9);
+    }
 
     input {
       width: 16px;
@@ -862,6 +868,8 @@
     flex-direction: column;
     padding: 6px 10px 10px 34px;
     gap: 6px;
+    background: var(--card, #ffffff);
+    border-top: 1px solid var(--border);
   }
 
   &.open &-subs {
@@ -895,6 +903,7 @@
   font-size: 13.5px;
   font-weight: 600;
   color: var(--ink);
+  background: var(--surface-raised, #F9FAFB);
   cursor: pointer;
 
   input {
@@ -913,7 +922,7 @@
   flex-wrap: wrap;
   margin: 10px 0 12px;
   padding: 8px 12px;
-  background: #F8FAFC;
+  background: var(--surface-raised, #F8FAFC);
   border: 1px solid var(--border);
   border-radius: 8px;
 
@@ -925,9 +934,9 @@
   }
 
   .access-quick-btn {
-    background: #ffffff;
-    border: 1px solid #d0d5dd;
-    color: #344054;
+    background: var(--card, #ffffff);
+    border: 1px solid var(--border, #d0d5dd);
+    color: var(--body-text, #344054);
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 12px;
@@ -936,27 +945,31 @@
     transition: all 0.15s ease;
 
     &:hover {
-      background: #f1f5f9;
-      border-color: #98a2b3;
-      color: #1d2939;
+      background: var(--blue-soft, #f1f5f9);
+      border-color: var(--border-hover, #98a2b3);
+      color: var(--ink, #1d2939);
     }
 
     &.primary {
-      color: var(--brand-blue);
-      border-color: #bfdbfe;
-      background: #eff6ff;
+      color: var(--blue, #2563eb);
+      border-color: var(--border, #bfdbfe);
+      background: var(--blue-soft, #eff6ff);
 
       &:hover {
-        background: #dbeafe;
-        border-color: #93c5fd;
+        background: var(--blue-soft, #dbeafe);
+        border-color: var(--border-hover, #93c5fd);
       }
     }
   }
 
   .access-count-summary {
     font-size: 12px;
-    color: #64748b;
+    color: var(--muted, #64748b);
     font-weight: 500;
+
+    strong {
+      color: var(--ink);
+    }
   }
 }
 
@@ -970,15 +983,15 @@
   flex-shrink: 0;
 
   &.default {
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
+    background: var(--green-bg, #ecfdf5);
+    color: var(--mint-accent, #047857);
+    border: 1px solid var(--green, #a7f3d0);
   }
 
   &.extra {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: var(--blue-soft, #eff6ff);
+    color: var(--blue-2, #1d4ed8);
+    border: 1px solid var(--blue, #bfdbfe);
   }
 }
 
@@ -991,18 +1004,18 @@
   flex-shrink: 0;
 
   &.full {
-    background: #ecfdf5;
-    color: #047857;
+    background: var(--green-bg, #ecfdf5);
+    color: var(--mint-accent, #047857);
   }
 
   &.partial {
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--blue-soft, #eff6ff);
+    color: var(--blue-2, #1d4ed8);
   }
 
   &.none {
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--surface-raised, #f1f5f9);
+    color: var(--muted, #64748b);
   }
 }
 
@@ -1127,5 +1140,314 @@
 @media (max-width: 440px) {
   .stats {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════
+   DARK THEME DEDICATED OVERRIDES FOR USER MANAGEMENT & MODALS
+   ═════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"],
+html[data-theme="dark"],
+[data-theme="dark"] {
+  .modal,
+  .user-drawer,
+  .bulk-modal,
+  .confirm-dialog {
+    background-color: var(--card, #161D27) !important;
+    border: 1px solid var(--border, #262F3B) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+
+    .modal-head,
+    .modal-foot,
+    .drawer-head,
+    .drawer-foot {
+      border-color: var(--border, #262F3B) !important;
+      background-color: var(--card, #161D27) !important;
+    }
+
+    .modal-head h2,
+    .drawer-head h2 {
+      color: var(--text, #E7ECF3) !important;
+    }
+
+    .modal-head span,
+    .drawer-head span {
+      color: var(--text-soft, #9AA5B4) !important;
+    }
+
+    .close-btn {
+      background-color: var(--surface-raised, #1C2430) !important;
+      border-color: var(--border, #262F3B) !important;
+      color: var(--text-soft, #9AA5B4) !important;
+
+      &:hover {
+        background-color: var(--blue-soft, #182A3F) !important;
+        color: var(--text, #E7ECF3) !important;
+      }
+    }
+  }
+
+  .section-label {
+    color: var(--blue-2, #3B82F6) !important;
+  }
+
+  .section-divider {
+    border-top-color: var(--border, #262F3B) !important;
+  }
+
+  .hint {
+    color: var(--text-soft, #9AA5B4) !important;
+  }
+
+  .field label {
+    color: var(--text-soft, #9AA5B4) !important;
+  }
+
+  .field input,
+  .field select,
+  .search-input,
+  .filter-select,
+  .pw-wrap {
+    background-color: var(--bg, #10151C) !important;
+    border-color: var(--border, #262F3B) !important;
+    color: var(--text, #E7ECF3) !important;
+
+    &:focus {
+      border-color: var(--blue, #2E6FBA) !important;
+      box-shadow: 0 0 0 2px rgba(46, 111, 186, 0.25) !important;
+    }
+
+    &::placeholder {
+      color: var(--faint, #6B7A8D) !important;
+    }
+  }
+
+  .pw-wrap input {
+    background: transparent !important;
+    color: var(--text, #E7ECF3) !important;
+  }
+
+  .note-box {
+    background-color: var(--blue-soft, #182A3F) !important;
+    border: 1px solid var(--banner-border, #284B72) !important;
+    color: var(--banner-text, #CFE0F5) !important;
+  }
+
+  /* ── Access Actions Bar ── */
+  .access-actions-bar {
+    background-color: var(--bg, #10151C) !important;
+    border-color: var(--border, #262F3B) !important;
+
+    .access-quick-btn {
+      background-color: var(--card, #161D27) !important;
+      border-color: var(--border, #262F3B) !important;
+      color: var(--text, #E7ECF3) !important;
+
+      &:hover {
+        background-color: var(--blue-soft, #182A3F) !important;
+        border-color: var(--border-hover, #354152) !important;
+      }
+
+      &.primary {
+        background-color: var(--blue-soft, #182A3F) !important;
+        border-color: var(--banner-border, #284B72) !important;
+        color: #60A5FA !important;
+
+        &:hover {
+          background-color: #1F3B57 !important;
+        }
+      }
+    }
+
+    .access-count-summary {
+      color: var(--text-soft, #9AA5B4) !important;
+
+      strong {
+        color: var(--text, #E7ECF3) !important;
+      }
+    }
+  }
+
+  /* ── Access Tree & Groups ── */
+  .access-tree {
+    .access-group {
+      background-color: var(--card, #161D27) !important;
+      border-color: var(--border, #262F3B) !important;
+
+      .access-group-head {
+        background-color: var(--card, #161D27) !important;
+
+        &:hover {
+          background-color: var(--surface-raised, #1C2430) !important;
+        }
+
+        span {
+          color: var(--text, #E7ECF3) !important;
+        }
+
+        .caret {
+          color: var(--text-soft, #9AA5B4) !important;
+        }
+      }
+
+      .access-group-subs {
+        background-color: var(--bg, #10151C) !important;
+        border-color: var(--border, #262F3B) !important;
+
+        .access-subrow {
+          color: var(--text, #E7ECF3) !important;
+
+          &:hover {
+            color: #ffffff !important;
+          }
+        }
+      }
+    }
+
+    .access-leaf {
+      background-color: var(--card, #161D27) !important;
+      border-color: var(--border, #262F3B) !important;
+
+      span {
+        color: var(--text, #E7ECF3) !important;
+      }
+
+      &:hover {
+        background-color: var(--surface-raised, #1C2430) !important;
+      }
+    }
+  }
+
+  /* ── Badges & Status Pills ── */
+  .badge-active {
+    background-color: var(--green-bg, #123326) !important;
+    color: var(--mint-accent, #57C9A5) !important;
+    border: 1px solid #1e4b38 !important;
+  }
+
+  .badge-pending {
+    background-color: var(--amber-bg, #3A2A0F) !important;
+    color: #FBBF24 !important;
+    border: 1px solid #5C4314 !important;
+  }
+
+  .badge-inactive {
+    background-color: var(--surface-raised, #1C2430) !important;
+    color: var(--text-soft, #9AA5B4) !important;
+    border: 1px solid var(--border, #262F3B) !important;
+  }
+
+  .badge-approved {
+    background-color: var(--blue-soft, #182A3F) !important;
+    color: #60A5FA !important;
+    border: 1px solid #284B72 !important;
+  }
+
+  .btn-table-approve {
+    background-color: var(--green-bg, #123326) !important;
+    color: var(--mint-accent, #57C9A5) !important;
+    border: 1px solid #1e4b38 !important;
+
+    &:hover {
+      background-color: #1a4d38 !important;
+    }
+  }
+
+  /* ── Access Status Badges ── */
+  .access-status-badge {
+    &.full {
+      background-color: var(--green-bg, #123326) !important;
+      color: var(--mint-accent, #57C9A5) !important;
+      border: 1px solid #1e4b38 !important;
+    }
+
+    &.partial {
+      background-color: var(--blue-soft, #182A3F) !important;
+      color: #60A5FA !important;
+      border: 1px solid #284B72 !important;
+    }
+
+    &.none {
+      background-color: var(--surface-raised, #1C2430) !important;
+      color: var(--text-soft, #9AA5B4) !important;
+      border: 1px solid var(--border, #262F3B) !important;
+    }
+  }
+
+  .access-pill {
+    &.default {
+      background-color: var(--green-bg, #123326) !important;
+      color: var(--mint-accent, #57C9A5) !important;
+      border: 1px solid #1e4b38 !important;
+    }
+
+    &.extra {
+      background-color: var(--blue-soft, #182A3F) !important;
+      color: #60A5FA !important;
+      border: 1px solid #284B72 !important;
+    }
+  }
+
+  /* ── Stat Cards & Tables ── */
+  .stat-card {
+    background-color: var(--card, #161D27) !important;
+    border-color: var(--border, #262F3B) !important;
+
+    .stat-label {
+      color: var(--text-soft, #9AA5B4) !important;
+    }
+
+    .stat-value {
+      color: var(--text, #E7ECF3) !important;
+    }
+  }
+
+  .tbl-wrap,
+  .table-card {
+    background-color: var(--card, #161D27) !important;
+    border-color: var(--border, #262F3B) !important;
+
+    table {
+      thead th {
+        background-color: var(--blue-soft, #182A3F) !important;
+        color: var(--text-soft, #9AA5B4) !important;
+        border-bottom-color: var(--border, #262F3B) !important;
+      }
+
+      tbody tr {
+        border-bottom-color: var(--border, #262F3B) !important;
+
+        &:hover {
+          background-color: var(--blue-soft, #182A3F) !important;
+        }
+
+        td {
+          color: var(--text, #E7ECF3) !important;
+        }
+      }
+    }
+  }
+
+  .pagination-bar {
+    border-color: var(--border, #262F3B) !important;
+
+    .pg-info {
+      color: var(--text-soft, #9AA5B4) !important;
+    }
+
+    .pg-btn {
+      background-color: var(--card, #161D27) !important;
+      border-color: var(--border, #262F3B) !important;
+      color: var(--text, #E7ECF3) !important;
+
+      &:hover:not(:disabled) {
+        background-color: var(--blue-soft, #182A3F) !important;
+      }
+
+      &.active {
+        background-color: var(--blue, #2E6FBA) !important;
+        color: #ffffff !important;
+      }
+    }
   }
 }
