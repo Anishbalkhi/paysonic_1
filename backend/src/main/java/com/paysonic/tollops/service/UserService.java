@@ -214,26 +214,42 @@ public class UserService {
     @Auditable(module = "User Management", action = "APPROVE_USER", actionLabel = "Approved User Onboarding")
     @Transactional
     public UserResponseDTO approveUser(String id, String approverId) {
+        if (approverId == null || approverId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Approver actor ID is required.");
+        }
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
 
-        // Hierarchy validation: check if approver has authority to approve this target user (creator or upper in hierarchy)
-        boolean isCreator = approverId != null && approverId.equalsIgnoreCase(user.getCreatedBy());
-        if (!isCreator) {
-            validateHierarchyAction(approverId, "APPROVE", user.getRole(), user.getAssignedPlaza(), user);
+        // Bug Fix 4: Check if user is already approved
+        if ("Approved".equalsIgnoreCase(user.getApproval())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "User is already approved. Cannot re-approve an approved account.");
         }
+
+        // Bug Fix 1 & 8: Maker-Checker Segregation
+        // Rule A: A user cannot approve their own account
+        if (approverId.equalsIgnoreCase(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Maker-Checker Violation: A user cannot approve their own registration.");
+        }
+
+        User approver = userRepository.findById(approverId).orElse(null);
+        boolean isRootMaster = approver != null && "masteradmin@paysonic.com".equalsIgnoreCase(approver.getEmail());
+
+        // Rule B: Maker cannot be Checker (Creator cannot approve user they created)
+        if (!isRootMaster && approverId.equalsIgnoreCase(user.getCreatedBy())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Maker-Checker Violation: The creator of a user cannot approve them. An independent supervisor upper in hierarchy is required.");
+        }
+
+        // Hierarchy validation: check if approver has authority to approve this target user
+        validateHierarchyAction(approverId, "APPROVE", user.getRole(), user.getAssignedPlaza(), user);
 
         user.setApproval("Approved");
         user.setStatus("Active");
 
-        String approverName = approverId;
-        if (approverId != null && !approverId.isBlank()) {
-            approverName = userRepository.findById(approverId)
-                    .map(u -> u.getName() + " (" + u.getId() + ")")
-                    .orElse(approverId);
-        } else {
-            approverName = "Master Admin (PSN1000)";
-        }
+        String approverName = approver != null ? approver.getName() + " (" + approver.getId() + ")" : approverId;
         user.setApprovedBy(approverName);
         User updated = userRepository.save(user);
         return UserResponseDTO.fromEntity(updated, objectMapper);
@@ -260,6 +276,15 @@ public class UserService {
         if (actor == null) return;
 
         String actorRole = actor.getRole();
+
+        // Bug Fix 5: Verify fine-grained user_management_approve_user permission if action is APPROVE
+        if (!"Master Admin".equalsIgnoreCase(actorRole) && "APPROVE".equalsIgnoreCase(action)) {
+            if (!hasApprovePermission(actor)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Permission Denied: Actor does not possess the 'user_management_approve_user' permission.");
+            }
+        }
+
         if ("Master Admin".equalsIgnoreCase(actorRole)) {
             if (targetUser != null && "Master Admin".equalsIgnoreCase(targetUser.getRole())) {
                 if ("DELETE".equalsIgnoreCase(action)) {
@@ -297,6 +322,10 @@ public class UserService {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "Hierarchy Violation: Concessionaire can only create Plaza Admin, Request Tag, and POS users.");
                 }
+                if (!hasPlazaOverlap(actor, null, targetPlaza)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Plaza Scope Violation: Concessionaire can only create users within their assigned plazas.");
+                }
             } else if (("MANAGE".equalsIgnoreCase(action) || "APPROVE".equalsIgnoreCase(action)) && targetUser != null) {
                 // Cannot manage or approve Master Admin, Admin, or peer Concessionaires
                 if (List.of("Master Admin", "Admin", "Concessionaire").contains(targetUser.getRole())) {
@@ -307,6 +336,11 @@ public class UserService {
                 if (!allowedRoles.contains(targetUser.getRole())) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "Hierarchy Violation: Concessionaire can only approve or manage Plaza Admin, Request Tag, and POS users.");
+                }
+                // Bug Fix 2: Check Concessionaire plaza scope on APPROVE/MANAGE
+                if (!hasPlazaOverlap(actor, targetUser, targetPlaza)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Plaza Scope Violation: Concessionaire can only approve or manage users within their assigned plazas.");
                 }
             }
             return;
@@ -320,12 +354,21 @@ public class UserService {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "Hierarchy Violation: Plaza Admin can only create Request Tag and POS users.");
                 }
+                if (!hasPlazaOverlap(actor, null, targetPlaza)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Plaza Scope Violation: Plaza Admin can only create users within their assigned plaza.");
+                }
             } else if ("APPROVE".equalsIgnoreCase(action) && targetUser != null) {
                 // Plaza Admin can approve subordinate roles: Request Tag Details, Plaza POS
                 List<String> allowedRoles = List.of("Request Tag Details", "Plaza POS");
                 if (!allowedRoles.contains(targetUser.getRole())) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "Hierarchy Violation: Plaza Admin can only approve Request Tag and POS users.");
+                }
+                // Bug Fix 2: Check Plaza Admin plaza scope on APPROVE
+                if (!hasPlazaOverlap(actor, targetUser, targetPlaza)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Plaza Scope Violation: Plaza Admin can only approve users within their assigned plaza.");
                 }
             } else if ("MANAGE".equalsIgnoreCase(action) && targetUser != null) {
                 // Can only edit/disable Request tag and POS users it created
@@ -335,6 +378,10 @@ public class UserService {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "Hierarchy Violation: Plaza Admin can only edit or disable Request Tag and POS users that it created.");
                 }
+                if (!hasPlazaOverlap(actor, targetUser, targetPlaza)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Plaza Scope Violation: Plaza Admin can only manage users within their assigned plaza.");
+                }
             }
             return;
         }
@@ -343,6 +390,58 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Hierarchy Violation: Terminal operational and bank roles cannot create, manage, or approve user accounts.");
         }
+    }
+
+    private boolean hasApprovePermission(User actor) {
+        if (actor == null) return false;
+        if ("Master Admin".equalsIgnoreCase(actor.getRole())) return true;
+        if (actor.getMenuAccessJson() != null && !actor.getMenuAccessJson().isBlank()) {
+            try {
+                List<String> perms = objectMapper.readValue(actor.getMenuAccessJson(), new TypeReference<List<String>>() {});
+                return perms.contains("user_management_approve_user");
+            } catch (Exception ignored) {}
+        }
+        return "Admin".equalsIgnoreCase(actor.getRole());
+    }
+
+    private List<String> getUserPlazas(User user) {
+        if (user == null) return List.of();
+        if (user.getPlazasJson() != null && !user.getPlazasJson().isBlank()) {
+            try {
+                return objectMapper.readValue(user.getPlazasJson(), new TypeReference<List<String>>() {});
+            } catch (Exception ignored) {}
+        }
+        if (user.getAssignedPlaza() != null && !user.getAssignedPlaza().isBlank()) {
+            return Arrays.stream(user.getAssignedPlaza().split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toList());
+        }
+        return List.of();
+    }
+
+    private boolean hasPlazaOverlap(User actor, User targetUser, String targetPlaza) {
+        if (actor == null) return false;
+        List<String> actorPlazas = getUserPlazas(actor);
+        if (actorPlazas.stream().anyMatch(p -> "All plazas".equalsIgnoreCase(p))) {
+            return true;
+        }
+
+        List<String> targetPlazas = new ArrayList<>(getUserPlazas(targetUser));
+        if (targetPlaza != null && !targetPlaza.isBlank()) {
+            targetPlazas.add(targetPlaza.trim());
+        }
+
+        if (targetPlazas.isEmpty()) return true;
+
+        for (String ap : actorPlazas) {
+            for (String tp : targetPlazas) {
+                if (ap.equalsIgnoreCase(tp) || ap.toLowerCase().contains(tp.toLowerCase()) || tp.toLowerCase().contains(ap.toLowerCase())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Auditable(module = "User Management", action = "BULK_IMPORT", actionLabel = "Imported Users via CSV")

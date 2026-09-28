@@ -77,7 +77,11 @@ public class UserController {
     @PatchMapping("/{id}/approve")
     public ResponseEntity<UserResponseDTO> approveUser(
             @PathVariable String id,
-            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
+            @RequestHeader(value = "X-Actor-ID", required = false) String actorId) {
+        if (actorId == null || actorId.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "X-Actor-ID header is required for approval action.");
+        }
         return ResponseEntity.ok(userService.approveUser(id, actorId));
     }
 

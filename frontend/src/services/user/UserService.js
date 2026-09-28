@@ -531,7 +531,9 @@ class UserService {
         actorId = active.id;
       } catch {}
     }
-    if (!actorId) actorId = 'PSN1000';
+    if (!actorId) {
+      throw new Error('Authentication required: please log in to perform approvals.');
+    }
 
     const res = await httpClient.patch(`/api/users/${id}/approve`, null, {
       headers: { 'X-Actor-ID': actorId },

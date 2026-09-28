@@ -88,7 +88,7 @@ export const UserList = () => {
 
   // Creation & approval permissions: role allowed AND actor possesses specific permission
   const canCreate = (isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin) && hasCreateUserPerm;
-  const canApprove = (isMasterAdmin || isAdmin) && hasApproveUserPerm;
+  const canApprove = hasApproveUserPerm;
   const canBulkUpload = (isMasterAdmin || isAdmin) && hasCreateUserPerm;
 
   // Available menu tree that this actor is permitted to delegate
@@ -295,40 +295,40 @@ export const UserList = () => {
     // Must possess 'user_management_approve_user' permission
     if (!hasApproveUserPerm) return false;
     // Already approved users do not need approval
-    if (targetUser.approval === 'Approved' && targetUser.status === 'Active') return false;
+    if (targetUser.approval === 'Approved') return false;
 
-    // Cannot approve own account
+    // Rule A: Cannot approve own account
     if (targetUser.id === currentUser?.id || (targetUser.email && targetUser.email.toLowerCase() === currentUser?.email?.toLowerCase())) {
       return false;
     }
 
-    // Master Admin authority:
-    // Master Admin CAN approve any pending user in the system, INCLUDING newly created Master Admins!
-    if (isMasterAdmin) {
-      return targetUser.approval === 'Pending' || targetUser.status === 'Pending';
-    }
+    const isRootMaster = currentUser?.email?.toLowerCase() === 'masteradmin@paysonic.com';
 
-    // 1. The person who created the user CAN approve the user
+    // Rule B: Maker-Checker Segregation — The person who created the user CANNOT approve the user
     const isCreator =
       targetUser.createdBy &&
       (targetUser.createdBy.toLowerCase() === currentUser?.id?.toLowerCase() ||
         targetUser.createdBy.toLowerCase() === currentUser?.username?.toLowerCase() ||
         targetUser.createdBy.toLowerCase() === currentUser?.email?.toLowerCase());
 
-    if (isCreator) {
-      return true;
+    if (isCreator && !isRootMaster) {
+      return false; // Maker cannot be Checker!
     }
 
-    // 2. Any person who is upper in hierarchy than the target user CAN approve the user
+    // Master Admin authority:
+    if (isMasterAdmin) {
+      return targetUser.approval === 'Pending' || targetUser.status === 'Pending';
+    }
+
+    // Must be strictly upper in hierarchy (lower level number = higher in hierarchy)
     const myLevel = ROLE_HIERARCHY_LEVEL[currentUser?.role] ?? 99;
     const targetLevel = ROLE_HIERARCHY_LEVEL[targetUser.role] ?? 99;
 
-    // Must be strictly upper in hierarchy (lower level number = higher in hierarchy)
     if (myLevel < targetLevel) {
       // Admin (Level 2) can approve subordinate roles below Level 2
       if (isAdmin) return true;
 
-      // Concessionaire (Level 4) can approve Plaza Admin, Request Tag Details, and Plaza POS within their plazas
+      // Concessionaire (Level 3) can approve Plaza Admin, Request Tag Details, and Plaza POS within their plazas
       if (isConcessionaire) {
         if (!['Plaza Admin', 'Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
           return false;
@@ -345,7 +345,7 @@ export const UserList = () => {
         });
       }
 
-      // Plaza Admin (Level 5) can approve Request Tag Details and Plaza POS within their plaza
+      // Plaza Admin (Level 4) can approve Request Tag Details and Plaza POS within their plaza
       if (isPlazaAdmin) {
         if (!['Request Tag Details', 'Plaza POS'].includes(targetUser.role)) {
           return false;
