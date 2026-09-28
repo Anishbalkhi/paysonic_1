@@ -82,8 +82,8 @@ export const UserList = () => {
   };
 
   // Sub-action permissions under User Management
-  const hasCreateUserPerm = hasMenuPerm('user_management_create_user');
-  const hasApproveUserPerm = hasMenuPerm('user_management_approve_user');
+  const hasCreateUserPerm = isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin || hasMenuPerm('user_management_create_user');
+  const hasApproveUserPerm = isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin || hasMenuPerm('user_management_approve_user');
   const hasAssignUserPerm = hasMenuPerm('user_management_assign_user');
   const hasLockUnlockPerm = hasMenuPerm('user_management_lock_unlock_user');
 

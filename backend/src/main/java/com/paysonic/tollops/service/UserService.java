@@ -397,7 +397,9 @@ public class UserService {
                 return perms.contains("user_management_approve_user");
             } catch (Exception ignored) {}
         }
-        return "Admin".equalsIgnoreCase(actor.getRole());
+        return "Admin".equalsIgnoreCase(actor.getRole())
+                || "Concessionaire".equalsIgnoreCase(actor.getRole())
+                || "Plaza Admin".equalsIgnoreCase(actor.getRole());
     }
 
     private List<String> getUserPlazas(User user) {

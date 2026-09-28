@@ -153,7 +153,7 @@ export const ROLE_MENU_DEFAULTS = {
   ],
   'Plaza Admin': [
     'dashboard',
-    'user_management', 'user_management_create_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
+    'user_management', 'user_management_create_user', 'user_management_approve_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
     'recon_management', 'recon_management_trs_report', 'recon_management_cycle_wise_report', 'recon_management_violation_settlement_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
@@ -165,7 +165,7 @@ export const ROLE_MENU_DEFAULTS = {
   ],
   Concessionaire: [
     'dashboard',
-    'user_management', 'user_management_create_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
+    'user_management', 'user_management_create_user', 'user_management_approve_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
     'recon_management', 'recon_management_trs_report', 'recon_management_cycle_wise_report', 'recon_management_violation_settlement_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
