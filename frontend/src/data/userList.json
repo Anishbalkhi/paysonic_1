@@ -81,5 +81,19 @@
       "tag_details_blacklist_search_history",
       "pass_issuance_pass_issuance_view"
     ]
+  },
+  {
+    "id": "PSN1000",
+    "name": "Master Admin",
+    "username": "masteradmin",
+    "email": "masteradmin@paysonic.com",
+    "role": "Master Admin",
+    "userType": "Toll Plaza",
+    "plaza": "All plazas",
+    "status": "Active",
+    "approval": "Approved",
+    "locked": false,
+    "avatarBg": "#0F172A",
+    "menuAccess": null
   }
 ]
