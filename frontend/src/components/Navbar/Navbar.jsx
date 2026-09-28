@@ -1,6 +1,5 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { IS_DEV_MODE } from '../../services/config/env';
 import './Navbar.scss';
 
 export const Navbar = () => {
@@ -43,10 +42,6 @@ export const Navbar = () => {
         </nav>
 
         <div className="c-navbar__actions">
-          <span className={`env-badge ${IS_DEV_MODE ? 'dev' : 'prod'}`}>
-            {IS_DEV_MODE ? 'dev mode' : 'prod mode'}
-          </span>
-
           <div className="user-profile">
             <img
               src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"

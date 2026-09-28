@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IS_DEV_MODE } from '../../services/config/env';
 import { useAuth } from '../../context/AuthContext';
 import './Topbar.scss';
 
@@ -48,14 +47,6 @@ export const Topbar = ({
         >
           <span className="clearance-dot" />
           <span>{currentUser?.role || 'Admin'}</span>
-        </span>
-
-        <span
-          className={`mode-badge ${IS_DEV_MODE ? 'mode-badge--dev' : 'mode-badge--prod'}`}
-          title={`Current Mode: ${IS_DEV_MODE ? 'Development (Mock JSON Data)' : 'Production (Live API Calls)'}`}
-        >
-          <span className="mode-dot" />
-          {IS_DEV_MODE ? 'DEV MODE' : 'PROD MODE'}
         </span>
 
         <div className="search-box">
