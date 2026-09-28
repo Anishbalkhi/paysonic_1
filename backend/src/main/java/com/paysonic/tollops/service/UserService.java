@@ -231,21 +231,13 @@ public class UserService {
                     "User is already approved. Cannot re-approve an approved account.");
         }
 
-        // Bug Fix 1 & 8: Maker-Checker Segregation
         // Rule A: A user cannot approve their own account
         if (approverId.equalsIgnoreCase(user.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Maker-Checker Violation: A user cannot approve their own registration.");
+                    "Hierarchy Violation: A user cannot approve their own registration account.");
         }
 
         User approver = userRepository.findById(approverId).orElse(null);
-        boolean isRootMaster = approver != null && "masteradmin@paysonic.com".equalsIgnoreCase(approver.getEmail());
-
-        // Rule B: Maker cannot be Checker (Creator cannot approve user they created)
-        if (!isRootMaster && approverId.equalsIgnoreCase(user.getCreatedBy())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Maker-Checker Violation: The creator of a user cannot approve them. An independent supervisor upper in hierarchy is required.");
-        }
 
         // Hierarchy validation: check if approver has authority to approve this target user
         validateHierarchyAction(approverId, "APPROVE", user.getRole(), user.getAssignedPlaza(), user);

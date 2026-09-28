@@ -303,19 +303,6 @@ export const UserList = () => {
       return false;
     }
 
-    const isRootMaster = currentUser?.email?.toLowerCase() === 'masteradmin@paysonic.com';
-
-    // Rule B: Maker-Checker Segregation — The person who created the user CANNOT approve the user
-    const isCreator =
-      targetUser.createdBy &&
-      (targetUser.createdBy.toLowerCase() === currentUser?.id?.toLowerCase() ||
-        targetUser.createdBy.toLowerCase() === currentUser?.username?.toLowerCase() ||
-        targetUser.createdBy.toLowerCase() === currentUser?.email?.toLowerCase());
-
-    if (isCreator && !isRootMaster) {
-      return false; // Maker cannot be Checker!
-    }
-
     // Master Admin authority:
     if (isMasterAdmin) {
       return targetUser.approval === 'Pending' || targetUser.status === 'Pending';
