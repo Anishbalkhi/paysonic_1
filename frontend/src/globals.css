@@ -146,6 +146,119 @@
   background-color: var(--blue-soft, #182A3F) !important;
 }
 
+:root[data-theme="dark"] .topbar,
+html[data-theme="dark"] .topbar,
+[data-theme="dark"] .topbar,
+:root[data-theme="dark"] .topbar-header-adaptive,
+[data-theme="dark"] .topbar-header-adaptive {
+  background-color: var(--card, #161D27) !important;
+  background: var(--card, #161D27) !important;
+  border-bottom: 2px solid var(--topbar-accent-border, #22c55e) !important;
+}
+
+:root[data-theme="dark"] .topbar .crumb,
+[data-theme="dark"] .topbar .crumb {
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+:root[data-theme="dark"] .topbar .crumb-title,
+[data-theme="dark"] .topbar .crumb-title {
+  color: var(--text, #E7ECF3) !important;
+}
+
+:root[data-theme="dark"] .topbar .search-box,
+[data-theme="dark"] .topbar .search-box {
+  background-color: var(--bg, #10151C) !important;
+  border-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] .topbar .search-box input,
+[data-theme="dark"] .topbar .search-box input {
+  color: var(--text, #E7ECF3) !important;
+}
+
+:root[data-theme="dark"] .topbar .search-box svg,
+[data-theme="dark"] .topbar .search-box svg {
+  stroke: var(--text-soft, #9AA5B4) !important;
+}
+
+:root[data-theme="dark"] .topbar .theme-toggle-btn,
+[data-theme="dark"] .topbar .theme-toggle-btn {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] .topbar .theme-toggle-btn:hover,
+[data-theme="dark"] .topbar .theme-toggle-btn:hover {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--border-hover, #354152) !important;
+}
+
+:root[data-theme="dark"] .topbar .notification-btn svg,
+[data-theme="dark"] .topbar .notification-btn svg {
+  stroke: var(--text-soft, #9AA5B4) !important;
+}
+
+:root[data-theme="dark"] .topbar .notification-btn:hover,
+[data-theme="dark"] .topbar .notification-btn:hover {
+  background-color: var(--blue-soft, #182A3F) !important;
+}
+
+:root[data-theme="dark"] .topbar .mobile-hamburger-btn,
+[data-theme="dark"] .topbar .mobile-hamburger-btn {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] .topbar .mobile-hamburger-btn svg,
+[data-theme="dark"] .topbar .mobile-hamburger-btn svg {
+  stroke: var(--text, #E7ECF3) !important;
+}
+
+:root[data-theme="dark"] .topbar .clearance-pill,
+[data-theme="dark"] .topbar .clearance-pill,
+:root[data-theme="dark"] .topbar .role-indicator-badge,
+[data-theme="dark"] .topbar .role-indicator-badge {
+  background-color: var(--green-bg, #123326) !important;
+  border-color: #1e4b38 !important;
+  color: var(--mint-accent, #57C9A5) !important;
+}
+
+:root[data-theme="dark"] .topbar-user-menu,
+[data-theme="dark"] .topbar-user-menu {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--border, #262F3B) !important;
+  color: var(--text, #E7ECF3) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root[data-theme="dark"] .topbar-user-menu::before,
+[data-theme="dark"] .topbar-user-menu::before {
+  background: var(--card, #161D27) !important;
+  border-top-color: var(--border, #262F3B) !important;
+  border-left-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] .topbar-user-menu .tum-info,
+[data-theme="dark"] .topbar-user-menu .tum-info {
+  border-bottom-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] .topbar-user-menu .tum-name,
+[data-theme="dark"] .topbar-user-menu .tum-name {
+  color: var(--text, #E7ECF3) !important;
+}
+
+:root[data-theme="dark"] .topbar-user-menu .tum-role,
+[data-theme="dark"] .topbar-user-menu .tum-role {
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+:root[data-theme="dark"] .topbar-user-menu .tum-logout:hover,
+[data-theme="dark"] .topbar-user-menu .tum-logout:hover {
+  background-color: var(--red-bg, #3A1414) !important;
+}
+
 /* ── MASTER ADMIN — Sovereign Emerald ─────────────────────── */
 [data-role="master-admin"] {
   --role-primary: #15803d;
@@ -328,7 +441,7 @@ body::before {
     top: 0 !important;
     z-index: 30 !important;
     width: 100% !important;
-    background: #ffffff !important;
+    background: var(--card) !important;
   }
 }
 
@@ -663,7 +776,7 @@ tbody tr:last-child td { border-bottom: none; }
     position: sticky !important;
     top: 0 !important;
     z-index: 50 !important;
-    background: #ffffff !important;
+    background: var(--card) !important;
     border-bottom: 2px solid var(--topbar-accent-border, #22c55e) !important;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
     box-sizing: border-box !important;
