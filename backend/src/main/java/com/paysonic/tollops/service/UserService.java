@@ -28,19 +28,23 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.paysonic.tollops.entity.Plaza;
+import com.paysonic.tollops.repository.PlazaRepository;
+
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PlazaRepository plazaRepository;
     private final ObjectMapper objectMapper;
 
     public static final List<String> ALL_AVAILABLE_PLAZAS = List.of(
-            "NH-44 Hyderabad", "KIAL Express Plaza", "NH-48 Pune-Satara", "NH-65 Vijayawada",
-            "MTHL Mumbai Sealink", "BWSL Mumbai", "DND Flyway", "Yamuna Expressway Toll 1"
+            "MUMBAI PLAZA NH-04", "PUNE BYPASS PLAZA", "NASHIK TOLL PLAZA", "KOLHAPUR PLAZA", "SOLAPUR PLAZA NH-65"
     );
 
-    public UserService(UserRepository userRepository, ObjectMapper objectMapper) {
+    public UserService(UserRepository userRepository, PlazaRepository plazaRepository, ObjectMapper objectMapper) {
         this.userRepository = userRepository;
+        this.plazaRepository = plazaRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -427,21 +431,38 @@ public class UserService {
             return true;
         }
 
-        List<String> targetPlazas = new ArrayList<>(getUserPlazas(targetUser));
+        // If targetPlaza is specified (creation or update), verify all target plazas belong to actor scope
         if (targetPlaza != null && !targetPlaza.isBlank()) {
-            targetPlazas.add(targetPlaza.trim());
+            List<String> requestedPlazas = Arrays.stream(targetPlaza.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toList());
+            boolean allInScope = requestedPlazas.stream().allMatch(rp ->
+                    actorPlazas.stream().anyMatch(ap ->
+                            ap.equalsIgnoreCase(rp) || ap.toLowerCase().contains(rp.toLowerCase()) || rp.toLowerCase().contains(ap.toLowerCase())
+                    )
+            );
+            if (!allInScope) {
+                return false;
+            }
         }
 
-        if (targetPlazas.isEmpty()) return true;
-
-        for (String ap : actorPlazas) {
-            for (String tp : targetPlazas) {
-                if (ap.equalsIgnoreCase(tp) || ap.toLowerCase().contains(tp.toLowerCase()) || tp.toLowerCase().contains(ap.toLowerCase())) {
-                    return true;
+        // If checking an existing user (e.g. approve/manage), verify existing user plazas also overlap with actor scope
+        if (targetUser != null) {
+            List<String> existingPlazas = getUserPlazas(targetUser);
+            if (!existingPlazas.isEmpty()) {
+                boolean existingInScope = existingPlazas.stream().anyMatch(ep ->
+                        actorPlazas.stream().anyMatch(ap ->
+                                ap.equalsIgnoreCase(ep) || ap.toLowerCase().contains(ep.toLowerCase()) || ep.toLowerCase().contains(ap.toLowerCase())
+                        )
+                );
+                if (!existingInScope) {
+                    return false;
                 }
             }
         }
-        return false;
+
+        return true;
     }
 
     @Auditable(module = "User Management", action = "BULK_IMPORT", actionLabel = "Imported Users via CSV")
@@ -484,10 +505,18 @@ public class UserService {
     }
 
     private void applyPlazaRules(User user, String role, String singlePlaza, List<String> plazaList) {
+        List<String> realDbPlazas = plazaRepository.findAll().stream()
+                .map(Plaza::getName)
+                .filter(n -> n != null && !n.isBlank())
+                .collect(Collectors.toList());
+        if (realDbPlazas.isEmpty()) {
+            realDbPlazas = ALL_AVAILABLE_PLAZAS;
+        }
+
         if ("Master Admin".equalsIgnoreCase(role) || "Admin".equalsIgnoreCase(role)) {
             user.setAssignedPlaza("All plazas");
             try {
-                user.setPlazasJson(objectMapper.writeValueAsString(ALL_AVAILABLE_PLAZAS));
+                user.setPlazasJson(objectMapper.writeValueAsString(realDbPlazas));
             } catch (Exception ignored) {}
         } else if ("Bank".equalsIgnoreCase(role)) {
             user.setAssignedPlaza("None (Bank Scope)");
@@ -499,11 +528,11 @@ public class UserService {
             } else if (singlePlaza != null && !singlePlaza.isBlank()) {
                 raw.add(singlePlaza);
             } else {
-                raw.add("NH-44 Hyderabad");
+                raw.add(realDbPlazas.get(0));
             }
             List<String> flattened = raw.stream()
                     .flatMap(p -> Arrays.stream(p.split(",")))
-                    .map(s -> s.trim())
+                    .map(String::trim)
                     .filter(s -> !s.isBlank())
                     .distinct()
                     .collect(Collectors.toList());
@@ -513,7 +542,7 @@ public class UserService {
             } catch (Exception ignored) {}
         } else {
             // Toll Plaza, EV, Parking, Fuel, Other: Single plaza
-            String plaza = (singlePlaza != null && !singlePlaza.isBlank()) ? singlePlaza : "NH-44 Hyderabad";
+            String plaza = (singlePlaza != null && !singlePlaza.isBlank()) ? singlePlaza : realDbPlazas.get(0);
             user.setAssignedPlaza(plaza);
             user.setPlazasJson("[\"" + plaza + "\"]");
         }

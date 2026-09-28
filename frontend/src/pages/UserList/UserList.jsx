@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import UserService from '../../services/user/UserService';
+import OnboardingService from '../../services/onboarding/OnboardingService';
 import { useAuth } from '../../context/AuthContext';
 import { getDefaultRouteForUser } from '../../config/roleMenus';
 import {
@@ -386,9 +387,25 @@ export const UserList = () => {
     setCurrentPage(1);
   }, [searchQuery, roleFilter, statusFilter, plazaFilter]);
 
+  const [dbPlazas, setDbPlazas] = useState([]);
+
+  useEffect(() => {
+    OnboardingService.getPlazas()
+      .then((res) => {
+        if (Array.isArray(res) && res.length > 0) {
+          const names = res.map((p) => p.name || p.id).filter(Boolean);
+          setDbPlazas(names);
+        }
+      })
+      .catch((err) => console.warn('[UserList] Failed to load live plazas:', err));
+  }, []);
+
   // Authentic DB plazas dynamically merged with any active DB user plazas
   const currentAllPlazas = useMemo(() => {
     const list = [...getDynamicAllPlazas()];
+    dbPlazas.forEach((p) => {
+      if (p && !list.includes(p)) list.push(p);
+    });
     if (Array.isArray(users)) {
       users.forEach((u) => {
         if (Array.isArray(u.plazas)) {
@@ -398,10 +415,17 @@ export const UserList = () => {
             }
           });
         }
+        const singlePlaza = u.assignedPlaza || u.plaza;
+        if (singlePlaza && singlePlaza !== 'All plazas' && singlePlaza !== 'Not applicable' && singlePlaza !== 'None (Bank Scope)') {
+          singlePlaza.split(',').forEach((sp) => {
+            const trimmed = sp.trim();
+            if (trimmed && !list.includes(trimmed)) list.push(trimmed);
+          });
+        }
       });
     }
     return list;
-  }, [users]);
+  }, [dbPlazas, users]);
 
   // Allowed plaza options when creating/assigning
   const allowedPlazasForActor = useMemo(() => {
@@ -1409,10 +1433,10 @@ export const UserList = () => {
         </select>
 
         <select value={plazaFilter} onChange={(e) => setPlazaFilter(e.target.value)}>
-          <option>All plazas</option>
-          <option>Mumbai Plaza NH-04</option>
-          <option>Pune Bypass Plaza</option>
-          <option>Nashik Toll Plaza</option>
+          <option value="All plazas">All plazas</option>
+          {currentAllPlazas.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
         </select>
       </div>
 

@@ -1,5 +1,4 @@
 import httpClient from '../api/httpClient';
-import initialMockData from '../../data/userList.json';
 import {
   getRoleMenuDefaults,
   parseUserTypeWithPermissions,
@@ -7,31 +6,18 @@ import {
 } from '../../pages/UserList/menuConfig';
 
 const PERMISSIONS_STORAGE_KEY = 'paysonic_user_permissions';
-const USERS_CACHE_KEY = 'paysonic_users_cache';
 const OVERRIDES_STORAGE_KEY = 'paysonic_user_profile_overrides';
 
-// Helper to get stored custom profile overrides (name, mobile, plaza, status, etc.)
+// Helper to get stored custom profile overrides (kept for backward compatibility, returns empty)
 export function getStoredProfileOverrides() {
-  try {
-    const raw = localStorage.getItem(OVERRIDES_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
+  return {};
 }
 
-// Helper to save profile overrides for a user
-export function saveUserProfileOverride(userId, data, email, username) {
-  let store = getStoredProfileOverrides();
-  if (userId) store[userId] = { ...(store[userId] || {}), ...data };
-  if (email) store[email.toLowerCase()] = { ...(store[email.toLowerCase()] || {}), ...data };
-  if (username) store[username.toLowerCase()] = { ...(store[username.toLowerCase()] || {}), ...data };
-  localStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(store));
+export function saveUserProfileOverride() {
+  // Deprecated: Real database is the single source of truth
 }
 
-// Helper to get stored custom permissions map
+// Helper to get stored custom permissions map for active session
 export function getStoredUserPermissions() {
   try {
     const raw = localStorage.getItem(PERMISSIONS_STORAGE_KEY);
@@ -46,7 +32,7 @@ export function getStoredUserPermissions() {
   }
 }
 
-// Helper to save permissions for a user by id, email, and username
+// Helper to save permissions for active session sync
 export function saveUserPermissions(userId, menuAccess, email, username) {
   let store = getStoredUserPermissions();
   if (!store || typeof store !== 'object' || Array.isArray(store)) {
@@ -56,7 +42,9 @@ export function saveUserPermissions(userId, menuAccess, email, username) {
   if (userId) store[userId] = cleanAccess;
   if (email) store[email.toLowerCase()] = cleanAccess;
   if (username) store[username.toLowerCase()] = cleanAccess;
-  localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(store));
+  try {
+    localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(store));
+  } catch {}
 
   // If the currently logged-in user is this user, update active auth session immediately
   try {
@@ -77,120 +65,90 @@ export function saveUserPermissions(userId, menuAccess, email, username) {
   }
 }
 
-// In-memory fallback if Railway API is temporarily unreachable
-let mockUsers = [...initialMockData];
+const getActiveActorId = () => {
+  try {
+    const raw = localStorage.getItem('paysonic_auth_session');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.id) return parsed.id;
+      if (parsed?.username) return parsed.username;
+    }
+  } catch {}
+  return localStorage.getItem('actorId') || 'PSN1000';
+};
 
 class UserService {
   _mapUsers(rawList) {
     if (!Array.isArray(rawList)) return [];
-    const perms = getStoredUserPermissions();
-    const overrides = getStoredProfileOverrides();
 
     return rawList.map((u) => {
       const username = u.username || (u.email ? u.email.split('@')[0] : u.id);
       const email = u.email || '';
-      const userOverride =
-        overrides[u.id] ||
-        (email && overrides[email.toLowerCase()]) ||
-        (username && overrides[username.toLowerCase()]) ||
-        {};
-
       const parsedUserType = parseUserTypeWithPermissions(u.userType);
-      const cleanUserType = userOverride.userType || parsedUserType.cleanUserType || u.userType || '—';
+      const cleanUserType = parsedUserType.cleanUserType || u.userType || '—';
 
-      const hasDbPermissions = Array.isArray(u.menuAccess);
-      const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess);
+      const customAccess = Array.isArray(u.menuAccess) && u.menuAccess.length > 0
+        ? u.menuAccess
+        : Array.isArray(parsedUserType.menuAccess) && parsedUserType.menuAccess.length > 0
+        ? parsedUserType.menuAccess
+        : getRoleMenuDefaults(u.role);
 
-      const customAccess =
-        userOverride.menuAccess !== undefined
-          ? userOverride.menuAccess
-          : hasEncodedPermissions
-          ? parsedUserType.menuAccess
-          : hasDbPermissions
-          ? u.menuAccess
-          : perms[u.id] ||
-            (email && perms[email.toLowerCase()]) ||
-            (username && perms[username.toLowerCase()]) ||
-            getRoleMenuDefaults(userOverride.role || u.role);
-
-      if (hasEncodedPermissions || hasDbPermissions) {
-        saveUserPermissions(u.id, customAccess, email, username);
-      }
-
-      const rawApproval = userOverride.approval || u.approval;
-      const isApproved = rawApproval === 'Approved';
-      const status = userOverride.status || (isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending');
+      const isApproved = u.approval === 'Approved';
+      const status = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
       const approval = isApproved ? 'Approved' : 'Pending';
 
       return {
         ...u,
-        ...userOverride,
         id: u.id,
-        name: userOverride.name || u.name,
-        username: userOverride.username || username,
-        email: userOverride.email || email,
-        contact: userOverride.contact || userOverride.mobile || u.mobile || u.contact || '',
-        mobile: userOverride.mobile || userOverride.contact || u.mobile || u.contact || '',
-        plaza: userOverride.plaza || userOverride.assignedPlaza || u.assignedPlaza || u.plaza || 'All plazas',
-        role: userOverride.role || u.role,
+        name: u.name || username,
+        username,
+        email,
+        contact: u.mobile || u.contact || '',
+        mobile: u.mobile || u.contact || '',
+        plaza: u.assignedPlaza || u.plaza || 'All plazas',
+        assignedPlaza: u.assignedPlaza || u.plaza || 'All plazas',
+        plazas: Array.isArray(u.plazas) && u.plazas.length > 0
+          ? u.plazas
+          : (u.assignedPlaza ? u.assignedPlaza.split(',').map((s) => s.trim()) : ['All plazas']),
+        role: u.role,
         userType: cleanUserType,
         status,
         approval,
-        locked: userOverride.locked !== undefined ? Boolean(userOverride.locked) : Boolean(u.locked),
-        password: userOverride.password || u.password || 'Paysonic@2026',
+        locked: Boolean(u.locked),
+        password: u.password || 'Paysonic@2026',
         menuAccess: customAccess,
+        createdBy: u.createdBy || '',
+        approvedBy: u.approvedBy || '',
       };
     });
   }
 
   async getUsers() {
-    try {
-      const res = await httpClient.get('/api/users');
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        const users = this._mapUsers(res.data);
-        try {
-          localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(users));
-        } catch {}
-        return users;
-      }
-    } catch (err) {
-      console.warn('[UserService] Railway API unreachable, using local fallback:', err?.message);
+    const res = await httpClient.get('/api/users');
+    if (res && res.data && Array.isArray(res.data)) {
+      return this._mapUsers(res.data);
     }
-
-    const fallbackUsers = this._mapUsers(mockUsers);
-    try {
-      localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(fallbackUsers));
-    } catch {}
-
-    return Promise.resolve(fallbackUsers);
+    return [];
   }
 
-  /**
-   * Server-side paginated user retrieval.
-   * Maximum 10 records per page.
-   */
   async getPagedUsers({ page = 0, size = 10, search = '', role = '', status = '', plaza = '' } = {}) {
     const cappedSize = Math.min(Math.max(size, 1), 10);
-    try {
-      const params = { page, size: cappedSize };
-      if (search) params.search = search;
-      if (role && role !== 'All roles') params.role = role;
-      if (status && status !== 'All statuses') params.status = status;
-      if (plaza && plaza !== 'All plazas') params.plaza = plaza;
+    const params = { page, size: cappedSize };
+    if (search) params.search = search;
+    if (role && role !== 'All roles') params.role = role;
+    if (status && status !== 'All statuses') params.status = status;
+    if (plaza && plaza !== 'All plazas') params.plaza = plaza;
 
-      const res = await httpClient.get('/api/users', { params });
-      if (res && res.data && res.data.content) {
-        const users = this._mapUsers(res.data.content);
-        return {
-          users,
-          totalElements: res.data.totalElements ?? users.length,
-          totalPages: res.data.totalPages ?? 1,
-          currentPage: res.data.currentPage ?? page,
-          pageSize: cappedSize,
-        };
-      }
-    } catch (err) {
-      console.warn('[UserService] getPagedUsers server call failed, using local slice:', err?.message);
+    const res = await httpClient.get('/api/users', { params });
+    if (res && res.data && res.data.content) {
+      const users = this._mapUsers(res.data.content);
+      return {
+        users,
+        totalElements: res.data.totalElements ?? users.length,
+        totalPages: res.data.totalPages ?? 1,
+        currentPage: res.data.currentPage ?? page,
+        pageSize: cappedSize,
+      };
     }
 
     const allUsers = await this.getUsers();
@@ -206,50 +164,15 @@ class UserService {
   }
 
   async getUserById(id) {
-    const perms = getStoredUserPermissions();
-    try {
-      const res = await httpClient.get(`/api/users/${id}`);
-      if (res && res.data) {
-        const u = res.data;
-        const parsedUserType = parseUserTypeWithPermissions(u.userType);
-        const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess) && parsedUserType.menuAccess.length > 0;
-        const customAccess =
-          (hasEncodedPermissions ? parsedUserType.menuAccess : null) ||
-          perms[u.id] ||
-          (u.email && perms[u.email.toLowerCase()]) ||
-          u.menuAccess ||
-          getRoleMenuDefaults(u.role);
-        return {
-          ...u,
-          userType: parsedUserType.cleanUserType,
-          menuAccess: customAccess,
-        };
-      }
-    } catch (err) {
-      const found = mockUsers.find((u) => u.id === id);
-      if (found) {
-        const parsedUserType = parseUserTypeWithPermissions(found.userType);
-        const hasEncodedPermissions = Array.isArray(parsedUserType.menuAccess) && parsedUserType.menuAccess.length > 0;
-        const customAccess =
-          (hasEncodedPermissions ? parsedUserType.menuAccess : null) ||
-          perms[found.id] ||
-          (found.email && perms[found.email.toLowerCase()]) ||
-          found.menuAccess ||
-          getRoleMenuDefaults(found.role);
-        return Promise.resolve({
-          ...found,
-          userType: parsedUserType.cleanUserType,
-          menuAccess: customAccess,
-        });
-      }
+    const res = await httpClient.get(`/api/users/${id}`);
+    if (res && res.data) {
+      return this._mapUsers([res.data])[0];
     }
-    return Promise.resolve(null);
+    return null;
   }
 
   async createUser(newUser) {
-    const actorId = localStorage.getItem('actorId') || 'PSN0001';
-    // Use 'OPS_MAKER' as creator so any independent administrator can approve the user
-    const creationActor = 'OPS_MAKER';
+    const actorId = newUser.createdBy || getActiveActorId();
     const cleanUserType = newUser.userType
       ? parseUserTypeWithPermissions(newUser.userType).cleanUserType
       : 'Toll Plaza';
@@ -266,65 +189,19 @@ class UserService {
       approval: newUser.approval || 'Pending',
       locked: Boolean(newUser.locked),
       password: newUser.password || 'Paysonic@2026',
-      createdBy: creationActor,
+      createdBy: actorId,
       menuAccess: newUser.menuAccess,
     };
 
-    let createdUser;
-    try {
-      const res = await httpClient.post('/api/users', payload, {
-        headers: {
-          'X-Actor-ID': creationActor,
-        },
-      });
-      createdUser = {
-        ...res.data,
-        username: newUser.username || res.data.email.split('@')[0],
-        contact: res.data.mobile || newUser.contact,
-        plaza: res.data.assignedPlaza || newUser.plaza,
-        status: newUser.status || 'Pending',
-        approval: newUser.approval || 'Pending',
-        password: newUser.password || res.data?.password || payload.password,
-        userType: cleanUserType,
-        menuAccess: newUser.menuAccess || getRoleMenuDefaults(newUser.role),
-      };
+    const res = await httpClient.post('/api/users', payload, {
+      headers: {
+        'X-Actor-ID': actorId,
+      },
+    });
 
-      // Ensure Railway MySQL DB also persists status, approval, password, and encoded userType
-      try {
-        await httpClient.put(
-          `/api/users/${res.data.id}`,
-          {
-            name: payload.name,
-            email: payload.email,
-            mobile: payload.mobile,
-            role: payload.role,
-            userType: payload.userType,
-            assignedPlaza: payload.assignedPlaza,
-            status: payload.status,
-            approval: payload.approval,
-            password: payload.password,
-            menuAccess: payload.menuAccess,
-          },
-          {
-            headers: { 'X-Actor-ID': creationActor },
-          }
-        );
-      } catch {}
-    } catch (err) {
-      console.warn('[UserService] Railway createUser fallback:', err?.message);
-      createdUser = {
-        ...newUser,
-        id: newUser.id || 'PSN' + Math.floor(1000 + Math.random() * 9000),
-        status: newUser.status || 'Pending',
-        approval: newUser.approval || 'Pending',
-        password: newUser.password || 'Paysonic@2026',
-        userType: cleanUserType,
-        menuAccess: newUser.menuAccess || getRoleMenuDefaults(newUser.role),
-      };
-      mockUsers.unshift(createdUser);
-    }
+    const createdUser = this._mapUsers([res.data])[0];
 
-    if (createdUser.menuAccess) {
+    if (createdUser && createdUser.menuAccess) {
       saveUserPermissions(createdUser.id, createdUser.menuAccess, createdUser.email, createdUser.username);
     }
 
@@ -332,17 +209,9 @@ class UserService {
   }
 
   async updateUser(id, updatedFields) {
-    const actorId = localStorage.getItem('actorId') || 'PSN0001';
+    const actorId = getActiveActorId();
 
-    // 1. Save profile overrides (name, contact, mobile, plaza, role, etc.)
-    saveUserProfileOverride(id, updatedFields, updatedFields.email, updatedFields.username);
-
-    // 2. Save custom permissions if menuAccess is passed
-    if (updatedFields.menuAccess !== undefined && updatedFields.menuAccess !== null) {
-      saveUserPermissions(id, updatedFields.menuAccess, updatedFields.email, updatedFields.username);
-    }
-
-    // 3. If currently logged in user matches, update session immediately
+    // If currently logged in user matches, update session immediately
     try {
       const activeSession = JSON.parse(localStorage.getItem('paysonic_auth_session') || 'null');
       if (
@@ -381,7 +250,6 @@ class UserService {
       } catch {}
     }
 
-    // Format userType payload to include menuAccess bitmask
     const cleanUserType = updatedFields.userType !== undefined
       ? parseUserTypeWithPermissions(updatedFields.userType).cleanUserType
       : undefined;
@@ -394,121 +262,48 @@ class UserService {
       ...(userTypeToSend !== undefined ? { userType: userTypeToSend } : {}),
     };
 
-    let resultUser;
-    try {
-      const res = await httpClient.put(`/api/users/${id}`, payloadToSend, {
-        headers: { 'X-Actor-ID': actorId },
-      });
-      const returned = res.data;
-      const parsedReturned = parseUserTypeWithPermissions(returned.userType);
-      resultUser = {
-        ...returned,
-        ...updatedFields,
-        userType: cleanUserType || parsedReturned.cleanUserType || returned.userType,
-        menuAccess: updatedFields.menuAccess || parsedReturned.menuAccess || returned.menuAccess,
-      };
-    } catch (err) {
-      console.warn('[UserService] Railway updateUser fallback:', err?.message);
-      resultUser = {
-        id,
-        ...updatedFields,
-        userType: cleanUserType || updatedFields.userType,
-      };
-    }
+    const res = await httpClient.put(`/api/users/${id}`, payloadToSend, {
+      headers: { 'X-Actor-ID': actorId },
+    });
 
-    // Always update in-memory mockUsers and localStorage cache
-    mockUsers = mockUsers.map((u) => (u.id === id ? { ...u, ...resultUser } : u));
-    try {
-      const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
-      const updatedCache = cached.map((u) => (u.id === id ? { ...u, ...resultUser } : u));
-      localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(updatedCache));
-    } catch {}
+    const resultUser = this._mapUsers([res.data])[0];
+
+    if (resultUser && resultUser.menuAccess) {
+      saveUserPermissions(resultUser.id, resultUser.menuAccess, resultUser.email, resultUser.username);
+    }
 
     return resultUser;
   }
 
   async deleteUser(id) {
-    // Get actor ID from active session
-    let actorId = localStorage.getItem('actorId');
-    if (!actorId) {
-      try {
-        const active = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
-        actorId = active.id;
-      } catch {}
-    }
-    if (!actorId) actorId = 'PSN0001';
+    const actorId = getActiveActorId();
 
-    // 1. Remove from cache and stored permissions immediately
     try {
-      const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
-      const userToDelete = cached.find((u) => u.id === id);
-      const email = userToDelete?.email?.toLowerCase();
-      const username = userToDelete?.username?.toLowerCase();
-
-      // Remove from users cache
-      const updatedCache = cached.filter((u) => u.id !== id);
-      localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(updatedCache));
-
-      // Remove from permissions store
-      const perms = getStoredUserPermissions();
-      delete perms[id];
-      if (email) delete perms[email];
-      if (username) delete perms[username];
-      localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(perms));
-
-      // 2. If this is the active logged-in user, immediately revoke and terminate session
       const activeSession = JSON.parse(localStorage.getItem('paysonic_auth_session') || 'null');
-      if (
-        activeSession &&
-        (activeSession.id === id || (email && activeSession.email?.toLowerCase() === email))
-      ) {
+      if (activeSession && activeSession.id === id) {
         localStorage.removeItem('paysonic_auth_session');
         localStorage.removeItem('actorId');
+        window.dispatchEvent(
+          new CustomEvent('paysonic_user_revoked', { detail: { id, reason: 'deleted' } })
+        );
       }
+    } catch {}
 
-      // 3. Broadcast revocation event across all tabs/windows
-      window.dispatchEvent(
-        new CustomEvent('paysonic_user_revoked', { detail: { id, email, username } })
-      );
-      localStorage.setItem(
-        'paysonic_revoked_user_id',
-        JSON.stringify({ id, timestamp: Date.now() })
-      );
-    } catch (e) {
-      console.warn('[UserService] Failed to clear local references on delete:', e);
-    }
-
-    mockUsers = mockUsers.filter((u) => u.id !== id);
-
-    try {
-      const res = await httpClient.delete(`/api/users/${id}`, {
-        headers: { 'X-Actor-ID': actorId },
-      });
-      return res.data;
-    } catch (err) {
-      console.warn('[UserService] Railway delete fallback:', err?.message);
-      return { success: true, id };
-    }
+    const res = await httpClient.delete(`/api/users/${id}`, {
+      headers: { 'X-Actor-ID': actorId },
+    });
+    return res.data;
   }
 
   async toggleLock(id) {
-    let result;
-    try {
-      const res = await httpClient.patch(`/api/users/${id}/lock`);
-      result = res.data;
-    } catch (err) {
-      mockUsers = mockUsers.map((u) => (u.id === id ? { ...u, locked: !u.locked } : u));
-      result = mockUsers.find((u) => u.id === id);
-    }
+    const actorId = getActiveActorId();
+    const res = await httpClient.patch(`/api/users/${id}/lock`, null, {
+      headers: { 'X-Actor-ID': actorId },
+    });
+    const result = this._mapUsers([res.data])[0];
 
-    // Update users cache
-    try {
-      const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
-      const updatedCache = cached.map((u) => (u.id === id ? { ...u, locked: result.locked } : u));
-      localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(updatedCache));
-
-      // If user was locked, immediately revoke active session if they are currently logged in
-      if (result.locked) {
+    if (result && result.locked) {
+      try {
         const activeSession = JSON.parse(localStorage.getItem('paysonic_auth_session') || 'null');
         if (activeSession && activeSession.id === id) {
           localStorage.removeItem('paysonic_auth_session');
@@ -517,20 +312,14 @@ class UserService {
             new CustomEvent('paysonic_user_revoked', { detail: { id, reason: 'locked' } })
           );
         }
-      }
-    } catch {}
+      } catch {}
+    }
 
     return result;
   }
 
   async approveUser(id) {
-    let actorId = localStorage.getItem('actorId');
-    if (!actorId) {
-      try {
-        const active = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
-        actorId = active.id;
-      } catch {}
-    }
+    const actorId = getActiveActorId();
     if (!actorId) {
       throw new Error('Authentication required: please log in to perform approvals.');
     }
@@ -539,28 +328,11 @@ class UserService {
       headers: { 'X-Actor-ID': actorId },
     });
 
-    const updated = {
-      ...res.data,
-      approval: res.data?.approval || 'Approved',
-      status: res.data?.status || 'Active',
-    };
-
-    mockUsers = mockUsers.map((u) => (u.id === id ? { ...u, ...updated } : u));
-
-    // Update users cache
-    try {
-      const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
-      const updatedCache = cached.map((u) =>
-        u.id === id ? { ...u, ...updated } : u
-      );
-      localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(updatedCache));
-    } catch {}
-
-    return updated;
+    return this._mapUsers([res.data])[0];
   }
 
   async bulkUpload(file) {
-    const actorId = localStorage.getItem('actorId') || 'PSN1000';
+    const actorId = getActiveActorId();
     const formData = new FormData();
     formData.append('file', file);
 
@@ -570,9 +342,8 @@ class UserService {
         'X-Actor-ID': actorId,
       },
     });
-    return res.data;
+    return this._mapUsers(res.data);
   }
 }
 
 export default new UserService();
-

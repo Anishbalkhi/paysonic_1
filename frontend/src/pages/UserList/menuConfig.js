@@ -2,36 +2,19 @@ export const ROLE_NO_USER_TYPE = ['Master Admin', 'Admin', 'Bank'];
 
 // Authentic plazas configured in the Paysonic backend database
 export const DB_PLAZAS = [
-  'NH-44 Hyderabad',
-  'KIAL Express Plaza',
-  'NH-48 Pune-Satara',
-  'NH-65 Vijayawada',
-  'MTHL Mumbai Sealink',
-  'BWSL Mumbai',
-  'DND Flyway',
-  'Yamuna Expressway Toll 1'
+  'MUMBAI PLAZA NH-04',
+  'PUNE BYPASS PLAZA',
+  'NASHIK TOLL PLAZA',
+  'KOLHAPUR PLAZA',
+  'SOLAPUR PLAZA NH-65'
 ];
 
 export const BASE_PLAZAS = DB_PLAZAS;
 
 /**
- * Returns verified plazas from database and any newly onboarded plazas from Onboarding module.
+ * Returns verified plazas from database.
  */
 export function getDynamicAllPlazas() {
-  try {
-    const raw = localStorage.getItem('paysonic_onboarding_data_v3');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed?.plazas && Array.isArray(parsed.plazas) && parsed.plazas.length > 0) {
-        const onboarded = parsed.plazas.map((p) => p.name || p.id).filter(Boolean);
-        const combined = [...DB_PLAZAS];
-        onboarded.forEach((name) => {
-          if (!combined.includes(name)) combined.push(name);
-        });
-        return combined;
-      }
-    }
-  } catch {}
   return [...DB_PLAZAS];
 }
 
