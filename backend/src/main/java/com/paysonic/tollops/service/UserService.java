@@ -60,7 +60,7 @@ public class UserService {
             String s = search.toLowerCase().trim();
             stream = stream.filter(u ->
                     (u.getName() != null && u.getName().toLowerCase().contains(s)) ||
-                    (u.getUsername() != null && u.getUsername().toLowerCase().contains(s)) ||
+                    (u.getMobile() != null && u.getMobile().toLowerCase().contains(s)) ||
                     (u.getId() != null && u.getId().toLowerCase().contains(s)) ||
                     (u.getEmail() != null && u.getEmail().toLowerCase().contains(s))
             );
@@ -225,7 +225,16 @@ public class UserService {
 
         user.setApproval("Approved");
         user.setStatus("Active");
-        user.setApprovedBy(approverId != null ? approverId : "Sanjay Kulkarni (PSN0005)");
+
+        String approverName = approverId;
+        if (approverId != null && !approverId.isBlank()) {
+            approverName = userRepository.findById(approverId)
+                    .map(u -> u.getName() + " (" + u.getId() + ")")
+                    .orElse(approverId);
+        } else {
+            approverName = "Master Admin (PSN1000)";
+        }
+        user.setApprovedBy(approverName);
         User updated = userRepository.save(user);
         return UserResponseDTO.fromEntity(updated, objectMapper);
     }

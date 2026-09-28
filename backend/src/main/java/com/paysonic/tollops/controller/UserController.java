@@ -46,7 +46,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserResponseDTO> createUser(
             @Valid @RequestBody CreateUserRequest request,
-            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0005") String actorId) {
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         UserResponseDTO created = userService.createUser(request, actorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -55,14 +55,14 @@ public class UserController {
     public ResponseEntity<UserResponseDTO> updateUser(
             @PathVariable String id,
             @RequestBody CreateUserRequest request,
-            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0001") String actorId) {
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         return ResponseEntity.ok(userService.updateUser(id, request, actorId));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteUser(
             @PathVariable String id,
-            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0001") String actorId) {
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         userService.deleteUser(id, actorId);
         return ResponseEntity.ok(Map.of("success", true, "id", id));
     }
@@ -70,21 +70,21 @@ public class UserController {
     @PatchMapping("/{id}/lock")
     public ResponseEntity<UserResponseDTO> toggleLock(
             @PathVariable String id,
-            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0001") String actorId) {
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         return ResponseEntity.ok(userService.toggleLock(id, actorId));
     }
 
     @PatchMapping("/{id}/approve")
     public ResponseEntity<UserResponseDTO> approveUser(
             @PathVariable String id,
-            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0005") String actorId) {
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         return ResponseEntity.ok(userService.approveUser(id, actorId));
     }
 
     @PostMapping("/bulk-upload")
     public ResponseEntity<List<UserResponseDTO>> bulkUpload(
             @RequestParam("file") MultipartFile file,
-            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0005") String actorId) {
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         return ResponseEntity.ok(userService.bulkUpload(file, actorId));
     }
 }

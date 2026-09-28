@@ -57,7 +57,7 @@ public class Plaza {
     private String schemeDuration = "24 Hrs";
 
     @Column(name = "status", length = 30, nullable = false)
-    private String status = "Active";
+    private String status = "Draft";
 
     @Column(name = "public_key", columnDefinition = "TEXT")
     private String publicKey;

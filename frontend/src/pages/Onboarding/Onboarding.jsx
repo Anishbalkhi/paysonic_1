@@ -477,6 +477,53 @@ export const Onboarding = () => {
     return `CON-${maxNum + 1}`;
   }, [store.concessionaires]);
 
+  const validateConcessField = (field, val, currentForm = concessForm) => {
+    switch (field) {
+      case 'name': {
+        const v = (val !== undefined ? val : currentForm.name).trim().toUpperCase();
+        if (!v) return 'Concessionaire Name is required';
+        if (!/^[A-Z &.,-]{1,100}$/.test(v)) {
+          return 'Alphabets, spaces, &, ., - allowed · max 100 chars';
+        }
+        return '';
+      }
+      case 'address': {
+        const v = (val !== undefined ? val : currentForm.address).trim().toUpperCase();
+        if (!v) return 'Address is required';
+        if (!/^[A-Z0-9 ,.\-/#]{1,250}$/.test(v)) {
+          return 'Alphanumeric + , . - / # allowed · max 250 chars';
+        }
+        return '';
+      }
+      case 'mail': {
+        const v = (val !== undefined ? val : currentForm.mail).trim();
+        if (!v) return 'Mail ID is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+          return 'Enter a valid email address';
+        }
+        if (store.concessionaires.some((c) => c.mail.toLowerCase() === v.toLowerCase())) {
+          return 'This mail ID is already registered for another concessionaire';
+        }
+        return '';
+      }
+      case 'contact': {
+        const v = (val !== undefined ? val : currentForm.contact).trim();
+        if (!v) return 'Contact No is required';
+        if (!/^\d{10}$/.test(v)) {
+          return 'Contact No must be exactly 10 digits';
+        }
+        return '';
+      }
+      default:
+        return '';
+    }
+  };
+
+  const handleConcessBlur = (field) => {
+    const err = validateConcessField(field, concessForm[field]);
+    setConcessErrors((prev) => ({ ...prev, [field]: err }));
+  };
+
   const handleConcessChange = (field, val) => {
     setConcessForm((prev) => ({ ...prev, [field]: val }));
     if (concessErrors[field]) {
@@ -486,39 +533,23 @@ export const Onboarding = () => {
 
   const handleSaveConcessionaire = (e) => {
     e.preventDefault();
+    const fields = ['name', 'address', 'mail', 'contact'];
     const errors = {};
-    const name = concessForm.name.trim().toUpperCase();
-    const address = concessForm.address.trim().toUpperCase();
-    const mail = concessForm.mail.trim();
-    const contact = concessForm.contact.trim();
-
-    if (!name) errors.name = 'Concessionaire Name is required';
-    else if (!/^[A-Z0-9 &.,-]{1,100}$/.test(name)) {
-      errors.name = 'Alphabets, numbers, spaces, &, ., - allowed · max 100 chars';
-    }
-
-    if (!address) errors.address = 'Address is required';
-    else if (!/^[A-Z0-9 ,.\-/#]{1,250}$/.test(address)) {
-      errors.address = 'Alphanumeric + , . - / # allowed · max 250 chars';
-    }
-
-    if (!mail) errors.mail = 'Mail ID is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
-      errors.mail = 'Enter a valid email address';
-    } else if (store.concessionaires.some((c) => c.mail.toLowerCase() === mail.toLowerCase())) {
-      errors.mail = 'This mail ID is already registered for another concessionaire';
-    }
-
-    if (!contact) errors.contact = 'Contact No is required';
-    else if (!/^\d{10}$/.test(contact)) {
-      errors.contact = 'Contact No must be exactly 10 digits';
-    }
+    fields.forEach((f) => {
+      const err = validateConcessField(f, concessForm[f]);
+      if (err) errors[f] = err;
+    });
 
     if (Object.keys(errors).length > 0) {
       setConcessErrors(errors);
       showToast('Please fix the highlighted errors', 'error');
       return;
     }
+
+    const name = concessForm.name.trim().toUpperCase();
+    const address = concessForm.address.trim().toUpperCase();
+    const mail = concessForm.mail.trim();
+    const contact = concessForm.contact.trim();
 
     const newConcess = {
       id: nextConcessionaireId,
@@ -619,6 +650,101 @@ export const Onboarding = () => {
     setPlazaErrors({});
   };
 
+  const validatePlazaField = (field, val, currentForm = plazaForm) => {
+    switch (field) {
+      case 'concessionaireId': {
+        const v = val !== undefined ? val : currentForm.concessionaireId;
+        if (!v) return 'Please select a Concessionaire';
+        return '';
+      }
+      case 'name': {
+        const v = (val !== undefined ? val : currentForm.name).trim().toUpperCase();
+        if (!v) return 'Plaza Name is required';
+        if (!/^[A-Z0-9 -]{1,100}$/.test(v)) {
+          return 'Alphanumeric, - and spaces only · max 100 chars';
+        }
+        return '';
+      }
+      case 'id': {
+        const v = (val !== undefined ? val : currentForm.id).trim();
+        if (!v) return 'Plaza ID is required';
+        if (!/^\d{6}$/.test(v)) {
+          return 'Plaza ID must be exactly 6 digits';
+        }
+        if (!isEditingPlaza && store.plazas.some((p) => p.id === v)) {
+          return 'This Plaza ID is already onboarded on the network';
+        }
+        return '';
+      }
+      case 'orgId': {
+        const v = (val !== undefined ? val : currentForm.orgId).trim().toUpperCase();
+        if (!v) return 'Org ID is required';
+        if (!/^[A-Z]{4}$/.test(v)) {
+          return 'Alphabetical only · exactly 4 letters';
+        }
+        return '';
+      }
+      case 'agencyId': {
+        const v = (val !== undefined ? val : currentForm.agencyId).trim().toUpperCase();
+        if (!v) return 'Agency ID is required';
+        if (!/^[A-Z]{5}$/.test(v)) {
+          return 'Alphabetical only · exactly 5 letters';
+        }
+        return '';
+      }
+      case 'state': {
+        const v = (val !== undefined ? val : currentForm.state).trim();
+        if (!v) return 'State is required';
+        return '';
+      }
+      case 'city': {
+        const v = (val !== undefined ? val : currentForm.city).trim();
+        if (!v) return 'City is required';
+        return '';
+      }
+      case 'activationDate': {
+        const v = val !== undefined ? val : currentForm.activationDate;
+        if (!v) return 'Plaza Activation Date is required';
+        return '';
+      }
+      case 'geoCode': {
+        const v = (val !== undefined ? val : currentForm.geoCode).trim();
+        if (v && !/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(v)) {
+          return 'Format must be Latitude,Longitude (e.g. 19.9975,73.7898)';
+        }
+        return '';
+      }
+      case 'publicKey': {
+        const v = (val !== undefined ? val : currentForm.publicKey).trim();
+        if (v.length > 5000) {
+          return 'Max 5000 characters allowed';
+        }
+        return '';
+      }
+      case 'contactNo': {
+        const v = (val !== undefined ? val : currentForm.contactNo).trim();
+        if (v && !/^\d{10}$/.test(v)) {
+          return 'Contact number must be 10 digits';
+        }
+        return '';
+      }
+      case 'contactMail': {
+        const v = (val !== undefined ? val : currentForm.contactMail).trim();
+        if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+          return 'Enter a valid email address';
+        }
+        return '';
+      }
+      default:
+        return '';
+    }
+  };
+
+  const handlePlazaBlur = (field) => {
+    const err = validatePlazaField(field, plazaForm[field]);
+    setPlazaErrors((prev) => ({ ...prev, [field]: err }));
+  };
+
   const handlePlazaChange = (field, val) => {
     setPlazaForm((prev) => ({ ...prev, [field]: val }));
     if (plazaErrors[field]) {
@@ -635,69 +761,42 @@ export const Onboarding = () => {
 
   const handleSavePlaza = (e) => {
     e.preventDefault();
+    const fieldsToValidate = [
+      'concessionaireId',
+      'name',
+      'id',
+      'orgId',
+      'agencyId',
+      'state',
+      'city',
+      'activationDate',
+      'geoCode',
+      'publicKey',
+      'contactNo',
+      'contactMail',
+    ];
     const errors = {};
-
-    const concess = plazaForm.concessionaireId;
-    const name = (plazaForm.name || '').trim().toUpperCase();
-    const id = (plazaForm.id || '').trim();
-    const orgId = (plazaForm.orgId || '').trim().toUpperCase();
-    const agencyId = (plazaForm.agencyId || '').trim().toUpperCase();
-    const state = (plazaForm.state || '').trim().toUpperCase();
-    const city = (plazaForm.city || '').trim().toUpperCase();
-    const activationDate = plazaForm.activationDate;
-    const geoCode = (plazaForm.geoCode || '').trim();
-    const pubKey = (plazaForm.publicKey || '').trim();
-    const contactNo = (plazaForm.contactNo || '').trim();
-    const contactMail = (plazaForm.contactMail || '').trim();
-
-    if (!concess) errors.concessionaireId = 'Please select a Concessionaire';
-    if (!name) errors.name = 'Plaza Name is required';
-    else if (!/^[A-Z0-9 -]{1,100}$/.test(name)) {
-      errors.name = 'Alphanumeric, - and spaces only · max 100 chars';
-    }
-
-    if (!id) errors.id = 'Plaza ID is required';
-    else if (!/^\d{6}$/.test(id)) {
-      errors.id = 'Plaza ID must be exactly 6 digits';
-    } else if (!isEditingPlaza && store.plazas.some((p) => p.id === id)) {
-      errors.id = 'This Plaza ID is already onboarded on the network';
-    }
-
-    if (!orgId) errors.orgId = 'Org ID is required';
-    else if (!/^[A-Z]{4}$/.test(orgId)) {
-      errors.orgId = 'Alphabetical only · exactly 4 letters';
-    }
-
-    if (!agencyId) errors.agencyId = 'Agency ID is required';
-    else if (!/^[A-Z0-9]{5}$/.test(agencyId)) {
-      errors.agencyId = 'Alphabetical/Alphanumeric only · exactly 5 characters';
-    }
-
-    if (!state) errors.state = 'State is required';
-    if (!city) errors.city = 'City is required';
-    if (!activationDate) errors.activationDate = 'Plaza Activation Date is required';
-
-    if (geoCode && !/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(geoCode)) {
-      errors.geoCode = 'Format must be Latitude,Longitude (e.g. 19.9975,73.7898)';
-    }
-
-    if (pubKey.length > 5000) {
-      errors.publicKey = 'Max 5000 characters allowed';
-    }
-
-    if (contactNo && !/^\d{10}$/.test(contactNo)) {
-      errors.contactNo = 'Contact number must be 10 digits';
-    }
-
-    if (contactMail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactMail)) {
-      errors.contactMail = 'Enter a valid email address';
-    }
+    fieldsToValidate.forEach((f) => {
+      const err = validatePlazaField(f, plazaForm[f]);
+      if (err) errors[f] = err;
+    });
 
     if (Object.keys(errors).length > 0) {
       setPlazaErrors(errors);
       showToast('Please fix the highlighted plaza errors', 'error');
       return;
     }
+
+    const name = (plazaForm.name || '').trim().toUpperCase();
+    const id = (plazaForm.id || '').trim();
+    const orgId = (plazaForm.orgId || '').trim().toUpperCase();
+    const agencyId = (plazaForm.agencyId || '').trim().toUpperCase();
+    const state = (plazaForm.state || '').trim().toUpperCase();
+    const city = (plazaForm.city || '').trim().toUpperCase();
+    const geoCode = (plazaForm.geoCode || '').trim();
+    const pubKey = (plazaForm.publicKey || '').trim();
+    const contactNo = (plazaForm.contactNo || '').trim();
+    const contactMail = (plazaForm.contactMail || '').trim();
 
     const savedPlaza = {
       ...plazaForm,
@@ -818,20 +917,29 @@ export const Onboarding = () => {
     setLaneModalOpen(true);
   };
 
+  const validateLaneId = (val) => {
+    const laneId = (val !== undefined ? val : newLane.laneId).trim().toUpperCase();
+    if (!laneId) return 'Lane ID is required';
+    if (!/^[A-Z0-9]{1,6}$/.test(laneId)) {
+      return 'Alphanumeric only, no spaces · max 6 characters';
+    }
+    if (store.lanes.some((l) => l.laneId === laneId)) {
+      return `Lane ID ${laneId} already exists across the network`;
+    }
+    return '';
+  };
+
+  const handleLaneBlur = () => {
+    const err = validateLaneId(newLane.laneId);
+    setLaneError(err);
+  };
+
   const handleSaveLane = (e) => {
     e.preventDefault();
     const laneId = newLane.laneId.trim().toUpperCase();
-
-    if (!laneId) {
-      setLaneError('Lane ID is required');
-      return;
-    }
-    if (!/^[A-Z0-9]{1,6}$/.test(laneId)) {
-      setLaneError('Alphanumeric only, no spaces · max 6 characters');
-      return;
-    }
-    if (store.lanes.some((l) => l.laneId === laneId)) {
-      setLaneError(`Lane ID ${laneId} already exists across the network`);
+    const err = validateLaneId(laneId);
+    if (err) {
+      setLaneError(err);
       return;
     }
 
@@ -1484,9 +1592,10 @@ export const Onboarding = () => {
                     placeholder="e.g. GMR HIGHWAYS LIMITED"
                     value={concessForm.name}
                     onChange={(e) => handleConcessChange('name', e.target.value.toUpperCase())}
+                    onBlur={() => handleConcessBlur('name')}
                     className={concessErrors.name ? 'invalid' : ''}
                   />
-                  <div className="field-hint">Alphabets, numbers, spaces, &, ., - allowed · max 100 chars</div>
+                  <div className="field-hint">Alphabets, spaces, &, ., - allowed · max 100 chars</div>
                   {concessErrors.name && <div className="field-error">{concessErrors.name}</div>}
                 </div>
 
@@ -1500,6 +1609,7 @@ export const Onboarding = () => {
                     placeholder="Registered corporate address"
                     value={concessForm.address}
                     onChange={(e) => handleConcessChange('address', e.target.value.toUpperCase())}
+                    onBlur={() => handleConcessBlur('address')}
                     className={concessErrors.address ? 'invalid' : ''}
                   />
                   <div className="field-hint">Alphanumeric + , . - / # allowed · max 250 chars</div>
@@ -1517,6 +1627,7 @@ export const Onboarding = () => {
                       placeholder="ops@concessionaire.com"
                       value={concessForm.mail}
                       onChange={(e) => handleConcessChange('mail', e.target.value)}
+                      onBlur={() => handleConcessBlur('mail')}
                       className={concessErrors.mail ? 'invalid' : ''}
                     />
                     <div className="field-hint">Must be unique per concessionaire</div>
@@ -1536,6 +1647,7 @@ export const Onboarding = () => {
                         const val = e.target.value.replace(/\D/g, '');
                         handleConcessChange('contact', val);
                       }}
+                      onBlur={() => handleConcessBlur('contact')}
                       className={concessErrors.contact ? 'invalid' : ''}
                     />
                     <div className="field-hint">Digits only · exactly 10 digits</div>
@@ -1641,6 +1753,7 @@ export const Onboarding = () => {
                   <select
                     value={plazaForm.concessionaireId}
                     onChange={(e) => handlePlazaChange('concessionaireId', e.target.value)}
+                    onBlur={() => handlePlazaBlur('concessionaireId')}
                     className={plazaErrors.concessionaireId ? 'invalid' : ''}
                   >
                     <option value="">Choose Concessionaire...</option>
@@ -1665,6 +1778,7 @@ export const Onboarding = () => {
                     placeholder="e.g. KHERKI DAULA"
                     value={plazaForm.name}
                     onChange={(e) => handlePlazaChange('name', e.target.value.toUpperCase())}
+                    onBlur={() => handlePlazaBlur('name')}
                     className={plazaErrors.name ? 'invalid' : ''}
                   />
                   <div className="field-hint">Alphanumeric, - and spaces allowed · max 100 chars</div>
@@ -1685,6 +1799,7 @@ export const Onboarding = () => {
                       const val = e.target.value.replace(/\D/g, '');
                       handlePlazaChange('id', val);
                     }}
+                    onBlur={() => handlePlazaBlur('id')}
                     className={`${plazaErrors.id ? 'invalid' : ''} ${isEditingPlaza ? 'disabled-input' : ''}`}
                   />
                   <div className="field-hint">Numeric only · exactly 6 digits · unique network-wide</div>
@@ -1701,6 +1816,7 @@ export const Onboarding = () => {
                     placeholder="e.g. PYSN"
                     value={plazaForm.orgId}
                     onChange={(e) => handlePlazaChange('orgId', e.target.value.toUpperCase())}
+                    onBlur={() => handlePlazaBlur('orgId')}
                     className={plazaErrors.orgId ? 'invalid' : ''}
                   />
                   <div className="field-hint">Letters only · exactly 4 characters</div>
@@ -1717,9 +1833,10 @@ export const Onboarding = () => {
                     placeholder="e.g. NHAI1"
                     value={plazaForm.agencyId}
                     onChange={(e) => handlePlazaChange('agencyId', e.target.value.toUpperCase())}
+                    onBlur={() => handlePlazaBlur('agencyId')}
                     className={plazaErrors.agencyId ? 'invalid' : ''}
                   />
-                  <div className="field-hint">Letters/alphanumeric · exactly 5 characters</div>
+                  <div className="field-hint">Letters only · exactly 5 letters</div>
                   {plazaErrors.agencyId && <div className="field-error">{plazaErrors.agencyId}</div>}
                 </div>
 
@@ -1731,6 +1848,7 @@ export const Onboarding = () => {
                     placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"
                     value={plazaForm.publicKey}
                     onChange={(e) => handlePlazaChange('publicKey', e.target.value)}
+                    onBlur={() => handlePlazaBlur('publicKey')}
                     className="code-font"
                   />
                   <div className="field-hint">Base64-encoded string or PEM format · max 5000 chars</div>
@@ -1867,6 +1985,7 @@ export const Onboarding = () => {
                     placeholder="e.g. HARYANA"
                     value={plazaForm.state}
                     onChange={(e) => handlePlazaChange('state', e.target.value.toUpperCase())}
+                    onBlur={() => handlePlazaBlur('state')}
                     className={plazaErrors.state ? 'invalid' : ''}
                   />
                   {plazaErrors.state && <div className="field-error">{plazaErrors.state}</div>}
@@ -1881,6 +2000,7 @@ export const Onboarding = () => {
                     placeholder="e.g. GURUGRAM"
                     value={plazaForm.city}
                     onChange={(e) => handlePlazaChange('city', e.target.value.toUpperCase())}
+                    onBlur={() => handlePlazaBlur('city')}
                     className={plazaErrors.city ? 'invalid' : ''}
                   />
                   {plazaErrors.city && <div className="field-error">{plazaErrors.city}</div>}
@@ -1894,6 +2014,7 @@ export const Onboarding = () => {
                     type="date"
                     value={plazaForm.activationDate}
                     onChange={(e) => handlePlazaChange('activationDate', e.target.value)}
+                    onBlur={() => handlePlazaBlur('activationDate')}
                     className={plazaErrors.activationDate ? 'invalid' : ''}
                   />
                   {plazaErrors.activationDate && (
@@ -1908,6 +2029,7 @@ export const Onboarding = () => {
                     placeholder="e.g. 28.4089,76.9647"
                     value={plazaForm.geoCode}
                     onChange={(e) => handlePlazaChange('geoCode', e.target.value)}
+                    onBlur={() => handlePlazaBlur('geoCode')}
                     className={plazaErrors.geoCode ? 'invalid' : ''}
                   />
                   <div className="field-hint">Format: Latitude,Longitude</div>
@@ -1942,6 +2064,7 @@ export const Onboarding = () => {
                       const val = e.target.value.replace(/\D/g, '');
                       handlePlazaChange('contactNo', val);
                     }}
+                    onBlur={() => handlePlazaBlur('contactNo')}
                     className={plazaErrors.contactNo ? 'invalid' : ''}
                   />
                   {plazaErrors.contactNo && (
@@ -1957,6 +2080,7 @@ export const Onboarding = () => {
                     placeholder="plaza.ops@concessionaire.com"
                     value={plazaForm.contactMail}
                     onChange={(e) => handlePlazaChange('contactMail', e.target.value)}
+                    onBlur={() => handlePlazaBlur('contactMail')}
                     className={plazaErrors.contactMail ? 'invalid' : ''}
                   />
                   {plazaErrors.contactMail && (
@@ -2530,6 +2654,7 @@ export const Onboarding = () => {
                     setNewLane({ ...newLane, laneId: e.target.value.toUpperCase() });
                     setLaneError('');
                   }}
+                  onBlur={handleLaneBlur}
                   className={laneError ? 'invalid' : ''}
                 />
                 <div className="field-hint">Alphanumeric, no spaces · max 6 chars · unique</div>

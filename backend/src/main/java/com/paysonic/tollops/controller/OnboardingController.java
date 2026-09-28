@@ -7,6 +7,7 @@ import com.paysonic.tollops.entity.Plaza;
 import com.paysonic.tollops.service.OnboardingBackendService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,17 +51,41 @@ public class OnboardingController {
     }
 
     @PostMapping("/plazas")
-    public ResponseEntity<Plaza> createPlaza(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> createPlaza(@RequestBody Map<String, Object> body) {
         Plaza plaza = mapToPlaza(body);
+
+        // Validation: Unique Plaza ID
+        if (plaza.getId() == null || plaza.getId().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Plaza ID is required"));
+        }
+        if (onboardingService.plazaExists(plaza.getId())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Plaza ID " + plaza.getId() + " is already onboarded across the network"));
+        }
+
+        // Referential integrity: Valid Concessionaire ID required
+        if (plaza.getConcessionaireId() == null || plaza.getConcessionaireId().trim().isEmpty() ||
+                !onboardingService.concessionaireExists(plaza.getConcessionaireId())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "A valid Concessionaire ID is required to onboard a Plaza"));
+        }
+
         Plaza saved = onboardingService.savePlaza(plaza);
         log.info("Created Plaza in Database: {} ({})", saved.getName(), saved.getId());
         return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/plazas/{id}")
-    public ResponseEntity<Plaza> updatePlaza(@PathVariable String id, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> updatePlaza(@PathVariable String id, @RequestBody Map<String, Object> body) {
         Plaza plaza = mapToPlaza(body);
         plaza.setId(id);
+
+        if (plaza.getConcessionaireId() != null && !plaza.getConcessionaireId().trim().isEmpty() &&
+                !onboardingService.concessionaireExists(plaza.getConcessionaireId())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Selected Concessionaire ID does not exist"));
+        }
+
         Plaza saved = onboardingService.savePlaza(plaza);
         log.info("Updated Plaza in Database: {} ({})", saved.getName(), saved.getId());
         return ResponseEntity.ok(saved);
@@ -97,7 +122,10 @@ public class OnboardingController {
     }
 
     @PostMapping("/plazas/lanes")
-    public ResponseEntity<Lane> saveLane(@RequestBody Lane lane) {
+    public ResponseEntity<?> saveLane(@RequestBody Lane lane) {
+        if (lane.getPlazaId() == null || !onboardingService.plazaExists(lane.getPlazaId())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Lane cannot be saved without a valid Plaza ID"));
+        }
         Lane saved = onboardingService.saveLane(lane);
         log.info("Saved Lane in Database: Plaza {} -> Lane {}", saved.getPlazaId(), saved.getLaneId());
         return ResponseEntity.ok(saved);
@@ -116,84 +144,105 @@ public class OnboardingController {
 
     // ─── Callbacks ───────────────────────────────────────────────────────────────
 
-    @PutMapping("/plazas/callbacks")
-    public ResponseEntity<Map<String, Object>> saveCallbacks(@RequestBody Map<String, Object> body) {
-        String plazaId = (String) body.get("plazaId");
-        Object urls = body.get("callbackUrls");
-        if (plazaId != null && urls != null) {
+    @PutMapping({"/plazas/callbacks", "/plazas/{plazaId}/callbacks"})
+    public ResponseEntity<Map<String, Object>> saveCallbacks(
+            @PathVariable(required = false) String plazaId,
+            @RequestBody Map<String, Object> body) {
+        String effectivePlazaId = plazaId != null ? plazaId : (String) body.get("plazaId");
+        if (effectivePlazaId == null || !onboardingService.plazaExists(effectivePlazaId)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Callbacks cannot be saved without a valid Plaza ID"));
+        }
+        Object urls = body.containsKey("callbacks") ? body.get("callbacks") : body.get("callbackUrls");
+        if (urls != null) {
             try {
                 String json = objectMapper.writeValueAsString(urls);
-                onboardingService.saveCallbacks(plazaId, json);
-                log.info("Saved Callbacks in Database for Plaza {}", plazaId);
+                onboardingService.saveCallbacks(effectivePlazaId, json);
+                log.info("Saved Callbacks in Database for Plaza {}", effectivePlazaId);
             } catch (Exception e) {
                 return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
             }
         }
-        return ResponseEntity.ok(Map.of("success", true, "plazaId", plazaId));
+        return ResponseEntity.ok(Map.of("success", true, "plazaId", effectivePlazaId));
     }
 
     // ─── Toll Fare Matrix ────────────────────────────────────────────────────────
 
-    @PutMapping("/plazas/fares")
-    public ResponseEntity<Map<String, Object>> saveFares(@RequestBody Map<String, Object> body) {
-        String plazaId = (String) body.get("plazaId");
+    @PutMapping({"/plazas/fares", "/plazas/{plazaId}/fares"})
+    public ResponseEntity<Map<String, Object>> saveFares(
+            @PathVariable(required = false) String plazaId,
+            @RequestBody Map<String, Object> body) {
+        String effectivePlazaId = plazaId != null ? plazaId : (String) body.get("plazaId");
+        if (effectivePlazaId == null || !onboardingService.plazaExists(effectivePlazaId)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Fare mapping cannot be saved without a valid Plaza ID"));
+        }
         Object fares = body.get("fares");
-        if (plazaId != null && fares != null) {
+        if (fares != null) {
             try {
                 String json = objectMapper.writeValueAsString(fares);
-                onboardingService.saveFares(plazaId, json);
-                log.info("Saved Toll Fare Matrix in Database for Plaza {}", plazaId);
+                onboardingService.saveFares(effectivePlazaId, json);
+                log.info("Saved Toll Fare Matrix in Database for Plaza {}", effectivePlazaId);
             } catch (Exception e) {
                 return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
             }
         }
-        return ResponseEntity.ok(Map.of("success", true, "plazaId", plazaId));
+        return ResponseEntity.ok(Map.of("success", true, "plazaId", effectivePlazaId));
     }
 
     // ─── CCH Mapping ─────────────────────────────────────────────────────────────
 
-    @PutMapping("/plazas/cch")
-    public ResponseEntity<Map<String, Object>> saveCch(@RequestBody Map<String, Object> body) {
-        String plazaId = (String) body.get("plazaId");
+    @PutMapping({"/plazas/cch", "/plazas/{plazaId}/cch"})
+    public ResponseEntity<Map<String, Object>> saveCch(
+            @PathVariable(required = false) String plazaId,
+            @RequestBody Map<String, Object> body) {
+        String effectivePlazaId = plazaId != null ? plazaId : (String) body.get("plazaId");
+        if (effectivePlazaId == null || !onboardingService.plazaExists(effectivePlazaId)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "CCH mapping cannot be saved without a valid Plaza ID"));
+        }
         Object cch = body.get("cch");
-        if (plazaId != null && cch != null) {
+        if (cch != null) {
             try {
                 String json = objectMapper.writeValueAsString(cch);
-                onboardingService.saveCch(plazaId, json);
-                log.info("Saved CCH Mapping in Database for Plaza {}", plazaId);
+                onboardingService.saveCch(effectivePlazaId, json);
+                log.info("Saved CCH Mapping in Database for Plaza {}", effectivePlazaId);
             } catch (Exception e) {
                 return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
             }
         }
-        return ResponseEntity.ok(Map.of("success", true, "plazaId", plazaId));
+        return ResponseEntity.ok(Map.of("success", true, "plazaId", effectivePlazaId));
     }
 
     // ─── Helper: Map request body to Plaza entity ─────────────────────────────────
 
     private Plaza mapToPlaza(Map<String, Object> map) {
         Plaza p = new Plaza();
-        if (map.containsKey("plazaId")) p.setId(String.valueOf(map.get("plazaId")));
-        if (map.containsKey("id")) p.setId(String.valueOf(map.get("id")));
-        if (map.containsKey("name")) p.setName((String) map.get("name"));
-        if (map.containsKey("orgId")) p.setOrgId((String) map.get("orgId"));
-        if (map.containsKey("agencyId")) p.setAgencyId((String) map.get("agencyId"));
-        if (map.containsKey("concessionaireId")) p.setConcessionaireId(String.valueOf(map.get("concessionaireId")));
-        if (map.containsKey("category")) p.setCategory((String) map.get("category"));
-        if (map.containsKey("basePricing")) p.setBasePricing((String) map.get("basePricing"));
-        if (map.containsKey("plazaInterface")) p.setPlazaInterface((String) map.get("plazaInterface"));
-        if (map.containsKey("subtype")) p.setSubtype((String) map.get("subtype"));
-        if (map.containsKey("authority")) p.setAuthority((String) map.get("authority"));
-        if (map.containsKey("state")) p.setState((String) map.get("state"));
-        if (map.containsKey("city")) p.setCity((String) map.get("city"));
-        if (map.containsKey("activationDate")) p.setActivationDate((String) map.get("activationDate"));
-        if (map.containsKey("geoCode")) p.setGeoCode((String) map.get("geoCode"));
-        if (map.containsKey("schemeRule")) p.setSchemeRule((String) map.get("schemeRule"));
-        if (map.containsKey("schemeDuration")) p.setSchemeDuration((String) map.get("schemeDuration"));
-        if (map.containsKey("status")) p.setStatus((String) map.get("status"));
-        if (map.containsKey("publicKey")) p.setPublicKey((String) map.get("publicKey"));
-        if (map.containsKey("contactAddress")) p.setContactAddress((String) map.get("contactAddress"));
-        if (map.containsKey("contactNo")) p.setContactNo((String) map.get("contactNo"));
-        if (map.containsKey("contactMail")) p.setContactMail((String) map.get("contactMail"));
+        if (map.containsKey("plazaId") && map.get("plazaId") != null) p.setId(String.valueOf(map.get("plazaId")).trim());
+        if (map.containsKey("id") && map.get("id") != null) p.setId(String.valueOf(map.get("id")).trim());
+
+        // Global Business Rule: All text values stored in uppercase
+        if (map.containsKey("name") && map.get("name") != null) p.setName(((String) map.get("name")).trim().toUpperCase());
+        if (map.containsKey("orgId") && map.get("orgId") != null) p.setOrgId(((String) map.get("orgId")).trim().toUpperCase());
+        if (map.containsKey("agencyId") && map.get("agencyId") != null) p.setAgencyId(((String) map.get("agencyId")).trim().toUpperCase());
+        if (map.containsKey("concessionaireId") && map.get("concessionaireId") != null) p.setConcessionaireId(String.valueOf(map.get("concessionaireId")).trim().toUpperCase());
+        if (map.containsKey("category") && map.get("category") != null) p.setCategory((String) map.get("category"));
+        if (map.containsKey("basePricing") && map.get("basePricing") != null) p.setBasePricing((String) map.get("basePricing"));
+        if (map.containsKey("plazaInterface") && map.get("plazaInterface") != null) p.setPlazaInterface((String) map.get("plazaInterface"));
+        if (map.containsKey("subtype") && map.get("subtype") != null) p.setSubtype((String) map.get("subtype"));
+        if (map.containsKey("authority") && map.get("authority") != null) p.setAuthority((String) map.get("authority"));
+        if (map.containsKey("state") && map.get("state") != null) p.setState(((String) map.get("state")).trim().toUpperCase());
+        if (map.containsKey("city") && map.get("city") != null) p.setCity(((String) map.get("city")).trim().toUpperCase());
+        if (map.containsKey("activationDate") && map.get("activationDate") != null) p.setActivationDate((String) map.get("activationDate"));
+        if (map.containsKey("geoCode") && map.get("geoCode") != null) p.setGeoCode((String) map.get("geoCode"));
+        if (map.containsKey("schemeRule") && map.get("schemeRule") != null) p.setSchemeRule((String) map.get("schemeRule"));
+        if (map.containsKey("schemeDuration") && map.get("schemeDuration") != null) p.setSchemeDuration((String) map.get("schemeDuration"));
+
+        // Global Business Rule: New plazas default to Draft
+        String status = (String) map.get("status");
+        p.setStatus(status != null && !status.trim().isEmpty() ? status : "Draft");
+
+        if (map.containsKey("publicKey") && map.get("publicKey") != null) p.setPublicKey((String) map.get("publicKey"));
+        if (map.containsKey("contactAddress") && map.get("contactAddress") != null) p.setContactAddress(((String) map.get("contactAddress")).trim().toUpperCase());
+        if (map.containsKey("contactNo") && map.get("contactNo") != null) p.setContactNo(((String) map.get("contactNo")).trim());
+        if (map.containsKey("contactMail") && map.get("contactMail") != null) p.setContactMail(((String) map.get("contactMail")).trim());
 
         if (map.containsKey("mdr")) {
             try {

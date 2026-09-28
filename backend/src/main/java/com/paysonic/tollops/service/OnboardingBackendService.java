@@ -48,10 +48,20 @@ public class OnboardingBackendService {
         return concessionaireRepo.findAll();
     }
 
+    public boolean concessionaireExists(String id) {
+        return id != null && concessionaireRepo.existsById(id);
+    }
+
     public Concessionaire saveConcessionaire(Concessionaire c) {
         if (c.getId() == null || c.getId().trim().isEmpty()) {
             c.setId("CON-" + (1000 + concessionaireRepo.count() + 1));
+        } else {
+            c.setId(c.getId().trim().toUpperCase());
         }
+        if (c.getName() != null) c.setName(c.getName().trim().toUpperCase());
+        if (c.getAddress() != null) c.setAddress(c.getAddress().trim().toUpperCase());
+        if (c.getMail() != null) c.setMail(c.getMail().trim());
+        if (c.getContact() != null) c.setContact(c.getContact().trim());
         return concessionaireRepo.save(c);
     }
 
@@ -59,6 +69,10 @@ public class OnboardingBackendService {
 
     public List<Plaza> getAllPlazas() {
         return plazaRepo.findAll();
+    }
+
+    public boolean plazaExists(String id) {
+        return id != null && plazaRepo.existsById(id);
     }
 
     public Optional<Plaza> getPlaza(String id) {
@@ -84,6 +98,9 @@ public class OnboardingBackendService {
     }
 
     public Lane saveLane(Lane lane) {
+        if (lane.getLaneId() != null) {
+            lane.setLaneId(lane.getLaneId().trim().toUpperCase());
+        }
         if (lane.getId() == null || lane.getId().trim().isEmpty()) {
             lane.setId(lane.getPlazaId() + "_" + lane.getLaneId());
         }

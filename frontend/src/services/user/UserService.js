@@ -531,72 +531,25 @@ class UserService {
         actorId = active.id;
       } catch {}
     }
-    if (!actorId) actorId = 'PSN0005';
+    if (!actorId) actorId = 'PSN1000';
 
-    // Retrieve creator of the target user to enforce Maker-Checker rule
-    let createdBy = null;
-    try {
-      const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
-      const targetUser = cached.find((u) => u.id === id);
-      if (targetUser && targetUser.createdBy) createdBy = targetUser.createdBy;
-    } catch {}
+    const res = await httpClient.patch(`/api/users/${id}/approve`, null, {
+      headers: { 'X-Actor-ID': actorId },
+    });
 
-    if (!createdBy) {
-      try {
-        const checkRes = await httpClient.get(`/api/users/${id}`);
-        if (checkRes.data && checkRes.data.createdBy) createdBy = checkRes.data.createdBy;
-      } catch {}
-    }
+    const updated = {
+      ...res.data,
+      approval: res.data?.approval || 'Approved',
+      status: res.data?.status || 'Active',
+    };
 
-    let approverHeaderId = actorId;
-    if (createdBy && createdBy.toLowerCase() === actorId.toLowerCase()) {
-      approverHeaderId = actorId.toLowerCase() === 'psn0001' ? 'PSN0005' : 'PSN0001';
-    }
-
-    let updated;
-    try {
-      const res = await httpClient.patch(`/api/users/${id}/approve`, null, {
-        headers: { 'X-Actor-ID': approverHeaderId },
-      });
-      updated = {
-        ...res.data,
-        approval: 'Approved',
-        status: 'Active',
-      };
-      // Ensure status 'Active' is persisted in MySQL on Railway
-      try {
-        await httpClient.put(
-          `/api/users/${id}`,
-          {
-            name: updated.name,
-            email: updated.email,
-            mobile: updated.mobile || updated.contact || '9999999999',
-            role: updated.role,
-            userType: updated.userType || 'Toll Plaza',
-            assignedPlaza: updated.assignedPlaza || updated.plaza || 'All plazas',
-            status: 'Active',
-            approval: 'Approved',
-          },
-          {
-            headers: { 'X-Actor-ID': approverHeaderId },
-          }
-        );
-      } catch {}
-    } catch (err) {
-      console.warn('[UserService] approveUser remote error handled with client approval:', err?.message);
-      updated = { id, approval: 'Approved', status: 'Active' };
-    }
-
-    // Persist approval override so it remains active and approved permanently
-    saveUserProfileOverride(id, { approval: 'Approved', status: 'Active' });
-
-    mockUsers = mockUsers.map((u) => (u.id === id ? { ...u, ...updated, approval: 'Approved', status: 'Active' } : u));
+    mockUsers = mockUsers.map((u) => (u.id === id ? { ...u, ...updated } : u));
 
     // Update users cache
     try {
       const cached = JSON.parse(localStorage.getItem(USERS_CACHE_KEY) || '[]');
       const updatedCache = cached.map((u) =>
-        u.id === id ? { ...u, ...updated, approval: 'Approved', status: 'Active' } : u
+        u.id === id ? { ...u, ...updated } : u
       );
       localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(updatedCache));
     } catch {}
@@ -605,7 +558,7 @@ class UserService {
   }
 
   async bulkUpload(file) {
-    const actorId = localStorage.getItem('actorId') || 'PSN0005';
+    const actorId = localStorage.getItem('actorId') || 'PSN1000';
     const formData = new FormData();
     formData.append('file', file);
 

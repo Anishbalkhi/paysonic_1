@@ -15,9 +15,23 @@ export const DB_PLAZAS = [
 export const BASE_PLAZAS = DB_PLAZAS;
 
 /**
- * Returns only verified plazas that actually exist in the database.
+ * Returns verified plazas from database and any newly onboarded plazas from Onboarding module.
  */
 export function getDynamicAllPlazas() {
+  try {
+    const raw = localStorage.getItem('paysonic_onboarding_data_v3');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.plazas && Array.isArray(parsed.plazas) && parsed.plazas.length > 0) {
+        const onboarded = parsed.plazas.map((p) => p.name || p.id).filter(Boolean);
+        const combined = [...DB_PLAZAS];
+        onboarded.forEach((name) => {
+          if (!combined.includes(name)) combined.push(name);
+        });
+        return combined;
+      }
+    }
+  } catch {}
   return [...DB_PLAZAS];
 }
 
