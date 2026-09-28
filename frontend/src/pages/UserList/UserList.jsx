@@ -400,32 +400,13 @@ export const UserList = () => {
       .catch((err) => console.warn('[UserList] Failed to load live plazas:', err));
   }, []);
 
-  // Authentic DB plazas dynamically merged with any active DB user plazas
+  // Authentic plazas directly from the live Onboarding module (/api/plazas)
   const currentAllPlazas = useMemo(() => {
-    const list = [...getDynamicAllPlazas()];
-    dbPlazas.forEach((p) => {
-      if (p && !list.includes(p)) list.push(p);
-    });
-    if (Array.isArray(users)) {
-      users.forEach((u) => {
-        if (Array.isArray(u.plazas)) {
-          u.plazas.forEach((p) => {
-            if (p && p !== 'All plazas' && p !== 'Not applicable' && p !== 'None (Bank Scope)' && !list.includes(p)) {
-              list.push(p);
-            }
-          });
-        }
-        const singlePlaza = u.assignedPlaza || u.plaza;
-        if (singlePlaza && singlePlaza !== 'All plazas' && singlePlaza !== 'Not applicable' && singlePlaza !== 'None (Bank Scope)') {
-          singlePlaza.split(',').forEach((sp) => {
-            const trimmed = sp.trim();
-            if (trimmed && !list.includes(trimmed)) list.push(trimmed);
-          });
-        }
-      });
+    if (dbPlazas && dbPlazas.length > 0) {
+      return dbPlazas;
     }
-    return list;
-  }, [dbPlazas, users]);
+    return getDynamicAllPlazas();
+  }, [dbPlazas]);
 
   // Allowed plaza options when creating/assigning
   const allowedPlazasForActor = useMemo(() => {
