@@ -203,22 +203,18 @@ class OnboardingService {
 
     let savedOnRailway = false;
 
-    try {
-      if (isUpdate) {
-        await httpClient.put(`/api/plazas/${plaza.id}`, payload, {
-          headers: { 'X-Actor-ID': actor.id },
-        });
-      } else {
-        await httpClient.post('/api/plazas', payload, {
-          headers: { 'X-Actor-ID': actor.id },
-        });
-      }
-      savedOnRailway = true;
-    } catch (err) {
-      console.warn(`[OnboardingService] Railway ${isUpdate ? 'PUT' : 'POST'} /api/plazas failed, localStorage only:`, err?.message);
+    if (isUpdate) {
+      await httpClient.put(`/api/plazas/${plaza.id}`, payload, {
+        headers: { 'X-Actor-ID': actor.id },
+      });
+    } else {
+      await httpClient.post('/api/plazas', payload, {
+        headers: { 'X-Actor-ID': actor.id },
+      });
     }
+    savedOnRailway = true;
 
-    // Always update localStorage
+    // Cache in local memory
     const existingPlazas = local.plazas || [];
     const idx = existingPlazas.findIndex((p) => p.id === plaza.id);
     let updatedPlazas;
@@ -237,13 +233,13 @@ class OnboardingService {
       status: 'SUCCESS',
       target: `${plaza.name} (${plaza.id})`,
       plaza: plaza.name,
-      details: `Plaza ${plaza.name} (ID: ${plaza.id}) ${isUpdate ? 'updated' : 'created'}. Status: ${plaza.status}. Concessionaire: ${plaza.concessionaireId}. ${savedOnRailway ? 'Persisted to Railway.' : 'Saved to localStorage only (Railway offline).'}`,
+      details: `Plaza ${plaza.name} (ID: ${plaza.id}) ${isUpdate ? 'updated' : 'created'} in Railway MySQL. Status: ${plaza.status}. Concessionaire: ${plaza.concessionaireId}.`,
       actor,
       before: isUpdate ? { id: plaza.id, name: plaza.name } : null,
       after: { id: plaza.id, name: plaza.name, status: plaza.status },
     });
 
-    return { ...plaza, _savedOnRailway: savedOnRailway };
+    return { ...plaza, _savedOnRailway: true };
   }
 
   // ============================================================
@@ -268,18 +264,11 @@ class OnboardingService {
       contact: concessionaire.contact,
     };
 
-    let savedOnRailway = false;
+    await httpClient.post('/api/concessionaires', payload, {
+      headers: { 'X-Actor-ID': actor.id },
+    });
 
-    try {
-      await httpClient.post('/api/concessionaires', payload, {
-        headers: { 'X-Actor-ID': actor.id },
-      });
-      savedOnRailway = true;
-    } catch (err) {
-      console.warn('[OnboardingService] Railway POST /api/concessionaires failed, localStorage only:', err?.message);
-    }
-
-    // Always update localStorage
+    // Update memory
     const existingConcess = local.concessionaires || [];
     const alreadyExists = existingConcess.some((c) => c.id === concessionaire.id);
     const updatedConcess = alreadyExists
@@ -295,12 +284,12 @@ class OnboardingService {
       actionLabel: 'Registered Concessionaire',
       status: 'SUCCESS',
       target: `${concessionaire.name} (${concessionaire.id})`,
-      details: `Concessionaire ${concessionaire.name} registered with ID ${concessionaire.id}. Mail: ${concessionaire.mail}. ${savedOnRailway ? 'Persisted to Railway.' : 'Saved to localStorage only (Railway offline).'}`,
+      details: `Concessionaire ${concessionaire.name} registered in Railway MySQL with ID ${concessionaire.id}. Mail: ${concessionaire.mail}.`,
       actor,
       after: { id: concessionaire.id, name: concessionaire.name },
     });
 
-    return { ...concessionaire, _savedOnRailway: savedOnRailway };
+    return { ...concessionaire, _savedOnRailway: true };
   }
 
   // ============================================================
@@ -321,18 +310,11 @@ class OnboardingService {
       status: lane.status,
     };
 
-    let savedOnRailway = false;
+    await httpClient.post('/api/plazas/lanes', payload, {
+      headers: { 'X-Actor-ID': actor.id },
+    });
 
-    try {
-      await httpClient.post('/api/plazas/lanes', payload, {
-        headers: { 'X-Actor-ID': actor.id },
-      });
-      savedOnRailway = true;
-    } catch (err) {
-      console.warn('[OnboardingService] Railway POST /api/plazas/lanes failed, localStorage only:', err?.message);
-    }
-
-    // Update localStorage
+    // Update memory
     const updatedLanes = [...(local.lanes || []), lane];
     saveLocalStore({ ...local, lanes: updatedLanes });
 
@@ -344,12 +326,12 @@ class OnboardingService {
       status: 'SUCCESS',
       target: `Lane ${lane.laneId} → Plaza ${lane.plazaId}`,
       plaza: lane.plazaId,
-      details: `Lane ${lane.laneId} added. Direction: ${lane.direction}, Type: ${lane.type}, Mode: ${lane.mode}, Category: ${lane.category}. ${savedOnRailway ? 'Persisted to Railway.' : 'Saved to localStorage only (Railway offline).'}`,
+      details: `Lane ${lane.laneId} added in Railway MySQL. Direction: ${lane.direction}, Type: ${lane.type}, Mode: ${lane.mode}, Category: ${lane.category}.`,
       actor,
       after: lane,
     });
 
-    return { ...lane, _savedOnRailway: savedOnRailway };
+    return { ...lane, _savedOnRailway: true };
   }
 
   // ============================================================
@@ -360,18 +342,11 @@ class OnboardingService {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
-    let savedOnRailway = false;
+    await httpClient.delete(`/api/plazas/lanes/${laneId}`, {
+      headers: { 'X-Actor-ID': actor.id },
+    });
 
-    try {
-      await httpClient.delete(`/api/plazas/lanes/${laneId}`, {
-        headers: { 'X-Actor-ID': actor.id },
-      });
-      savedOnRailway = true;
-    } catch (err) {
-      console.warn('[OnboardingService] Railway DELETE /api/plazas/lanes failed, localStorage only:', err?.message);
-    }
-
-    // Update localStorage
+    // Update memory
     const updatedLanes = (local.lanes || []).filter((l) => l.laneId !== laneId);
     saveLocalStore({ ...local, lanes: updatedLanes });
 
@@ -383,12 +358,12 @@ class OnboardingService {
       status: 'SUCCESS',
       target: `Lane ${laneId} (Plaza ${plazaId})`,
       plaza: plazaId,
-      details: `Lane ${laneId} removed from Plaza ${plazaId}. ${savedOnRailway ? 'Deleted from Railway.' : 'Removed from localStorage only (Railway offline).'}`,
+      details: `Lane ${laneId} removed from Plaza ${plazaId} in Railway MySQL.`,
       actor,
       before: laneId,
     });
 
-    return { success: true, _savedOnRailway: savedOnRailway };
+    return { success: true, _savedOnRailway: true };
   }
 
   // ============================================================
@@ -399,18 +374,11 @@ class OnboardingService {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
-    let savedOnRailway = false;
+    await httpClient.put(`/api/plazas/${plazaId}/callbacks`, { callbacks: callbackUrls }, {
+      headers: { 'X-Actor-ID': actor.id },
+    });
 
-    try {
-      await httpClient.put(`/api/plazas/${plazaId}/callbacks`, { callbacks: callbackUrls }, {
-        headers: { 'X-Actor-ID': actor.id },
-      });
-      savedOnRailway = true;
-    } catch (err) {
-      console.warn('[OnboardingService] Railway PUT /api/plazas/callbacks failed, localStorage only:', err?.message);
-    }
-
-    // Update localStorage
+    // Update memory
     const updatedCallbacks = { ...local.callbacks, [plazaId]: callbackUrls };
     saveLocalStore({ ...local, callbacks: updatedCallbacks });
 
@@ -423,11 +391,11 @@ class OnboardingService {
       status: 'SUCCESS',
       target: `Plaza ${plazaId} · ${configuredCount}/14 Endpoints Configured`,
       plaza: plazaId,
-      details: `Saved ${configuredCount} of 14 callback webhook URLs for Plaza ${plazaId}. ${savedOnRailway ? 'Persisted to Railway.' : 'Saved to localStorage only (Railway offline).'}`,
+      details: `Saved ${configuredCount} of 14 callback webhook URLs for Plaza ${plazaId} in Railway MySQL.`,
       actor,
     });
 
-    return { success: true, _savedOnRailway: savedOnRailway };
+    return { success: true, _savedOnRailway: true };
   }
 
   // ============================================================
@@ -438,18 +406,11 @@ class OnboardingService {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
-    let savedOnRailway = false;
+    await httpClient.put(`/api/plazas/${plazaId}/fares`, { fares }, {
+      headers: { 'X-Actor-ID': actor.id },
+    });
 
-    try {
-      await httpClient.put(`/api/plazas/${plazaId}/fares`, { fares }, {
-        headers: { 'X-Actor-ID': actor.id },
-      });
-      savedOnRailway = true;
-    } catch (err) {
-      console.warn('[OnboardingService] Railway PUT /api/plazas/fares failed, localStorage only:', err?.message);
-    }
-
-    // Update localStorage
+    // Update memory
     const updatedFares = { ...local.fares, [plazaId]: fares };
     saveLocalStore({ ...local, fares: updatedFares });
 
@@ -461,11 +422,11 @@ class OnboardingService {
       status: 'SUCCESS',
       target: `Plaza ${plazaId} · 17 Vehicle Classes × 6 Journey Types`,
       plaza: plazaId,
-      details: `Fare mapping saved for Plaza ${plazaId} covering VC4–VC20 across 6 journey types (Single, Return, Local 10km, Local 20km, District Commercial, Monthly Pass). ${savedOnRailway ? 'Persisted to Railway.' : 'Saved to localStorage only (Railway offline).'}`,
+      details: `Fare mapping saved for Plaza ${plazaId} in Railway MySQL covering VC4–VC20 across 6 journey types.`,
       actor,
     });
 
-    return { success: true, _savedOnRailway: savedOnRailway };
+    return { success: true, _savedOnRailway: true };
   }
 
   // ============================================================
@@ -476,18 +437,11 @@ class OnboardingService {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
-    let savedOnRailway = false;
+    await httpClient.put(`/api/plazas/${plazaId}/cch`, { cch }, {
+      headers: { 'X-Actor-ID': actor.id },
+    });
 
-    try {
-      await httpClient.put(`/api/plazas/${plazaId}/cch`, { cch }, {
-        headers: { 'X-Actor-ID': actor.id },
-      });
-      savedOnRailway = true;
-    } catch (err) {
-      console.warn('[OnboardingService] Railway PUT /api/plazas/cch failed, localStorage only:', err?.message);
-    }
-
-    // Update localStorage
+    // Update memory
     const updatedCch = { ...local.cch, [plazaId]: cch };
     saveLocalStore({ ...local, cch: updatedCch });
 

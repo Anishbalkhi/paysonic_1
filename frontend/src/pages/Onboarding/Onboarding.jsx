@@ -567,17 +567,14 @@ export const Onboarding = () => {
 
     setConcessForm({ name: '', address: '', mail: '', contact: '' });
     setConcessErrors({});
-    showToast(`Concessionaire ${newConcess.name} (${newConcess.id}) successfully created!`, 'success');
 
-    // Railway API + audit (fire-and-forget — UI already updated)
+    // Direct Railway MySQL API write
     OnboardingService.saveConcessionaire(newConcess, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then((res) => {
-      if (res._savedOnRailway) {
-        showToast(`✓ ${newConcess.name} synced to Railway backend`, 'success');
-      }
-    }).catch(() => {
-      // localStorage already saved — fail silently
+    }).then(() => {
+      showToast(`✓ Concessionaire ${newConcess.name} saved directly to Railway MySQL!`, 'success');
+    }).catch((err) => {
+      showToast(`⚠ Railway DB Error: ${err?.response?.data?.error || err.message}`, 'error');
     });
   };
 
@@ -870,15 +867,15 @@ export const Onboarding = () => {
     handleResetPlazaForm();
     setTab('view');
 
-    // Railway API + audit (fire-and-forget)
+    // Direct Railway MySQL API write
     OnboardingService.savePlaza(savedPlaza, {
       isEdit: isEditingPlaza,
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then((res) => {
-      if (res._savedOnRailway) {
-        showToast(`✓ Plaza ${savedPlaza.name} synced to Railway backend`, 'success');
-      }
-    }).catch(() => {});
+    }).then(() => {
+      showToast(`✓ Plaza ${savedPlaza.name} (${savedPlaza.id}) saved directly in Railway MySQL!`, 'success');
+    }).catch((err) => {
+      showToast(`⚠ Railway DB Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+    });
   };
 
   // =========================================================================
@@ -958,14 +955,14 @@ export const Onboarding = () => {
     setLaneModalOpen(false);
     showToast(`Lane ${laneId} added to Plaza ${selectedPlazaId}`, 'success');
 
-    // Railway API + audit
+    // Direct Railway MySQL API write
     OnboardingService.saveLane(laneRecord, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then((res) => {
-      if (res._savedOnRailway) {
-        showToast(`✓ Lane ${laneId} synced to Railway backend`, 'success');
-      }
-    }).catch(() => {});
+    }).then(() => {
+      showToast(`✓ Lane ${laneId} saved directly in Railway MySQL`, 'success');
+    }).catch((err) => {
+      showToast(`⚠ Railway Lane Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+    });
   };
 
   const handleDeleteLane = (laneId) => {
@@ -975,12 +972,15 @@ export const Onboarding = () => {
         ...prev,
         lanes: prev.lanes.filter((l) => l.laneId !== laneId),
       }));
-      showToast(`Lane ${laneId} removed`, 'info');
 
-      // Railway API + audit
+      // Direct Railway MySQL API delete
       OnboardingService.deleteLane(laneId, selectedPlazaId, {
         actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-      }).catch(() => {});
+      }).then(() => {
+        showToast(`✓ Lane ${laneId} deleted from Railway MySQL`, 'info');
+      }).catch((err) => {
+        showToast(`⚠ Railway Lane Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
+      });
     }
   };
 
@@ -1068,14 +1068,14 @@ export const Onboarding = () => {
 
     showToast(`Saved 14 Callback URLs for Plaza ${selectedPlazaId}`, 'success');
 
-    // Railway API + audit
+    // Direct Railway MySQL API write
     OnboardingService.saveCallbacks(selectedPlazaId, callbackUrls, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then((res) => {
-      if (res._savedOnRailway) {
-        showToast(`✓ Callback URLs for Plaza ${selectedPlazaId} synced to Railway`, 'success');
-      }
-    }).catch(() => {});
+    }).then(() => {
+      showToast(`✓ All 14 Callback URLs for Plaza ${selectedPlazaId} saved directly in Railway MySQL`, 'success');
+    }).catch((err) => {
+      showToast(`⚠ Railway Callback Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+    });
   };
 
   // =========================================================================
@@ -1119,16 +1119,14 @@ export const Onboarding = () => {
       },
     }));
 
-    showToast(`Fare mapping successfully saved for Plaza ${selectedPlazaId}`, 'success');
-
-    // Railway API + audit
+    // Direct Railway MySQL API write
     OnboardingService.saveFares(selectedPlazaId, plazaFares, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then((res) => {
-      if (res._savedOnRailway) {
-        showToast(`✓ Fare mapping for Plaza ${selectedPlazaId} synced to Railway`, 'success');
-      }
-    }).catch(() => {});
+    }).then(() => {
+      showToast(`✓ Fare mapping for Plaza ${selectedPlazaId} saved directly in Railway MySQL!`, 'success');
+    }).catch((err) => {
+      showToast(`⚠ Railway Fare Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+    });
   };
 
   // =========================================================================
@@ -1183,16 +1181,14 @@ export const Onboarding = () => {
       },
     }));
 
-    showToast(`CCH mapping saved and applied for Plaza ${selectedPlazaId}`, 'success');
-
-    // Railway API + audit
+    // Direct Railway MySQL API write
     OnboardingService.saveCch(selectedPlazaId, updated, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then((res) => {
-      if (res._savedOnRailway) {
-        showToast(`✓ CCH mapping for Plaza ${selectedPlazaId} synced to Railway`, 'success');
-      }
-    }).catch(() => {});
+    }).then(() => {
+      showToast(`✓ CCH mapping for Plaza ${selectedPlazaId} saved directly in Railway MySQL!`, 'success');
+    }).catch((err) => {
+      showToast(`⚠ Railway CCH Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+    });
   };
 
   const selectedPlazaObject = useMemo(() => {
