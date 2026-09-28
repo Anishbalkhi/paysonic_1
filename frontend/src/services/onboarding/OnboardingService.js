@@ -16,21 +16,9 @@ import UserActivityService from '../userActivity/UserActivityService';
 
 const STORAGE_KEY = 'paysonic_onboarding_data_v3';
 
-// ─── Local storage helpers ────────────────────────────────────────────────────
-
-const getLocalStore = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return null;
-};
-
-const saveLocalStore = (store) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch {}
-};
+// ─── Real Database Storage Mode (Direct Railway MySQL) ────────────────────────
+const getLocalStore = () => ({});
+const saveLocalStore = () => {};
 
 // ─── Actor helper (active logged-in user) ────────────────────────────────────
 

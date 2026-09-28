@@ -42,8 +42,6 @@ const CALLBACK_APIS = [
   'TagDetailsAPI',
 ];
 
-const STORAGE_KEY = 'paysonic_onboarding_data_v3';
-
 // Real operational network data for Paysonic Plaza Onboarding — strictly matches backend DB
 const getInitialData = () => {
   const concessionaires = [
@@ -339,28 +337,11 @@ export const Onboarding = () => {
     setSearchParams({ tab });
   };
 
-  // Main persistent state — seeded from localStorage, then hydrated from Railway
-  const [store, setStore] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.plazas && parsed.plazas.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Failed to parse onboarding storage:', e);
-    }
-    const initial = getInitialData();
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-    } catch {}
-    return initial;
-  });
+  // Main state — initialized with network seed schema, directly loaded from Railway MySQL
+  const [store, setStore] = useState(() => getInitialData());
 
   // ── Railway hydration on mount ─────────────────────────────────────────────
-  // Load plazas & concessionaires from Railway backend, merge with local seed data.
+  // Load plazas & concessionaires directly from Railway MySQL backend.
   const [railwayLoading, setRailwayLoading] = useState(true);
 
   useEffect(() => {
@@ -373,13 +354,13 @@ export const Onboarding = () => {
           setStore((prev) => ({
             ...prev,
             ...hydrated,
-            source: hydrated.source || 'LIVE_BACKEND_DB',
+            source: 'LIVE_BACKEND_DB',
             _liveDb: true,
           }));
         }
       })
       .catch((err) => {
-        console.warn('[Onboarding] Railway hydration failed, using localStorage:', err?.message);
+        console.warn('[Onboarding] Railway database load error:', err?.message);
       })
       .finally(() => {
         if (isMounted) setRailwayLoading(false);
@@ -387,15 +368,6 @@ export const Onboarding = () => {
     return () => { isMounted = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Sync store to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    } catch (e) {
-      console.error('Failed to save onboarding store:', e);
-    }
-  }, [store]);
 
   // Toast notifications
   const [toast, setToast] = useState({ show: false, msg: '', type: 'info' });
@@ -1233,13 +1205,11 @@ export const Onboarding = () => {
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  background: store.source === 'LIVE_BACKEND_DB' || store._liveDb ? '#10b981' : '#f59e0b',
+                  background: '#10b981',
                   display: 'inline-block',
                 }}
               />
-              {store.source === 'LIVE_BACKEND_DB' || store._liveDb
-                ? 'Source: Real Database (Railway MySQL)'
-                : 'Source: Offline Cache (Railway Sync Pending)'}
+              Railway Database (MySQL)
             </span>
           </div>
           <h1>Plaza Onboarding Module</h1>
@@ -1248,44 +1218,6 @@ export const Onboarding = () => {
           </p>
         </div>
         <div className="header-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={railwayLoading}
-            onClick={async () => {
-              setRailwayLoading(true);
-              showToast('Connecting to Railway Database...', 'info');
-              try {
-                const hydrated = await OnboardingService.loadFullStore(store);
-                if (hydrated && (hydrated.source === 'LIVE_BACKEND_DB' || hydrated._liveDb)) {
-                  setStore(hydrated);
-                  showToast('✓ Real Database synchronized successfully!', 'success');
-                } else {
-                  showToast('Railway backend is deploying or offline. Showing cached records.', 'warning');
-                }
-              } catch (e) {
-                showToast('Sync error: ' + (e?.message || 'Network error'), 'error');
-              } finally {
-                setRailwayLoading(false);
-              }
-            }}
-          >
-            {railwayLoading ? '⟳ Syncing...' : '⚡ Sync Database'}
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => {
-              if (window.confirm('Clear all local onboarding records? Only original data will remain.')) {
-                const fresh = getInitialData();
-                setStore(fresh);
-                setSelectedPlazaId('');
-                showToast('Cleared all local onboarding records', 'info');
-              }
-            }}
-          >
-            ↺ Clear Local Data
-          </button>
           <button
             type="button"
             className="btn-primary"
