@@ -631,3 +631,94 @@
     gap: 12px;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════
+   DARK THEME OVERRIDES FOR TAG DETAILS
+   ═════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"],
+html[data-theme="dark"],
+[data-theme="dark"] {
+  .inquiry-card,
+  .history-card {
+    background: var(--card, #161D27) !important;
+    border-color: var(--border, #262F3B) !important;
+
+    .card-top {
+      h3 {
+        color: var(--text, #E7ECF3) !important;
+      }
+      p {
+        color: var(--text-soft, #9AA5B4) !important;
+      }
+    }
+  }
+
+  .inquiry-form {
+    .query-input {
+      background: var(--bg, #10151C) !important;
+      border-color: var(--border, #262F3B) !important;
+      color: var(--text, #E7ECF3) !important;
+
+      &::placeholder {
+        color: var(--faint, #6B7A8D) !important;
+      }
+    }
+  }
+
+  .tag-result-grid {
+    .result-card {
+      background: var(--bg, #10151C) !important;
+      border-color: var(--border, #262F3B) !important;
+
+      .res-label {
+        color: var(--text-soft, #9AA5B4) !important;
+      }
+      .res-val {
+        color: var(--text, #E7ECF3) !important;
+      }
+    }
+  }
+
+  .history-table {
+    border-color: var(--border, #262F3B) !important;
+
+    thead th {
+      background: var(--blue-soft, #182A3F) !important;
+      color: var(--text-soft, #9AA5B4) !important;
+      border-bottom-color: var(--border, #262F3B) !important;
+    }
+
+    tbody td {
+      color: var(--text, #E7ECF3) !important;
+      border-bottom-color: var(--border, #262F3B) !important;
+    }
+
+    tbody tr:hover {
+      background: var(--blue-soft, #182A3F) !important;
+    }
+  }
+
+  .tag-tabs-bar {
+    border-bottom-color: var(--border, #262F3B) !important;
+
+    .tag-tab-btn {
+      color: var(--text-soft, #9AA5B4) !important;
+
+      .tab-num {
+        background: var(--surface-raised, #1C2430) !important;
+        color: var(--text-soft, #9AA5B4) !important;
+      }
+
+      &.active {
+        color: var(--mint-accent, #57C9A5) !important;
+        border-bottom-color: var(--mint-accent, #57C9A5) !important;
+
+        .tab-num {
+          background: var(--green-bg, #123326) !important;
+          color: var(--mint-accent, #57C9A5) !important;
+          border-color: #1e4b38 !important;
+        }
+      }
+    }
+  }
+}

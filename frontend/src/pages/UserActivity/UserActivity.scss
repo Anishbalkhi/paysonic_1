@@ -1048,3 +1048,72 @@
     }
   }
 }
+
+/* ═════════════════════════════════════════════════════════════
+   DARK THEME OVERRIDES FOR USER ACTIVITY
+   ═════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"],
+html[data-theme="dark"],
+[data-theme="dark"] {
+  .activity-chart-card,
+  .module-breakdown-card,
+  .activity-table-card,
+  .user-drawer {
+    background: var(--card, #161D27) !important;
+    border-color: var(--border, #262F3B) !important;
+
+    h3 {
+      color: var(--text, #E7ECF3) !important;
+    }
+  }
+
+  .activity-chart-card__controls {
+    .range-selector {
+      background: var(--surface-raised, #1C2430) !important;
+
+      .range-btn {
+        color: var(--text-soft, #9AA5B4) !important;
+
+        &.active {
+          background: var(--card, #161D27) !important;
+          color: #60A5FA !important;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+        }
+      }
+    }
+  }
+
+  .activity-table {
+    thead th {
+      background: var(--blue-soft, #182A3F) !important;
+      color: var(--text-soft, #9AA5B4) !important;
+      border-bottom-color: var(--border, #262F3B) !important;
+    }
+
+    tbody td {
+      color: var(--text, #E7ECF3) !important;
+      border-bottom-color: var(--border, #262F3B) !important;
+    }
+
+    tbody tr:hover {
+      background: var(--blue-soft, #182A3F) !important;
+    }
+  }
+
+  .format-options .format-pill {
+    background: var(--card, #161D27) !important;
+    border-color: var(--border, #262F3B) !important;
+
+    strong {
+      color: var(--text, #E7ECF3) !important;
+    }
+    span {
+      color: var(--text-soft, #9AA5B4) !important;
+    }
+
+    &.selected {
+      border-color: #2E6FBA !important;
+      background: var(--blue-soft, #182A3F) !important;
+    }
+  }
+}
