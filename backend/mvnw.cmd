@@ -71,7 +71,12 @@ IF NOT EXIST "%_MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.properties" (
 @REM ----------------------------
 set JAVA_CMD=java
 if "%JAVA_HOME%"=="" goto tryJavaCmd
-set JAVA_CMD=%JAVA_HOME%/bin/java
+for /f "tokens=* delims= " %%i in ("%JAVA_HOME%") do set "CLEAN_JAVA_HOME=%%i"
+if exist "%CLEAN_JAVA_HOME%\bin\java.exe" (
+    set "JAVA_CMD=%CLEAN_JAVA_HOME%\bin\java.exe"
+) else (
+    set JAVA_CMD=java
+)
 :tryJavaCmd
 
 set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
