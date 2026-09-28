@@ -5,17 +5,24 @@
 
 :root,
 [data-role] {
-  // ── Unified Canvas & Neutral Hierarchy ──────────────────────────────────
+  // ── Unified Light Canvas & Neutral Hierarchy (Default) ─────────────────────
   --bg: #f4f7fb;
+  --bg-page: #f4f7fb;
+  --bg-body: #f4f7fb;
   --card: #ffffff;
-  --surface: #f8fafc;
-  --surface-raised: #f1f5f9;
+  --surface: #ffffff;
+  --surface-raised: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f8fafc;
 
   --ink: #0f172a;
   --body-text: #334155;
   --muted: #64748b;
   --faint: #94a3b8;
 
+  --border: #e2e8f0;
+  --border-color: #e2e8f0;
   --stroke: #e2e8f0;
   --stroke-strong: #cbd5e1;
 
@@ -47,6 +54,63 @@
   --r: 16px;
   --shadow: 0 1px 3px rgba(16, 24, 40, 0.05), 0 10px 24px -12px rgba(16, 24, 40, 0.12);
   --shadow-lg: 0 4px 6px rgba(16, 24, 40, 0.05), 0 20px 36px -16px rgba(16, 24, 40, 0.18);
+}
+
+// ── Dark mode overrides (:root[data-theme="dark"]) ──────────────────────────
+:root[data-theme="dark"],
+html[data-theme="dark"],
+[data-theme="dark"],
+[data-theme="dark"] [data-role],
+[data-role][data-theme="dark"] {
+  --bg: #10151C !important;
+  --bg-page: #10151C !important;
+  --bg-body: #10151C !important;
+  --card: #161D27 !important;
+  --surface: #161D27 !important;
+  --surface-raised: #1C2430 !important;
+  --bg-card: #161D27 !important;
+  --bg-surface: #161D27 !important;
+  --bg-subtle: #131A24 !important;
+
+  --border: #262F3B !important;
+  --border-color: #262F3B !important;
+  --border-light: #1E2734 !important;
+  --border-hover: #354152 !important;
+  --stroke: #262F3B !important;
+  --stroke-strong: #354152 !important;
+
+  --text: #E7ECF3 !important;
+  --ink: #E7ECF3 !important;
+  --body-text: #E7ECF3 !important;
+  --text-primary: #E7ECF3 !important;
+  --text-secondary: #9AA5B4 !important;
+  --text-soft: #9AA5B4 !important;
+  --muted: #9AA5B4 !important;
+  --text-muted: #9AA5B4 !important;
+  --faint: #6B7A8D !important;
+
+  --blue-soft: #182A3F !important;
+  --green-bg: #123326 !important;
+  --green-soft: #123326 !important;
+  --amber-bg: #3A2A0F !important;
+  --amber-soft: #3A2A0F !important;
+  --red-bg: #3A1414 !important;
+  --red-soft: #3A1414 !important;
+
+  --banner-border: #284B72 !important;
+  --banner-text: #CFE0F5 !important;
+  --callout-val: #E7ECF3 !important;
+
+  --navy: #152943 !important;
+  --navy-soft: #1F3B57 !important;
+  --blue: #2E6FBA !important;
+  --green: #1E8E5A !important;
+  --amber: #B4790A !important;
+  --red: #C23A3A !important;
+  --mint-accent: #57C9A5 !important;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 10px 24px -12px rgba(0, 0, 0, 0.6) !important;
+  --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.4), 0 20px 36px -16px rgba(0, 0, 0, 0.7) !important;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -83,8 +147,8 @@ body {
 
 // 2. Sidebar Theming (Unified)
 .sidebar {
-  background: #ffffff !important;
-  border-right: 1px solid var(--stroke) !important;
+  background: var(--card) !important;
+  border-right: 1px solid var(--border) !important;
   color: var(--body-text) !important;
 
   .brand {
@@ -104,7 +168,7 @@ body {
     }
 
     &:hover {
-      background: #f1f5fb !important;
+      background: var(--blue-soft) !important;
       color: var(--ink) !important;
 
       svg {
@@ -140,7 +204,7 @@ body {
     color: var(--muted) !important;
 
     &:hover {
-      background: #f1f5fb !important;
+      background: var(--blue-soft) !important;
       color: var(--ink) !important;
     }
 
@@ -155,11 +219,11 @@ body {
   }
 
   .sidebar-foot {
-    border-top: 1px solid var(--stroke) !important;
+    border-top: 1px solid var(--border) !important;
     background: transparent !important;
 
     .avatar-row:hover {
-      background: #f1f5fb !important;
+      background: var(--blue-soft) !important;
     }
 
     .who-name {
@@ -170,14 +234,14 @@ body {
     }
 
     .logout-btn {
-      background: #ffffff !important;
-      border: 1px solid var(--stroke) !important;
+      background: var(--card) !important;
+      border: 1px solid var(--border) !important;
       color: var(--muted) !important;
 
       &:hover {
-        background: #fef2f2 !important;
-        border-color: #fca5a5 !important;
-        color: #ef4444 !important;
+        background: var(--red-bg) !important;
+        border-color: var(--red) !important;
+        color: var(--red) !important;
       }
     }
   }
@@ -186,7 +250,7 @@ body {
 // 3. Topbar Theming (Unified)
 .topbar,
 .topbar-header-adaptive {
-  background: #ffffff !important;
+  background: var(--card) !important;
   border-bottom: 2px solid var(--topbar-accent-border) !important;
 
   .topbar-crumb-block {
@@ -199,8 +263,8 @@ body {
   }
 
   .search-box {
-    background: #f8fafc !important;
-    border: 1px solid var(--stroke) !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
 
     input {
       color: var(--ink) !important;
@@ -211,18 +275,18 @@ body {
   }
 
   .notification-btn {
-    color: #475467 !important;
+    color: var(--muted) !important;
     &:hover {
-      background: #f1f5fb !important;
+      background: var(--blue-soft) !important;
       color: var(--ink) !important;
     }
   }
 
   .mobile-hamburger-btn {
-    background: #f8fafc !important;
-    border: 1px solid var(--stroke) !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--border) !important;
     svg {
-      stroke: #334155 !important;
+      stroke: var(--body-text) !important;
     }
   }
 }
