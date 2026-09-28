@@ -1237,11 +1237,13 @@ export const Onboarding = () => {
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  background: store.source === 'LIVE_BACKEND_DB' || store._liveDb ? '#10b981' : '#3b82f6',
+                  background: store.source === 'LIVE_BACKEND_DB' || store._liveDb ? '#10b981' : '#f59e0b',
                   display: 'inline-block',
                 }}
               />
-              {store.source === 'LIVE_BACKEND_DB' || store._liveDb ? 'Source: Real Database (Backend Sync)' : 'Source: Local Storage'}
+              {store.source === 'LIVE_BACKEND_DB' || store._liveDb
+                ? 'Source: Real Database (Railway MySQL)'
+                : 'Source: Offline Cache (Railway Sync Pending)'}
             </span>
           </div>
           <h1>Plaza Onboarding Module</h1>
@@ -1250,6 +1252,30 @@ export const Onboarding = () => {
           </p>
         </div>
         <div className="header-actions">
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={railwayLoading}
+            onClick={async () => {
+              setRailwayLoading(true);
+              showToast('Connecting to Railway Database...', 'info');
+              try {
+                const hydrated = await OnboardingService.loadFullStore(store);
+                if (hydrated && (hydrated.source === 'LIVE_BACKEND_DB' || hydrated._liveDb)) {
+                  setStore(hydrated);
+                  showToast('✓ Real Database synchronized successfully!', 'success');
+                } else {
+                  showToast('Railway backend is deploying or offline. Showing cached records.', 'warning');
+                }
+              } catch (e) {
+                showToast('Sync error: ' + (e?.message || 'Network error'), 'error');
+              } finally {
+                setRailwayLoading(false);
+              }
+            }}
+          >
+            {railwayLoading ? '⟳ Syncing...' : '⚡ Sync Database'}
+          </button>
           <button
             type="button"
             className="btn-secondary"

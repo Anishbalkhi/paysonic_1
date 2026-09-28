@@ -103,6 +103,7 @@ class OnboardingService {
             bankGst: p.bankGst || p.bank_gst || '18',
             npciGst: p.npciGst || p.npci_gst || '18',
           },
+          _fromRailway: true,
         }));
 
         // Update localStorage cache
@@ -144,6 +145,7 @@ class OnboardingService {
           address: c.address || '',
           mail: c.mail || c.email || '',
           contact: c.contact || c.mobile || c.phone || '',
+          _fromRailway: true,
         }));
 
         if (local) {
@@ -551,10 +553,17 @@ class OnboardingService {
       this.getConcessionaires().catch(() => localFallback?.concessionaires || []),
     ]);
 
+    const isLive = Boolean(
+      (plazas && plazas.some((p) => p._fromRailway)) ||
+      (concessionaires && concessionaires.some((c) => c._fromRailway))
+    );
+
     return {
       ...localFallback,
       plazas,
       concessionaires,
+      source: isLive ? 'LIVE_BACKEND_DB' : (localFallback?.source || 'LOCAL_CACHE'),
+      _liveDb: isLive || Boolean(localFallback?._liveDb),
     };
   }
 }
