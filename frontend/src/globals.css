@@ -42,6 +42,110 @@
   --topbar-accent-border: #22c55e;
 }
 
+/* ── Dark mode overrides (:root[data-theme="dark"]) ────────── */
+:root[data-theme="dark"] {
+  --bg: #10151C;
+  --bg-page: #10151C;
+  --bg-body: #10151C;
+  --card: #161D27;
+  --surface: #161D27;
+  --surface-raised: #1C2430;
+  --bg-card: #161D27;
+  --bg-surface: #161D27;
+  --bg-subtle: #131A24;
+
+  --border: #262F3B;
+  --border-color: #262F3B;
+  --border-light: #1E2734;
+  --border-hover: #354152;
+  --stroke: #262F3B;
+  --stroke-strong: #354152;
+
+  --text: #E7ECF3;
+  --ink: #E7ECF3;
+  --body-text: #E7ECF3;
+  --text-primary: #E7ECF3;
+  --text-secondary: #9AA5B4;
+  --text-soft: #9AA5B4;
+  --muted: #9AA5B4;
+  --text-muted: #9AA5B4;
+  --faint: #6B7A8D;
+
+  --blue-soft: #182A3F;
+  --green-bg: #123326;
+  --green-soft: #123326;
+  --amber-bg: #3A2A0F;
+  --amber-soft: #3A2A0F;
+  --red-bg: #3A1414;
+  --red-soft: #3A1414;
+
+  --banner-border: #284B72;
+  --banner-text: #CFE0F5;
+  --callout-val: #E7ECF3;
+
+  --navy: #152943;
+  --navy-soft: #1F3B57;
+  --blue: #2E6FBA;
+  --green: #1E8E5A;
+  --amber: #B4790A;
+  --red: #C23A3A;
+  --mint-accent: #57C9A5;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 10px 26px -10px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 20px 30px -15px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="dark"] .callout,
+:root[data-theme="dark"] .info-banner,
+:root[data-theme="dark"] .banner {
+  border-color: var(--banner-border, #284B72) !important;
+  color: var(--banner-text, #CFE0F5) !important;
+}
+
+:root[data-theme="dark"] .callout strong,
+:root[data-theme="dark"] .banner strong {
+  color: var(--callout-val, #E7ECF3) !important;
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  background-color: var(--card, #161D27) !important;
+  color: var(--text, #E7ECF3) !important;
+  border-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: var(--muted, #9AA5B4) !important;
+}
+
+:root[data-theme="dark"] .modal,
+:root[data-theme="dark"] .modal-head,
+:root[data-theme="dark"] .modal-body,
+:root[data-theme="dark"] .modal-foot,
+:root[data-theme="dark"] .drawer,
+:root[data-theme="dark"] .table-card,
+:root[data-theme="dark"] .stat {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--border, #262F3B) !important;
+  color: var(--text, #E7ECF3) !important;
+}
+
+:root[data-theme="dark"] .t-head {
+  background-color: var(--blue-soft, #182A3F) !important;
+  color: var(--text-soft, #9AA5B4) !important;
+  border-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] .t-row {
+  border-color: var(--border, #262F3B) !important;
+}
+
+:root[data-theme="dark"] .t-row:hover {
+  background-color: var(--blue-soft, #182A3F) !important;
+}
+
 /* ── MASTER ADMIN — Sovereign Emerald ─────────────────────── */
 [data-role="master-admin"] {
   --role-primary: #15803d;
