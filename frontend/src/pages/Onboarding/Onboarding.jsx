@@ -975,9 +975,14 @@ export const Onboarding = () => {
     }
     setIsEditingLane(false);
     setEditingLaneId('');
-    const defaultSuffix = String(plazaLanes.length + 1).padStart(2, '0');
+    let nextNum = plazaLanes.length + 1;
+    let candidate = `L${String(nextNum).padStart(2, '0')}`;
+    while (plazaLanes.some((l) => l.laneId?.toUpperCase() === candidate)) {
+      nextNum++;
+      candidate = `L${String(nextNum).padStart(2, '0')}`;
+    }
     setNewLane({
-      laneId: `L${defaultSuffix}`,
+      laneId: candidate,
       direction: 'North',
       type: 'Entry',
       mode: 'Normal',
@@ -1008,6 +1013,15 @@ export const Onboarding = () => {
     if (!laneId) return 'Lane ID is required';
     if (!/^[A-Z0-9]{1,6}$/.test(laneId)) {
       return 'Alphanumeric only, no spaces · max 6 characters';
+    }
+    const isDuplicateInPlaza = (store.lanes || []).some(
+      (l) =>
+        l.plazaId === selectedPlazaId &&
+        l.laneId?.toUpperCase() === laneId &&
+        (!isEditingLane || l.laneId?.toUpperCase() !== editingLaneId?.toUpperCase())
+    );
+    if (isDuplicateInPlaza) {
+      return `Lane ID ${laneId} already exists in this plaza`;
     }
     return '';
   };
@@ -2361,8 +2375,8 @@ export const Onboarding = () => {
                       </td>
                     </tr>
                   ) : (
-                    plazaLanes.map((l) => (
-                      <tr key={l.laneId}>
+                    plazaLanes.map((l, idx) => (
+                      <tr key={l.id || `${l.plazaId}_${l.laneId}_${idx}`}>
                         <td>
                           <code className="id-code">{l.laneId}</code>
                         </td>
@@ -2806,7 +2820,7 @@ export const Onboarding = () => {
                   className={laneError ? 'invalid' : ''}
                 />
                 <div className="field-hint">
-                  Alphanumeric, no spaces · max 6 chars (e.g. L01, L02)
+                  Alphanumeric, max 6 chars · Unique within this plaza (reusable across plazas)
                 </div>
                 {laneError && <div className="field-error">{laneError}</div>}
               </div>
