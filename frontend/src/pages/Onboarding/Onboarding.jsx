@@ -1430,36 +1430,7 @@ export const Onboarding = () => {
       {/* Top Header */}
       <div className="onboarding-header">
         <div className="header-left">
-          <div className="badge-row">
-            <span className="header-badge">
-              <span className="dot" />
-              Toll Ops Network Engine
-            </span>
-            <span className="spec-badge">BRD &amp; Field Spec v1.0</span>
-            <span
-              className="spec-badge"
-              style={{
-                background: store.source === 'LIVE_BACKEND_DB' || store._liveDb ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                color: store.source === 'LIVE_BACKEND_DB' || store._liveDb ? '#10b981' : '#3b82f6',
-                borderColor: store.source === 'LIVE_BACKEND_DB' || store._liveDb ? 'rgba(16, 185, 129, 0.35)' : 'rgba(59, 130, 246, 0.35)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontWeight: 600,
-              }}
-            >
-              <span
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#10b981',
-                  display: 'inline-block',
-                }}
-              />
-              Railway Database (MySQL)
-            </span>
-          </div>
+
           <h1>Plaza Onboarding Module</h1>
         </div>
         <div className="header-actions">

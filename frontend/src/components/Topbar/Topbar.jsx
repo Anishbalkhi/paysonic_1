@@ -5,8 +5,8 @@ import { useTheme } from '../../context/ThemeContext';
 import './Topbar.scss';
 
 export const Topbar = ({
-  title = 'User management',
-  crumb = 'Admin console / Access control',
+  title = '',
+  crumb = '',
   onToggleMobileNav = () => {},
 }) => {
   const navigate = useNavigate();
@@ -36,10 +36,12 @@ export const Topbar = ({
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <div className="topbar-crumb-block">
-          <span className="crumb">{crumb}</span>
-          <span className="crumb-title">{title}</span>
-        </div>
+        {(title || crumb) && (
+          <div className="topbar-crumb-block">
+            {crumb && <span className="crumb">{crumb}</span>}
+            {title && <span className="crumb-title">{title}</span>}
+          </div>
+        )}
       </div>
 
       <div className="topbar-right">
