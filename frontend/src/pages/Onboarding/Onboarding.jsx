@@ -977,7 +977,7 @@ export const Onboarding = () => {
     setEditingLaneId('');
     const defaultSuffix = String(plazaLanes.length + 1).padStart(2, '0');
     setNewLane({
-      laneId: `L${selectedPlazaId.slice(-3)}${defaultSuffix}`,
+      laneId: `L${defaultSuffix}`,
       direction: 'North',
       type: 'Entry',
       mode: 'Normal',
@@ -1008,9 +1008,6 @@ export const Onboarding = () => {
     if (!laneId) return 'Lane ID is required';
     if (!/^[A-Z0-9]{1,6}$/.test(laneId)) {
       return 'Alphanumeric only, no spaces · max 6 characters';
-    }
-    if ((!isEditingLane || laneId !== editingLaneId) && store.lanes.some((l) => l.laneId === laneId)) {
-      return `Lane ID ${laneId} already exists across the network`;
     }
     return '';
   };
@@ -2810,7 +2807,7 @@ export const Onboarding = () => {
                   className={`${laneError ? 'invalid' : ''} ${isEditingLane ? 'disabled-input code-font' : ''}`}
                 />
                 <div className="field-hint">
-                  {isEditingLane ? 'Lane ID is immutable after provisioning' : 'Alphanumeric, no spaces · max 6 chars · unique'}
+                  {isEditingLane ? 'Lane ID is immutable after provisioning' : 'Alphanumeric, no spaces · max 6 chars (e.g. L01, L02)'}
                 </div>
                 {laneError && <div className="field-error">{laneError}</div>}
               </div>
