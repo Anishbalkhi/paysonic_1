@@ -21,8 +21,8 @@ const VEHICLE_CLASSES = [
   { id: 'VC15', name: 'Multi-Axle Truck (7+ Axle)', label: 'VC15 · Multi-Axle Truck (7+ Axle)' },
   { id: 'VC16', name: 'Earth Moving Machinery (EMM)', label: 'VC16 · Earth Moving Machinery (EMM)' },
   { id: 'VC17', name: 'Heavy Construction Machinery (HCM)', label: 'VC17 · Heavy Construction Machinery (HCM)' },
-  { id: 'VC18', name: 'Tractor / Tractor with Trailer', label: 'VC18 · Tractor / Tractor with Trailer' },
-  { id: 'VC19', name: 'Two-Wheeler / Three-Wheeler', label: 'VC19 · Two-Wheeler / Three-Wheeler' },
+  { id: 'VC18', name: 'Tractor', label: 'VC18 · Tractor' },
+  { id: 'VC19', name: 'Tractor with trailer', label: 'VC19 · Tractor with trailer' },
   { id: 'VC20', name: 'Tata Ace / Mini LCV', label: 'VC20 · Tata Ace / Mini LCV' },
 ];
 
@@ -884,10 +884,11 @@ export const Onboarding = () => {
       contactMail,
     };
 
-    // Optimistic store update
+    // Optimistic store update — replace in-place to avoid duplicate entry when ID changes
     setStore((prev) => {
       let updatedPlazas = [...prev.plazas];
-      const existingIdx = updatedPlazas.findIndex((p) => p.id === id);
+      const targetOriginalId = isEditingPlaza && editingPlazaOriginalId ? editingPlazaOriginalId : id;
+      const existingIdx = updatedPlazas.findIndex((p) => p.id === targetOriginalId || p.id === id);
 
       if (existingIdx >= 0) {
         updatedPlazas[existingIdx] = savedPlaza;
@@ -895,8 +896,37 @@ export const Onboarding = () => {
         updatedPlazas.push(savedPlaza);
       }
 
-      // Initialize callbacks, fares, and cch if not present
+      // If ID was modified during editing, ensure old ID entry is removed so no duplicates appear
+      if (isEditingPlaza && editingPlazaOriginalId && editingPlazaOriginalId !== id) {
+        updatedPlazas = updatedPlazas.filter((p, idx) => idx === existingIdx || p.id !== editingPlazaOriginalId);
+      }
+
+      // Migrate callbacks, fares, cch, lanes if ID was modified
       const newCallbacks = { ...prev.callbacks };
+      const newFares = { ...prev.fares };
+      const newCch = { ...prev.cch };
+      const newLanes = (prev.lanes || []).map((l) =>
+        isEditingPlaza && editingPlazaOriginalId && l.plazaId === editingPlazaOriginalId
+          ? { ...l, plazaId: id }
+          : l
+      );
+
+      if (isEditingPlaza && editingPlazaOriginalId && editingPlazaOriginalId !== id) {
+        if (newCallbacks[editingPlazaOriginalId]) {
+          newCallbacks[id] = newCallbacks[editingPlazaOriginalId];
+          delete newCallbacks[editingPlazaOriginalId];
+        }
+        if (newFares[editingPlazaOriginalId]) {
+          newFares[id] = newFares[editingPlazaOriginalId];
+          delete newFares[editingPlazaOriginalId];
+        }
+        if (newCch[editingPlazaOriginalId]) {
+          newCch[id] = newCch[editingPlazaOriginalId];
+          delete newCch[editingPlazaOriginalId];
+        }
+      }
+
+      // Initialize callbacks, fares, and cch if not present
       if (!newCallbacks[id]) {
         newCallbacks[id] = {};
         CALLBACK_APIS.forEach((api) => {
@@ -904,7 +934,6 @@ export const Onboarding = () => {
         });
       }
 
-      const newFares = { ...prev.fares };
       if (!newFares[id]) {
         newFares[id] = {};
         VEHICLE_CLASSES.forEach((vc, i) => {
@@ -920,7 +949,6 @@ export const Onboarding = () => {
         });
       }
 
-      const newCch = { ...prev.cch };
       if (!newCch[id]) {
         newCch[id] = {};
         VEHICLE_CLASSES.forEach((vc, i) => {
@@ -931,11 +959,16 @@ export const Onboarding = () => {
       return {
         ...prev,
         plazas: updatedPlazas,
+        lanes: newLanes,
         callbacks: newCallbacks,
         fares: newFares,
         cch: newCch,
       };
     });
+
+    if (selectedPlazaId === editingPlazaOriginalId) {
+      setSelectedPlazaId(id);
+    }
 
     showToast(`Plaza ${savedPlaza.name} (${savedPlaza.id}) saved with status ${savedPlaza.status}`, 'success');
     handleResetPlazaForm();
@@ -944,6 +977,7 @@ export const Onboarding = () => {
     // Direct Railway MySQL API write
     OnboardingService.savePlaza(savedPlaza, {
       isEdit: isEditingPlaza,
+      originalId: editingPlazaOriginalId,
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
     }).then(() => {
       showToast(`✓ Plaza ${savedPlaza.name} (${savedPlaza.id}) saved directly in Railway MySQL!`, 'success');

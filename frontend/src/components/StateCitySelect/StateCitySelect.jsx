@@ -3,7 +3,7 @@ import { INDIA_STATES, getCitiesForState } from '../../utils/indiaCities';
 import './StateCitySelect.css';
 
 /**
- * StateCitySelect — Reusable searchable State + dependent City dropdowns
+ * StateCitySelect — Reusable searchable State + searchable dependent City dropdowns
  *
  * Props:
  *   stateValue   {string}   — current state value (UPPERCASE)
@@ -29,17 +29,29 @@ export const StateCitySelect = ({
 }) => {
   const [stateSearch, setStateSearch] = useState('');
   const [stateOpen, setStateOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
   const [cityOpen, setCityOpen] = useState(false);
+
   const stateRef = useRef(null);
   const cityRef = useRef(null);
 
   const cities = getCitiesForState(stateValue);
 
+  // Filter states based on user typing
   const filteredStates = stateSearch.trim()
     ? INDIA_STATES.filter((s) =>
-        s.toLowerCase().startsWith(stateSearch.toLowerCase().trim())
+        s.toLowerCase().includes(stateSearch.toLowerCase().trim())
       )
     : INDIA_STATES;
+
+  // Filter cities for selected state based on user typing
+  const filteredCities = citySearch.trim()
+    ? cities.filter((c) =>
+        c.toLowerCase().includes(citySearch.toLowerCase().trim())
+      )
+    : cities;
+
+
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -58,27 +70,40 @@ export const StateCitySelect = ({
   const handleStateSelect = (state) => {
     onStateChange(state);
     onCityChange(''); // reset city when state changes
-    setStateSearch('');
+    setStateSearch(state);
+    setCitySearch('');
     setStateOpen(false);
     if (onStateBlur) onStateBlur();
-  };
-
-  const handleCitySelect = (city) => {
-    onCityChange(city);
-    setCityOpen(false);
-    if (onCityBlur) onCityBlur();
   };
 
   const handleStateInputChange = (e) => {
     const val = e.target.value.toUpperCase();
     setStateSearch(val);
     setStateOpen(true);
-    // If user clears the input, also clear the selected state
     if (!val) {
       onStateChange('');
       onCityChange('');
+      setCitySearch('');
     }
   };
+
+  const handleCitySelect = (city) => {
+    onCityChange(city);
+    setCitySearch(city);
+    setCityOpen(false);
+    if (onCityBlur) onCityBlur();
+  };
+
+  const handleCityInputChange = (e) => {
+    const val = e.target.value.toUpperCase();
+    setCitySearch(val);
+    onCityChange(val);
+    setCityOpen(true);
+  };
+
+  const isExactCityMatch = cities.some(
+    (c) => c.toLowerCase() === (citySearch || '').trim().toLowerCase()
+  );
 
   return (
     <>
@@ -92,22 +117,27 @@ export const StateCitySelect = ({
             type="text"
             className="scs-input"
             placeholder="Type to search state…"
-            value={stateOpen ? stateSearch : stateValue}
+            value={stateOpen ? stateSearch : (stateValue || '')}
             onFocus={() => {
-              setStateSearch('');
+              setStateSearch(stateValue || '');
               setStateOpen(true);
             }}
             onChange={handleStateInputChange}
             onBlur={() => {
-              // small delay so click on option registers first
               setTimeout(() => {
                 setStateOpen(false);
                 if (onStateBlur) onStateBlur();
-              }, 150);
+              }, 200);
             }}
             autoComplete="off"
           />
-          <span className="scs-chevron" onClick={() => setStateOpen((p) => !p)}>
+          <span
+            className="scs-chevron"
+            onClick={(e) => {
+              e.stopPropagation();
+              setStateOpen((p) => !p);
+            }}
+          >
             {stateOpen ? '▲' : '▼'}
           </span>
           {stateOpen && filteredStates.length > 0 && (
@@ -116,7 +146,10 @@ export const StateCitySelect = ({
                 <li
                   key={s}
                   className={`scs-option ${s === stateValue ? 'selected' : ''}`}
-                  onMouseDown={() => handleStateSelect(s)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleStateSelect(s);
+                  }}
                 >
                   {s}
                 </li>
@@ -138,54 +171,84 @@ export const StateCitySelect = ({
           City {required && <span className="req">*</span>}
         </label>
         <div className={`scs-wrapper ${cityError ? 'invalid' : ''} ${!stateValue ? 'scs-disabled' : ''}`}>
-          {cities.length > 0 ? (
-            <>
-              <input
-                type="text"
-                className="scs-input"
-                placeholder={stateValue ? 'Select city…' : 'Select state first'}
-                value={cityOpen ? '' : cityValue}
-                readOnly={!stateValue}
-                onFocus={() => stateValue && setCityOpen(true)}
-                onBlur={() => {
-                  setTimeout(() => {
-                    setCityOpen(false);
-                    if (onCityBlur) onCityBlur();
-                  }, 150);
-                }}
-                autoComplete="off"
-              />
-              <span
-                className="scs-chevron"
-                onClick={() => stateValue && setCityOpen((p) => !p)}
-              >
-                {cityOpen ? '▲' : '▼'}
-              </span>
-              {cityOpen && (
-                <ul className="scs-dropdown">
-                  {cities.map((c) => (
+          <input
+            type="text"
+            className="scs-input"
+            placeholder={stateValue ? 'Type or select city…' : 'Select state first'}
+            value={cityOpen ? citySearch : (cityValue || '')}
+            disabled={!stateValue}
+            onFocus={() => {
+              if (stateValue) {
+                setCitySearch(cityValue || '');
+                setCityOpen(true);
+              }
+            }}
+            onChange={handleCityInputChange}
+            onBlur={() => {
+              setTimeout(() => {
+                setCityOpen(false);
+                if (onCityBlur) onCityBlur();
+              }, 200);
+            }}
+            autoComplete="off"
+          />
+          <span
+            className="scs-chevron"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (stateValue) setCityOpen((p) => !p);
+            }}
+          >
+            {cityOpen ? '▲' : '▼'}
+          </span>
+
+          {cityOpen && stateValue && (
+            <ul className="scs-dropdown">
+              {filteredCities.length > 0 ? (
+                <>
+                  {filteredCities.map((c) => (
                     <li
                       key={c}
                       className={`scs-option ${c === cityValue ? 'selected' : ''}`}
-                      onMouseDown={() => handleCitySelect(c)}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleCitySelect(c);
+                      }}
                     >
                       {c}
                     </li>
                   ))}
-                </ul>
+                  {/* If user typed a custom city not in the standard list, allow saving it */}
+                  {citySearch.trim() && !isExactCityMatch && (
+                    <li
+                      className="scs-option scs-custom"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleCitySelect(citySearch.trim().toUpperCase());
+                      }}
+                    >
+                      Use &ldquo;{citySearch.trim().toUpperCase()}&rdquo; (Custom City)
+                    </li>
+                  )}
+                </>
+              ) : (
+                <>
+                  {citySearch.trim() ? (
+                    <li
+                      className="scs-option scs-custom"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleCitySelect(citySearch.trim().toUpperCase());
+                      }}
+                    >
+                      Use &ldquo;{citySearch.trim().toUpperCase()}&rdquo; (Custom City)
+                    </li>
+                  ) : (
+                    <li className="scs-option scs-no-result">No cities listed for this state</li>
+                  )}
+                </>
               )}
-            </>
-          ) : (
-            <input
-              type="text"
-              className="scs-input"
-              placeholder={stateValue ? 'Enter city name' : 'Select state first'}
-              value={cityValue}
-              disabled={!stateValue}
-              onChange={(e) => onCityChange(e.target.value.toUpperCase())}
-              onBlur={() => { if (onCityBlur) onCityBlur(); }}
-              autoComplete="off"
-            />
+            </ul>
           )}
         </div>
         {cityError && <div className="field-error">{cityError}</div>}

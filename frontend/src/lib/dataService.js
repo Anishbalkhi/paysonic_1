@@ -130,6 +130,7 @@ export const DataService = {
   alerts:      () => getData('alerts',       'alerts.json'),
   systems:     () => getData('systems',      'systems.json'),
   declines:    () => getData('declines',     'declines.json'),
+  settlement:  () => getData('settlement',   'settlement.json'),
   plazas: async () => {
     try {
       const raw = localStorage.getItem('paysonic_onboarding_data_v3');

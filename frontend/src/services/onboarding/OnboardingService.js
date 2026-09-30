@@ -182,10 +182,11 @@ class OnboardingService {
    * Falls back to localStorage only if Railway is unavailable.
    * Fires audit event in both cases.
    */
-  async savePlaza(plaza, { isEdit = false, actor: actorOverride } = {}) {
+  async savePlaza(plaza, { isEdit = false, originalId, actor: actorOverride } = {}) {
     const actor = actorOverride || getActor();
     const isUpdate = isEdit || Boolean(plaza._railwayId);
     const local = getLocalStore() || {};
+    const targetLookupId = (isEdit && originalId) ? originalId : plaza.id;
 
     const payload = {
       plazaId: plaza.id,
@@ -215,7 +216,7 @@ class OnboardingService {
     let savedOnRailway = false;
 
     if (isUpdate) {
-      await httpClient.put(`/api/plazas/${plaza.id}`, payload, {
+      await httpClient.put(`/api/plazas/${targetLookupId}`, payload, {
         headers: { 'X-Actor-ID': actor.id },
       });
     } else {
@@ -225,12 +226,15 @@ class OnboardingService {
     }
     savedOnRailway = true;
 
-    // Cache in local memory
+    // Cache in local memory — update existing plaza in-place, preventing duplicate if ID was changed
     const existingPlazas = local.plazas || [];
-    const idx = existingPlazas.findIndex((p) => p.id === plaza.id);
+    const idx = existingPlazas.findIndex((p) => p.id === targetLookupId || p.id === plaza.id);
     let updatedPlazas;
     if (idx >= 0) {
-      updatedPlazas = existingPlazas.map((p) => (p.id === plaza.id ? plaza : p));
+      updatedPlazas = existingPlazas.map((p, i) => (i === idx ? plaza : p));
+      if (originalId && originalId !== plaza.id) {
+        updatedPlazas = updatedPlazas.filter((p, i) => i === idx || p.id !== originalId);
+      }
     } else {
       updatedPlazas = [...existingPlazas, plaza];
     }
