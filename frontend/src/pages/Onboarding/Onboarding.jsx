@@ -652,6 +652,7 @@ export const Onboarding = () => {
   // SUBMODULE 3: ADD / EDIT PLAZA
   // =========================================================================
   const [isEditingPlaza, setIsEditingPlaza] = useState(false);
+  const [editingPlazaOriginalId, setEditingPlazaOriginalId] = useState('');
   const [plazaForm, setPlazaForm] = useState({
     id: '',
     name: '',
@@ -680,6 +681,7 @@ export const Onboarding = () => {
 
   const handleStartEditPlaza = (p) => {
     setIsEditingPlaza(true);
+    setEditingPlazaOriginalId(p.id);
     setPlazaForm({
       ...p,
       mdr: p.mdr || { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
@@ -690,6 +692,7 @@ export const Onboarding = () => {
 
   const handleResetPlazaForm = () => {
     setIsEditingPlaza(false);
+    setEditingPlazaOriginalId('');
     setPlazaForm({
       id: '',
       name: '',
@@ -738,7 +741,7 @@ export const Onboarding = () => {
         if (!/^\d{6}$/.test(v)) {
           return 'Plaza ID must be exactly 6 digits';
         }
-        if (!isEditingPlaza && store.plazas.some((p) => p.id === v)) {
+        if (store.plazas.some((p) => p.id === v && p.id !== editingPlazaOriginalId)) {
           return 'This Plaza ID is already onboarded on the network';
         }
         return '';
@@ -1992,13 +1995,12 @@ export const Onboarding = () => {
                     maxLength={6}
                     placeholder="6-digit unique number"
                     value={plazaForm.id}
-                    disabled={isEditingPlaza}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '');
                       handlePlazaChange('id', val);
                     }}
                     onBlur={() => handlePlazaBlur('id')}
-                    className={`${plazaErrors.id ? 'invalid' : ''} ${isEditingPlaza ? 'disabled-input' : ''}`}
+                    className={plazaErrors.id ? 'invalid' : ''}
                   />
                   <div className="field-hint">Numeric only · exactly 6 digits · unique network-wide</div>
                   {plazaErrors.id && <div className="field-error">{plazaErrors.id}</div>}
