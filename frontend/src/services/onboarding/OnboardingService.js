@@ -417,7 +417,7 @@ class OnboardingService {
     return { ...lane, _savedOnRailway: savedOnRailway };
   }
 
-  async updateLane(lane, { actor: actorOverride } = {}) {
+  async updateLane(lane, { oldLaneId, actor: actorOverride } = {}) {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
@@ -433,6 +433,13 @@ class OnboardingService {
 
     let savedOnRailway = false;
     try {
+      // If lane ID was renamed, purge previous composite key from database
+      if (oldLaneId && oldLaneId !== lane.laneId) {
+        try {
+          await this.deleteLane(oldLaneId, lane.plazaId, { actor });
+        } catch {}
+      }
+
       try {
         await httpClient.put(`/api/plazas/lanes/${lane.laneId}`, payload, {
           headers: { 'X-Actor-ID': actor.id },
@@ -454,9 +461,12 @@ class OnboardingService {
     }
 
     // Update memory
+    const targetOldId = oldLaneId || lane.laneId;
     const existingLanes = local.lanes || [];
     const updatedLanes = existingLanes.map((l) =>
-      l.laneId === lane.laneId && l.plazaId === lane.plazaId ? { ...l, ...lane } : l
+      (l.laneId === targetOldId || l.laneId === lane.laneId) && l.plazaId === lane.plazaId
+        ? { ...l, ...lane }
+        : l
     );
     saveLocalStore({ ...local, lanes: updatedLanes });
 

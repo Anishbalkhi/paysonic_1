@@ -1045,6 +1045,7 @@ export const Onboarding = () => {
       showToast(`Lane ${laneId} configuration updated`, 'success');
 
       OnboardingService.updateLane(laneRecord, {
+        oldLaneId: editingLaneId,
         actor: currentUser
           ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
           : undefined,
@@ -2790,24 +2791,22 @@ export const Onboarding = () => {
             <form onSubmit={handleSaveLane} className="modal-body">
               <div className="form-group">
                 <label>
-                  Lane ID <span className="req">*</span> {isEditingLane && <span className="helper-label">(Fixed)</span>}
+                  Lane ID <span className="req">*</span>
                 </label>
                 <input
                   type="text"
                   maxLength={6}
-                  placeholder="e.g. L45101"
+                  placeholder="e.g. L01"
                   value={newLane.laneId}
-                  disabled={isEditingLane}
                   onChange={(e) => {
-                    if (isEditingLane) return;
                     setNewLane({ ...newLane, laneId: e.target.value.toUpperCase() });
                     setLaneError('');
                   }}
                   onBlur={handleLaneBlur}
-                  className={`${laneError ? 'invalid' : ''} ${isEditingLane ? 'disabled-input code-font' : ''}`}
+                  className={laneError ? 'invalid' : ''}
                 />
                 <div className="field-hint">
-                  {isEditingLane ? 'Lane ID is immutable after provisioning' : 'Alphanumeric, no spaces · max 6 chars (e.g. L01, L02)'}
+                  Alphanumeric, no spaces · max 6 chars (e.g. L01, L02)
                 </div>
                 {laneError && <div className="field-error">{laneError}</div>}
               </div>
