@@ -357,6 +357,11 @@ export const Onboarding = () => {
             source: 'LIVE_BACKEND_DB',
             _liveDb: true,
           }));
+          // Automatically synchronize scope to first live Railway MySQL plaza
+          setSelectedPlazaId((currentId) => {
+            const hasCurrent = hydrated.plazas.some((p) => p.id === currentId);
+            return hasCurrent ? currentId : hydrated.plazas[0].id;
+          });
         }
       })
       .catch((err) => {
@@ -384,8 +389,11 @@ export const Onboarding = () => {
   });
 
   useEffect(() => {
-    if (!selectedPlazaId && store.plazas.length > 0) {
-      setSelectedPlazaId(store.plazas[0].id);
+    if (store.plazas.length > 0) {
+      const exists = store.plazas.some((p) => p.id === selectedPlazaId);
+      if (!exists || !selectedPlazaId) {
+        setSelectedPlazaId(store.plazas[0].id);
+      }
     }
   }, [store.plazas, selectedPlazaId]);
 
@@ -427,7 +435,8 @@ export const Onboarding = () => {
   }, [store.plazas]);
 
   // =========================================================================
-  // SUBMODULE 2: ADD CONCESSIONAIRE
+  // =========================================================================
+  // SUBMODULE 2: ADD / EDIT CONCESSIONAIRE
   // =========================================================================
   const [concessForm, setConcessForm] = useState({
     name: '',
@@ -436,6 +445,8 @@ export const Onboarding = () => {
     contact: '',
   });
   const [concessErrors, setConcessErrors] = useState({});
+  const [isEditingConcess, setIsEditingConcess] = useState(false);
+  const [editingConcessId, setEditingConcessId] = useState('');
 
   const nextConcessionaireId = useMemo(() => {
     const maxNum = store.concessionaires.reduce((acc, c) => {
@@ -473,7 +484,13 @@ export const Onboarding = () => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
           return 'Enter a valid email address';
         }
-        if (store.concessionaires.some((c) => c.mail.toLowerCase() === v.toLowerCase())) {
+        if (
+          store.concessionaires.some(
+            (c) =>
+              c.mail.toLowerCase() === v.toLowerCase() &&
+              (!isEditingConcess || c.id !== editingConcessId)
+          )
+        ) {
           return 'This mail ID is already registered for another concessionaire';
         }
         return '';
@@ -503,6 +520,64 @@ export const Onboarding = () => {
     }
   };
 
+  const handleStartEditConcess = (c) => {
+    setIsEditingConcess(true);
+    setEditingConcessId(c.id);
+    setConcessForm({
+      name: c.name || '',
+      address: c.address || '',
+      mail: c.mail || '',
+      contact: c.contact || '',
+    });
+    setConcessErrors({});
+    const formEl = document.querySelector('.form-column');
+    if (formEl) formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleCancelEditConcess = () => {
+    setIsEditingConcess(false);
+    setEditingConcessId('');
+    setConcessForm({ name: '', address: '', mail: '', contact: '' });
+    setConcessErrors({});
+  };
+
+  const handleDeleteConcess = (c) => {
+    const linkedPlazas = store.plazas.filter(
+      (p) => String(p.concessionaireId).toUpperCase() === String(c.id).toUpperCase()
+    );
+    if (linkedPlazas.length > 0) {
+      const plazaNames = linkedPlazas.map((p) => p.name || p.id).join(', ');
+      showToast(
+        `Cannot delete Concessionaire ${c.name}: linked to ${linkedPlazas.length} active Plaza(s) (${plazaNames}). Reassign or delete associated plazas first.`,
+        'error'
+      );
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to permanently delete Concessionaire ${c.name} (${c.id})?`)) {
+      setStore((prev) => ({
+        ...prev,
+        concessionaires: prev.concessionaires.filter((item) => item.id !== c.id),
+      }));
+
+      if (isEditingConcess && editingConcessId === c.id) {
+        handleCancelEditConcess();
+      }
+
+      OnboardingService.deleteConcessionaire(c.id, {
+        actor: currentUser
+          ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
+          : undefined,
+      })
+        .then(() => {
+          showToast(`✓ Concessionaire ${c.name} (${c.id}) deleted from Railway MySQL`, 'info');
+        })
+        .catch((err) => {
+          showToast(`⚠ Railway Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
+        });
+    }
+  };
+
   const handleSaveConcessionaire = (e) => {
     e.preventDefault();
     const fields = ['name', 'address', 'mail', 'contact'];
@@ -523,31 +598,54 @@ export const Onboarding = () => {
     const mail = concessForm.mail.trim();
     const contact = concessForm.contact.trim();
 
-    const newConcess = {
-      id: nextConcessionaireId,
+    const concessRecord = {
+      id: isEditingConcess ? editingConcessId : nextConcessionaireId,
       name,
       address,
       mail,
       contact,
     };
 
-    // Optimistic update
-    setStore((prev) => ({
-      ...prev,
-      concessionaires: [...prev.concessionaires, newConcess],
-    }));
+    const wasEditing = isEditingConcess;
+    const targetId = concessRecord.id;
 
+    // Optimistic update
+    setStore((prev) => {
+      if (wasEditing) {
+        return {
+          ...prev,
+          concessionaires: prev.concessionaires.map((c) =>
+            c.id === targetId ? concessRecord : c
+          ),
+        };
+      }
+      return {
+        ...prev,
+        concessionaires: [...prev.concessionaires, concessRecord],
+      };
+    });
+
+    setIsEditingConcess(false);
+    setEditingConcessId('');
     setConcessForm({ name: '', address: '', mail: '', contact: '' });
     setConcessErrors({});
 
     // Direct Railway MySQL API write
-    OnboardingService.saveConcessionaire(newConcess, {
-      actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then(() => {
-      showToast(`✓ Concessionaire ${newConcess.name} saved directly to Railway MySQL!`, 'success');
-    }).catch((err) => {
-      showToast(`⚠ Railway DB Error: ${err?.response?.data?.error || err.message}`, 'error');
-    });
+    OnboardingService.saveConcessionaire(concessRecord, {
+      isEdit: wasEditing,
+      actor: currentUser
+        ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
+        : undefined,
+    })
+      .then(() => {
+        showToast(
+          `✓ Concessionaire ${concessRecord.name} (${targetId}) ${wasEditing ? 'updated' : 'saved'} directly to Railway MySQL!`,
+          'success'
+        );
+      })
+      .catch((err) => {
+        showToast(`⚠ Railway DB Error: ${err?.response?.data?.error || err.message}`, 'error');
+      });
   };
 
   // =========================================================================
@@ -854,6 +952,8 @@ export const Onboarding = () => {
   // SUBMODULE 4: LANE DETAILS
   // =========================================================================
   const [laneModalOpen, setLaneModalOpen] = useState(false);
+  const [isEditingLane, setIsEditingLane] = useState(false);
+  const [editingLaneId, setEditingLaneId] = useState('');
   const [newLane, setNewLane] = useState({
     laneId: '',
     direction: 'North',
@@ -873,6 +973,8 @@ export const Onboarding = () => {
       showToast('Please select a plaza first', 'error');
       return;
     }
+    setIsEditingLane(false);
+    setEditingLaneId('');
     const defaultSuffix = String(plazaLanes.length + 1).padStart(2, '0');
     setNewLane({
       laneId: `L${selectedPlazaId.slice(-3)}${defaultSuffix}`,
@@ -886,13 +988,28 @@ export const Onboarding = () => {
     setLaneModalOpen(true);
   };
 
+  const handleOpenEditLane = (lane) => {
+    setIsEditingLane(true);
+    setEditingLaneId(lane.laneId);
+    setNewLane({
+      laneId: lane.laneId,
+      direction: lane.direction || 'North',
+      type: lane.type || 'Entry',
+      mode: lane.mode || 'Normal',
+      category: lane.category || 'Hybrid',
+      status: lane.status || 'Open',
+    });
+    setLaneError('');
+    setLaneModalOpen(true);
+  };
+
   const validateLaneId = (val) => {
     const laneId = (val !== undefined ? val : newLane.laneId).trim().toUpperCase();
     if (!laneId) return 'Lane ID is required';
     if (!/^[A-Z0-9]{1,6}$/.test(laneId)) {
       return 'Alphanumeric only, no spaces · max 6 characters';
     }
-    if (store.lanes.some((l) => l.laneId === laneId)) {
+    if ((!isEditingLane || laneId !== editingLaneId) && store.lanes.some((l) => l.laneId === laneId)) {
       return `Lane ID ${laneId} already exists across the network`;
     }
     return '';
@@ -918,41 +1035,73 @@ export const Onboarding = () => {
       laneId,
     };
 
-    // Optimistic update
-    setStore((prev) => ({
-      ...prev,
-      lanes: [...prev.lanes, laneRecord],
-    }));
+    if (isEditingLane) {
+      // Optimistic update for edit
+      setStore((prev) => ({
+        ...prev,
+        lanes: prev.lanes.map((l) =>
+          l.laneId === editingLaneId && l.plazaId === selectedPlazaId ? laneRecord : l
+        ),
+      }));
 
-    setLaneModalOpen(false);
-    showToast(`Lane ${laneId} added to Plaza ${selectedPlazaId}`, 'success');
+      setLaneModalOpen(false);
+      showToast(`Lane ${laneId} configuration updated`, 'success');
 
-    // Direct Railway MySQL API write
-    OnboardingService.saveLane(laneRecord, {
-      actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then(() => {
-      showToast(`✓ Lane ${laneId} saved directly in Railway MySQL`, 'success');
-    }).catch((err) => {
-      showToast(`⚠ Railway Lane Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
-    });
+      OnboardingService.updateLane(laneRecord, {
+        actor: currentUser
+          ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
+          : undefined,
+      })
+        .then(() => {
+          showToast(`✓ Lane ${laneId} updated directly in Railway MySQL`, 'success');
+        })
+        .catch((err) => {
+          showToast(`⚠ Railway Lane Update Failed: ${err?.response?.data?.error || err.message}`, 'error');
+        });
+    } else {
+      // Optimistic update for add
+      setStore((prev) => ({
+        ...prev,
+        lanes: [...prev.lanes, laneRecord],
+      }));
+
+      setLaneModalOpen(false);
+      showToast(`Lane ${laneId} added to Plaza ${selectedPlazaId}`, 'success');
+
+      OnboardingService.saveLane(laneRecord, {
+        actor: currentUser
+          ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
+          : undefined,
+      })
+        .then(() => {
+          showToast(`✓ Lane ${laneId} saved directly in Railway MySQL`, 'success');
+        })
+        .catch((err) => {
+          showToast(`⚠ Railway Lane Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+        });
+    }
   };
 
   const handleDeleteLane = (laneId) => {
-    if (window.confirm(`Are you sure you want to remove Lane ${laneId}?`)) {
+    if (window.confirm(`Are you sure you want to remove Lane ${laneId} from Plaza ${selectedPlazaId}?`)) {
       // Optimistic update
       setStore((prev) => ({
         ...prev,
-        lanes: prev.lanes.filter((l) => l.laneId !== laneId),
+        lanes: prev.lanes.filter((l) => !(l.laneId === laneId && l.plazaId === selectedPlazaId)),
       }));
 
       // Direct Railway MySQL API delete
       OnboardingService.deleteLane(laneId, selectedPlazaId, {
-        actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-      }).then(() => {
-        showToast(`✓ Lane ${laneId} deleted from Railway MySQL`, 'info');
-      }).catch((err) => {
-        showToast(`⚠ Railway Lane Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
-      });
+        actor: currentUser
+          ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
+          : undefined,
+      })
+        .then(() => {
+          showToast(`✓ Lane ${laneId} deleted from Railway MySQL`, 'info');
+        })
+        .catch((err) => {
+          showToast(`⚠ Railway Lane Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
+        });
     }
   };
 
@@ -1516,24 +1665,26 @@ export const Onboarding = () => {
             {/* Form Column */}
             <div className="panel-card form-column">
               <div className="card-header">
-                <h3>Add Concessionaire</h3>
+                <h3>{isEditingConcess ? `Edit Concessionaire — ${concessForm.name || editingConcessId} (${editingConcessId})` : 'Add Concessionaire'}</h3>
                 <p className="card-desc">
-                  Concessionaire ID is generated automatically in <code>CON-####</code> format upon save and is used to bind plazas.
+                  {isEditingConcess
+                    ? 'Update registered corporate details, official email address, or contact phone.'
+                    : 'Concessionaire ID is generated automatically in CON-#### format upon save and is used to bind plazas.'}
                 </p>
               </div>
 
               <form onSubmit={handleSaveConcessionaire} className="styled-form">
                 <div className="form-group">
                   <label>
-                    Concessionaire ID <span className="helper-label">(System Generated)</span>
+                    Concessionaire ID <span className="helper-label">{isEditingConcess ? '(Read Only)' : '(System Generated)'}</span>
                   </label>
                   <input
                     type="text"
-                    value={nextConcessionaireId}
+                    value={isEditingConcess ? editingConcessId : nextConcessionaireId}
                     disabled
                     className="disabled-input code-font"
                   />
-                  <div className="field-hint">Auto-assigned sequence ID</div>
+                  <div className="field-hint">{isEditingConcess ? 'Concessionaire sequence ID is immutable' : 'Auto-assigned sequence ID'}</div>
                 </div>
 
                 <div className="form-group">
@@ -1610,18 +1761,31 @@ export const Onboarding = () => {
                 </div>
 
                 <div className="form-actions">
+                  {isEditingConcess ? (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleCancelEditConcess}
+                    >
+                      Cancel Edit
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="btn-ghost"
                     onClick={() => {
-                      setConcessForm({ name: '', address: '', mail: '', contact: '' });
-                      setConcessErrors({});
+                      if (isEditingConcess) {
+                        handleCancelEditConcess();
+                      } else {
+                        setConcessForm({ name: '', address: '', mail: '', contact: '' });
+                        setConcessErrors({});
+                      }
                     }}
                   >
-                    Clear Form
+                    {isEditingConcess ? 'Reset' : 'Clear Form'}
                   </button>
                   <button type="submit" className="btn-primary">
-                    Save Concessionaire
+                    {isEditingConcess ? 'Update Concessionaire' : 'Save Concessionaire'}
                   </button>
                 </div>
               </form>
@@ -1642,12 +1806,13 @@ export const Onboarding = () => {
                       <th>Concessionaire Name</th>
                       <th>Official Email</th>
                       <th>Contact No</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {store.concessionaires.length === 0 ? (
                       <tr>
-                        <td colSpan="4" className="empty-cell" style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                        <td colSpan="5" className="empty-cell" style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
                           No concessionaires onboarded yet. Fill out the form on the left to add one.
                         </td>
                       </tr>
@@ -1663,6 +1828,26 @@ export const Onboarding = () => {
                           </td>
                           <td>{c.mail}</td>
                           <td>{c.contact}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div className="table-actions">
+                              <button
+                                type="button"
+                                className="action-btn edit"
+                                title="Edit Concessionaire"
+                                onClick={() => handleStartEditConcess(c)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-danger-ghost sm"
+                                title="Delete Concessionaire"
+                                onClick={() => handleDeleteConcess(c)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -2208,13 +2393,24 @@ export const Onboarding = () => {
                           </span>
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            className="btn-danger-ghost sm"
-                            onClick={() => handleDeleteLane(l.laneId)}
-                          >
-                            Remove
-                          </button>
+                          <div className="table-actions">
+                            <button
+                              type="button"
+                              className="action-btn edit"
+                              title="Edit Lane Configuration"
+                              onClick={() => handleOpenEditLane(l)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-danger-ghost sm"
+                              title="Delete Lane"
+                              onClick={() => handleDeleteLane(l.laneId)}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -2584,7 +2780,7 @@ export const Onboarding = () => {
         <div className="onboarding-modal-backdrop" onClick={() => setLaneModalOpen(false)}>
           <div className="onboarding-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Add Lane — {selectedPlazaObject?.name} ({selectedPlazaId})</h3>
+              <h3>{isEditingLane ? `Edit Lane ${newLane.laneId} — ${selectedPlazaObject?.name || selectedPlazaId}` : `Add Lane — ${selectedPlazaObject?.name} (${selectedPlazaId})`}</h3>
               <button
                 type="button"
                 className="close-btn"
@@ -2597,21 +2793,25 @@ export const Onboarding = () => {
             <form onSubmit={handleSaveLane} className="modal-body">
               <div className="form-group">
                 <label>
-                  Lane ID <span className="req">*</span>
+                  Lane ID <span className="req">*</span> {isEditingLane && <span className="helper-label">(Fixed)</span>}
                 </label>
                 <input
                   type="text"
                   maxLength={6}
                   placeholder="e.g. L45101"
                   value={newLane.laneId}
+                  disabled={isEditingLane}
                   onChange={(e) => {
+                    if (isEditingLane) return;
                     setNewLane({ ...newLane, laneId: e.target.value.toUpperCase() });
                     setLaneError('');
                   }}
                   onBlur={handleLaneBlur}
-                  className={laneError ? 'invalid' : ''}
+                  className={`${laneError ? 'invalid' : ''} ${isEditingLane ? 'disabled-input code-font' : ''}`}
                 />
-                <div className="field-hint">Alphanumeric, no spaces · max 6 chars · unique</div>
+                <div className="field-hint">
+                  {isEditingLane ? 'Lane ID is immutable after provisioning' : 'Alphanumeric, no spaces · max 6 chars · unique'}
+                </div>
                 {laneError && <div className="field-error">{laneError}</div>}
               </div>
 
@@ -2682,7 +2882,7 @@ export const Onboarding = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  Save Lane
+                  {isEditingLane ? 'Update Lane' : 'Save Lane'}
                 </button>
               </div>
             </form>

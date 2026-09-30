@@ -111,6 +111,32 @@ public class OnboardingController {
         return ResponseEntity.ok(saved);
     }
 
+    @PutMapping("/concessionaires/{id}")
+    public ResponseEntity<?> updateConcessionaire(@PathVariable String id, @RequestBody Concessionaire c) {
+        try {
+            Concessionaire updated = onboardingService.updateConcessionaire(id, c);
+            log.info("Updated Concessionaire in Database: {} ({})", updated.getName(), updated.getId());
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/concessionaires/{id}")
+    public ResponseEntity<?> deleteConcessionaire(@PathVariable String id) {
+        try {
+            onboardingService.deleteConcessionaire(id);
+            log.info("Deleted Concessionaire from Database: {}", id);
+            return ResponseEntity.ok(Map.of("success", true, "deletedId", id));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ─── Lanes ───────────────────────────────────────────────────────────────────
 
     @GetMapping("/plazas/lanes")
@@ -131,15 +157,35 @@ public class OnboardingController {
         return ResponseEntity.ok(saved);
     }
 
-    @DeleteMapping("/plazas/lanes")
-    public ResponseEntity<Map<String, Object>> deleteLane(@RequestBody Map<String, String> body) {
-        String laneId = body.get("laneId");
-        String plazaId = body.get("plazaId");
-        if (laneId != null && plazaId != null) {
-            onboardingService.deleteLane(laneId, plazaId);
-            log.info("Deleted Lane from Database: Plaza {} -> Lane {}", plazaId, laneId);
+    @PutMapping({"/plazas/lanes/{laneId}", "/plazas/lanes"})
+    public ResponseEntity<?> updateLane(
+            @PathVariable(required = false) String laneId,
+            @RequestBody Lane lane) {
+        String effectiveLaneId = laneId != null ? laneId : lane.getLaneId();
+        if (effectiveLaneId == null || effectiveLaneId.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Lane ID is required"));
         }
-        return ResponseEntity.ok(Map.of("success", true));
+        if (lane.getPlazaId() == null || !onboardingService.plazaExists(lane.getPlazaId())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Valid Plaza ID is required"));
+        }
+        lane.setLaneId(effectiveLaneId);
+        Lane updated = onboardingService.updateLane(effectiveLaneId, lane.getPlazaId(), lane);
+        log.info("Updated Lane in Database: Plaza {} -> Lane {}", updated.getPlazaId(), updated.getLaneId());
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping({"/plazas/lanes/{laneId}", "/plazas/lanes"})
+    public ResponseEntity<Map<String, Object>> deleteLane(
+            @PathVariable(required = false) String laneId,
+            @RequestParam(required = false) String plazaId,
+            @RequestBody(required = false) Map<String, String> body) {
+        String effectiveLaneId = laneId != null ? laneId : (body != null ? body.get("laneId") : null);
+        String effectivePlazaId = plazaId != null ? plazaId : (body != null ? body.get("plazaId") : null);
+        if (effectiveLaneId != null) {
+            onboardingService.deleteLane(effectiveLaneId, effectivePlazaId);
+            log.info("Deleted Lane from Database: Plaza {} -> Lane {}", effectivePlazaId, effectiveLaneId);
+        }
+        return ResponseEntity.ok(Map.of("success", true, "deletedLaneId", effectiveLaneId != null ? effectiveLaneId : ""));
     }
 
     // ─── Callbacks ───────────────────────────────────────────────────────────────

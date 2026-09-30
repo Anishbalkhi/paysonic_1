@@ -52,6 +52,14 @@ public class OnboardingBackendService {
         return id != null && concessionaireRepo.existsById(id);
     }
 
+    public Optional<Concessionaire> getConcessionaire(String id) {
+        return concessionaireRepo.findById(id);
+    }
+
+    public List<Plaza> getPlazasByConcessionaire(String concessionaireId) {
+        return plazaRepo.findByConcessionaireId(concessionaireId);
+    }
+
     public Concessionaire saveConcessionaire(Concessionaire c) {
         if (c.getId() == null || c.getId().trim().isEmpty()) {
             c.setId("CON-" + (1000 + concessionaireRepo.count() + 1));
@@ -63,6 +71,24 @@ public class OnboardingBackendService {
         if (c.getMail() != null) c.setMail(c.getMail().trim());
         if (c.getContact() != null) c.setContact(c.getContact().trim());
         return concessionaireRepo.save(c);
+    }
+
+    public Concessionaire updateConcessionaire(String id, Concessionaire updated) {
+        Concessionaire c = concessionaireRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Concessionaire not found with ID: " + id));
+        if (updated.getName() != null) c.setName(updated.getName().trim().toUpperCase());
+        if (updated.getAddress() != null) c.setAddress(updated.getAddress().trim().toUpperCase());
+        if (updated.getMail() != null) c.setMail(updated.getMail().trim());
+        if (updated.getContact() != null) c.setContact(updated.getContact().trim());
+        return concessionaireRepo.save(c);
+    }
+
+    public void deleteConcessionaire(String id) {
+        List<Plaza> linkedPlazas = plazaRepo.findByConcessionaireId(id);
+        if (linkedPlazas != null && !linkedPlazas.isEmpty()) {
+            throw new IllegalStateException("Cannot delete Concessionaire " + id + " because it is linked to " + linkedPlazas.size() + " active Plaza(s)");
+        }
+        concessionaireRepo.deleteById(id);
     }
 
     // ─── Plazas ──────────────────────────────────────────────────────────────────
@@ -107,12 +133,38 @@ public class OnboardingBackendService {
         return laneRepo.save(lane);
     }
 
+    public Lane updateLane(String laneId, String plazaId, Lane updated) {
+        String effectivePlazaId = plazaId != null ? plazaId : updated.getPlazaId();
+        String id = effectivePlazaId + "_" + laneId;
+        Lane lane = laneRepo.findById(id).orElseGet(() -> {
+            Lane l = new Lane();
+            l.setId(id);
+            l.setPlazaId(effectivePlazaId);
+            l.setLaneId(laneId);
+            return l;
+        });
+        if (updated.getDirection() != null) lane.setDirection(updated.getDirection());
+        if (updated.getType() != null) lane.setType(updated.getType());
+        if (updated.getMode() != null) lane.setMode(updated.getMode());
+        if (updated.getCategory() != null) lane.setCategory(updated.getCategory());
+        if (updated.getStatus() != null) lane.setStatus(updated.getStatus());
+        return laneRepo.save(lane);
+    }
+
     public void deleteLane(String laneId, String plazaId) {
-        String id = plazaId + "_" + laneId;
-        if (laneRepo.existsById(id)) {
-            laneRepo.deleteById(id);
-        } else {
+        if (plazaId != null && !plazaId.trim().isEmpty()) {
+            String id = plazaId + "_" + laneId;
+            if (laneRepo.existsById(id)) {
+                laneRepo.deleteById(id);
+                return;
+            }
             laneRepo.deleteByPlazaIdAndLaneId(plazaId, laneId);
+        } else {
+            // Find by laneId if plazaId is not supplied
+            laneRepo.findAll().stream()
+                    .filter(l -> laneId.equalsIgnoreCase(l.getLaneId()))
+                    .findFirst()
+                    .ifPresent(l -> laneRepo.deleteById(l.getId()));
         }
     }
 

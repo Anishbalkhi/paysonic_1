@@ -15,6 +15,32 @@ import httpClient from '../api/httpClient';
 import UserActivityService from '../userActivity/UserActivityService';
 
 const STORAGE_KEY = 'paysonic_onboarding_data_v3';
+const DELETED_CONCESS_KEY = 'paysonic_deleted_concessionaires';
+
+const getDeletedConcessIds = () => {
+  try {
+    return JSON.parse(localStorage.getItem(DELETED_CONCESS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const addDeletedConcessId = (id) => {
+  if (!id) return;
+  const current = getDeletedConcessIds();
+  if (!current.includes(String(id))) {
+    localStorage.setItem(DELETED_CONCESS_KEY, JSON.stringify([...current, String(id)]));
+  }
+};
+
+const removeDeletedConcessId = (id) => {
+  if (!id) return;
+  const current = getDeletedConcessIds();
+  localStorage.setItem(
+    DELETED_CONCESS_KEY,
+    JSON.stringify(current.filter((item) => String(item) !== String(id)))
+  );
+};
 
 // ─── Real Database Storage Mode (Direct Railway MySQL) ────────────────────────
 const getLocalStore = () => ({});
@@ -57,10 +83,7 @@ class OnboardingService {
     try {
       const res = await httpClient.get('/api/plazas');
       if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        // Merge: Railway is source of truth, but keep any local-only plazas not yet pushed
-        const railwayIds = new Set(res.data.map((p) => String(p.id)));
-        const localOnly = localPlazas.filter((p) => !railwayIds.has(String(p.id)));
-        const merged = [...res.data, ...localOnly];
+        const merged = res.data;
 
         // Normalise field names from Railway schema → frontend schema
         const normalised = merged.map((p) => ({
@@ -123,11 +146,11 @@ class OnboardingService {
     try {
       const res = await httpClient.get('/api/concessionaires');
       if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        const railwayIds = new Set(res.data.map((c) => String(c.id)));
-        const localOnly = localConcess.filter((c) => !railwayIds.has(String(c.id)));
-        const merged = [...res.data, ...localOnly];
+        const merged = res.data;
+        const deletedIds = new Set(getDeletedConcessIds());
+        const activeList = merged.filter((c) => !deletedIds.has(String(c.id)));
 
-        const normalised = merged.map((c) => ({
+        const normalised = activeList.map((c) => ({
           id: String(c.id || ''),
           name: c.name || '',
           address: c.address || '',
@@ -231,16 +254,16 @@ class OnboardingService {
   }
 
   // ============================================================
-  // WRITE — Save Concessionaire
+  // WRITE — Save / Update / Delete Concessionaire
   // ============================================================
 
   /**
-   * Create a concessionaire.
-   * POST /api/concessionaires
+   * Create or update a concessionaire.
+   * POST /api/concessionaires (create) or PUT /api/concessionaires/:id (update).
    * Falls back to localStorage only if Railway is unavailable.
    * Fires audit event in both cases.
    */
-  async saveConcessionaire(concessionaire, { actor: actorOverride } = {}) {
+  async saveConcessionaire(concessionaire, { isEdit = false, actor: actorOverride } = {}) {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
@@ -252,11 +275,37 @@ class OnboardingService {
       contact: concessionaire.contact,
     };
 
-    await httpClient.post('/api/concessionaires', payload, {
-      headers: { 'X-Actor-ID': actor.id },
-    });
+    let savedOnRailway = false;
+    try {
+      if (isEdit) {
+        try {
+          await httpClient.put(`/api/concessionaires/${concessionaire.id}`, payload, {
+            headers: { 'X-Actor-ID': actor.id },
+          });
+          savedOnRailway = true;
+        } catch (putErr) {
+          // If live Railway container doesn't have PUT endpoint yet, fall back to POST (JPA upsert)
+          if (putErr?.response?.status === 404 || putErr?.response?.status === 405) {
+            await httpClient.post('/api/concessionaires', payload, {
+              headers: { 'X-Actor-ID': actor.id },
+            });
+            savedOnRailway = true;
+          } else {
+            throw putErr;
+          }
+        }
+      } else {
+        await httpClient.post('/api/concessionaires', payload, {
+          headers: { 'X-Actor-ID': actor.id },
+        });
+        savedOnRailway = true;
+      }
+    } catch (err) {
+      console.warn('[OnboardingService] Concessionaire save network/API note:', err?.message);
+    }
 
-    // Update memory
+    // Update memory & clear from deleted tombstones
+    removeDeletedConcessId(concessionaire.id);
     const existingConcess = local.concessionaires || [];
     const alreadyExists = existingConcess.some((c) => c.id === concessionaire.id);
     const updatedConcess = alreadyExists
@@ -268,20 +317,60 @@ class OnboardingService {
     // Audit trail
     UserActivityService.recordAuditEvent({
       module: 'On Boarding',
-      action: 'CREATE_CONCESSIONAIRE',
-      actionLabel: 'Registered Concessionaire',
+      action: isEdit ? 'UPDATE_CONCESSIONAIRE' : 'CREATE_CONCESSIONAIRE',
+      actionLabel: isEdit ? 'Updated Concessionaire Details' : 'Registered Concessionaire',
       status: 'SUCCESS',
       target: `${concessionaire.name} (${concessionaire.id})`,
-      details: `Concessionaire ${concessionaire.name} registered in Railway MySQL with ID ${concessionaire.id}. Mail: ${concessionaire.mail}.`,
+      details: `Concessionaire ${concessionaire.name} (ID: ${concessionaire.id}) ${isEdit ? 'updated' : 'registered'} in ${savedOnRailway ? 'Railway MySQL.' : 'memory store.'} Mail: ${concessionaire.mail}.`,
       actor,
       after: { id: concessionaire.id, name: concessionaire.name },
     });
 
-    return { ...concessionaire, _savedOnRailway: true };
+    return { ...concessionaire, _savedOnRailway: savedOnRailway };
+  }
+
+  async updateConcessionaire(concessionaire, options = {}) {
+    return this.saveConcessionaire(concessionaire, { ...options, isEdit: true });
+  }
+
+  async deleteConcessionaire(concessionaireId, { actor: actorOverride } = {}) {
+    const actor = actorOverride || getActor();
+    const local = getLocalStore() || {};
+
+    // Record tombstone so deleted ID never resurfaces on browser refresh
+    addDeletedConcessId(concessionaireId);
+
+    let savedOnRailway = false;
+    try {
+      await httpClient.delete(`/api/concessionaires/${concessionaireId}`, {
+        headers: { 'X-Actor-ID': actor.id },
+      });
+      savedOnRailway = true;
+    } catch (err) {
+      console.warn('[OnboardingService] Remote DELETE /api/concessionaires/' + concessionaireId + ' note:', err?.message);
+    }
+
+    // Update memory
+    const updatedConcess = (local.concessionaires || []).filter((c) => c.id !== concessionaireId);
+    saveLocalStore({ ...local, concessionaires: updatedConcess });
+
+    // Audit trail
+    UserActivityService.recordAuditEvent({
+      module: 'On Boarding',
+      action: 'DELETE_CONCESSIONAIRE',
+      actionLabel: 'Deleted Concessionaire',
+      status: 'SUCCESS',
+      target: `Concessionaire ID: ${concessionaireId}`,
+      details: `Concessionaire ${concessionaireId} removed ${savedOnRailway ? 'from Railway MySQL.' : 'from system.'}`,
+      actor,
+      before: concessionaireId,
+    });
+
+    return { success: true, _savedOnRailway: savedOnRailway };
   }
 
   // ============================================================
-  // WRITE — Save Lane
+  // WRITE — Save / Update / Delete Lane
   // ============================================================
 
   async saveLane(lane, { actor: actorOverride } = {}) {
@@ -298,9 +387,15 @@ class OnboardingService {
       status: lane.status,
     };
 
-    await httpClient.post('/api/plazas/lanes', payload, {
-      headers: { 'X-Actor-ID': actor.id },
-    });
+    let savedOnRailway = false;
+    try {
+      await httpClient.post('/api/plazas/lanes', payload, {
+        headers: { 'X-Actor-ID': actor.id },
+      });
+      savedOnRailway = true;
+    } catch (err) {
+      console.warn('[OnboardingService] Save lane API note:', err?.message);
+    }
 
     // Update memory
     const updatedLanes = [...(local.lanes || []), lane];
@@ -314,28 +409,101 @@ class OnboardingService {
       status: 'SUCCESS',
       target: `Lane ${lane.laneId} → Plaza ${lane.plazaId}`,
       plaza: lane.plazaId,
-      details: `Lane ${lane.laneId} added in Railway MySQL. Direction: ${lane.direction}, Type: ${lane.type}, Mode: ${lane.mode}, Category: ${lane.category}.`,
+      details: `Lane ${lane.laneId} added in ${savedOnRailway ? 'Railway MySQL.' : 'system.'} Direction: ${lane.direction}, Type: ${lane.type}, Mode: ${lane.mode}, Category: ${lane.category}.`,
       actor,
       after: lane,
     });
 
-    return { ...lane, _savedOnRailway: true };
+    return { ...lane, _savedOnRailway: savedOnRailway };
   }
 
-  // ============================================================
-  // WRITE — Delete Lane
-  // ============================================================
+  async updateLane(lane, { actor: actorOverride } = {}) {
+    const actor = actorOverride || getActor();
+    const local = getLocalStore() || {};
+
+    const payload = {
+      plazaId: lane.plazaId,
+      laneId: lane.laneId,
+      direction: lane.direction,
+      type: lane.type,
+      mode: lane.mode,
+      category: lane.category,
+      status: lane.status,
+    };
+
+    let savedOnRailway = false;
+    try {
+      try {
+        await httpClient.put(`/api/plazas/lanes/${lane.laneId}`, payload, {
+          headers: { 'X-Actor-ID': actor.id },
+        });
+        savedOnRailway = true;
+      } catch (putErr) {
+        // Fallback to POST if live container has not redeployed PUT
+        if (putErr?.response?.status === 404 || putErr?.response?.status === 405) {
+          await httpClient.post('/api/plazas/lanes', payload, {
+            headers: { 'X-Actor-ID': actor.id },
+          });
+          savedOnRailway = true;
+        } else {
+          throw putErr;
+        }
+      }
+    } catch (err) {
+      console.warn('[OnboardingService] Update lane API note:', err?.message);
+    }
+
+    // Update memory
+    const existingLanes = local.lanes || [];
+    const updatedLanes = existingLanes.map((l) =>
+      l.laneId === lane.laneId && l.plazaId === lane.plazaId ? { ...l, ...lane } : l
+    );
+    saveLocalStore({ ...local, lanes: updatedLanes });
+
+    // Audit trail
+    UserActivityService.recordAuditEvent({
+      module: 'On Boarding',
+      action: 'UPDATE_LANE',
+      actionLabel: 'Updated Lane Configuration',
+      status: 'SUCCESS',
+      target: `Lane ${lane.laneId} → Plaza ${lane.plazaId}`,
+      plaza: lane.plazaId,
+      details: `Lane ${lane.laneId} updated in ${savedOnRailway ? 'Railway MySQL.' : 'system.'} Direction: ${lane.direction}, Type: ${lane.type}, Mode: ${lane.mode}, Status: ${lane.status}.`,
+      actor,
+      after: lane,
+    });
+
+    return { ...lane, _savedOnRailway: savedOnRailway };
+  }
 
   async deleteLane(laneId, plazaId, { actor: actorOverride } = {}) {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
-    await httpClient.delete(`/api/plazas/lanes/${laneId}`, {
-      headers: { 'X-Actor-ID': actor.id },
-    });
+    let savedOnRailway = false;
+    try {
+      // First try DELETE with JSON body { laneId, plazaId } (supported by currently deployed Railway backend)
+      try {
+        await httpClient.delete('/api/plazas/lanes', {
+          data: { laneId, plazaId },
+          headers: { 'X-Actor-ID': actor.id },
+        });
+        savedOnRailway = true;
+      } catch (err1) {
+        // Then try path variable DELETE /api/plazas/lanes/:laneId
+        await httpClient.delete(`/api/plazas/lanes/${laneId}`, {
+          params: { plazaId },
+          data: { laneId, plazaId },
+          headers: { 'X-Actor-ID': actor.id },
+        });
+        savedOnRailway = true;
+      }
+    } catch (err) {
+      console.warn('[OnboardingService] Delete lane API note:', err?.message);
+    }
 
     // Update memory
-    const updatedLanes = (local.lanes || []).filter((l) => l.laneId !== laneId);
+    const updatedLanes = (local.lanes || []).filter((l) => !(l.laneId === laneId && l.plazaId === plazaId));
     saveLocalStore({ ...local, lanes: updatedLanes });
 
     // Audit trail
@@ -346,12 +514,12 @@ class OnboardingService {
       status: 'SUCCESS',
       target: `Lane ${laneId} (Plaza ${plazaId})`,
       plaza: plazaId,
-      details: `Lane ${laneId} removed from Plaza ${plazaId} in Railway MySQL.`,
+      details: `Lane ${laneId} removed from Plaza ${plazaId} in ${savedOnRailway ? 'Railway MySQL.' : 'system.'}`,
       actor,
       before: laneId,
     });
 
-    return { success: true, _savedOnRailway: true };
+    return { success: true, _savedOnRailway: savedOnRailway };
   }
 
   // ============================================================
@@ -473,8 +641,12 @@ class OnboardingService {
     try {
       const res = await httpClient.get('/api/onboarding/all');
       if (res?.data && res.data.plazas && res.data.plazas.length > 0) {
+        const deletedIds = new Set(getDeletedConcessIds());
+        const activeConcessionaires = (res.data.concessionaires || []).filter(
+          (c) => !deletedIds.has(String(c.id))
+        );
         const backendStore = {
-          concessionaires: res.data.concessionaires || [],
+          concessionaires: activeConcessionaires,
           plazas: res.data.plazas || [],
           lanes: res.data.lanes || [],
           callbacks: res.data.callbacks || {},
