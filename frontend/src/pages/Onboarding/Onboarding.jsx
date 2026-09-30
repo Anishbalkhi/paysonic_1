@@ -1126,14 +1126,17 @@ export const Onboarding = () => {
   // =========================================================================
   const [callbackUrls, setCallbackUrls] = useState({});
   const [testResults, setTestResults] = useState({});
+  const [isAutoFilledCallbacks, setIsAutoFilledCallbacks] = useState(false);
 
   useEffect(() => {
     if (selectedPlazaId && store.callbacks[selectedPlazaId]) {
       setCallbackUrls({ ...store.callbacks[selectedPlazaId] });
       setTestResults({});
+      setIsAutoFilledCallbacks(false);
     } else {
       setCallbackUrls({});
       setTestResults({});
+      setIsAutoFilledCallbacks(false);
     }
   }, [selectedPlazaId, store.callbacks]);
 
@@ -1164,13 +1167,37 @@ export const Onboarding = () => {
     }, 450);
   };
 
+  const handleClearCallbacks = () => {
+    const cleared = {};
+    CALLBACK_APIS.forEach((api) => {
+      cleared[api] = '';
+    });
+    setCallbackUrls(cleared);
+    setTestResults({});
+    setIsAutoFilledCallbacks(false);
+    showToast('Auto-filled URLs removed', 'info');
+  };
+
   const handleAutoGenerateCallbacks = () => {
     if (!selectedPlazaId) return;
+
+    const allMatchGenerated = CALLBACK_APIS.every(
+      (api) => callbackUrls[api] === `https://api.paysonic.in/v1/plazas/${selectedPlazaId.toLowerCase()}/${api.toLowerCase()}`
+    );
+
+    // If clicked again after auto-filling or matching generated URLs, toggle/remove them
+    if (isAutoFilledCallbacks || allMatchGenerated) {
+      handleClearCallbacks();
+      return;
+    }
+
     const generated = {};
     CALLBACK_APIS.forEach((api) => {
       generated[api] = `https://api.paysonic.in/v1/plazas/${selectedPlazaId.toLowerCase()}/${api.toLowerCase()}`;
     });
     setCallbackUrls(generated);
+    setTestResults({});
+    setIsAutoFilledCallbacks(true);
     showToast('Auto-generated endpoint paths for all 14 APIs', 'info');
   };
 
@@ -1182,10 +1209,14 @@ export const Onboarding = () => {
     }
 
     let invalidCount = 0;
+    let filledCount = 0;
     Object.entries(callbackUrls).forEach(([api, url]) => {
       const u = (url || '').trim();
-      if (u && !/^https?:\/\/\S{3,250}$/.test(u)) {
-        invalidCount++;
+      if (u) {
+        filledCount++;
+        if (!/^https?:\/\/\S{3,250}$/.test(u)) {
+          invalidCount++;
+        }
       }
     });
 
@@ -1203,13 +1234,14 @@ export const Onboarding = () => {
       },
     }));
 
-    showToast(`Saved 14 Callback URLs for Plaza ${selectedPlazaId}`, 'success');
+    const urlLabel = filledCount === 1 ? '1 URL' : `${filledCount} URLs`;
+    showToast(`Saved ${urlLabel} for Plaza ${selectedPlazaId}`, 'success');
 
     // Direct Railway MySQL API write
     OnboardingService.saveCallbacks(selectedPlazaId, callbackUrls, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
     }).then(() => {
-      showToast(`✓ All 14 Callback URLs for Plaza ${selectedPlazaId} saved directly in Railway MySQL`, 'success');
+      showToast(`✓ ${urlLabel} for Plaza ${selectedPlazaId} saved directly in Railway MySQL`, 'success');
     }).catch((err) => {
       showToast(`⚠ Railway Callback Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
     });
@@ -2495,8 +2527,17 @@ export const Onboarding = () => {
                 type="button"
                 className="btn-secondary"
                 onClick={handleAutoGenerateCallbacks}
+                title="Click to auto-fill · Click again to remove auto-filled URLs"
               >
                 Auto-Fill All 14 Endpoints
+              </button>
+              <button
+                type="button"
+                className="btn-secondary btn-remove-autofill"
+                onClick={handleClearCallbacks}
+                title="Remove auto-filled URLs"
+              >
+                Remove Auto-fill
               </button>
             </div>
           </div>
@@ -2522,14 +2563,26 @@ export const Onboarding = () => {
                         <span className="api-name">{api}</span>
                       </div>
                       <div className="api-input-wrap">
-                        <input
-                          type="text"
-                          maxLength={250}
-                          placeholder={`https://api.paysonic.in/${selectedPlazaId.toLowerCase()}/${api.toLowerCase()}`}
-                          value={currentVal}
-                          onChange={(e) => handleCallbackChange(api, e.target.value)}
-                          className="cb-input"
-                        />
+                        <div className="cb-input-inner">
+                          <input
+                            type="text"
+                            maxLength={250}
+                            placeholder={`https://api.paysonic.in/${selectedPlazaId.toLowerCase()}/${api.toLowerCase()}`}
+                            value={currentVal}
+                            onChange={(e) => handleCallbackChange(api, e.target.value)}
+                            className="cb-input"
+                          />
+                          {currentVal && (
+                            <button
+                              type="button"
+                              className="cb-clear-btn"
+                              title="Clear URL"
+                              onClick={() => handleCallbackChange(api, '')}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
                         {test && (
                           <div className={`test-feedback ${test.status}`}>
                             {test.status === 'success' ? '✓ ' : '✕ '}
@@ -2553,7 +2606,7 @@ export const Onboarding = () => {
 
               <div className="form-actions" style={{ marginTop: '24px' }}>
                 <button type="submit" className="btn-primary">
-                  Save All 14 Callback URLs
+                  Save
                 </button>
               </div>
             </form>

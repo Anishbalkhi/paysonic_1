@@ -314,6 +314,19 @@
     .scope-actions {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+
+      .btn-remove-autofill {
+        color: #dc2626 !important;
+        border-color: #fca5a5 !important;
+        background: #fef2f2 !important;
+
+        &:hover {
+          background: #fee2e2 !important;
+          border-color: #f87171 !important;
+          color: #b91c1c !important;
+        }
+      }
     }
   }
 
@@ -926,17 +939,44 @@
       .api-input-wrap {
         position: relative;
 
-        .cb-input {
-          width: 100%;
-          padding: 8px 12px;
-          font-size: 12.5px;
-          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-          border: 1px solid #cbd5e1;
-          border-radius: 6px;
-          background: #ffffff;
+        .cb-input-inner {
+          position: relative;
+          display: flex;
+          align-items: center;
 
-          &:focus {
-            border-color: #2563eb;
+          .cb-input {
+            width: 100%;
+            padding: 8px 30px 8px 12px;
+            font-size: 12.5px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #ffffff;
+
+            &:focus {
+              border-color: #2563eb;
+            }
+          }
+
+          .cb-clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 15px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+
+            &:hover {
+              color: #dc2626;
+              background: #fee2e2;
+            }
           }
         }
 
@@ -1477,10 +1517,30 @@ html[data-theme="dark"],
         }
       }
 
+      .api-input-wrap .cb-input-inner .cb-input,
       .api-input-wrap .cb-input {
         background: var(--card, #161D27) !important;
         border-color: var(--border, #262F3B) !important;
         color: var(--text, #E7ECF3) !important;
+      }
+
+      .api-input-wrap .cb-input-inner .cb-clear-btn {
+        color: var(--faint, #6B7A8D) !important;
+
+        &:hover {
+          color: #f87171 !important;
+          background: rgba(239, 68, 68, 0.2) !important;
+        }
+      }
+
+      .btn-remove-autofill {
+        color: #f87171 !important;
+        border-color: rgba(239, 68, 68, 0.35) !important;
+        background: rgba(239, 68, 68, 0.12) !important;
+
+        &:hover {
+          background: rgba(239, 68, 68, 0.22) !important;
+        }
       }
     }
 
