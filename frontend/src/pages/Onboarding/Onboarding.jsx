@@ -1461,9 +1461,6 @@ export const Onboarding = () => {
             </span>
           </div>
           <h1>Plaza Onboarding Module</h1>
-          <p className="subtext">
-            End-to-end network onboarding: concessionaires, plazas, lane hardware, callback webhooks, fare structures, and CCH matrix.
-          </p>
         </div>
         <div className="header-actions">
           <button
@@ -1476,14 +1473,6 @@ export const Onboarding = () => {
           >
             + Add New Plaza
           </button>
-        </div>
-      </div>
-
-      {/* BRD Notice Banner */}
-      <div className="spec-notice-banner">
-        <div className="notice-icon">📋</div>
-        <div className="notice-content">
-          <strong>Field Specification &amp; Global Rules:</strong> All text inputs are automatically converted and stored in UPPER CASE. Concessionaire IDs (<code>CON-####</code>) and unique 6-digit numeric Plaza IDs are strictly validated. Lane Details, Callback URLs, Fare Mapping, and CCH Mapping are plaza-scoped.
         </div>
       </div>
 
