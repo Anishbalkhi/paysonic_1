@@ -1,28 +1,28 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import OnboardingService from '../../services/onboarding/OnboardingService';
 import './Onboarding.scss';
 
-// Vehicle classes VC4 through VC20
+// Vehicle classes VC4 through VC20 (NETC / NPCI Standard FASTag Specifications)
 const VEHICLE_CLASSES = [
   { id: 'VC4', label: 'VC4 · Car / Jeep / Van' },
-  { id: 'VC5', label: 'VC5 · Light Commercial Vehicle (LCV)' },
-  { id: 'VC6', label: 'VC6 · Bus 2-Axle' },
-  { id: 'VC7', label: 'VC7 · Truck 2-Axle' },
-  { id: 'VC8', label: 'VC8 · 3-Axle Commercial' },
-  { id: 'VC9', label: 'VC9 · Multi Axle (4-6 Axle)' },
-  { id: 'VC10', label: 'VC10 · Oversized (7+ Axle)' },
-  { id: 'VC11', label: 'VC11 · Heavy Construction Equipment' },
-  { id: 'VC12', label: 'VC12 · Earth Moving Machinery' },
-  { id: 'VC13', label: 'VC13 · Specialized Multi-Axle' },
-  { id: 'VC14', label: 'VC14 · Tractor with Trailer' },
-  { id: 'VC15', label: 'VC15 · Emergency & Escort Class' },
-  { id: 'VC16', label: 'VC16 · Commercial Passenger Maxi' },
-  { id: 'VC17', label: 'VC17 · Mini Bus / Shuttle' },
-  { id: 'VC18', label: 'VC18 · Auto Rickshaw (Commercial)' },
-  { id: 'VC19', label: 'VC19 · Two Wheeler (Exempt/Spec)' },
-  { id: 'VC20', label: 'VC20 · Defense & Exempt Protocol' },
+  { id: 'VC5', label: 'VC5 · Light Commercial Vehicle (LCV) 2-Axle' },
+  { id: 'VC6', label: 'VC6 · Light Commercial Vehicle (LCV) 3-Axle' },
+  { id: 'VC7', label: 'VC7 · Bus 2-Axle' },
+  { id: 'VC8', label: 'VC8 · Bus 3-Axle' },
+  { id: 'VC9', label: 'VC9 · Mini-Bus' },
+  { id: 'VC10', label: 'VC10 · Truck 2-Axle' },
+  { id: 'VC11', label: 'VC11 · Truck 3-Axle' },
+  { id: 'VC12', label: 'VC12 · Truck 4-Axle' },
+  { id: 'VC13', label: 'VC13 · Truck 5-Axle' },
+  { id: 'VC14', label: 'VC14 · Truck 6-Axle' },
+  { id: 'VC15', label: 'VC15 · Multi-Axle Truck (7+ Axle)' },
+  { id: 'VC16', label: 'VC16 · Earth Moving Machinery (EMM)' },
+  { id: 'VC17', label: 'VC17 · Heavy Construction Machinery (HCM)' },
+  { id: 'VC18', label: 'VC18 · Tractor / Tractor with Trailer' },
+  { id: 'VC19', label: 'VC19 · Two-Wheeler / Three-Wheeler' },
+  { id: 'VC20', label: 'VC20 · Tata Ace / Mini LCV' },
 ];
 
 const CALLBACK_APIS = [
@@ -1224,9 +1224,58 @@ export const Onboarding = () => {
     }
   }, [selectedPlazaId, store.fares]);
 
+  const [fareError, setFareError] = useState('');
+  const lastAutoPopulateClickRef = useRef(0);
+
+  const handleClearAutoFares = () => {
+    const cleared = {};
+    VEHICLE_CLASSES.forEach((vc) => {
+      cleared[vc.id] = {
+        single: '',
+        ret: '',
+        local10: '',
+        local20: '',
+        district: '',
+        monthly: '',
+      };
+    });
+    setPlazaFares(cleared);
+    setFareError('');
+    showToast('Auto-populated fares removed', 'info');
+  };
+
+  const handleAutoPopulateToggle = () => {
+    const now = Date.now();
+    // Double-click detected (within 450ms) -> clear/remove auto-populated fares
+    if (now - lastAutoPopulateClickRef.current < 450) {
+      handleClearAutoFares();
+      lastAutoPopulateClickRef.current = 0;
+      return;
+    }
+    lastAutoPopulateClickRef.current = now;
+
+    // Single click: populate standard NHAI matrix defaults
+    const updated = {};
+    VEHICLE_CLASSES.forEach((vc, i) => {
+      const base = 60 + i * 25;
+      updated[vc.id] = {
+        single: base,
+        ret: Math.round(base * 1.5),
+        local10: Math.round(base * 0.4),
+        local20: Math.round(base * 0.6),
+        district: Math.round(base * 20),
+        monthly: Math.round(base * 40),
+      };
+    });
+    setPlazaFares(updated);
+    setFareError('');
+    showToast('Populated standard NHAI fare matrix defaults (Double-click button to remove)', 'info');
+  };
+
   const handleFareInputChange = (vcId, journeyType, val) => {
     // Only numbers allowed, max 6 digits
     if (val && !/^\d{0,6}$/.test(val)) return;
+    setFareError('');
     setPlazaFares((prev) => ({
       ...prev,
       [vcId]: {
@@ -1242,6 +1291,25 @@ export const Onboarding = () => {
       showToast('Select a plaza first', 'error');
       return;
     }
+
+    // Validate that at least one valid non-zero fare amount is specified
+    const hasAnyAmount = Object.values(plazaFares || {}).some((rates) => {
+      if (!rates || typeof rates !== 'object') return false;
+      return Object.values(rates).some((val) => {
+        if (val === '' || val === null || val === undefined) return false;
+        const num = Number(val);
+        return !isNaN(num) && num > 0;
+      });
+    });
+
+    if (!hasAnyAmount) {
+      const errorMsg = 'Amount is required: Please enter valid toll fare rates before saving the matrix.';
+      setFareError(errorMsg);
+      showToast(errorMsg, 'error');
+      return;
+    }
+
+    setFareError('');
 
     // Optimistic update
     setStore((prev) => ({
@@ -2559,22 +2627,9 @@ export const Onboarding = () => {
               <button
                 type="button"
                 className="btn-secondary"
-                onClick={() => {
-                  const updated = {};
-                  VEHICLE_CLASSES.forEach((vc, i) => {
-                    const base = 60 + i * 25;
-                    updated[vc.id] = {
-                      single: base,
-                      ret: Math.round(base * 1.5),
-                      local10: Math.round(base * 0.4),
-                      local20: Math.round(base * 0.6),
-                      district: Math.round(base * 20),
-                      monthly: Math.round(base * 40),
-                    };
-                  });
-                  setPlazaFares(updated);
-                  showToast('Populated standard NHAI fare matrix defaults', 'info');
-                }}
+                onClick={handleAutoPopulateToggle}
+                onDoubleClick={handleClearAutoFares}
+                title="Single-click to populate defaults · Double-click to remove auto-populated fares"
               >
                 Auto-Populate Standard Matrix
               </button>
@@ -2674,6 +2729,27 @@ export const Onboarding = () => {
                   </tbody>
                 </table>
               </div>
+
+              {fareError && (
+                <div
+                  className="field-error-banner"
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#ef4444',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    marginTop: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontWeight: '600',
+                  }}
+                >
+                  <span style={{ fontSize: '18px' }}>⚠️</span>
+                  <span>{fareError}</span>
+                </div>
+              )}
 
               <div className="form-actions" style={{ marginTop: '24px' }}>
                 <button type="submit" className="btn-primary">
