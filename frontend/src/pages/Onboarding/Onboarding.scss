@@ -876,6 +876,12 @@
       border-color: #2563eb;
       box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     }
+
+    &.invalid {
+      border-color: #ef4444 !important;
+      background-color: rgba(239, 68, 68, 0.06) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    }
   }
 
   /* Callback Endpoints Grid */
@@ -1449,6 +1455,12 @@ html[data-theme="dark"],
       background: var(--bg, #10151C) !important;
       border-color: var(--border, #262F3B) !important;
       color: var(--text, #E7ECF3) !important;
+
+      &.invalid {
+        border-color: #ef4444 !important;
+        background: rgba(239, 68, 68, 0.12) !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3) !important;
+      }
     }
 
     /* Callback Endpoints Grid */

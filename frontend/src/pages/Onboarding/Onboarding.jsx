@@ -1292,18 +1292,33 @@ export const Onboarding = () => {
       return;
     }
 
-    // Validate that at least one valid non-zero fare amount is specified
-    const hasAnyAmount = Object.values(plazaFares || {}).some((rates) => {
+    // Validate that no fare amount is blank and valid rates are provided
+    const JOURNEY_KEYS = ['single', 'ret', 'local10', 'local20', 'district', 'monthly'];
+    let hasBlankAmount = false;
+
+    for (const vc of VEHICLE_CLASSES) {
+      const rates = plazaFares[vc.id];
+      if (!rates || typeof rates !== 'object') {
+        hasBlankAmount = true;
+        break;
+      }
+      for (const jk of JOURNEY_KEYS) {
+        const val = rates[jk];
+        if (val === '' || val === null || val === undefined || String(val).trim() === '') {
+          hasBlankAmount = true;
+          break;
+        }
+      }
+      if (hasBlankAmount) break;
+    }
+
+    const hasAnyPositiveAmount = Object.values(plazaFares || {}).some((rates) => {
       if (!rates || typeof rates !== 'object') return false;
-      return Object.values(rates).some((val) => {
-        if (val === '' || val === null || val === undefined) return false;
-        const num = Number(val);
-        return !isNaN(num) && num > 0;
-      });
+      return Object.values(rates).some((val) => Number(val) > 0);
     });
 
-    if (!hasAnyAmount) {
-      const errorMsg = 'Amount is required: Please enter valid toll fare rates before saving the matrix.';
+    if (hasBlankAmount || !hasAnyPositiveAmount) {
+      const errorMsg = 'Amount is required';
       setFareError(errorMsg);
       showToast(errorMsg, 'error');
       return;
@@ -2660,14 +2675,8 @@ export const Onboarding = () => {
                   </thead>
                   <tbody>
                     {VEHICLE_CLASSES.map((vc) => {
-                      const f = plazaFares[vc.id] || {
-                        single: 0,
-                        ret: 0,
-                        local10: 0,
-                        local20: 0,
-                        district: 0,
-                        monthly: 0,
-                      };
+                      const f = plazaFares[vc.id] || {};
+                      const isBlank = (val) => val === '' || val === null || val === undefined || String(val).trim() === '';
 
                       return (
                         <tr key={vc.id}>
@@ -2678,49 +2687,55 @@ export const Onboarding = () => {
                           <td>
                             <input
                               type="text"
+                              placeholder="₹0"
                               value={f.single ?? ''}
                               onChange={(e) => handleFareInputChange(vc.id, 'single', e.target.value)}
-                              className="tbl-input"
+                              className={`tbl-input ${fareError && isBlank(f.single) ? 'invalid' : ''}`}
                             />
                           </td>
                           <td>
                             <input
                               type="text"
+                              placeholder="₹0"
                               value={f.ret ?? ''}
                               onChange={(e) => handleFareInputChange(vc.id, 'ret', e.target.value)}
-                              className="tbl-input"
+                              className={`tbl-input ${fareError && isBlank(f.ret) ? 'invalid' : ''}`}
                             />
                           </td>
                           <td>
                             <input
                               type="text"
+                              placeholder="₹0"
                               value={f.local10 ?? ''}
                               onChange={(e) => handleFareInputChange(vc.id, 'local10', e.target.value)}
-                              className="tbl-input"
+                              className={`tbl-input ${fareError && isBlank(f.local10) ? 'invalid' : ''}`}
                             />
                           </td>
                           <td>
                             <input
                               type="text"
+                              placeholder="₹0"
                               value={f.local20 ?? ''}
                               onChange={(e) => handleFareInputChange(vc.id, 'local20', e.target.value)}
-                              className="tbl-input"
+                              className={`tbl-input ${fareError && isBlank(f.local20) ? 'invalid' : ''}`}
                             />
                           </td>
                           <td>
                             <input
                               type="text"
+                              placeholder="₹0"
                               value={f.district ?? ''}
                               onChange={(e) => handleFareInputChange(vc.id, 'district', e.target.value)}
-                              className="tbl-input"
+                              className={`tbl-input ${fareError && isBlank(f.district) ? 'invalid' : ''}`}
                             />
                           </td>
                           <td>
                             <input
                               type="text"
+                              placeholder="₹0"
                               value={f.monthly ?? ''}
                               onChange={(e) => handleFareInputChange(vc.id, 'monthly', e.target.value)}
-                              className="tbl-input"
+                              className={`tbl-input ${fareError && isBlank(f.monthly) ? 'invalid' : ''}`}
                             />
                           </td>
                         </tr>
