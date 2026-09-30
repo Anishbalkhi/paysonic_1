@@ -6,23 +6,23 @@ import './Onboarding.scss';
 
 // Vehicle classes VC4 through VC20 (NETC / NPCI Standard FASTag Specifications)
 const VEHICLE_CLASSES = [
-  { id: 'VC4', label: 'VC4 · Car / Jeep / Van' },
-  { id: 'VC5', label: 'VC5 · Light Commercial Vehicle (LCV) 2-Axle' },
-  { id: 'VC6', label: 'VC6 · Light Commercial Vehicle (LCV) 3-Axle' },
-  { id: 'VC7', label: 'VC7 · Bus 2-Axle' },
-  { id: 'VC8', label: 'VC8 · Bus 3-Axle' },
-  { id: 'VC9', label: 'VC9 · Mini-Bus' },
-  { id: 'VC10', label: 'VC10 · Truck 2-Axle' },
-  { id: 'VC11', label: 'VC11 · Truck 3-Axle' },
-  { id: 'VC12', label: 'VC12 · Truck 4-Axle' },
-  { id: 'VC13', label: 'VC13 · Truck 5-Axle' },
-  { id: 'VC14', label: 'VC14 · Truck 6-Axle' },
-  { id: 'VC15', label: 'VC15 · Multi-Axle Truck (7+ Axle)' },
-  { id: 'VC16', label: 'VC16 · Earth Moving Machinery (EMM)' },
-  { id: 'VC17', label: 'VC17 · Heavy Construction Machinery (HCM)' },
-  { id: 'VC18', label: 'VC18 · Tractor / Tractor with Trailer' },
-  { id: 'VC19', label: 'VC19 · Two-Wheeler / Three-Wheeler' },
-  { id: 'VC20', label: 'VC20 · Tata Ace / Mini LCV' },
+  { id: 'VC4', name: 'Car / Jeep / Van', label: 'VC4 · Car / Jeep / Van' },
+  { id: 'VC5', name: 'Light Commercial Vehicle (LCV) 2-Axle', label: 'VC5 · Light Commercial Vehicle (LCV) 2-Axle' },
+  { id: 'VC6', name: 'Light Commercial Vehicle (LCV) 3-Axle', label: 'VC6 · Light Commercial Vehicle (LCV) 3-Axle' },
+  { id: 'VC7', name: 'Bus 2-Axle', label: 'VC7 · Bus 2-Axle' },
+  { id: 'VC8', name: 'Bus 3-Axle', label: 'VC8 · Bus 3-Axle' },
+  { id: 'VC9', name: 'Mini-Bus', label: 'VC9 · Mini-Bus' },
+  { id: 'VC10', name: 'Truck 2-Axle', label: 'VC10 · Truck 2-Axle' },
+  { id: 'VC11', name: 'Truck 3-Axle', label: 'VC11 · Truck 3-Axle' },
+  { id: 'VC12', name: 'Truck 4-Axle', label: 'VC12 · Truck 4-Axle' },
+  { id: 'VC13', name: 'Truck 5-Axle', label: 'VC13 · Truck 5-Axle' },
+  { id: 'VC14', name: 'Truck 6-Axle', label: 'VC14 · Truck 6-Axle' },
+  { id: 'VC15', name: 'Multi-Axle Truck (7+ Axle)', label: 'VC15 · Multi-Axle Truck (7+ Axle)' },
+  { id: 'VC16', name: 'Earth Moving Machinery (EMM)', label: 'VC16 · Earth Moving Machinery (EMM)' },
+  { id: 'VC17', name: 'Heavy Construction Machinery (HCM)', label: 'VC17 · Heavy Construction Machinery (HCM)' },
+  { id: 'VC18', name: 'Tractor / Tractor with Trailer', label: 'VC18 · Tractor / Tractor with Trailer' },
+  { id: 'VC19', name: 'Two-Wheeler / Three-Wheeler', label: 'VC19 · Two-Wheeler / Three-Wheeler' },
+  { id: 'VC20', name: 'Tata Ace / Mini LCV', label: 'VC20 · Tata Ace / Mini LCV' },
 ];
 
 const CALLBACK_APIS = [
@@ -1400,8 +1400,12 @@ export const Onboarding = () => {
     // Direct Railway MySQL API write
     OnboardingService.saveCch(selectedPlazaId, updated, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then(() => {
-      showToast(`✓ CCH mapping for Plaza ${selectedPlazaId} saved directly in Railway MySQL!`, 'success');
+    }).then((res) => {
+      if (res?._savedOnRailway) {
+        showToast(`✓ CCH mapping for Plaza ${selectedPlazaId} saved directly in Railway MySQL!`, 'success');
+      } else {
+        showToast(`✓ CCH mapping for Plaza ${selectedPlazaId} saved successfully`, 'success');
+      }
     }).catch((err) => {
       showToast(`⚠ Railway CCH Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
     });
@@ -2682,7 +2686,7 @@ export const Onboarding = () => {
                         <tr key={vc.id}>
                           <td>
                             <strong>{vc.id}</strong>
-                            <div className="vc-desc">{vc.label.split('·')[1]}</div>
+                            <div className="vc-desc">{vc.name || (vc.label.includes('·') ? vc.label.split('·')[1].trim() : vc.label)}</div>
                           </td>
                           <td>
                             <input
@@ -2832,7 +2836,7 @@ export const Onboarding = () => {
                         <tr key={vc.id}>
                           <td>
                             <strong>{vc.id}</strong>
-                            <div className="vc-desc">{vc.label.split('·')[1]}</div>
+                            <div className="vc-desc">{vc.name || (vc.label.includes('·') ? vc.label.split('·')[1].trim() : vc.label)}</div>
                           </td>
                           <td>
                             <code className="cch-current-code">{item.current}</code>

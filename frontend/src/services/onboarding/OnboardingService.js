@@ -603,9 +603,15 @@ class OnboardingService {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
 
-    await httpClient.put(`/api/plazas/${plazaId}/cch`, { cch }, {
-      headers: { 'X-Actor-ID': actor.id },
-    });
+    let savedOnRailway = false;
+    try {
+      await httpClient.put(`/api/plazas/${plazaId}/cch`, { cch, plazaId }, {
+        headers: { 'X-Actor-ID': actor.id },
+      });
+      savedOnRailway = true;
+    } catch (err) {
+      console.warn('[OnboardingService] Remote PUT /api/plazas/' + plazaId + '/cch note:', err.message);
+    }
 
     // Update memory
     const updatedCch = { ...local.cch, [plazaId]: cch };
