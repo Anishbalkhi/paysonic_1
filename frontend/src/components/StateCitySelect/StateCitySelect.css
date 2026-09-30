@@ -1,0 +1,128 @@
+/* StateCitySelect — Searchable state + dependent city dropdowns */
+
+.scs-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.scs-input {
+  width: 100%;
+  padding-right: 28px !important;
+  cursor: pointer;
+}
+
+.scs-input:read-only {
+  cursor: pointer;
+}
+
+.scs-chevron {
+  position: absolute;
+  right: 10px;
+  font-size: 10px;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  user-select: none;
+  pointer-events: all;
+  z-index: 2;
+  line-height: 1;
+}
+
+/* invalid border */
+.scs-wrapper.invalid .scs-input {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* disabled state when no state selected */
+.scs-wrapper.scs-disabled .scs-input {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dropdown list */
+.scs-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg, #1a1f2e);
+  border: 1px solid var(--border, rgba(255,255,255,0.1));
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 9999;
+  padding: 4px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  list-style: none;
+  margin: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.scs-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+.scs-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+
+.scs-option {
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #e2e8f0);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scs-option:hover {
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+}
+
+.scs-option.selected {
+  background: rgba(99, 102, 241, 0.25);
+  color: #818cf8;
+  font-weight: 600;
+}
+
+.scs-no-result {
+  color: var(--text-muted, #6b7280);
+  cursor: default;
+  font-style: italic;
+}
+
+/* Light mode overrides */
+[data-theme='light'] .scs-dropdown,
+.light .scs-dropdown {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='light'] .scs-option,
+.light .scs-option {
+  color: #1f2937;
+}
+
+[data-theme='light'] .scs-option:hover,
+.light .scs-option:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+[data-theme='light'] .scs-option.selected,
+.light .scs-option.selected {
+  background: rgba(99, 102, 241, 0.15);
+  color: #4338ca;
+}
+
+[data-theme='light'] .scs-chevron,
+.light .scs-chevron {
+  color: #9ca3af;
+}

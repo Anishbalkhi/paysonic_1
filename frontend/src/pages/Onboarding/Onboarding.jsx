@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import OnboardingService from '../../services/onboarding/OnboardingService';
+import StateCitySelect from '../../components/StateCitySelect/StateCitySelect';
 import './Onboarding.scss';
 
 // Vehicle classes VC4 through VC20 (NETC / NPCI Standard FASTag Specifications)
@@ -2176,35 +2177,16 @@ export const Onboarding = () => {
                 <span className="sec-num">3</span> Geographical Location
               </div>
               <div className="form-grid-4">
-                <div className="form-group">
-                  <label>
-                    State <span className="req">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. HARYANA"
-                    value={plazaForm.state}
-                    onChange={(e) => handlePlazaChange('state', e.target.value.toUpperCase())}
-                    onBlur={() => handlePlazaBlur('state')}
-                    className={plazaErrors.state ? 'invalid' : ''}
-                  />
-                  {plazaErrors.state && <div className="field-error">{plazaErrors.state}</div>}
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    City <span className="req">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. GURUGRAM"
-                    value={plazaForm.city}
-                    onChange={(e) => handlePlazaChange('city', e.target.value.toUpperCase())}
-                    onBlur={() => handlePlazaBlur('city')}
-                    className={plazaErrors.city ? 'invalid' : ''}
-                  />
-                  {plazaErrors.city && <div className="field-error">{plazaErrors.city}</div>}
-                </div>
+                <StateCitySelect
+                  stateValue={plazaForm.state}
+                  cityValue={plazaForm.city}
+                  onStateChange={(val) => handlePlazaChange('state', val)}
+                  onCityChange={(val) => handlePlazaChange('city', val)}
+                  stateError={plazaErrors.state}
+                  cityError={plazaErrors.city}
+                  onStateBlur={() => handlePlazaBlur('state')}
+                  onCityBlur={() => handlePlazaBlur('city')}
+                />
 
                 <div className="form-group">
                   <label>
