@@ -50,22 +50,14 @@ export const AuditDetailDrawer = ({ event, onClose }) => {
 
         <div className="drawer-body">
           {/* Prominent Reference Banner (UAM-FR-011, UAM-FR-015) */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
-              border: '1px solid #C7D2FE',
-              borderRadius: '10px',
-              padding: '14px 16px',
-              marginBottom: '20px',
-            }}
-          >
-            <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 700, color: '#4338CA', letterSpacing: '0.04em' }}>
+          <div className="audit-ref-banner">
+            <div className="audit-ref-label">
               Target Entity Reference ({ref.label || 'Entity'})
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#1E1B4B', marginTop: '4px', fontFamily: 'monospace' }}>
+            <div className="audit-ref-id">
               {maskSensitive(ref.refId)}
             </div>
-            <div style={{ fontSize: '12.5px', color: '#4338CA', marginTop: '2px' }}>
+            <div className="audit-ref-target">
               {displayOrNotCaptured(event.target)}
             </div>
           </div>

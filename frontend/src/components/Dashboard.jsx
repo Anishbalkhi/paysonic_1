@@ -272,10 +272,10 @@ export default function Dashboard() {
               boxShadow: '0 0 0 3px var(--role-border, #bbf7d0)',
             }} />
             <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--ink, #0f172a)' }}>
                 {currentBanner.title}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '1px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--muted, #64748b)', marginTop: '1px' }}>
                 {currentBanner.desc}
               </div>
             </div>
@@ -603,8 +603,8 @@ function Topbar() {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            background: '#ffffff',
-            border: '1.5px solid #e2e8f0',
+            background: 'var(--card, #ffffff)',
+            border: '1.5px solid var(--border, #e2e8f0)',
             borderRadius: '9999px',
             padding: '3px 10px 3px 3px',
             cursor: 'pointer',
@@ -625,10 +625,10 @@ function Topbar() {
           }}>
             {initials}
           </div>
-          <span style={{ fontSize: '12px', fontWeight: '600', color: '#1e293b' }}>
+          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text, #1e293b)' }}>
             {currentUser?.name ? currentUser.name.split(' ')[0] : 'Admin'}
           </span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-soft, #64748b)' }}>
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
@@ -638,23 +638,23 @@ function Topbar() {
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
+            background: 'var(--card, #ffffff)',
+            border: '1px solid var(--border, #e2e8f0)',
             borderRadius: '12px',
-            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+            boxShadow: 'var(--shadow-lg, 0 10px 25px -5px rgba(0,0,0,0.25))',
             minWidth: '220px',
             padding: '12px',
             zIndex: 100,
           }}>
-            <div style={{ paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
-              <div style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{currentUser?.name || 'Administrator'}</div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{currentUser?.email || ''}</div>
+            <div style={{ paddingBottom: '10px', borderBottom: '1px solid var(--border, #f1f5f9)' }}>
+              <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text, #0f172a)' }}>{currentUser?.name || 'Administrator'}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-soft, #64748b)', marginTop: '2px' }}>{currentUser?.email || ''}</div>
               <div style={{
                 display: 'inline-block',
                 marginTop: '6px',
                 padding: '2px 8px',
-                background: '#f0fdf4',
-                color: '#16a34a',
+                background: 'var(--green-bg, #f0fdf4)',
+                color: 'var(--mint-accent, #16a34a)',
                 borderRadius: '6px',
                 fontSize: '11px',
                 fontWeight: '600'
@@ -671,9 +671,9 @@ function Topbar() {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '8px 10px',
-                background: '#fef2f2',
-                color: '#dc2626',
-                border: '1px solid #fecaca',
+                background: 'var(--red-bg, #fef2f2)',
+                color: '#ef4444',
+                border: '1px solid var(--red-bg, #fecaca)',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: '600',
