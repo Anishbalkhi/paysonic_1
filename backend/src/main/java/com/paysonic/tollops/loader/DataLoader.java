@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -35,6 +36,7 @@ public class DataLoader implements CommandLineRunner {
     private final DisputeTransactionRepository disputeTransactionRepository;
     private final ViolationTransactionRepository violationTransactionRepository;
     private final ViolationRawRecordRepository violationRawRecordRepository;
+    private final ViolationSettlementRepository violationSettlementRepository;
     private final ObjectMapper objectMapper;
 
     public DataLoader(UserRepository userRepository,
@@ -51,6 +53,7 @@ public class DataLoader implements CommandLineRunner {
                       DisputeTransactionRepository disputeTransactionRepository,
                       ViolationTransactionRepository violationTransactionRepository,
                       ViolationRawRecordRepository violationRawRecordRepository,
+                      ViolationSettlementRepository violationSettlementRepository,
                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
@@ -66,6 +69,7 @@ public class DataLoader implements CommandLineRunner {
         this.disputeTransactionRepository = disputeTransactionRepository;
         this.violationTransactionRepository = violationTransactionRepository;
         this.violationRawRecordRepository = violationRawRecordRepository;
+        this.violationSettlementRepository = violationSettlementRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -82,6 +86,7 @@ public class DataLoader implements CommandLineRunner {
             seedDisputeTransactions();
             seedViolationTransactions();
             seedViolationRawRecords();
+            seedViolationSettlementRecords();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -1181,6 +1186,107 @@ public class DataLoader implements CommandLineRunner {
 
         violationRawRecordRepository.saveAll(list);
         log.info("Seeded {} Violation Raw Records into Railway DB successfully.", list.size());
+    }
+
+    private void seedViolationSettlementRecords() {
+        if (violationSettlementRepository.count() > 0) {
+            return;
+        }
+
+        List<ViolationSettlementRecord> list = new ArrayList<>();
+
+        // Row 1
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA82032866C03B7D640", "34MH51FA820",
+                "101997240733664000", "1715889119753", LocalDateTime.of(2026, 8, 4, 10, 0, 0),
+                "VC12", "VC12", null, null, "ACCEPTED",
+                new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
+                LocalDate.of(2026, 8, 2), null
+        ));
+
+        // Row 2
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA82032866C03B7D640", "34MH51FA820",
+                "101997240733664000", "1715889119753", LocalDateTime.of(2026, 8, 4, 11, 0, 0),
+                "VC12", "VC12", null, null, "ACCEPTED",
+                new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
+                null, null
+        ));
+
+        // Row 3
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA82032866C03B7D640", "34MH51FA820",
+                "101997240733664000", "1715889119753", LocalDateTime.of(2026, 8, 4, 11, 30, 0),
+                "VC12", "VC12", null, null, "ACCEPTED",
+                new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
+                null, null
+        ));
+
+        // Row 4
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA82033E8260213A3A0", "TN95GB6328",
+                "101997240733664000", "1792912348111", LocalDateTime.of(2026, 8, 11, 1, 15, 0),
+                "VC16", "VC16", null, null, "ACCEPTED",
+                new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
+                null, null
+        ));
+
+        // Row 5
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA82033E8260213A3A0", "TN95GB6328",
+                "101997240733664000", "1792912348111", LocalDateTime.of(2026, 8, 11, 3, 15, 0),
+                "VC16", "VC16", null, null, "ACCEPTED",
+                new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
+                null, null
+        ));
+
+        // Row 6
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA82033E8260213A3A0", "TN95GB6328",
+                "101997240733664000", "1792912348111", LocalDateTime.of(2026, 8, 11, 4, 15, 0),
+                "VC16", "VC16", null, null, "ACCEPTED",
+                new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
+                null, null
+        ));
+
+        // Row 7
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA820328E00213B680", "TN06ED8759",
+                "102047735808525000", "ZP020902", LocalDateTime.of(2026, 9, 2, 2, 0, 0),
+                "VC4", "VC1", "VC18", "ACCEPTED", "ACCEPTED",
+                new BigDecimal("5.00"), new BigDecimal("245.00"), new BigDecimal("5.00"),
+                LocalDate.of(2026, 4, 22), null
+        ));
+
+        // Row 8
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA820328EB002947820", "MH12VL3467",
+                "102047735808525000", "AM020904", LocalDateTime.of(2026, 9, 2, 4, 30, 0),
+                "VC4", "VC1", "VC5", "ACCEPTED", "ACCEPTED",
+                new BigDecimal("5.00"), new BigDecimal("5.00"), new BigDecimal("5.00"),
+                LocalDate.of(2026, 9, 3), null
+        ));
+
+        // Row 9
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA820328EB002947820", "MH12VL3467",
+                "102047735808525000", "AM020907", LocalDateTime.of(2026, 9, 2, 7, 30, 0),
+                "VC4", "VC4", "VC18", "ACCEPTED", "ACCEPTED",
+                new BigDecimal("5.00"), new BigDecimal("245.00"), new BigDecimal("5.00"),
+                LocalDate.of(2026, 9, 3), null
+        ));
+
+        // Row 10
+        list.add(new ViolationSettlementRecord(
+                "600601", "Dummytollplaza1", "34161FA820328EB002947820", "MH12VL3467",
+                "102047735808525000", "SK09090601", LocalDateTime.of(2026, 9, 9, 8, 0, 0),
+                "VC4", "VC4", "VC13", "ACCEPTED", "ACCEPTED",
+                new BigDecimal("5.00"), new BigDecimal("20.00"), new BigDecimal("5.00"),
+                LocalDate.of(2026, 9, 10), null
+        ));
+
+        violationSettlementRepository.saveAll(list);
+        log.info("Seeded {} Violation Settlement Records into Railway DB successfully.", list.size());
     }
 }
 

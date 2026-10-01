@@ -268,7 +268,7 @@ CREATE TABLE IF NOT EXISTS `violation_transactions` (
     INDEX `idx_viol_txn_date` (`txn_date_time`),
     INDEX `idx_viol_plaza_date` (`plaza_id`, `txn_date_time`),
     INDEX `idx_viol_api_status` (`violation_api_status`),
-    INDEX `idx_viol_tag_id` (`tag_id`),
+    INDEX `idx_viol_tag_id` (`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 14. Violation Raw Files Table (Violation Raw File Report)
@@ -294,5 +294,34 @@ CREATE TABLE IF NOT EXISTS `violation_raw_files` (
     INDEX `idx_raw_txn_id` (`txn_id`),
     INDEX `idx_raw_plaza_id` (`toll_plaza_id`),
     INDEX `idx_raw_txn_time` (`txn_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 15. Violation Settlement Reports Table
+CREATE TABLE IF NOT EXISTS `violation_settlement_reports` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `plaza_name` VARCHAR(120) NOT NULL,
+    `tag_id` VARCHAR(64) NOT NULL,
+    `vrn` VARCHAR(32) NOT NULL,
+    `acq_txn_id` VARCHAR(32) NOT NULL,
+    `toll_txn_id` VARCHAR(32) NOT NULL,
+    `txn_date_time` DATETIME NOT NULL,
+    `mvc` VARCHAR(16) NULL,
+    `avc` VARCHAR(16) NULL,
+    `audit_vc` VARCHAR(16) NULL,
+    `audit_remark` VARCHAR(64) NULL,
+    `npci_violation_status` VARCHAR(32) NOT NULL DEFAULT 'ACCEPTED',
+    `txn_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `violation_adjustment_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `violation_settlement_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `settlement_date` DATE NULL,
+    `img_received_time` DATETIME NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_vset_txn_date` (`txn_date_time`),
+    INDEX `idx_vset_plaza_date` (`plaza_id`, `txn_date_time`),
+    INDEX `idx_vset_tag_id` (`tag_id`),
+    INDEX `idx_vset_vrn` (`vrn`),
+    INDEX `idx_vset_status` (`npci_violation_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
