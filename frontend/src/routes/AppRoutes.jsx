@@ -13,6 +13,7 @@ import DateWiseRecon from '../pages/DateWiseRecon/DateWiseRecon';
 import CycleWiseRecon from '../pages/CycleWiseRecon/CycleWiseRecon';
 import DisputeDetailReport from '../pages/DisputeDetailReport/DisputeDetailReport';
 import TollFareReport from '../pages/TollFareReport/TollFareReport';
+import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransaction';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -111,6 +112,25 @@ export const AppRoutes = () => {
       <Route
         path="/transaction-report"
         element={<Navigate to="/transactional-reports/transaction-report" replace />}
+      />
+      <Route
+        path="/transactional-reports/rejected-transaction"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="transactional_report"
+          >
+            <RejectedTransaction />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rejected-transaction"
+        element={<Navigate to="/transactional-reports/rejected-transaction" replace />}
+      />
+      <Route
+        path="/rejected-transactions"
+        element={<Navigate to="/transactional-reports/rejected-transaction" replace />}
       />
       <Route
         path="/transactional-reports/toll-fare-report"

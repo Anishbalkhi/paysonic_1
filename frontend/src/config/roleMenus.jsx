@@ -137,7 +137,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.report,
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
-        { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '#rejected-transaction' },
+        { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
         { subId: 'transactional_report_settled_transaction', label: 'C. Settled Transaction', path: '#settled-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
         { subId: 'transactional_report_transaction_search', label: 'E. Transaction Search', path: '#transaction-search' },
@@ -244,7 +244,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.report,
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
-        { label: 'B. Rejected Transaction', path: '#rejected-transaction' },
+        { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
         { label: 'C. Settled Transaction', path: '#settled-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
         { label: 'E. Transaction Search', path: '#transaction-search' },
@@ -343,7 +343,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.report,
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
-        { label: 'B. Rejected Transactions', path: '#rejected-transaction' },
+        { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
         { label: 'C. Settled Transactions', path: '#settled-transaction' },
         { label: 'D. Transaction Search', path: '#transaction-search' },
         { subId: 'transactional_report_toll_fare_report', label: 'E. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
@@ -442,7 +442,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.report,
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
-        { label: 'B. Rejected Transactions', path: '#rejected-transaction' },
+        { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
         { label: 'C. Settled Transactions', path: '#settled-transaction' },
         { label: 'D. Transaction Search', path: '#transaction-search' },
         { subId: 'transactional_report_toll_fare_report', label: 'E. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
