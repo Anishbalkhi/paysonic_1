@@ -10,6 +10,6 @@ import java.lang.annotation.Target;
 public @interface Auditable {
     String module();
     String action();
-    String actionLabel();
+    String actionLabel() default "";
     String target() default "";
 }

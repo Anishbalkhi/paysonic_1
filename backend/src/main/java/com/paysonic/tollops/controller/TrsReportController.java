@@ -62,7 +62,7 @@ public class TrsReportController {
     }
 
     @GetMapping("/export")
-    @Auditable(module = "Recon Management", action = "EXPORT_TRS_REPORT")
+    @Auditable(module = "Recon Management", action = "EXPORT_TRS_REPORT", actionLabel = "Exported TRS Report (Excel)", target = "TRS Report")
     public void exportExcel(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
