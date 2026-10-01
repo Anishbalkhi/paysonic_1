@@ -12,6 +12,7 @@ import TrsReport from '../pages/TrsReport/TrsReport';
 import DateWiseRecon from '../pages/DateWiseRecon/DateWiseRecon';
 import CycleWiseRecon from '../pages/CycleWiseRecon/CycleWiseRecon';
 import DisputeDetailReport from '../pages/DisputeDetailReport/DisputeDetailReport';
+import TollFareReport from '../pages/TollFareReport/TollFareReport';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -110,6 +111,21 @@ export const AppRoutes = () => {
       <Route
         path="/transaction-report"
         element={<Navigate to="/transactional-reports/transaction-report" replace />}
+      />
+      <Route
+        path="/transactional-reports/toll-fare-report"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="transactional_report"
+          >
+            <TollFareReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/toll-fare-report"
+        element={<Navigate to="/transactional-reports/toll-fare-report" replace />}
       />
       <Route
         path="/reports/dynamicreport/8"
