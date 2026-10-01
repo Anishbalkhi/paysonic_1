@@ -132,10 +132,16 @@ export const TrsReport = () => {
     const fromStr = fromDate ? formatDateDisplay(fromDate) : '01-09-2026 00:00:00';
     const toStr = toDate ? formatDateDisplay(toDate) : '06-09-2026 23:59:59';
 
-    // Banner rows matching screenshot
+    // Banner rows centered in the middle of the table (around midpoint column)
+    const midIdx = Math.floor(headers.length / 2);
+    const titleArr = Array(headers.length).fill('');
+    titleArr[midIdx] = 'TRANSACTION REPORT';
+    const subArr = Array(headers.length).fill('');
+    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}`;
+
     const bannerRows = [
-      Array(headers.length - 1).fill('').concat(['TRANSACTION REPORT']).join(','),
-      Array(headers.length - 1).fill('').concat([`From Date: ${fromStr}   |   To Date: ${toStr}`]).join(','),
+      titleArr.join(','),
+      subArr.join(','),
       ''
     ];
 

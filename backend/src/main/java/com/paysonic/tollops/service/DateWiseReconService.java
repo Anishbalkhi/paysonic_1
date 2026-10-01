@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,7 +113,7 @@ public class DateWiseReconService {
             Sheet sheet = workbook.createSheet("Date Wise Recon");
             DataFormat df = workbook.createDataFormat();
 
-            // 1. Title Style (Bold Royal Blue, 16pt)
+            // 1. Title Style (Bold Royal Blue, 16pt, Centered in middle of table)
             CellStyle titleStyle = workbook.createCellStyle();
             Font titleFont = workbook.createFont();
             titleFont.setFontName("Calibri");
@@ -120,15 +121,17 @@ public class DateWiseReconService {
             titleFont.setBold(true);
             titleFont.setColor(IndexedColors.DARK_BLUE.getIndex());
             titleStyle.setFont(titleFont);
+            titleStyle.setAlignment(HorizontalAlignment.CENTER);
             titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
-            // 2. Subtitle Date Range Style (Muted Grey, 10pt)
+            // 2. Subtitle Date Range Style (Muted Grey, 10pt, Centered in middle of table)
             CellStyle subTitleStyle = workbook.createCellStyle();
             Font subFont = workbook.createFont();
             subFont.setFontName("Calibri");
             subFont.setFontHeightInPoints((short) 10);
             subFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
             subTitleStyle.setFont(subFont);
+            subTitleStyle.setAlignment(HorizontalAlignment.CENTER);
             subTitleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
             // 3. Green Accent Line Style (Solid Green fill)
@@ -195,22 +198,24 @@ public class DateWiseReconService {
 
             String[] headers = {"Plaza ID", "Plaza Name", "Txn Date", "Settlement Date", "Txn Count", "Settled Amount"};
 
-            // Row 0: Title Banner
+            // Row 0: Title Banner (Centered in the middle of the table)
             Row titleRow = sheet.createRow(0);
             titleRow.setHeightInPoints(28);
             Cell titleCell = titleRow.createCell(0);
             titleCell.setCellValue("DATE WISE RECONCILIATION REPORT");
             titleCell.setCellStyle(titleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, headers.length - 1));
 
-            // Row 1: Subtitle with Date Range
+            // Row 1: Subtitle with Date Range (Centered in the middle of the table)
             Row subRow = sheet.createRow(1);
             subRow.setHeightInPoints(18);
             Cell subCell = subRow.createCell(0);
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
             String fromStr = fromDate != null ? fromDate.format(dtf) : "01-08-2026 00:00:00";
             String toStr = toDate != null ? toDate.format(dtf) : "31-10-2026 23:59:59";
-            subCell.setCellValue("From Date: " + fromStr + "  |  To Date: " + toStr);
+            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr);
             subCell.setCellStyle(subTitleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
 
             // Row 2: Green Accent Bar
             Row greenRow = sheet.createRow(2);
