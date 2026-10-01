@@ -655,6 +655,43 @@ public class DataLoader implements CommandLineRunner {
             txns.add(t);
         }
 
+        // 13-16. Reference Screenshot Rows for Date Wise Recon (Plaza 600601, Dummytollplaza1, Txn Date 07-08-2026)
+        LocalDateTime august7 = LocalDateTime.of(2026, 8, 7, 10, 30, 0);
+        LocalDateTime august4Settled = LocalDateTime.of(2026, 8, 4, 14, 0, 0);
+        LocalDateTime august5Settled = LocalDateTime.of(2026, 8, 5, 14, 0, 0);
+
+        for (int k = 1; k <= 4; k++) {
+            TollTransaction dk = new TollTransaction();
+            dk.setTollFileName("ONLINE");
+            dk.setPlazaId("600601");
+            dk.setPlazaName("Dummytollplaza1");
+            dk.setLaneId("L0" + k);
+            dk.setTagId("34161FA820328909988109" + k);
+            dk.setVrn("MH12DT000" + k);
+            dk.setAcqTxnId("10204773809988109" + k);
+            dk.setTollTxnId("TXNDUMMY" + k);
+            dk.setTollMessageId("MSGDUMMY" + k);
+            dk.setMvc("VC4");
+            dk.setTagVc("4");
+            dk.setAvc("VC4");
+            dk.setStatus("Settled");
+            dk.setReason("ACCEPTED");
+            dk.setTxnAmount(new BigDecimal("51.50"));
+            dk.setSettledAmount(new BigDecimal("51.50")); // Total 2 txns = 103.00
+            dk.setTxnDate(august7.plusMinutes(k * 15));
+            dk.setPlazaPostDate(august7.plusMinutes(k * 15 + 2));
+            dk.setNpciRespDate(august7.plusMinutes(k * 15 + 3));
+            dk.setNpciSettledDate(k <= 2 ? august4Settled : august5Settled);
+            dk.setClearingCycle(k <= 2 ? "C1" : "C2");
+            dk.setPlazaSettleDate(k <= 2 ? august4Settled.plusHours(2) : august5Settled.plusHours(2));
+            dk.setTxnType("DEBIT");
+            dk.setPlazaType("Toll");
+            dk.setIsViolation("No");
+            dk.setAuditVc("NA");
+            dk.setViolationSettledAmount(BigDecimal.ZERO);
+            txns.add(dk);
+        }
+
         tollTransactionRepository.saveAll(txns);
         log.info("Seeded {} initial Toll Transactions for TRS Report.", txns.size());
     }

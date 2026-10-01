@@ -9,6 +9,7 @@ import TagDetails from '../pages/TagDetails/TagDetails';
 import PassIssuance from '../pages/PassIssuance/PassIssuance';
 import Onboarding from '../pages/Onboarding/Onboarding';
 import TrsReport from '../pages/TrsReport/TrsReport';
+import DateWiseRecon from '../pages/DateWiseRecon/DateWiseRecon';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -101,6 +102,18 @@ export const AppRoutes = () => {
             requiredMenu="recon_management"
           >
             <TrsReport />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/recon/date-wise-recon"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank']}
+            requiredMenu="recon_management"
+          >
+            <DateWiseRecon />
           </ProtectedRoute>
         }
       />
