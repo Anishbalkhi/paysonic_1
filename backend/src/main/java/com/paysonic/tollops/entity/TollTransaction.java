@@ -104,6 +104,18 @@ public class TollTransaction {
     @Column(name = "violation_settled_date")
     private LocalDateTime violationSettledDate;
 
+    @Column(name = "dispute_add_amount", precision = 10, scale = 2)
+    private BigDecimal disputeAddAmount = BigDecimal.ZERO;
+
+    @Column(name = "dispute_sub_amount", precision = 10, scale = 2)
+    private BigDecimal disputeSubAmount = BigDecimal.ZERO;
+
+    @Column(name = "is_dispute_add", length = 8)
+    private String isDisputeAdd = "No";
+
+    @Column(name = "is_dispute_sub", length = 8)
+    private String isDisputeSub = "No";
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -120,6 +132,18 @@ public class TollTransaction {
         }
         if (isViolation == null) {
             isViolation = "No";
+        }
+        if (disputeAddAmount == null) {
+            disputeAddAmount = BigDecimal.ZERO;
+        }
+        if (disputeSubAmount == null) {
+            disputeSubAmount = BigDecimal.ZERO;
+        }
+        if (isDisputeAdd == null) {
+            isDisputeAdd = "No";
+        }
+        if (isDisputeSub == null) {
+            isDisputeSub = "No";
         }
     }
 
@@ -369,5 +393,37 @@ public class TollTransaction {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public BigDecimal getDisputeAddAmount() {
+        return disputeAddAmount;
+    }
+
+    public void setDisputeAddAmount(BigDecimal disputeAddAmount) {
+        this.disputeAddAmount = disputeAddAmount;
+    }
+
+    public BigDecimal getDisputeSubAmount() {
+        return disputeSubAmount;
+    }
+
+    public void setDisputeSubAmount(BigDecimal disputeSubAmount) {
+        this.disputeSubAmount = disputeSubAmount;
+    }
+
+    public String getIsDisputeAdd() {
+        return isDisputeAdd;
+    }
+
+    public void setIsDisputeAdd(String isDisputeAdd) {
+        this.isDisputeAdd = isDisputeAdd;
+    }
+
+    public String getIsDisputeSub() {
+        return isDisputeSub;
+    }
+
+    public void setIsDisputeSub(String isDisputeSub) {
+        this.isDisputeSub = isDisputeSub;
     }
 }

@@ -69,6 +69,7 @@ public class DataLoader implements CommandLineRunner {
             seedAuditLogs();
             seedOnboardingData();
             seedTollTransactions();
+            seedCycleWiseTransactions();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -694,6 +695,165 @@ public class DataLoader implements CommandLineRunner {
 
         tollTransactionRepository.saveAll(txns);
         log.info("Seeded {} initial Toll Transactions for TRS Report.", txns.size());
+    }
+
+    private void seedCycleWiseTransactions() {
+        if (tollTransactionRepository.countByPlazaId("600602") > 0) {
+            log.info("Cycle wise transactions already present, skipping seed.");
+            return;
+        }
+
+        List<TollTransaction> list = new ArrayList<>();
+        String[] plazas = {"600601", "600602"};
+        String[] plazaNames = {"Dummytollplaza1", "Dummytollplaza2"};
+
+        for (int p = 0; p < plazas.length; p++) {
+            String pId = plazas[p];
+            String pName = plazaNames[p];
+
+            // 1. Settlement Date 02-08-2026, Cycle 2 (5 txns, 125.00)
+            LocalDateTime d1 = LocalDateTime.of(2026, 8, 2, 10, 0, 0);
+            LocalDateTime s1 = LocalDateTime.of(2026, 8, 2, 14, 0, 0);
+            for (int i = 1; i <= 5; i++) {
+                TollTransaction t = new TollTransaction();
+                t.setTollFileName("ONLINE");
+                t.setPlazaId(pId);
+                t.setPlazaName(pName);
+                t.setLaneId("L01");
+                t.setTagId("34161FA82032890" + pId + "2" + i);
+                t.setVrn("MH12CW" + pId.substring(3) + "0" + i);
+                t.setAcqTxnId("1020477" + pId + "20" + i);
+                t.setTollTxnId("TXNCW" + pId + "20" + i);
+                t.setTollMessageId("MSGCW" + pId + "20" + i);
+                t.setMvc("VC4");
+                t.setTagVc("4");
+                t.setAvc("VC4");
+                t.setStatus("Settled");
+                t.setReason("ACCEPTED");
+                t.setTxnAmount(new BigDecimal("25.00"));
+                t.setSettledAmount(new BigDecimal("25.00"));
+                t.setTxnDate(d1.plusMinutes(i * 10));
+                t.setPlazaPostDate(d1.plusMinutes(i * 10 + 2));
+                t.setNpciRespDate(d1.plusMinutes(i * 10 + 3));
+                t.setNpciSettledDate(s1);
+                t.setPlazaSettleDate(s1);
+                t.setClearingCycle("2");
+                t.setTxnType("DEBIT");
+                t.setPlazaType("Toll");
+                t.setIsViolation("No");
+                t.setIsDisputeAdd("No");
+                t.setIsDisputeSub("No");
+                list.add(t);
+            }
+
+            // 2. Settlement Date 03-08-2026, Cycle 1 (3 txns = 75.00 + 3 dispute add = 60.00 -> Total 135.00)
+            LocalDateTime d2 = LocalDateTime.of(2026, 8, 3, 9, 0, 0);
+            LocalDateTime s2 = LocalDateTime.of(2026, 8, 3, 12, 0, 0);
+            for (int i = 1; i <= 3; i++) {
+                TollTransaction t = new TollTransaction();
+                t.setTollFileName("ONLINE");
+                t.setPlazaId(pId);
+                t.setPlazaName(pName);
+                t.setLaneId("L02");
+                t.setTagId("34161FA82032890" + pId + "1" + i);
+                t.setVrn("MH12CW" + pId.substring(3) + "1" + i);
+                t.setAcqTxnId("1020477" + pId + "10" + i);
+                t.setTollTxnId("TXNCW" + pId + "10" + i);
+                t.setTollMessageId("MSGCW" + pId + "10" + i);
+                t.setMvc("VC4");
+                t.setTagVc("4");
+                t.setAvc("VC4");
+                t.setStatus("Settled");
+                t.setReason("ACCEPTED");
+                t.setTxnAmount(new BigDecimal("25.00"));
+                t.setSettledAmount(new BigDecimal("25.00"));
+                t.setTxnDate(d2.plusMinutes(i * 10));
+                t.setPlazaPostDate(d2.plusMinutes(i * 10 + 2));
+                t.setNpciRespDate(d2.plusMinutes(i * 10 + 3));
+                t.setNpciSettledDate(s2);
+                t.setPlazaSettleDate(s2);
+                t.setClearingCycle("1");
+                t.setTxnType("DEBIT");
+                t.setPlazaType("Toll");
+                t.setIsViolation("No");
+                t.setIsDisputeAdd("No");
+                t.setIsDisputeSub("No");
+                list.add(t);
+            }
+
+            // 3 dispute add adjustments (20.00 each)
+            for (int i = 1; i <= 3; i++) {
+                TollTransaction disp = new TollTransaction();
+                disp.setTollFileName("ONLINE");
+                disp.setPlazaId(pId);
+                disp.setPlazaName(pName);
+                disp.setLaneId("L02");
+                disp.setTagId("34161FA82032890" + pId + "D" + i);
+                disp.setVrn("MH12CW" + pId.substring(3) + "D" + i);
+                disp.setAcqTxnId("1020477" + pId + "D0" + i);
+                disp.setTollTxnId("TXNDISP" + pId + "10" + i);
+                disp.setTollMessageId("MSGDISP" + pId + "10" + i);
+                disp.setMvc("VC4");
+                disp.setTagVc("4");
+                disp.setAvc("VC4");
+                disp.setStatus("Settled");
+                disp.setReason("DISPUTE_CREDIT");
+                disp.setTxnAmount(BigDecimal.ZERO);
+                disp.setSettledAmount(new BigDecimal("20.00"));
+                disp.setDisputeAddAmount(new BigDecimal("20.00"));
+                disp.setIsDisputeAdd("Yes");
+                disp.setIsDisputeSub("No");
+                disp.setTxnDate(d2.plusMinutes(40 + i * 5));
+                disp.setPlazaPostDate(d2.plusMinutes(40 + i * 5 + 2));
+                disp.setNpciRespDate(d2.plusMinutes(40 + i * 5 + 3));
+                disp.setNpciSettledDate(s2);
+                disp.setPlazaSettleDate(s2);
+                disp.setClearingCycle("1");
+                disp.setTxnType("CREDIT");
+                disp.setPlazaType("Toll");
+                disp.setIsViolation("No");
+                list.add(disp);
+            }
+
+            // 3. Settlement Date 03-08-2026, Cycle 3 (4 txns: 2 of 26.00 + 2 of 25.50 = 103.00)
+            LocalDateTime d3 = LocalDateTime.of(2026, 8, 3, 14, 0, 0);
+            LocalDateTime s3 = LocalDateTime.of(2026, 8, 3, 18, 0, 0);
+            BigDecimal[] c3Amts = {new BigDecimal("26.00"), new BigDecimal("26.00"), new BigDecimal("25.50"), new BigDecimal("25.50")};
+            for (int i = 1; i <= 4; i++) {
+                TollTransaction t = new TollTransaction();
+                t.setTollFileName("ONLINE");
+                t.setPlazaId(pId);
+                t.setPlazaName(pName);
+                t.setLaneId("L03");
+                t.setTagId("34161FA82032890" + pId + "3" + i);
+                t.setVrn("MH12CW" + pId.substring(3) + "3" + i);
+                t.setAcqTxnId("1020477" + pId + "30" + i);
+                t.setTollTxnId("TXNCW" + pId + "30" + i);
+                t.setTollMessageId("MSGCW" + pId + "30" + i);
+                t.setMvc("VC4");
+                t.setTagVc("4");
+                t.setAvc("VC4");
+                t.setStatus("Settled");
+                t.setReason("ACCEPTED");
+                t.setTxnAmount(c3Amts[i - 1]);
+                t.setSettledAmount(c3Amts[i - 1]);
+                t.setTxnDate(d3.plusMinutes(i * 10));
+                t.setPlazaPostDate(d3.plusMinutes(i * 10 + 2));
+                t.setNpciRespDate(d3.plusMinutes(i * 10 + 3));
+                t.setNpciSettledDate(s3);
+                t.setPlazaSettleDate(s3);
+                t.setClearingCycle("3");
+                t.setTxnType("DEBIT");
+                t.setPlazaType("Toll");
+                t.setIsViolation("No");
+                t.setIsDisputeAdd("No");
+                t.setIsDisputeSub("No");
+                list.add(t);
+            }
+        }
+
+        tollTransactionRepository.saveAll(list);
+        log.info("Seeded {} Cycle Wise Reconciliation transactions for Plazas 600601 & 600602.", list.size());
     }
 }
 

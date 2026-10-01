@@ -107,12 +107,9 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Recon Management',
       icon: ICONS.recon,
       children: [
-        { subId: 'recon_management_upload_recon_file', label: 'A. Upload Recon File', path: '#upload-recon' },
-        { subId: 'recon_management_recon_file_status', label: 'B. Recon File Status', path: '#recon-status' },
-        { subId: 'recon_management_trs_report', label: 'C. TRS Report', path: '/recon/trs-report' },
-        { subId: 'recon_management_date_wise_recon', label: 'D. Date Wise Recon', path: '/recon/date-wise-recon' },
-        { subId: 'recon_management_cycle_wise_report', label: 'E. Cycle Wise Report', path: '#cycle-wise-report' },
-        { subId: 'recon_management_violation_settlement_report', label: 'F. Violation Settlement Report', path: '#violation-settlement-recon' },
+        { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
+        { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
+        { subId: 'recon_management_cycle_wise_report', label: 'C. Cycle Wise Report', path: '/recon/cycle-wise-report' },
       ],
     },
     {
@@ -228,8 +225,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
         { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
-        { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
-        { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
+        { subId: 'recon_management_cycle_wise_report', label: 'C. Cycle Wise Report', path: '/recon/cycle-wise-report' },
       ],
     },
     {
@@ -335,8 +331,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
         { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
-        { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
-        { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
+        { subId: 'recon_management_cycle_wise_report', label: 'C. Cycle Wise Report', path: '/recon/cycle-wise-report' },
       ],
     },
     {
@@ -440,8 +435,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
         { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
-        { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
-        { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
+        { subId: 'recon_management_cycle_wise_report', label: 'C. Cycle Wise Report', path: '/recon/cycle-wise-report' },
       ],
     },
     {
@@ -573,8 +567,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
         { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
-        { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
-        { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
+        { subId: 'recon_management_cycle_wise_report', label: 'C. Cycle Wise Report', path: '/recon/cycle-wise-report' },
       ],
     },
     {

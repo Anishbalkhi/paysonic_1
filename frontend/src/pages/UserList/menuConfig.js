@@ -51,12 +51,9 @@ export const MENU_TREE = [
     id: 'recon_management',
     label: 'Recon Management',
     subs: [
-      { id: 'recon_management_upload_recon_file', label: 'Upload Recon File' },
-      { id: 'recon_management_recon_file_status', label: 'Recon File Status' },
       { id: 'recon_management_trs_report', label: 'TRS Report' },
       { id: 'recon_management_date_wise_recon', label: 'Date Wise Recon' },
-      { id: 'recon_management_cycle_wise_report', label: 'Cycle Wise Report' },
-      { id: 'recon_management_violation_settlement_report', label: 'Violation Settlement Report' }
+      { id: 'recon_management_cycle_wise_report', label: 'Cycle Wise Report' }
     ]
   },
   {
@@ -144,7 +141,7 @@ export const ROLE_MENU_DEFAULTS = {
     'user_management', 'user_management_create_user', 'user_management_approve_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
     'user_activity',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
-    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report', 'recon_management_violation_settlement_report',
+    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_dashboard', 'violation_management_violation_validate', 'violation_management_violation_settlement_report', 'violation_management_violation_raw_file', 'violation_management_violation_bulk_action',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_settled_transaction', 'transactional_report_toll_fare_report', 'transactional_report_transaction_search',
@@ -156,7 +153,7 @@ export const ROLE_MENU_DEFAULTS = {
     'dashboard',
     'user_management', 'user_management_create_user', 'user_management_approve_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
-    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report', 'recon_management_violation_settlement_report',
+    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_dashboard', 'violation_management_view_violation', 'violation_management_violation_settlement_report',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_settled_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
@@ -168,7 +165,7 @@ export const ROLE_MENU_DEFAULTS = {
     'dashboard',
     'user_management', 'user_management_create_user', 'user_management_approve_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
-    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report', 'recon_management_violation_settlement_report',
+    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_dashboard', 'violation_management_view_violation', 'violation_management_violation_settlement_report',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_settled_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
@@ -183,7 +180,10 @@ export const ROLE_MENU_DEFAULTS = {
   'Request Tag Details': [
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history'
   ],
-  Bank: []
+  Bank: [
+    'dashboard',
+    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report'
+  ]
 };
 
 // All IDs for Master Admin (every module and every sub-item)

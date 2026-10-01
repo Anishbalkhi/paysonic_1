@@ -18,6 +18,8 @@ public interface TollTransactionRepository extends JpaRepository<TollTransaction
 
     long countByTxnDateBetween(LocalDateTime from, LocalDateTime to);
 
+    long countByPlazaId(String plazaId);
+
     Page<TollTransaction> findByTxnDateBetween(LocalDateTime from, LocalDateTime to, Pageable pageable);
 
     List<TollTransaction> findByTxnDateBetweenOrderByTxnDateDesc(LocalDateTime from, LocalDateTime to);
