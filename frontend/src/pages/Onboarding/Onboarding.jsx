@@ -43,289 +43,17 @@ const CALLBACK_APIS = [
   'TagDetailsAPI',
 ];
 
-// Real operational network data for Paysonic Plaza Onboarding — strictly matches backend DB
-const getInitialData = () => {
-  const concessionaires = [
-    {
-      id: 'CON-1001',
-      name: 'MAHARASHTRA STATE ROAD DEVELOPMENT CORP (MSRDC)',
-      address: 'Bandra Worli Sea Link Project Office, K.C. Marg, Bandra West, Mumbai',
-      mail: 'ops@msrdc.in',
-      contact: '02226558174',
-    },
-    {
-      id: 'CON-1002',
-      name: 'NATIONAL HIGHWAYS INFRA TRUST (NHIT)',
-      address: 'G-5 & 6, Sector-10, Dwarka, New Delhi',
-      mail: 'tollops@nhit.co.in',
-      contact: '01125074100',
-    },
-    {
-      id: 'CON-1003',
-      name: 'IRB INFRASTRUCTURE DEVELOPERS LTD',
-      address: 'IRB Complex, Chandivali Farm, Andheri East, Mumbai, Maharashtra',
-      mail: 'operations@irb.co.in',
-      contact: '02266404220',
-    },
-  ];
-
-  const seedPlazas = [
-    {
-      id: 'PLZ-NH44-01',
-      name: 'NH-44 Hyderabad',
-      orgId: 'PYSN',
-      agencyId: 'NHAI-HYD',
-      concessionaireId: 'CON-1002',
-      category: 'Toll',
-      basePricing: 'Distance Based',
-      plazaInterface: 'API',
-      subtype: 'National',
-      authority: 'NHAI',
-      state: 'TELANGANA',
-      city: 'HYDERABAD',
-      activationDate: '2026-09-01',
-      geoCode: '17.3850,78.4867',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'NH-44 Hyderabad-Bengaluru Highway, Thondupally, Telangana',
-      contactNo: '04024001234',
-      contactMail: 'hyderabad.toll@nhai.gov.in',
-      mdr: { bankFee: '0.85', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: 'PLZ-KIAL-02',
-      name: 'KIAL Express Plaza',
-      orgId: 'PYSN',
-      agencyId: 'NHAI-BLR',
-      concessionaireId: 'CON-1002',
-      category: 'Toll',
-      basePricing: 'Point Based',
-      plazaInterface: 'API',
-      subtype: 'National',
-      authority: 'NHAI',
-      state: 'KARNATAKA',
-      city: 'BENGALURU',
-      activationDate: '2026-09-02',
-      geoCode: '13.1986,77.7066',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'Kempegowda Int Airport Road, Sadahalli Toll Plaza, Bengaluru, Karnataka',
-      contactNo: '08028445678',
-      contactMail: 'kial.express@nhai.gov.in',
-      mdr: { bankFee: '0.90', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: 'PLZ-NH48-03',
-      name: 'NH-48 Pune-Satara',
-      orgId: 'PYSN',
-      agencyId: 'NHAI-PUN',
-      concessionaireId: 'CON-1003',
-      category: 'Toll',
-      basePricing: 'Distance Based',
-      plazaInterface: 'API',
-      subtype: 'National',
-      authority: 'NHAI',
-      state: 'MAHARASHTRA',
-      city: 'PUNE',
-      activationDate: '2026-09-03',
-      geoCode: '18.3482,73.9144',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'NH-48 Km 824, Khed Shivapur Toll Plaza, Pune, Maharashtra',
-      contactNo: '02024389012',
-      contactMail: 'punesatara.toll@nhai.gov.in',
-      mdr: { bankFee: '0.80', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: 'PLZ-NH65-04',
-      name: 'NH-65 Vijayawada',
-      orgId: 'PYSN',
-      agencyId: 'NHAI-VIJ',
-      concessionaireId: 'CON-1002',
-      category: 'Toll',
-      basePricing: 'Distance Based',
-      plazaInterface: 'API',
-      subtype: 'National',
-      authority: 'NHAI',
-      state: 'ANDHRA PRADESH',
-      city: 'VIJAYAWADA',
-      activationDate: '2026-09-04',
-      geoCode: '16.5062,80.6480',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'NH-65 Hyderabad-Machilipatnam Rd, Keesara Toll Plaza, Vijayawada, AP',
-      contactNo: '08662491122',
-      contactMail: 'vijayawada.toll@nhai.gov.in',
-      mdr: { bankFee: '0.85', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: 'PLZ-MTHL-05',
-      name: 'MTHL Mumbai Sealink',
-      orgId: 'PYSN',
-      agencyId: 'MMRDA-01',
-      concessionaireId: 'CON-1001',
-      category: 'Toll',
-      basePricing: 'Point Based',
-      plazaInterface: 'API',
-      subtype: 'State',
-      authority: 'MMRDA',
-      state: 'MAHARASHTRA',
-      city: 'MUMBAI',
-      activationDate: '2026-09-05',
-      geoCode: '18.9950,72.9550',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'Atal Bihari Vajpayee Sewri-Nhava Sheva Atal Setu Toll Plaza, Mumbai, Maharashtra',
-      contactNo: '02226594000',
-      contactMail: 'mthl.toll@mmrda.maharashtra.gov.in',
-      mdr: { bankFee: '0.75', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: 'PLZ-BWSL-06',
-      name: 'BWSL Mumbai',
-      orgId: 'PYSN',
-      agencyId: 'MSRDC-01',
-      concessionaireId: 'CON-1001',
-      category: 'Toll',
-      basePricing: 'Point Based',
-      plazaInterface: 'API',
-      subtype: 'State',
-      authority: 'MSRDC',
-      state: 'MAHARASHTRA',
-      city: 'MUMBAI',
-      activationDate: '2026-09-06',
-      geoCode: '19.0434,72.8188',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'Bandra Toll Plaza, Bandra Reclamation, Bandra West, Mumbai, Maharashtra',
-      contactNo: '02226558174',
-      contactMail: 'bwsl.toll@msrdc.in',
-      mdr: { bankFee: '0.80', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: 'PLZ-DND-07',
-      name: 'DND Flyway',
-      orgId: 'PYSN',
-      agencyId: 'NTBCL-01',
-      concessionaireId: 'CON-1003',
-      category: 'Toll',
-      basePricing: 'Point Based',
-      plazaInterface: 'API',
-      subtype: 'Expressway',
-      authority: 'NTBCL',
-      state: 'DELHI',
-      city: 'NOIDA',
-      activationDate: '2026-09-07',
-      geoCode: '28.5833,77.3000',
-      schemeRule: 'Single Single',
-      schemeDuration: 'Same Day Midnight',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'DND Flyway Toll Plaza, Sector 15A, Noida, Uttar Pradesh',
-      contactNo: '01202516495',
-      contactMail: 'dnd.operations@ntbcl.com',
-      mdr: { bankFee: '0.85', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-    {
-      id: 'PLZ-YEX-08',
-      name: 'Yamuna Expressway Toll 1',
-      orgId: 'PYSN',
-      agencyId: 'YEIDA-01',
-      concessionaireId: 'CON-1003',
-      category: 'Toll',
-      basePricing: 'Distance Based',
-      plazaInterface: 'API',
-      subtype: 'Expressway',
-      authority: 'YEIDA',
-      state: 'UTTAR PRADESH',
-      city: 'GREATER NOIDA',
-      activationDate: '2026-09-08',
-      geoCode: '28.4089,77.5256',
-      schemeRule: 'Single Return',
-      schemeDuration: '24 Hrs',
-      status: 'Active',
-      publicKey: '',
-      contactAddress: 'Yamuna Expressway Km 38, Jewar Toll Plaza, Gautam Buddha Nagar, UP',
-      contactNo: '01202395150',
-      contactMail: 'yamuna.exp@yeida.gov.in',
-      mdr: { bankFee: '0.85', npciFee: '0.15', bankGst: '18', npciGst: '18' },
-    },
-  ];
-
-  const dirs = ['North', 'South'];
-  const types = ['Entry', 'Exit'];
-  const modes = ['Normal', 'Maintenance'];
-  const cats = ['Dedicated', 'Hybrid', 'Handheld'];
-
-  const lanes = [];
-  seedPlazas.forEach((p) => {
-    const count = 6;
-    for (let i = 1; i <= count; i++) {
-      lanes.push({
-        plazaId: p.id,
-        laneId: `L${p.id.slice(-3)}${String(i).padStart(2, '0')}`,
-        direction: dirs[i % 2],
-        type: types[i % 2],
-        mode: i === count ? 'Maintenance' : 'Normal',
-        category: cats[i % 3],
-        status: 'Open',
-      });
-    }
-  });
-
-  const callbacks = {};
-  const fares = {};
-  const cch = {};
-
-  seedPlazas.forEach((p) => {
-    callbacks[p.id] = {};
-    CALLBACK_APIS.forEach((api) => {
-      callbacks[p.id][api] = `https://api.paysonic.in/${p.id.toLowerCase()}/${api.toLowerCase()}`;
-    });
-
-    fares[p.id] = {};
-    VEHICLE_CLASSES.forEach((vc, i) => {
-      const base = 60 + i * 30;
-      fares[p.id][vc.id] = {
-        single: base,
-        ret: Math.round(base * 1.5),
-        local10: Math.round(base * 0.4),
-        local20: Math.round(base * 0.6),
-        district: Math.round(base * 20),
-        monthly: Math.round(base * 40),
-      };
-    });
-
-    cch[p.id] = {};
-    VEHICLE_CLASSES.forEach((vc, i) => {
-      cch[p.id][vc.id] = {
-        current: 110 + i * 8,
-        new: '',
-      };
-    });
-  });
-
-  return {
-    concessionaires,
-    plazas: seedPlazas,
-    lanes,
-    callbacks,
-    fares,
-    cch,
-  };
-};
+// Empty schema for Paysonic Plaza Onboarding — strictly populated from Railway live database
+const getEmptyStore = () => ({
+  concessionaires: [],
+  plazas: [],
+  lanes: [],
+  callbacks: {},
+  fares: {},
+  cch: {},
+  source: 'LIVE_BACKEND_DB',
+  _liveDb: true,
+});
 
 export const Onboarding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -338,40 +66,54 @@ export const Onboarding = () => {
     setSearchParams({ tab });
   };
 
-  // Main state — initialized with network seed schema, directly loaded from Railway MySQL
-  const [store, setStore] = useState(() => getInitialData());
+  // Main state — initialized empty, loaded exclusively from Railway live database
+  const [store, setStore] = useState(() => getEmptyStore());
 
-  // ── Railway hydration on mount ─────────────────────────────────────────────
-  // Load plazas & concessionaires directly from Railway MySQL backend.
+  // ── Railway live database hydration on mount ───────────────────────────────
   const [railwayLoading, setRailwayLoading] = useState(true);
+  const [dbLoadError, setDbLoadError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
     setRailwayLoading(true);
-    OnboardingService.loadFullStore(store)
+    setDbLoadError(null);
+
+    OnboardingService.loadFullStore()
       .then((hydrated) => {
         if (!isMounted) return;
-        if (hydrated && hydrated.plazas && hydrated.plazas.length > 0) {
-          setStore((prev) => ({
-            ...prev,
-            ...hydrated,
+        if (hydrated && Array.isArray(hydrated.plazas)) {
+          setStore({
+            concessionaires: hydrated.concessionaires || [],
+            plazas: hydrated.plazas || [],
+            lanes: hydrated.lanes || [],
+            callbacks: hydrated.callbacks || {},
+            fares: hydrated.fares || {},
+            cch: hydrated.cch || {},
             source: 'LIVE_BACKEND_DB',
             _liveDb: true,
-          }));
-          // Automatically synchronize scope to first live Railway MySQL plaza
-          setSelectedPlazaId((currentId) => {
-            const hasCurrent = hydrated.plazas.some((p) => p.id === currentId);
-            return hasCurrent ? currentId : hydrated.plazas[0].id;
           });
+          // Automatically synchronize scope to first live Railway MySQL plaza
+          if (hydrated.plazas.length > 0) {
+            setSelectedPlazaId((currentId) => {
+              const hasCurrent = hydrated.plazas.some((p) => p.id === currentId);
+              return hasCurrent ? currentId : hydrated.plazas[0].id;
+            });
+          }
         }
       })
       .catch((err) => {
-        console.warn('[Onboarding] Railway database load error:', err?.message);
+        console.error('[Onboarding] Railway database load error:', err?.message);
+        if (isMounted) {
+          setDbLoadError(err?.message || 'Failed to connect to Railway database');
+        }
       })
       .finally(() => {
         if (isMounted) setRailwayLoading(false);
       });
-    return () => { isMounted = false; };
+
+    return () => {
+      isMounted = false;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -385,9 +127,7 @@ export const Onboarding = () => {
   };
 
   // Plaza scoped selectors (shared for Lanes, Callback, Fare, CCH)
-  const [selectedPlazaId, setSelectedPlazaId] = useState(() => {
-    return store.plazas[0]?.id || '';
-  });
+  const [selectedPlazaId, setSelectedPlazaId] = useState('');
 
   useEffect(() => {
     if (store.plazas.length > 0) {
@@ -926,34 +666,17 @@ export const Onboarding = () => {
         }
       }
 
-      // Initialize callbacks, fares, and cch if not present
+      // Initialize callbacks, fares, and cch as empty objects if not present
       if (!newCallbacks[id]) {
         newCallbacks[id] = {};
-        CALLBACK_APIS.forEach((api) => {
-          newCallbacks[id][api] = `https://api.paysonic.in/${id.toLowerCase()}/${api.toLowerCase()}`;
-        });
       }
 
       if (!newFares[id]) {
         newFares[id] = {};
-        VEHICLE_CLASSES.forEach((vc, i) => {
-          const base = 50 + i * 25;
-          newFares[id][vc.id] = {
-            single: base,
-            ret: Math.round(base * 1.5),
-            local10: Math.round(base * 0.4),
-            local20: Math.round(base * 0.6),
-            district: Math.round(base * 20),
-            monthly: Math.round(base * 40),
-          };
-        });
       }
 
       if (!newCch[id]) {
         newCch[id] = {};
-        VEHICLE_CLASSES.forEach((vc, i) => {
-          newCch[id][vc.id] = { current: 100 + i * 5, new: '' };
-        });
       }
 
       return {
@@ -1433,7 +1156,7 @@ export const Onboarding = () => {
     setPlazaCch((prev) => ({
       ...prev,
       [vcId]: {
-        ...(prev[vcId] || { current: 100, new: '' }),
+        ...(prev[vcId] || { current: '', new: '' }),
         new: val,
       },
     }));
@@ -1449,7 +1172,7 @@ export const Onboarding = () => {
     // Apply new CCH to current CCH if entered
     const updated = {};
     VEHICLE_CLASSES.forEach((vc) => {
-      const item = plazaCch[vc.id] || { current: 100, new: '' };
+      const item = plazaCch[vc.id] || { current: '', new: '' };
       const newNum = item.new ? parseInt(item.new, 10) : item.current;
       updated[vc.id] = {
         current: newNum,
@@ -1500,7 +1223,29 @@ export const Onboarding = () => {
       {/* Top Header */}
       <div className="onboarding-header">
         <div className="header-left">
-
+          <div className="badge-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '3px 10px',
+              borderRadius: '12px',
+              fontSize: '12px',
+              fontWeight: 600,
+              background: railwayLoading ? 'rgba(234, 179, 8, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+              color: railwayLoading ? '#eab308' : '#22c55e',
+              border: railwayLoading ? '1px solid rgba(234, 179, 8, 0.25)' : '1px solid rgba(34, 197, 94, 0.25)'
+            }}>
+              <span style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: railwayLoading ? '#eab308' : '#22c55e',
+                boxShadow: railwayLoading ? 'none' : '0 0 8px #22c55e'
+              }} />
+              {railwayLoading ? 'Connecting to Railway DB...' : 'Live Railway Database (MySQL)'}
+            </span>
+          </div>
           <h1>Plaza Onboarding Module</h1>
         </div>
         <div className="header-actions">
@@ -1589,10 +1334,60 @@ export const Onboarding = () => {
         </button>
       </div>
 
+      {/* Live Railway Database Loading State */}
+      {railwayLoading && (
+        <div className="onboarding-loading-state" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '60px 20px',
+          color: '#8b949e',
+          gap: '12px'
+        }}>
+          <div className="spinner" style={{
+            width: '32px',
+            height: '32px',
+            border: '3px solid rgba(255, 255, 255, 0.1)',
+            borderTopColor: '#38bdf8',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite'
+          }} />
+          <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: '#c9d1d9' }}>
+            Loading live records from Railway database...
+          </p>
+        </div>
+      )}
+
+      {/* Database Load Error Banner */}
+      {dbLoadError && (
+        <div className="onboarding-error-banner" style={{
+          margin: '16px 0',
+          padding: '12px 16px',
+          backgroundColor: 'rgba(248, 81, 73, 0.1)',
+          border: '1px solid rgba(248, 81, 73, 0.3)',
+          borderRadius: '8px',
+          color: '#f85149',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <span>⚠ Failed to connect to Railway database: {dbLoadError}</span>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => window.location.reload()}
+            style={{ fontSize: '12px', padding: '4px 10px' }}
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
       {/* ================================================================= */}
       {/* TAB A: VIEW PLAZA                                                 */}
       {/* ================================================================= */}
-      {activeTab === 'view' && (
+      {!railwayLoading && activeTab === 'view' && (
         <div className="tab-content view-plaza-section">
           {/* KPI Summary Cards */}
           <div className="kpi-grid">
@@ -1788,7 +1583,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB B: ADD CONCESSIONAIRE                                         */}
       {/* ================================================================= */}
-      {activeTab === 'concess' && (
+      {!railwayLoading && activeTab === 'concess' && (
         <div className="tab-content add-concess-section">
           <div className="two-col-layout">
             {/* Form Column */}
@@ -1991,7 +1786,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB C: ADD / EDIT PLAZA                                           */}
       {/* ================================================================= */}
-      {activeTab === 'addplaza' && (
+      {!railwayLoading && activeTab === 'addplaza' && (
         <div className="tab-content add-plaza-section">
           <div className="panel-card">
             <div className="card-header flex-header">
@@ -2399,7 +2194,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB D: LANE DETAILS                                               */}
       {/* ================================================================= */}
-      {activeTab === 'lanes' && (
+      {!railwayLoading && activeTab === 'lanes' && (
         <div className="tab-content lane-details-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
@@ -2534,7 +2329,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB E: CALLBACK URL CONFIGURATION                                 */}
       {/* ================================================================= */}
-      {activeTab === 'callback' && (
+      {!railwayLoading && activeTab === 'callback' && (
         <div className="tab-content callback-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
@@ -2651,7 +2446,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB F: FARE MAPPING                                               */}
       {/* ================================================================= */}
-      {activeTab === 'fare' && (
+      {!railwayLoading && activeTab === 'fare' && (
         <div className="tab-content fare-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
@@ -2814,7 +2609,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB G: CCH MAPPING                                                */}
       {/* ================================================================= */}
-      {activeTab === 'cch' && (
+      {!railwayLoading && activeTab === 'cch' && (
         <div className="tab-content cch-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
@@ -2859,9 +2654,9 @@ export const Onboarding = () => {
                   </thead>
                   <tbody>
                     {VEHICLE_CLASSES.map((vc) => {
-                      const item = plazaCch[vc.id] || { current: 100, new: '' };
+                      const item = plazaCch[vc.id] || { current: '', new: '' };
                       const hasNew = Boolean(item.new);
-                      const delta = hasNew ? parseInt(item.new, 10) - item.current : 0;
+                      const delta = hasNew && item.current !== '' && item.current !== undefined ? parseInt(item.new, 10) - item.current : 0;
 
                       return (
                         <tr key={vc.id}>
@@ -2870,7 +2665,7 @@ export const Onboarding = () => {
                             <div className="vc-desc">{vc.name || (vc.label.includes('·') ? vc.label.split('·')[1].trim() : vc.label)}</div>
                           </td>
                           <td>
-                            <code className="cch-current-code">{item.current}</code>
+                            <code className="cch-current-code">{item.current !== '' && item.current !== undefined ? item.current : '—'}</code>
                           </td>
                           <td>
                             <input

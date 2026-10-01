@@ -7,7 +7,7 @@ const apiBaseUrl =
 
 const httpClient = axios.create({
   baseURL: apiBaseUrl,
-  timeout: 15000,
+  timeout: 60000,
 });
 
 httpClient.interceptors.request.use((config) => {

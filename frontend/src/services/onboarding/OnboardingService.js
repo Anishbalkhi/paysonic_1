@@ -14,37 +14,10 @@
 import httpClient from '../api/httpClient';
 import UserActivityService from '../userActivity/UserActivityService';
 
-const STORAGE_KEY = 'paysonic_onboarding_data_v3';
-const DELETED_CONCESS_KEY = 'paysonic_deleted_concessionaires';
-
-const getDeletedConcessIds = () => {
-  try {
-    return JSON.parse(localStorage.getItem(DELETED_CONCESS_KEY) || '[]');
-  } catch {
-    return [];
-  }
-};
-
-const addDeletedConcessId = (id) => {
-  if (!id) return;
-  const current = getDeletedConcessIds();
-  if (!current.includes(String(id))) {
-    localStorage.setItem(DELETED_CONCESS_KEY, JSON.stringify([...current, String(id)]));
-  }
-};
-
-const removeDeletedConcessId = (id) => {
-  if (!id) return;
-  const current = getDeletedConcessIds();
-  localStorage.setItem(
-    DELETED_CONCESS_KEY,
-    JSON.stringify(current.filter((item) => String(item) !== String(id)))
-  );
-};
-
 // ─── Real Database Storage Mode (Direct Railway MySQL) ────────────────────────
 const getLocalStore = () => ({});
 const saveLocalStore = () => {};
+
 
 // ─── Actor helper (active logged-in user) ────────────────────────────────────
 
@@ -77,16 +50,10 @@ class OnboardingService {
    * Tries Railway GET /api/plazas → merges with localStorage seed data as fallback.
    */
   async getPlazas() {
-    const local = getLocalStore();
-    const localPlazas = local?.plazas || [];
-
     try {
       const res = await httpClient.get('/api/plazas');
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        const merged = res.data;
-
-        // Normalise field names from Railway schema → frontend schema
-        const normalised = merged.map((p) => ({
+      if (res && res.data && Array.isArray(res.data)) {
+        const normalised = res.data.map((p) => ({
           id: String(p.id || p.plazaId || ''),
           name: p.name || p.plazaName || '',
           orgId: p.orgId || p.org_id || '',
@@ -108,7 +75,7 @@ class OnboardingService {
           contactAddress: p.contactAddress || p.contact_address || '',
           contactNo: p.contactNo || p.contact_no || '',
           contactMail: p.contactMail || p.contact_mail || '',
-          mdr: p.mdr || {
+          mdr: p.mdr || (typeof p.mdrJson === 'string' ? JSON.parse(p.mdrJson) : null) || {
             bankFee: p.bankFee || p.bank_fee || '0.90',
             npciFee: p.npciFee || p.npci_fee || '0.15',
             bankGst: p.bankGst || p.bank_gst || '18',
@@ -116,19 +83,12 @@ class OnboardingService {
           },
           _fromRailway: true,
         }));
-
-        // Update localStorage cache
-        if (local) {
-          saveLocalStore({ ...local, plazas: normalised });
-        }
-
         return normalised;
       }
     } catch (err) {
-      console.warn('[OnboardingService] Railway GET /api/plazas unreachable, using localStorage:', err?.message);
+      console.warn('[OnboardingService] Railway GET /api/plazas error:', err?.message);
     }
-
-    return localPlazas;
+    return [];
   }
 
   // ============================================================
@@ -136,21 +96,13 @@ class OnboardingService {
   // ============================================================
 
   /**
-   * Load all concessionaires.
-   * Tries Railway GET /api/concessionaires → falls back to localStorage.
+   * Load all concessionaires directly from Railway MySQL.
    */
   async getConcessionaires() {
-    const local = getLocalStore();
-    const localConcess = local?.concessionaires || [];
-
     try {
       const res = await httpClient.get('/api/concessionaires');
-      if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-        const merged = res.data;
-        const deletedIds = new Set(getDeletedConcessIds());
-        const activeList = merged.filter((c) => !deletedIds.has(String(c.id)));
-
-        const normalised = activeList.map((c) => ({
+      if (res && res.data && Array.isArray(res.data)) {
+        return res.data.map((c) => ({
           id: String(c.id || ''),
           name: c.name || '',
           address: c.address || '',
@@ -158,18 +110,35 @@ class OnboardingService {
           contact: c.contact || c.mobile || c.phone || '',
           _fromRailway: true,
         }));
-
-        if (local) {
-          saveLocalStore({ ...local, concessionaires: normalised });
-        }
-
-        return normalised;
       }
     } catch (err) {
-      console.warn('[OnboardingService] Railway GET /api/concessionaires unreachable, using localStorage:', err?.message);
+      console.warn('[OnboardingService] Railway GET /api/concessionaires error:', err?.message);
     }
+    return [];
+  }
 
-    return localConcess;
+  // ============================================================
+  // READ — Lanes
+  // ============================================================
+
+  /**
+   * Load lanes directly from Railway MySQL.
+   */
+  async getLanes(plazaId) {
+    try {
+      const res = await httpClient.get('/api/plazas/lanes', {
+        params: plazaId ? { plazaId } : undefined,
+      });
+      if (res && res.data && Array.isArray(res.data)) {
+        return res.data.map((l) => ({
+          ...l,
+          _fromRailway: true,
+        }));
+      }
+    } catch (err) {
+      console.warn('[OnboardingService] Railway GET /api/plazas/lanes error:', err?.message);
+    }
+    return [];
   }
 
   // ============================================================
@@ -308,8 +277,6 @@ class OnboardingService {
       console.warn('[OnboardingService] Concessionaire save network/API note:', err?.message);
     }
 
-    // Update memory & clear from deleted tombstones
-    removeDeletedConcessId(concessionaire.id);
     const existingConcess = local.concessionaires || [];
     const alreadyExists = existingConcess.some((c) => c.id === concessionaire.id);
     const updatedConcess = alreadyExists
@@ -340,9 +307,6 @@ class OnboardingService {
   async deleteConcessionaire(concessionaireId, { actor: actorOverride } = {}) {
     const actor = actorOverride || getActor();
     const local = getLocalStore() || {};
-
-    // Record tombstone so deleted ID never resurfaces on browser refresh
-    addDeletedConcessId(concessionaireId);
 
     let savedOnRailway = false;
     try {
@@ -657,18 +621,55 @@ class OnboardingService {
    * Load full onboarding store from Railway / Backend Database.
    * Called once on component mount to hydrate all tabs with real DB data.
    */
-  async loadFullStore(localFallback) {
+  async loadFullStore() {
     try {
       const res = await httpClient.get('/api/onboarding/all');
-      if (res?.data && res.data.plazas && res.data.plazas.length > 0) {
-        const deletedIds = new Set(getDeletedConcessIds());
-        const activeConcessionaires = (res.data.concessionaires || []).filter(
-          (c) => !deletedIds.has(String(c.id))
-        );
+      if (res?.data && res.data.plazas && Array.isArray(res.data.plazas)) {
+        const normalisedPlazas = res.data.plazas.map((p) => ({
+          id: String(p.id || p.plazaId || ''),
+          name: p.name || p.plazaName || '',
+          orgId: p.orgId || p.org_id || '',
+          agencyId: p.agencyId || p.agency_id || '',
+          concessionaireId: String(p.concessionaireId || p.concessionaire_id || ''),
+          publicKey: p.publicKey || p.public_key || '',
+          category: p.category || 'Toll',
+          basePricing: p.basePricing || p.base_pricing || 'Distance Based',
+          plazaInterface: p.plazaInterface || p.plaza_interface || 'API',
+          subtype: p.subtype || 'National',
+          authority: p.authority || 'NHAI',
+          schemeRule: p.schemeRule || p.scheme_rule || 'Single Return',
+          schemeDuration: p.schemeDuration || p.scheme_duration || '24 Hrs',
+          status: p.status || 'Draft',
+          state: p.state || '',
+          city: p.city || '',
+          activationDate: p.activationDate || p.activation_date || '',
+          geoCode: p.geoCode || p.geo_code || '',
+          contactAddress: p.contactAddress || p.contact_address || '',
+          contactNo: p.contactNo || p.contact_no || '',
+          contactMail: p.contactMail || p.contact_mail || '',
+          mdr: p.mdr || (typeof p.mdrJson === 'string' ? JSON.parse(p.mdrJson) : null) || {
+            bankFee: p.bankFee || p.bank_fee || '0.90',
+            npciFee: p.npciFee || p.npci_fee || '0.15',
+            bankGst: p.bankGst || p.bank_gst || '18',
+            npciGst: p.npciGst || p.npci_gst || '18',
+          },
+          _fromRailway: true,
+        }));
+
         const backendStore = {
-          concessionaires: activeConcessionaires,
-          plazas: res.data.plazas || [],
-          lanes: res.data.lanes || [],
+          concessionaires: (res.data.concessionaires || []).map((c) => ({
+            id: String(c.id || ''),
+            name: c.name || '',
+            address: c.address || '',
+            mail: c.mail || c.email || '',
+            contact: c.contact || c.mobile || c.phone || '',
+            _fromRailway: true,
+          })),
+          plazas: normalisedPlazas,
+          lanes: (res.data.lanes || []).map((l) => ({
+            ...l,
+            _fromRailway: true,
+          })),
           callbacks: res.data.callbacks || {},
           fares: res.data.fares || {},
           cch: res.data.cch || {},
@@ -679,25 +680,24 @@ class OnboardingService {
         return backendStore;
       }
     } catch (err) {
-      console.warn('[OnboardingService] GET /api/onboarding/all unreachable, trying individual endpoints:', err?.message);
+      console.warn('[OnboardingService] GET /api/onboarding/all error, falling back to individual endpoints:', err?.message);
     }
 
-    const [plazas, concessionaires] = await Promise.all([
-      this.getPlazas().catch(() => localFallback?.plazas || []),
-      this.getConcessionaires().catch(() => localFallback?.concessionaires || []),
+    const [plazas, concessionaires, lanes] = await Promise.all([
+      this.getPlazas().catch(() => []),
+      this.getConcessionaires().catch(() => []),
+      this.getLanes().catch(() => []),
     ]);
 
-    const isLive = Boolean(
-      (plazas && plazas.some((p) => p._fromRailway)) ||
-      (concessionaires && concessionaires.some((c) => c._fromRailway))
-    );
-
     return {
-      ...localFallback,
-      plazas,
       concessionaires,
-      source: isLive ? 'LIVE_BACKEND_DB' : (localFallback?.source || 'LOCAL_CACHE'),
-      _liveDb: isLive || Boolean(localFallback?._liveDb),
+      plazas,
+      lanes,
+      callbacks: {},
+      fares: {},
+      cch: {},
+      source: 'LIVE_BACKEND_DB',
+      _liveDb: true,
     };
   }
 }
