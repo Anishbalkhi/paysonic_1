@@ -162,7 +162,25 @@ export const CycleWiseRecon = () => {
       ''
     ];
 
-    const csvContent = [
+    // Summary Total Row
+    const totTxnCount = rows.reduce((acc, r) => acc + (Number(r[4]) || 0), 0);
+    const totTxnAmt = rows.reduce((acc, r) => acc + (Number(r[5]) || 0), 0);
+    const totDisputeAddAmt = rows.reduce((acc, r) => acc + (Number(r[7]) || 0), 0);
+    const totDisputeSubAmt = rows.reduce((acc, r) => acc + (Number(r[9]) || 0), 0);
+    const totTotalAmt = rows.reduce((acc, r) => acc + (Number(r[10]) || 0), 0);
+    const totSettledAmt = rows.reduce((acc, r) => acc + (Number(r[15]) || 0), 0);
+
+    const totalRow = Array(headers.length).fill('');
+    totalRow[0] = 'TOTAL';
+    totalRow[4] = totTxnCount;
+    totalRow[5] = totTxnAmt.toFixed(2);
+    totalRow[7] = totDisputeAddAmt.toFixed(2);
+    totalRow[9] = totDisputeSubAmt.toFixed(2);
+    totalRow[10] = totTotalAmt.toFixed(2);
+    totalRow[15] = totSettledAmt.toFixed(2);
+    rows.push(totalRow);
+
+    const csvContent = '\uFEFF' + [
       ...bannerRows,
       headers.map(escapeCsv).join(','),
       ...rows.map((row) => row.map(escapeCsv).join(','))

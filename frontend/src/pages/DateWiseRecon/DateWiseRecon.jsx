@@ -179,7 +179,12 @@ export const DateWiseRecon = () => {
       ''
     ];
 
-    const csvContent = [
+    // Summary Total Row
+    const totalTxnCount = rows.reduce((acc, r) => acc + (Number(r[4]) || 0), 0);
+    const totalSettledAmt = rows.reduce((acc, r) => acc + (Number(r[5]) || 0), 0);
+    rows.push(['TOTAL', '', '', '', totalTxnCount, totalSettledAmt.toFixed(2)]);
+
+    const csvContent = '\uFEFF' + [
       ...bannerRows,
       headers.map(escapeCsv).join(','),
       ...rows.map((row) => row.map(escapeCsv).join(','))

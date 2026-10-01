@@ -181,7 +181,15 @@ export const TrsReport = () => {
       ];
     });
 
-    const csvContent = [
+    // Summary Total Row
+    const totTxnAmt = records.reduce((acc, t) => acc + (Number(t.txnAmount) || 0), 0);
+    const totalRow = Array(headers.length).fill('');
+    totalRow[0] = 'TOTAL';
+    totalRow[13] = `${records.length} Transactions`;
+    totalRow[15] = totTxnAmt.toFixed(2);
+    rows.push(totalRow);
+
+    const csvContent = '\uFEFF' + [
       ...bannerRows,
       headers.map(escapeCsv).join(','),
       ...rows.map((row) => row.map(escapeCsv).join(','))
