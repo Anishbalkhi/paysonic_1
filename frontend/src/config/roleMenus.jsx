@@ -123,12 +123,10 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { subId: 'violation_management_violation_dashboard', label: 'A. Violation Dashboard', path: '#violation-dashboard' },
-        { subId: 'violation_management_violation_validate', label: 'B. Violation Validate Report', path: '/violation-management/violation-validate-report' },
-        { subId: 'violation_management_view_violation', label: 'C. View Violation', path: '#view-violation' },
-        { subId: 'violation_management_violation_settlement_report', label: 'D. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
-        { subId: 'violation_management_violation_raw_file', label: 'E. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
-        { subId: 'violation_management_violation_bulk_action', label: 'F. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
+        { subId: 'violation_management_violation_validate', label: 'A. Violation Validate Report', path: '/violation-management/violation-validate-report' },
+        { subId: 'violation_management_violation_settlement_report', label: 'B. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_raw_file', label: 'C. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
+        { subId: 'violation_management_violation_bulk_action', label: 'D. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
       ],
     },
     {
@@ -138,10 +136,9 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
-        { subId: 'transactional_report_settled_transaction', label: 'C. Settled Transaction', path: '#settled-transaction' },
-        { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
@@ -163,8 +160,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'summary_report_transaction_summary', label: 'A. Transaction Summary Report', path: '/summary-reports/transaction-summary-report' },
         { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
-        { subId: 'summary_report_settlement_summary', label: 'C. Settlement Summary', path: '#settlement-summary' },
-        { subId: 'summary_report_pass_summary', label: 'D. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
+        { subId: 'summary_report_pass_summary', label: 'C. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
       ],
     },
     {
@@ -232,11 +228,10 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { label: 'A. Violation Dashboard', path: '#violation-dashboard' },
-        { subId: 'violation_management_violation_validate', label: 'B. Violation Validate Report', path: '/violation-management/violation-validate-report' },
-        { subId: 'violation_management_violation_settlement_report', label: 'C. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
-        { subId: 'violation_management_violation_raw_file', label: 'D. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
-        { subId: 'violation_management_violation_bulk_action', label: 'E. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
+        { subId: 'violation_management_violation_validate', label: 'A. Violation Validate Report', path: '/violation-management/violation-validate-report' },
+        { subId: 'violation_management_violation_settlement_report', label: 'B. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_raw_file', label: 'C. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
+        { subId: 'violation_management_violation_bulk_action', label: 'D. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
       ],
     },
     {
@@ -246,10 +241,9 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
-        { label: 'C. Settled Transaction', path: '#settled-transaction' },
-        { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
@@ -271,8 +265,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'summary_report_transaction_summary', label: 'A. Transaction Summary Report', path: '/summary-reports/transaction-summary-report' },
         { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
-        { label: 'C. Settlement Summary', path: '#settlement-summary' },
-        { subId: 'summary_report_pass_summary', label: 'D. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
+        { subId: 'summary_report_pass_summary', label: 'C. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
       ],
     },
     {
@@ -334,9 +327,7 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { label: 'A. Violation Dashboard', path: '#violation-dashboard' },
-        { label: 'B. View Violation', path: '#view-violation' },
-        { subId: 'violation_management_violation_settlement_report', label: 'C. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_settlement_report', label: 'A. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
       ],
     },
     {
@@ -346,9 +337,9 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
-        { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
@@ -358,8 +349,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'summary_report_transaction_summary', label: 'A. Transaction Summary Report', path: '/summary-reports/transaction-summary-report' },
         { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
-        { label: 'C. Settlement Summary', path: '#settlement-summary' },
-        { subId: 'summary_report_pass_summary', label: 'D. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
+        { subId: 'summary_report_pass_summary', label: 'C. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
       ],
     },
     {
@@ -433,9 +423,7 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { label: 'A. Violation Dashboard', path: '#violation-dashboard' },
-        { label: 'B. View Violation', path: '#view-violation' },
-        { subId: 'violation_management_violation_settlement_report', label: 'C. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_settlement_report', label: 'A. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
       ],
     },
     {
@@ -445,9 +433,9 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
-        { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
@@ -457,8 +445,7 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'summary_report_transaction_summary', label: 'A. Transaction Summary Report', path: '/summary-reports/transaction-summary-report' },
         { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
-        { label: 'C. Settlement Summary', path: '#settlement-summary' },
-        { subId: 'summary_report_pass_summary', label: 'D. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
+        { subId: 'summary_report_pass_summary', label: 'C. Pass Summary Report', path: '/summary-reports/pass-summary-report' },
       ],
     },
     {
