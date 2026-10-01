@@ -243,6 +243,31 @@ CREATE TABLE IF NOT EXISTS `dispute_transactions` (
     INDEX `idx_disp_plaza_date` (`plaza_id`, `txn_date_time`),
     INDEX `idx_disp_func_code` (`function_code`),
     INDEX `idx_disp_tag_id` (`tag_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;-- 13. Violation Transactions Table (Violation Bulk Action)
+CREATE TABLE IF NOT EXISTS `violation_transactions` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `plaza_name` VARCHAR(120) NOT NULL,
+    `vrn` VARCHAR(32) NOT NULL,
+    `tag_id` VARCHAR(64) NOT NULL,
+    `acq_txn_id` VARCHAR(32) NOT NULL,
+    `toll_txn_id` VARCHAR(32) NOT NULL,
+    `txn_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `txn_date_time` DATETIME NOT NULL,
+    `mvc` VARCHAR(16) NULL,
+    `avc` VARCHAR(16) NULL,
+    `audit_vc` VARCHAR(16) NULL DEFAULT 'NA',
+    `audit_remark` VARCHAR(255) NULL,
+    `audit_desc` VARCHAR(255) NULL,
+    `violation_img` VARCHAR(16) NOT NULL DEFAULT 'YES',
+    `netc_txn_type` VARCHAR(32) NOT NULL DEFAULT 'DEBIT',
+    `violation_api_status` VARCHAR(32) NOT NULL DEFAULT 'ACCEPTED',
+    `action_status` VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_viol_txn_date` (`txn_date_time`),
+    INDEX `idx_viol_plaza_date` (`plaza_id`, `txn_date_time`),
+    INDEX `idx_viol_api_status` (`violation_api_status`),
+    INDEX `idx_viol_tag_id` (`tag_id`),
+    INDEX `idx_viol_vrn` (`vrn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-

@@ -128,7 +128,7 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'violation_management_view_violation', label: 'C. View Violation', path: '#view-violation' },
         { subId: 'violation_management_violation_settlement_report', label: 'D. Violation Settlement Report', path: '#violation-settlement-report' },
         { subId: 'violation_management_violation_raw_file', label: 'E. Violation Raw File', path: '#violation-raw-file' },
-        { subId: 'violation_management_violation_bulk_action', label: 'F. Violation Bulk Action', path: '#violation-bulk-action' },
+        { subId: 'violation_management_violation_bulk_action', label: 'F. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
       ],
     },
     {
@@ -236,7 +236,7 @@ export const ROLE_NAVIGATION_MAP = {
         { label: 'B. Violation Validate', path: '#violation-validate' },
         { label: 'C. Violation Settlement Report', path: '#violation-settlement-report' },
         { label: 'D. Violation Raw File', path: '#violation-raw-file' },
-        { label: 'E. Violation Bulk Action', path: '#violation-bulk-action' },
+        { subId: 'violation_management_violation_bulk_action', label: 'E. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
       ],
     },
     {

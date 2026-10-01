@@ -33,6 +33,7 @@ public class DataLoader implements CommandLineRunner {
     private final PlazaCchRepository plazaCchRepository;
     private final TollTransactionRepository tollTransactionRepository;
     private final DisputeTransactionRepository disputeTransactionRepository;
+    private final ViolationTransactionRepository violationTransactionRepository;
     private final ObjectMapper objectMapper;
 
     public DataLoader(UserRepository userRepository,
@@ -47,6 +48,7 @@ public class DataLoader implements CommandLineRunner {
                       PlazaCchRepository plazaCchRepository,
                       TollTransactionRepository tollTransactionRepository,
                       DisputeTransactionRepository disputeTransactionRepository,
+                      ViolationTransactionRepository violationTransactionRepository,
                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
@@ -60,6 +62,7 @@ public class DataLoader implements CommandLineRunner {
         this.plazaCchRepository = plazaCchRepository;
         this.tollTransactionRepository = tollTransactionRepository;
         this.disputeTransactionRepository = disputeTransactionRepository;
+        this.violationTransactionRepository = violationTransactionRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -74,6 +77,7 @@ public class DataLoader implements CommandLineRunner {
             seedTollTransactions();
             seedCycleWiseTransactions();
             seedDisputeTransactions();
+            seedViolationTransactions();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -1001,6 +1005,97 @@ public class DataLoader implements CommandLineRunner {
 
         disputeTransactionRepository.saveAll(list);
         log.info("Seeded {} Dispute Transactions into Railway DB successfully.", list.size());
+    }
+
+    private void seedViolationTransactions() {
+        if (violationTransactionRepository.count() > 0) {
+            return;
+        }
+
+        List<ViolationTransaction> list = new ArrayList<>();
+
+        // Row 1
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "102047735808525000", "ZP170907", new BigDecimal("5.00"),
+                LocalDateTime.of(2026, 9, 15, 7, 0, 0),
+                "VC4", "VC18", "NA", null, "8009", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 2
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "102047735808525000", "ZP170906", new BigDecimal("5.00"),
+                LocalDateTime.of(2026, 9, 15, 6, 0, 0),
+                "VC4", "VC18", "NA", null, "8004", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 3
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "102047735808525000", "ZP170904", new BigDecimal("5.00"),
+                LocalDateTime.of(2026, 9, 15, 4, 0, 0),
+                "VC4", "VC18", "VC20", null, "Tata Ace or Similar Mini Light Commercial Vehicle", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 4
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "102047735808525000", "ZP170902", new BigDecimal("5.00"),
+                LocalDateTime.of(2026, 9, 15, 2, 0, 0),
+                "VC4", "VC18", "NA", null, "8012 Tractor with trailer", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 5
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "102047735808525000", "ZP170901", new BigDecimal("5.00"),
+                LocalDateTime.of(2026, 9, 15, 1, 0, 0),
+                "VC4", "VC18", "NA", null, "8006 Tata Ace or Similar Mini Light Commercial Vehicle", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 6
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "102047735808525000", "ZP160912", new BigDecimal("25.00"),
+                LocalDateTime.of(2026, 9, 14, 12, 0, 0),
+                "VC16", "VC18", "VC17", null, "8008 Heavy Construction machinery", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 7
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "102047735808525000", "ZP160911", new BigDecimal("25.00"),
+                LocalDateTime.of(2026, 9, 14, 11, 0, 0),
+                "VC16", "VC10", "NA", "NA", "Business Rule Violation", "YES", "DEBIT", "DECLINED"
+        ));
+
+        // Row 8
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "102047735808525000", "ZP160911", new BigDecimal("25.00"),
+                LocalDateTime.of(2026, 9, 14, 11, 0, 0),
+                "VC16", "VC18", "NA", null, "8008 Tractor", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 9
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "102047735808525000", "ZP160910", new BigDecimal("25.00"),
+                LocalDateTime.of(2026, 9, 14, 10, 0, 0),
+                "VC16", "VC18", "VC18", null, "Approved via Bulk Action", "YES", "DEBIT", "ACCEPTED"
+        ));
+
+        // Row 10
+        list.add(new ViolationTransaction(
+                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "102047735808525000", "ZP160909", new BigDecimal("25.00"),
+                LocalDateTime.of(2026, 9, 14, 9, 0, 0),
+                "VC16", "VC18", "NA", "NA", "Business Rule Violation", "YES", "DEBIT", "DECLINED"
+        ));
+
+        violationTransactionRepository.saveAll(list);
+        log.info("Seeded {} Violation Transactions into Railway DB successfully.", list.size());
     }
 }
 

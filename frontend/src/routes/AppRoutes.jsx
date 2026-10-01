@@ -16,6 +16,7 @@ import TollFareReport from '../pages/TollFareReport/TollFareReport';
 import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransaction';
 import TransactionSearchDispute from '../pages/TransactionSearchDispute/TransactionSearchDispute';
 import TransactionSearchNormal from '../pages/TransactionSearchNormal/TransactionSearchNormal';
+import ViolationBulkAction from '../pages/ViolationBulkAction/ViolationBulkAction';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -243,8 +244,19 @@ export const AppRoutes = () => {
         element={<Navigate to="/dispute-handling" replace />}
       />
       <Route
-        path="/dispute/detail-report"
-        element={<Navigate to="/dispute-handling" replace />}
+        path="/violation-management/violation-bulk-action"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="violation_management"
+          >
+            <ViolationBulkAction />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/violation-bulk-action"
+        element={<Navigate to="/violation-management/violation-bulk-action" replace />}
       />
 
       {/* Catch-all */}
