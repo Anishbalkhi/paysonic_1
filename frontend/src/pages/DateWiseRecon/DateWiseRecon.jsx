@@ -126,6 +126,61 @@ export const DateWiseRecon = () => {
     }
   };
 
+  // Export CSV matching exact records currently displayed on screen (1:1 guaranteed)
+  const handleExportCsv = () => {
+    if (!records || records.length === 0) return;
+
+    const headers = ['Plaza ID', 'Plaza Name', 'Txn Date', 'Settlement Date', 'Txn Count', 'Settled Amount'];
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = [];
+    records.forEach((r) => {
+      if (r.breakdowns && r.breakdowns.length > 0) {
+        r.breakdowns.forEach((b) => {
+          rows.push([
+            r.plazaId || '',
+            r.plazaName || '',
+            formatDate(r.txnDate),
+            formatDate(b.settlementDate),
+            b.txnCount || 0,
+            (Number(b.settledAmount) || 0).toFixed(2)
+          ]);
+        });
+      } else {
+        rows.push([
+          r.plazaId || '',
+          r.plazaName || '',
+          formatDate(r.txnDate),
+          '-',
+          r.txnCount || 0,
+          (Number(r.settledAmount) || 0).toFixed(2)
+        ]);
+      }
+    });
+
+    const csvContent = [
+      headers.map(escapeCsv).join(','),
+      ...rows.map((row) => row.map(escapeCsv).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Date_Wise_Recon_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Date formatter (DD-MM-YYYY)
   const formatDate = (dateVal) => {
     if (!dateVal) return '';
@@ -205,10 +260,19 @@ export const DateWiseRecon = () => {
               type="button"
               className="btn-orange"
               onClick={handleExportExcel}
-              disabled={exporting}
+              disabled={exporting || loading || records.length === 0}
               id="dwrExportBtn"
             >
               {exporting ? 'Exporting...' : 'Export Excel'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleExportCsv}
+              disabled={loading || records.length === 0}
+              id="dwrExportCsvBtn"
+            >
+              Export CSV
             </button>
 
             <button

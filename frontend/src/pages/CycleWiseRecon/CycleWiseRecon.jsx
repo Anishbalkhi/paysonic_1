@@ -89,7 +89,7 @@ export const CycleWiseRecon = () => {
     setCycle('');
   };
 
-  // Export to Excel
+  // Export to Excel (Server XLSX)
   const handleExport = async () => {
     if (!validateDates(fromDate, toDate)) return;
 
@@ -107,6 +107,61 @@ export const CycleWiseRecon = () => {
     } finally {
       setExporting(false);
     }
+  };
+
+  // Export CSV matching exact records currently displayed on screen (1:1 guaranteed)
+  const handleExportCsv = () => {
+    if (!records || records.length === 0) return;
+
+    const headers = [
+      'Plaza Id', 'Plaza Name', 'Plaza Settlement Date', 'Recon Cycle',
+      'Txn Count', 'Txn Amount', 'Dispute Add Count', 'Dispute Add Amount',
+      'Dispute Sub Count', 'Dispute Sub Amount', 'Total Amount',
+      'Service Fees', 'Service GST', '0.013 GST(1.30%)', 'GST(1.30%)', 'Settled Amount'
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = records.map((r) => [
+      r.plazaId || '',
+      r.plazaName || '',
+      formatDate(r.plazaSettlementDate),
+      r.reconCycle || '',
+      r.txnCount || 0,
+      Number(r.txnAmount || 0).toFixed(2),
+      r.disputeAddCount || 0,
+      Number(r.disputeAddAmount || 0).toFixed(2),
+      r.disputeSubCount || 0,
+      Number(r.disputeSubAmount || 0).toFixed(2),
+      Number(r.totalAmount || 0).toFixed(2),
+      Number(r.serviceFees || 0).toFixed(2),
+      Number(r.serviceGst || 0).toFixed(2),
+      Number(r.fee130 || 0).toFixed(2),
+      Number(r.gstOnFee130 || 0).toFixed(2),
+      Number(r.settledAmount || 0).toFixed(2)
+    ]);
+
+    const csvContent = [
+      headers.map(escapeCsv).join(','),
+      ...rows.map((row) => row.map(escapeCsv).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Cycle_Wise_Report_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Format currency with 2 decimals
@@ -289,6 +344,15 @@ export const CycleWiseRecon = () => {
               id="cwrExportBtn"
             >
               {exporting ? 'Exporting...' : 'Export Excel'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleExportCsv}
+              disabled={loading || records.length === 0}
+              id="cwrExportCsvBtn"
+            >
+              Export CSV
             </button>
             <button
               type="button"

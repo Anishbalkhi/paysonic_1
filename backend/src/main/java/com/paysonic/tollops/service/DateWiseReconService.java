@@ -139,27 +139,27 @@ public class DateWiseReconService {
 
             int rowIdx = 1;
             for (DateWiseReconSummaryDTO summary : records) {
-                // Summary (Parent Level)
-                Row pRow = sheet.createRow(rowIdx++);
-                pRow.createCell(0).setCellValue(summary.getPlazaId());
-                pRow.createCell(1).setCellValue(summary.getPlazaName());
-                pRow.createCell(2).setCellValue(summary.getTxnDate() != null ? summary.getTxnDate().format(DATE_FMT) : "");
-                pRow.createCell(3).setCellValue("TOTAL (ALL SETTLEMENT DATES)");
-                pRow.createCell(4).setCellValue(summary.getTxnCount());
-                Cell pAmt = pRow.createCell(5);
-                pAmt.setCellValue(summary.getSettledAmount().doubleValue());
-                pAmt.setCellStyle(numStyle);
-
-                // Expanded Breakdown (Child Level)
-                for (DateWiseBreakdownDTO b : summary.getBreakdowns()) {
-                    Row cRow = sheet.createRow(rowIdx++);
-                    cRow.createCell(0).setCellValue(summary.getPlazaId());
-                    cRow.createCell(1).setCellValue(summary.getPlazaName());
-                    cRow.createCell(2).setCellValue(summary.getTxnDate() != null ? summary.getTxnDate().format(DATE_FMT) : "");
-                    cRow.createCell(3).setCellValue(b.getSettlementDate() != null ? b.getSettlementDate().format(DATE_FMT) : "");
-                    cRow.createCell(4).setCellValue(b.getTxnCount());
-                    Cell cAmt = cRow.createCell(5);
-                    cAmt.setCellValue(b.getSettledAmount().doubleValue());
+                if (summary.getBreakdowns() != null && !summary.getBreakdowns().isEmpty()) {
+                    for (DateWiseBreakdownDTO b : summary.getBreakdowns()) {
+                        Row row = sheet.createRow(rowIdx++);
+                        row.createCell(0).setCellValue(summary.getPlazaId());
+                        row.createCell(1).setCellValue(summary.getPlazaName());
+                        row.createCell(2).setCellValue(summary.getTxnDate() != null ? summary.getTxnDate().format(DATE_FMT) : "");
+                        row.createCell(3).setCellValue(b.getSettlementDate() != null ? b.getSettlementDate().format(DATE_FMT) : "");
+                        row.createCell(4).setCellValue(b.getTxnCount());
+                        Cell cAmt = row.createCell(5);
+                        cAmt.setCellValue(b.getSettledAmount() != null ? b.getSettledAmount().doubleValue() : 0.0);
+                        cAmt.setCellStyle(numStyle);
+                    }
+                } else {
+                    Row row = sheet.createRow(rowIdx++);
+                    row.createCell(0).setCellValue(summary.getPlazaId());
+                    row.createCell(1).setCellValue(summary.getPlazaName());
+                    row.createCell(2).setCellValue(summary.getTxnDate() != null ? summary.getTxnDate().format(DATE_FMT) : "");
+                    row.createCell(3).setCellValue("-");
+                    row.createCell(4).setCellValue(summary.getTxnCount());
+                    Cell cAmt = row.createCell(5);
+                    cAmt.setCellValue(summary.getSettledAmount() != null ? summary.getSettledAmount().doubleValue() : 0.0);
                     cAmt.setCellStyle(numStyle);
                 }
             }

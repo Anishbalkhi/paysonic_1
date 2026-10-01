@@ -106,6 +106,57 @@ export const TrsReport = () => {
     }
   };
 
+  // Export CSV matching exact records currently displayed on screen (1:1 guaranteed)
+  const handleExportCsv = () => {
+    if (!records || records.length === 0) return;
+
+    const headers = [
+      'Acq Txn ID', 'Plaza ID', 'Plaza Name', 'Lane ID', 'Tag ID', 'VRN',
+      'Toll Txn ID', 'Status', 'Txn Amount', 'Settled Amount', 'Txn Date',
+      'Plaza Settle Date', 'Clearing Cycle'
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = records.map((t) => [
+      t.acqTxnId || '',
+      t.plazaId || '',
+      t.plazaName || '',
+      t.laneId || '',
+      t.tagId || '',
+      t.vrn || '',
+      t.tollTxnId || '',
+      t.status || '',
+      t.txnAmount !== null && t.txnAmount !== undefined ? Number(t.txnAmount).toFixed(2) : '0.00',
+      t.settledAmount !== null && t.settledAmount !== undefined ? Number(t.settledAmount).toFixed(2) : '0.00',
+      formatDateDisplay(t.txnDate),
+      formatDateDisplay(t.plazaSettleDate),
+      t.clearingCycle || ''
+    ]);
+
+    const csvContent = [
+      headers.map(escapeCsv).join(','),
+      ...rows.map((row) => row.map(escapeCsv).join(','))
+    ].join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `TRS_Report_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Date formatter for table display
   const formatDateDisplay = (dateVal) => {
     if (!dateVal) return '';
@@ -173,10 +224,19 @@ export const TrsReport = () => {
               type="button"
               className="btn-orange"
               onClick={handleExportExcel}
-              disabled={exporting}
+              disabled={exporting || loading || records.length === 0}
               id="trsExportBtn"
             >
               {exporting ? 'Exporting...' : 'Export Excel'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleExportCsv}
+              disabled={loading || records.length === 0}
+              id="trsExportCsvBtn"
+            >
+              Export CSV
             </button>
 
             <button
