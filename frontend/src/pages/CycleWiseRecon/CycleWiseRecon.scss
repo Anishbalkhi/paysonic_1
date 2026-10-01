@@ -167,36 +167,41 @@
         margin-left: auto;
 
         .btn-orange {
-          height: 38px;
-          padding: 0 20px;
-          font-size: 13px;
+          height: 42px;
+          padding: 0 24px;
+          font-size: 14px;
           font-weight: 600;
           color: #ffffff;
           background: #ff7a00;
           border: none;
           border-radius: 6px;
           cursor: pointer;
-          transition: background-color 0.15s ease, transform 0.1s ease;
+          transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
+          gap: 8px;
           white-space: nowrap;
 
           &:hover:not(:disabled) {
             background: #e66e00;
+            box-shadow: 0 2px 6px rgba(255, 122, 0, 0.3);
+          }
+
+          &:active:not(:disabled) {
+            transform: scale(0.98);
           }
 
           &:disabled {
-            opacity: 0.6;
+            opacity: 0.65;
             cursor: not-allowed;
           }
         }
 
         .btn-secondary {
-          height: 38px;
-          padding: 0 16px;
-          font-size: 13px;
+          height: 42px;
+          padding: 0 20px;
+          font-size: 14px;
           font-weight: 500;
           color: #4b5563;
           background: #f3f4f6;
@@ -205,7 +210,7 @@
           cursor: pointer;
           transition: all 0.15s ease;
 
-          &:hover {
+          &:hover:not(:disabled) {
             background: #e5e7eb;
             color: #1f2937;
           }

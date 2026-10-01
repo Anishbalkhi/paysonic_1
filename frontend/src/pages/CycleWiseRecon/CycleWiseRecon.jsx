@@ -190,16 +190,6 @@ export const CycleWiseRecon = () => {
           </p>
         </div>
 
-        <div className="header-actions">
-          <button
-            type="button"
-            className="btn-excel"
-            onClick={handleExport}
-            disabled={exporting || loading || records.length === 0}
-          >
-            {exporting ? 'Generating Excel...' : '📥 Export to Excel'}
-          </button>
-        </div>
       </div>
 
       {/* KPI Cards */}
@@ -294,10 +284,20 @@ export const CycleWiseRecon = () => {
             <button
               type="button"
               className="btn-orange"
+              onClick={handleExport}
+              disabled={exporting || loading || records.length === 0}
+              id="cwrExportBtn"
+            >
+              {exporting ? 'Exporting...' : 'Export Excel'}
+            </button>
+            <button
+              type="button"
+              className="btn-orange"
               onClick={handleSearch}
               disabled={loading}
+              id="cwrSearchBtn"
             >
-              {loading ? 'Searching...' : '🔍 Search'}
+              {loading ? 'Searching...' : 'Search'}
             </button>
             <button
               type="button"
