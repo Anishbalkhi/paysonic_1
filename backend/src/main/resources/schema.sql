@@ -269,5 +269,30 @@ CREATE TABLE IF NOT EXISTS `violation_transactions` (
     INDEX `idx_viol_plaza_date` (`plaza_id`, `txn_date_time`),
     INDEX `idx_viol_api_status` (`violation_api_status`),
     INDEX `idx_viol_tag_id` (`tag_id`),
-    INDEX `idx_viol_vrn` (`vrn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 14. Violation Raw Files Table (Violation Raw File Report)
+CREATE TABLE IF NOT EXISTS `violation_raw_files` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `tag_id` VARCHAR(64) NOT NULL,
+    `function_code` VARCHAR(16) NOT NULL DEFAULT '763',
+    `txn_time` VARCHAR(32) NOT NULL,
+    `txn_id` VARCHAR(64) NOT NULL,
+    `issuer_id` VARCHAR(32) NOT NULL,
+    `acquirer_id` VARCHAR(32) NOT NULL DEFAULT '720030',
+    `txn_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `reason_code` VARCHAR(16) NOT NULL DEFAULT '1005',
+    `full_partial_indicator` VARCHAR(8) NOT NULL DEFAULT 'P',
+    `toll_plaza_id` VARCHAR(32) NOT NULL DEFAULT '600601',
+    `tid` VARCHAR(64) NOT NULL,
+    `mmt` VARCHAR(64) NULL,
+    `internal_tracking_number` VARCHAR(64) NULL DEFAULT 'NA',
+    `parsed_date_time` DATETIME NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_raw_tag_id` (`tag_id`),
+    INDEX `idx_raw_txn_id` (`txn_id`),
+    INDEX `idx_raw_plaza_id` (`toll_plaza_id`),
+    INDEX `idx_raw_txn_time` (`txn_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

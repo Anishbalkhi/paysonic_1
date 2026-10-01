@@ -34,6 +34,7 @@ public class DataLoader implements CommandLineRunner {
     private final TollTransactionRepository tollTransactionRepository;
     private final DisputeTransactionRepository disputeTransactionRepository;
     private final ViolationTransactionRepository violationTransactionRepository;
+    private final ViolationRawRecordRepository violationRawRecordRepository;
     private final ObjectMapper objectMapper;
 
     public DataLoader(UserRepository userRepository,
@@ -49,6 +50,7 @@ public class DataLoader implements CommandLineRunner {
                       TollTransactionRepository tollTransactionRepository,
                       DisputeTransactionRepository disputeTransactionRepository,
                       ViolationTransactionRepository violationTransactionRepository,
+                      ViolationRawRecordRepository violationRawRecordRepository,
                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
@@ -63,6 +65,7 @@ public class DataLoader implements CommandLineRunner {
         this.tollTransactionRepository = tollTransactionRepository;
         this.disputeTransactionRepository = disputeTransactionRepository;
         this.violationTransactionRepository = violationTransactionRepository;
+        this.violationRawRecordRepository = violationRawRecordRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -78,6 +81,7 @@ public class DataLoader implements CommandLineRunner {
             seedCycleWiseTransactions();
             seedDisputeTransactions();
             seedViolationTransactions();
+            seedViolationRawRecords();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -1096,6 +1100,87 @@ public class DataLoader implements CommandLineRunner {
 
         violationTransactionRepository.saveAll(list);
         log.info("Seeded {} Violation Transactions into Railway DB successfully.", list.size());
+    }
+
+    private void seedViolationRawRecords() {
+        if (violationRawRecordRepository.count() > 0) {
+            return;
+        }
+
+        List<ViolationRawRecord> list = new ArrayList<>();
+
+        // Row 1
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260916162535", "102047735808525000",
+                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 2
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260916162335", "102047735808525000",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 3
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260916160238", "102047735808525000",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 4
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260916121551", "102047735808525000",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 5
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260916121500", "102047735808525000",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 6
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260916121302", "102047735808525000",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 7
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260915123718", "102047735808525000",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 8
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260915123428", "102047735808525000",
+                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 9
+        list.add(new ViolationRawRecord(
+                "34161FA82033E8260213A3A0", "763", "260915123338", "102047735808525000",
+                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
+        ));
+
+        // Row 10
+        list.add(new ViolationRawRecord(
+                "34161FA820328EB002947820", "763", "260917102244", "102047735808525000",
+                "608088", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "34161FA820328EB002947820", "MH12VL3467", "NA"
+        ));
+
+        violationRawRecordRepository.saveAll(list);
+        log.info("Seeded {} Violation Raw Records into Railway DB successfully.", list.size());
     }
 }
 

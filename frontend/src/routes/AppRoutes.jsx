@@ -17,6 +17,7 @@ import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransactio
 import TransactionSearchDispute from '../pages/TransactionSearchDispute/TransactionSearchDispute';
 import TransactionSearchNormal from '../pages/TransactionSearchNormal/TransactionSearchNormal';
 import ViolationBulkAction from '../pages/ViolationBulkAction/ViolationBulkAction';
+import ViolationRawFileReport from '../pages/ViolationRawFileReport/ViolationRawFileReport';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -257,6 +258,25 @@ export const AppRoutes = () => {
       <Route
         path="/violation-bulk-action"
         element={<Navigate to="/violation-management/violation-bulk-action" replace />}
+      />
+      <Route
+        path="/violation-management/violation-raw-file"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="violation_management"
+          >
+            <ViolationRawFileReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/violation-raw-file"
+        element={<Navigate to="/violation-management/violation-raw-file" replace />}
+      />
+      <Route
+        path="/violation-management/violation-raw-file-report"
+        element={<Navigate to="/violation-management/violation-raw-file" replace />}
       />
 
       {/* Catch-all */}
