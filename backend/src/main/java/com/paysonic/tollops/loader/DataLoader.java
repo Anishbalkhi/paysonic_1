@@ -39,6 +39,8 @@ public class DataLoader implements CommandLineRunner {
     private final ViolationSettlementRepository violationSettlementRepository;
     private final ViolationValidateRepository violationValidateRepository;
     private final NhaiTrafficRepository nhaiTrafficRepository;
+    private final TransactionSummaryRepository transactionSummaryRepository;
+    private final PassSummaryRepository passSummaryRepository;
     private final ObjectMapper objectMapper;
 
     public DataLoader(UserRepository userRepository,
@@ -58,6 +60,8 @@ public class DataLoader implements CommandLineRunner {
                       ViolationSettlementRepository violationSettlementRepository,
                       ViolationValidateRepository violationValidateRepository,
                       NhaiTrafficRepository nhaiTrafficRepository,
+                      TransactionSummaryRepository transactionSummaryRepository,
+                      PassSummaryRepository passSummaryRepository,
                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
@@ -76,6 +80,8 @@ public class DataLoader implements CommandLineRunner {
         this.violationSettlementRepository = violationSettlementRepository;
         this.violationValidateRepository = violationValidateRepository;
         this.nhaiTrafficRepository = nhaiTrafficRepository;
+        this.transactionSummaryRepository = transactionSummaryRepository;
+        this.passSummaryRepository = passSummaryRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -95,6 +101,8 @@ public class DataLoader implements CommandLineRunner {
             seedViolationSettlementRecords();
             seedViolationValidateReports();
             seedNhaiTrafficReports();
+            seedTransactionSummaryReports();
+            seedPassSummaryReports();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -1484,6 +1492,83 @@ public class DataLoader implements CommandLineRunner {
         nhaiTrafficRepository.saveAll(list);
         log.info("Seeded {} NHAI Traffic Records into Railway DB successfully.", list.size());
     }
+
+    private void seedTransactionSummaryReports() {
+        if (transactionSummaryRepository.count() > 0) {
+            log.info("Transaction Summary Reports already seeded ({} records).", transactionSummaryRepository.count());
+            return;
+        }
+
+        List<TransactionSummaryRecord> list = new ArrayList<>();
+
+        record PlazaMeta(String id, String name) {}
+        List<PlazaMeta> plazas = List.of(
+                new PlazaMeta("Plaza 1", "Plaza Name"),
+                new PlazaMeta("Plaza 2", "Plaza Name"),
+                new PlazaMeta("600601", "Dummytollplaza1"),
+                new PlazaMeta("666666", "Autumn"),
+                new PlazaMeta("501101", "MUMBAI PLAZA NH-04")
+        );
+
+        record RowMeta(String status, String code, long count, String amount, int order) {}
+        List<RowMeta> rows = List.of(
+                new RowMeta("Declined", "DUPLICATE", 192, "0.00", 1),
+                new RowMeta("Declined", "BLKLISTTAG", 24, "0.00", 2),
+                new RowMeta("Declined", "MALTAG", 62, "0.00", 3),
+                new RowMeta("NPCIDecline", "Error:164", 1, "620.00", 4),
+                new RowMeta("Accepted", "ACCEPTED", 24001, "3624310.00", 5),
+                new RowMeta("Accepted", "DISCOUNTRP", 5240, "550330.00", 6),
+                new RowMeta("Accepted", "EXEMPTED", 15, "0.00", 7)
+        );
+
+        LocalDate defaultDate = LocalDate.of(2026, 9, 15);
+
+        for (PlazaMeta p : plazas) {
+            for (RowMeta r : rows) {
+                list.add(new TransactionSummaryRecord(
+                        p.id(), p.name(), defaultDate,
+                        r.status(), r.code(),
+                        r.count(), new BigDecimal(r.amount()),
+                        r.order()
+                ));
+            }
+        }
+
+        transactionSummaryRepository.saveAll(list);
+        log.info("Seeded {} Transaction Summary Records into Railway DB successfully.", list.size());
+    }
+
+    // ── Pass Summary Report Seed ─────────────────────────────────────────
+
+    private void seedPassSummaryReports() {
+        if (passSummaryRepository.existsByReportDate(LocalDate.of(2026, 9, 15))) {
+            log.info("Pass Summary Reports already seeded — skipping.");
+            return;
+        }
+
+        List<PassSummaryRecord> list = new ArrayList<>();
+        LocalDate date = LocalDate.of(2026, 9, 15);
+
+        // Plaza 555555 / Plaza1
+        String plazaId = "555555";
+        String plazaName = "Plaza1";
+
+        // Cash mode
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Cash", "Monthly Regular",  5L, new BigDecimal("100.00"), 1));
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Cash", "Monthly Exempted", 4L, new BigDecimal("0.00"),   2));
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Cash", "Local 10km",       6L, new BigDecimal("50.00"),  3));
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Cash", "Local 20km",       7L, new BigDecimal("80.00"),  4));
+
+        // Online mode
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Online", "Monthly Regular",  5L, new BigDecimal("100.00"), 1));
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Online", "Monthly Exempted", 4L, new BigDecimal("0.00"),   2));
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Online", "Local 10km",       6L, new BigDecimal("50.00"),  3));
+        list.add(new PassSummaryRecord(plazaId, plazaName, date, "Online", "Local 20km",       7L, new BigDecimal("80.00"),  4));
+
+        passSummaryRepository.saveAll(list);
+        log.info("Seeded {} Pass Summary Records into Railway DB successfully.", list.size());
+    }
 }
+
 
 

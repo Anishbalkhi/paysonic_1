@@ -376,5 +376,43 @@ CREATE TABLE IF NOT EXISTS `nhai_traffic_reports` (
     INDEX `idx_nhai_journey` (`journey_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 18. Transaction Summary Reports Table (Transaction Summary Report)
+CREATE TABLE IF NOT EXISTS `transaction_summary_reports` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `plaza_name` VARCHAR(128) NOT NULL,
+    `report_date` DATE NOT NULL,
+    `transaction_status` VARCHAR(50) NOT NULL,
+    `response_code` VARCHAR(50) NOT NULL,
+    `transaction_count` BIGINT NOT NULL DEFAULT 0,
+    `transaction_amount` DECIMAL(14, 2) NOT NULL DEFAULT 0.00,
+    `display_order` INT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_txn_sum_plaza_date` (`plaza_id`, `report_date`),
+    INDEX `idx_txn_sum_date` (`report_date`),
+    INDEX `idx_txn_sum_status` (`transaction_status`),
+    INDEX `idx_txn_sum_code` (`response_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 19. Pass Summary Reports Table (Pass Summary Report)
+CREATE TABLE IF NOT EXISTS `pass_summary_reports` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `plaza_name` VARCHAR(128) NOT NULL,
+    `report_date` DATE NOT NULL,
+    `payment_mode` VARCHAR(50) NOT NULL,
+    `pass_type` VARCHAR(100) NOT NULL,
+    `pass_count` BIGINT NOT NULL DEFAULT 0,
+    `pass_amount` DECIMAL(14, 2) NOT NULL DEFAULT 0.00,
+    `display_order` INT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_pass_sum_plaza_date` (`plaza_id`, `report_date`),
+    INDEX `idx_pass_sum_date` (`report_date`),
+    INDEX `idx_pass_sum_mode` (`payment_mode`),
+    INDEX `idx_pass_sum_type` (`pass_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
