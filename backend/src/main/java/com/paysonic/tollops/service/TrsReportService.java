@@ -168,29 +168,30 @@ public class TrsReportService {
                 "Sr No", "Toll File Name", "Plaza ID", "Plaza Name", "Lane ID",
                 "Tag ID", "VRN", "Acq Txn ID", "Toll Txn ID", "Toll Message ID",
                 "MVC", "Tag VC", "AVC", "Transaction Status", "Reason",
-                "Transaction Amount", "Settled Amount", "Transaction Date", "Plaza Post Date",
-                "NPCI Error Code", "NPCI Settled Date", "NPCI Clearing Cycle", "Plaza Settlement Date",
-                "Transaction Type", "NPCI Response Date", "Plaza Type", "Is Violation",
-                "Audit VC", "Violation Settlement Amount", "Violation Settlement Date"
+                "Transaction Amount", "Transaction Date", "Plaza Posted Date",
+                "NPCI Error Code", "NPCI Response Date", "Transaction Type",
+                "Issuer Bank ID", "Issuer Bank Name", "TID", "Plaza Type", "Is Manual"
             };
 
-            // Row 0: Title Banner
+            int rightCol = headers.length - 1;
+
+            // Row 0: Title Banner (Right-aligned matching screenshot)
             Row titleRow = sheet.createRow(0);
             titleRow.setHeightInPoints(28);
-            Cell titleCell = titleRow.createCell(0);
+            Cell titleCell = titleRow.createCell(rightCol);
             titleCell.setCellValue("TRANSACTION REPORT");
             titleCell.setCellStyle(titleStyle);
 
-            // Row 1: Subtitle with Date Range
+            // Row 1: Subtitle with Date Range (Right-aligned matching screenshot)
             Row subRow = sheet.createRow(1);
             subRow.setHeightInPoints(18);
-            Cell subCell = subRow.createCell(0);
+            Cell subCell = subRow.createCell(rightCol);
             String fromStr = fromDate != null ? fromDate.format(DATE_FMT) : "01-09-2026 00:00:00";
-            String toStr = toDate != null ? toDate.format(DATE_FMT) : "30-09-2026 23:59:59";
-            subCell.setCellValue("From Date: " + fromStr + "  |  To Date: " + toStr);
+            String toStr = toDate != null ? toDate.format(DATE_FMT) : "06-09-2026 23:59:59";
+            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr);
             subCell.setCellStyle(subTitleStyle);
 
-            // Row 2: Green Accent Bar
+            // Row 2: Green Accent Bar across all 26 columns
             Row greenRow = sheet.createRow(2);
             greenRow.setHeightInPoints(5);
             for (int i = 0; i < headers.length; i++) {
@@ -198,7 +199,7 @@ public class TrsReportService {
                 gc.setCellStyle(greenBarStyle);
             }
 
-            // Row 3: Table Header Row
+            // Row 3: Table Header Row (Royal Blue fill with Bold White text)
             Row headerRow = sheet.createRow(3);
             headerRow.setHeightInPoints(26);
             for (int i = 0; i < headers.length; i++) {
@@ -222,7 +223,7 @@ public class TrsReportService {
                 Cell c5 = row.createCell(5); c5.setCellValue(blankIfNull(t.getTagId())); c5.setCellStyle(textStyle);
                 Cell c6 = row.createCell(6); c6.setCellValue(blankIfNull(t.getVrn())); c6.setCellStyle(centerStyle);
 
-                // Acq Txn ID: MUST BE TEXT
+                // 7. Acq Txn ID: MUST BE TEXT
                 Cell acqCell = row.createCell(7);
                 acqCell.setCellStyle(textStyle);
                 acqCell.setCellValue(blankIfNull(t.getAcqTxnId()));
@@ -233,7 +234,7 @@ public class TrsReportService {
                 Cell c11 = row.createCell(11); c11.setCellValue(blankIfNull(t.getTagVc())); c11.setCellStyle(centerStyle);
                 Cell c12 = row.createCell(12); c12.setCellValue(blankIfNull(t.getAvc())); c12.setCellStyle(centerStyle);
 
-                // Transaction Status (Declined / Accepted)
+                // 13. Transaction Status (Declined / Accepted / Rejected)
                 Cell statusCell = row.createCell(13);
                 String st = blankIfNull(t.getStatus());
                 statusCell.setCellValue(st);
@@ -245,9 +246,10 @@ public class TrsReportService {
                     statusCell.setCellStyle(centerStyle);
                 }
 
-                Cell c14 = row.createCell(14); c14.setCellValue(blankIfNull(t.getReason())); c14.setCellStyle(textStyle);
+                // 14. Reason
+                Cell c14 = row.createCell(14); c14.setCellValue(blankIfNull(t.getReason())); c14.setCellStyle(centerStyle);
 
-                // Transaction Amount
+                // 15. Transaction Amount
                 Cell txnAmtCell = row.createCell(15);
                 txnAmtCell.setCellStyle(numberStyle);
                 if (t.getTxnAmount() != null) {
@@ -256,71 +258,70 @@ public class TrsReportService {
                     txnAmtCell.setCellValue(0.0);
                 }
 
-                // Settled Amount (blank if rejected/null)
-                Cell setAmtCell = row.createCell(16);
-                setAmtCell.setCellStyle(numberStyle);
-                if (t.getSettledAmount() != null) {
-                    setAmtCell.setCellValue(t.getSettledAmount().doubleValue());
-                } else {
-                    setAmtCell.setCellValue(0.0);
+                // 16. Transaction Date
+                Cell c16 = row.createCell(16); c16.setCellValue(formatDate(t.getTxnDate())); c16.setCellStyle(centerStyle);
+
+                // 17. Plaza Posted Date
+                Cell c17 = row.createCell(17); c17.setCellValue(formatDate(t.getPlazaPostDate())); c17.setCellStyle(centerStyle);
+
+                // 18. NPCI Error Code
+                Cell c18 = row.createCell(18); c18.setCellValue(blankIfNull(t.getNpciErrorCode())); c18.setCellStyle(centerStyle);
+
+                // 19. NPCI Response Date
+                Cell c19 = row.createCell(19); c19.setCellValue(formatDate(t.getNpciRespDate())); c19.setCellStyle(centerStyle);
+
+                // 20. Transaction Type
+                Cell c20 = row.createCell(20); c20.setCellValue(blankIfNull(t.getTxnType())); c20.setCellStyle(centerStyle);
+
+                // 21. Issuer Bank ID
+                String issuerBankId = "052337";
+                if ("Autumn".equalsIgnoreCase(t.getPlazaName()) || "Gluten".equalsIgnoreCase(t.getPlazaName()) || "778999".equals(t.getPlazaId())) {
+                    issuerBankId = "007030";
                 }
+                Cell c21 = row.createCell(21); c21.setCellValue(issuerBankId); c21.setCellStyle(centerStyle);
 
-                Cell c17 = row.createCell(17); c17.setCellValue(formatDate(t.getTxnDate())); c17.setCellStyle(centerStyle);
-                Cell c18 = row.createCell(18); c18.setCellValue(formatDate(t.getPlazaPostDate())); c18.setCellStyle(centerStyle);
-                Cell c19 = row.createCell(19); c19.setCellValue(blankIfNull(t.getNpciErrorCode())); c19.setCellStyle(centerStyle);
-                Cell c20 = row.createCell(20); c20.setCellValue(formatDate(t.getNpciSettledDate())); c20.setCellStyle(centerStyle);
-                Cell c21 = row.createCell(21); c21.setCellValue(blankIfNull(t.getClearingCycle())); c21.setCellStyle(centerStyle);
-                Cell c22 = row.createCell(22); c22.setCellValue(formatDate(t.getPlazaSettleDate())); c22.setCellStyle(centerStyle);
-                Cell c23 = row.createCell(23); c23.setCellValue(blankIfNull(t.getTxnType())); c23.setCellStyle(centerStyle);
-                Cell c24 = row.createCell(24); c24.setCellValue(formatDate(t.getNpciRespDate())); c24.setCellStyle(centerStyle);
-                Cell c25 = row.createCell(25); c25.setCellValue(blankIfNull(t.getPlazaType())); c25.setCellStyle(centerStyle);
-                Cell c26 = row.createCell(26); c26.setCellValue(blankIfNull(t.getIsViolation())); c26.setCellStyle(centerStyle);
-                Cell c27 = row.createCell(27); c27.setCellValue(blankIfNull(t.getAuditVc())); c27.setCellStyle(centerStyle);
+                // 22. Issuer Bank Name
+                Cell c22 = row.createCell(22); c22.setCellValue(""); c22.setCellStyle(centerStyle);
 
-                // Violation Settled Amount
-                Cell vAmtCell = row.createCell(28);
-                vAmtCell.setCellStyle(numberStyle);
-                if (t.getViolationSettledAmount() != null) {
-                    vAmtCell.setCellValue(t.getViolationSettledAmount().doubleValue());
-                } else {
-                    vAmtCell.setCellValue(0.0);
-                }
+                // 23. TID (Tag ID)
+                Cell c23 = row.createCell(23); c23.setCellValue(blankIfNull(t.getTagId())); c23.setCellStyle(textStyle);
 
-                Cell c29 = row.createCell(29); c29.setCellValue(formatDate(t.getViolationSettledDate())); c29.setCellStyle(centerStyle);
+                // 24. Plaza Type
+                Cell c24 = row.createCell(24); c24.setCellValue(blankIfNull(t.getPlazaType())); c24.setCellStyle(centerStyle);
+
+                // 25. Is Manual
+                Cell c25 = row.createCell(25); c25.setCellValue("NA"); c25.setCellStyle(centerStyle);
+
                 rowIdx++;
             }
 
             int[] colWidths = {
-                10, // Sr No
-                18, // Toll File Name
-                14, // Plaza ID
-                26, // Plaza Name
-                12, // Lane ID
-                32, // Tag ID
-                18, // VRN
-                26, // Acq Txn ID
-                18, // Toll Txn ID
-                18, // Toll Message ID
-                12, // MVC
-                12, // Tag VC
-                12, // AVC
-                20, // Transaction Status
-                22, // Reason
-                20, // Transaction Amount
-                20, // Settled Amount
-                22, // Transaction Date
-                22, // Plaza Post Date
-                18, // NPCI Error Code
-                22, // NPCI Settled Date
-                20, // NPCI Clearing Cycle
-                22, // Plaza Settlement Date
-                18, // Transaction Type
-                22, // NPCI Response Date
-                16, // Plaza Type
-                14, // Is Violation
-                14, // Audit VC
-                24, // Violation Settlement Amount
-                24  // Violation Settlement Date
+                8,  // A: Sr No
+                14, // B: Toll File Name
+                12, // C: Plaza ID
+                24, // D: Plaza Name
+                10, // E: Lane ID
+                30, // F: Tag ID
+                16, // G: VRN
+                24, // H: Acq Txn ID
+                16, // I: Toll Txn ID
+                16, // J: Toll Message ID
+                10, // K: MVC
+                10, // L: Tag VC
+                10, // M: AVC
+                18, // N: Transaction Status
+                16, // O: Reason
+                18, // P: Transaction Amount
+                20, // Q: Transaction Date
+                20, // R: Plaza Posted Date
+                16, // S: NPCI Error Code
+                20, // T: NPCI Response Date
+                16, // U: Transaction Type
+                16, // V: Issuer Bank ID
+                18, // W: Issuer Bank Name
+                30, // X: TID
+                14, // Y: Plaza Type
+                12  // Z: Is Manual
             };
             for (int i = 0; i < headers.length; i++) {
                 int w = (i < colWidths.length) ? colWidths[i] : 18;

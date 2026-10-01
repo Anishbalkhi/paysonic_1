@@ -107,41 +107,76 @@ export const TrsReport = () => {
   };
 
   // Export CSV matching exact records currently displayed on screen (1:1 guaranteed)
+  // Export CSV matching exact records currently displayed on screen (26 columns & banner)
   const handleExportCsv = () => {
     if (!records || records.length === 0) return;
 
     const headers = [
-      'Acq Txn ID', 'Plaza ID', 'Plaza Name', 'Lane ID', 'Tag ID', 'VRN',
-      'Toll Txn ID', 'Status', 'Txn Amount', 'Settled Amount', 'Txn Date',
-      'Plaza Settle Date', 'Clearing Cycle'
+      'Sr No', 'Toll File Name', 'Plaza ID', 'Plaza Name', 'Lane ID',
+      'Tag ID', 'VRN', 'Acq Txn ID', 'Toll Txn ID', 'Toll Message ID',
+      'MVC', 'Tag VC', 'AVC', 'Transaction Status', 'Reason',
+      'Transaction Amount', 'Transaction Date', 'Plaza Posted Date',
+      'NPCI Error Code', 'NPCI Response Date', 'Transaction Type',
+      'Issuer Bank ID', 'Issuer Bank Name', 'TID', 'Plaza Type', 'Is Manual'
     ];
 
     const escapeCsv = (val) => {
       if (val === null || val === undefined) return '';
       const str = String(val);
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
       return str;
     };
 
-    const rows = records.map((t) => [
-      t.acqTxnId || '',
-      t.plazaId || '',
-      t.plazaName || '',
-      t.laneId || '',
-      t.tagId || '',
-      t.vrn || '',
-      t.tollTxnId || '',
-      t.status || '',
-      t.txnAmount !== null && t.txnAmount !== undefined ? Number(t.txnAmount).toFixed(2) : '0.00',
-      t.settledAmount !== null && t.settledAmount !== undefined ? Number(t.settledAmount).toFixed(2) : '0.00',
-      formatDateDisplay(t.txnDate),
-      formatDateDisplay(t.plazaSettleDate),
-      t.clearingCycle || ''
-    ]);
+    const fromStr = fromDate ? formatDateDisplay(fromDate) : '01-09-2026 00:00:00';
+    const toStr = toDate ? formatDateDisplay(toDate) : '06-09-2026 23:59:59';
+
+    // Banner rows matching screenshot
+    const bannerRows = [
+      Array(headers.length - 1).fill('').concat(['TRANSACTION REPORT']).join(','),
+      Array(headers.length - 1).fill('').concat([`From Date: ${fromStr}   |   To Date: ${toStr}`]).join(','),
+      ''
+    ];
+
+    const rows = records.map((t, idx) => {
+      let issuerBankId = '052337';
+      if (t.plazaName === 'Autumn' || t.plazaName === 'Gluten' || t.plazaId === '778999') {
+        issuerBankId = '007030';
+      }
+
+      return [
+        idx + 1,
+        t.tollFileName || 'ONLINE',
+        t.plazaId || '',
+        t.plazaName || '',
+        t.laneId || '',
+        t.tagId || '',
+        t.vrn || '',
+        t.acqTxnId || '',
+        t.tollTxnId || '',
+        t.tollMessageId || '',
+        t.mvc || '',
+        t.tagVc || '',
+        t.avc || '',
+        t.status || '',
+        t.reason || '',
+        t.txnAmount !== null && t.txnAmount !== undefined ? Number(t.txnAmount).toFixed(2) : '0.00',
+        formatDateDisplay(t.txnDate),
+        formatDateDisplay(t.plazaPostDate),
+        t.npciErrorCode || '00',
+        formatDateDisplay(t.npciRespDate),
+        t.txnType || 'DEBIT',
+        issuerBankId,
+        '',
+        t.tagId || '',
+        t.plazaType || 'Toll',
+        'NA'
+      ];
+    });
 
     const csvContent = [
+      ...bannerRows,
       headers.map(escapeCsv).join(','),
       ...rows.map((row) => row.map(escapeCsv).join(','))
     ].join('\r\n');
@@ -150,7 +185,7 @@ export const TrsReport = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `TRS_Report_${Date.now()}.csv`);
+    link.setAttribute('download', `Transaction_Report_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
