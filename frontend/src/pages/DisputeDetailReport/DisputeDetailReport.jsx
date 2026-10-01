@@ -185,51 +185,10 @@ export const DisputeDetailReport = () => {
       {/* Top Banner Header */}
       <header className="page-header">
         <div className="header-titles">
-          <h1>Dispute Detail Report</h1>
+          <h1 className="page-title">Dispute Detail Report</h1>
           <p className="subtitle">
             Audited Toll Dispute Adjustments &amp; Chargebacks (Live Railway DB)
           </p>
-        </div>
-
-        <div className="header-actions">
-          <button
-            type="button"
-            className="btn-export btn-excel"
-            onClick={handleExportExcel}
-            disabled={exportingExcel || loading}
-            title="Download formatted Excel report"
-          >
-            {exportingExcel ? (
-              <span className="spinner-border" />
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="8" y1="13" x2="16" y2="13" />
-                <line x1="8" y1="17" x2="16" y2="17" />
-              </svg>
-            )}
-            <span>Export Excel</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-export btn-csv"
-            onClick={handleExportCsv}
-            disabled={exportingCsv || loading}
-            title="Download UTF-8 BOM CSV report"
-          >
-            {exportingCsv ? (
-              <span className="spinner-border" />
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            )}
-            <span>Export CSV</span>
-          </button>
         </div>
       </header>
 
@@ -237,7 +196,7 @@ export const DisputeDetailReport = () => {
       <div className="filter-card">
         <div className="filter-row">
           <div className="filter-group">
-            <label htmlFor="fromDate">From Date</label>
+            <label htmlFor="fromDate">From Date *</label>
             <input
               id="fromDate"
               type="datetime-local"
@@ -248,7 +207,7 @@ export const DisputeDetailReport = () => {
           </div>
 
           <div className="filter-group">
-            <label htmlFor="toDate">To Date</label>
+            <label htmlFor="toDate">To Date *</label>
             <input
               id="toDate"
               type="datetime-local"
@@ -259,7 +218,7 @@ export const DisputeDetailReport = () => {
           </div>
 
           <div className="filter-group">
-            <label htmlFor="plazaSelect">Plaza</label>
+            <label htmlFor="plazaSelect">Plaza (Optional)</label>
             <select
               id="plazaSelect"
               value={plazaId}
@@ -285,32 +244,37 @@ export const DisputeDetailReport = () => {
             </select>
           </div>
 
-          <div className="filter-actions">
+          <div className="btn-group">
             <button
               type="button"
-              className="btn-search"
+              className="btn-royal-blue"
+              onClick={handleExportExcel}
+              disabled={exportingExcel || loading || filteredRecords.length === 0}
+              id="dispExportExcelBtn"
+            >
+              {exportingExcel ? 'Exporting...' : 'Export Excel'}
+            </button>
+            <button
+              type="button"
+              className="btn-royal-blue"
+              onClick={handleExportCsv}
+              disabled={exportingCsv || loading || filteredRecords.length === 0}
+              id="dispExportCsvBtn"
+            >
+              {exportingCsv ? 'Exporting...' : 'Export CSV'}
+            </button>
+            <button
+              type="button"
+              className="btn-royal-blue"
               onClick={handleSearch}
               disabled={loading}
+              id="dispSearchBtn"
             >
-              {loading ? (
-                <>
-                  <span className="spinner-border" />
-                  <span>Searching...</span>
-                </>
-              ) : (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                  <span>Search</span>
-                </>
-              )}
+              {loading ? 'Searching...' : 'Search'}
             </button>
-
             <button
               type="button"
-              className="btn-reset"
+              className="btn-secondary"
               onClick={handleReset}
               disabled={loading}
             >

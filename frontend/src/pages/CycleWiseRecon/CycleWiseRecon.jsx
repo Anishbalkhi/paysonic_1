@@ -380,7 +380,7 @@ export const CycleWiseRecon = () => {
             </button>
             <button
               type="button"
-              className="btn-secondary"
+              className="btn-orange"
               onClick={handleExportCsv}
               disabled={loading || records.length === 0}
               id="cwrExportCsvBtn"
