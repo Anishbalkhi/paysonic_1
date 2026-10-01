@@ -14,6 +14,7 @@ import CycleWiseRecon from '../pages/CycleWiseRecon/CycleWiseRecon';
 import DisputeDetailReport from '../pages/DisputeDetailReport/DisputeDetailReport';
 import TollFareReport from '../pages/TollFareReport/TollFareReport';
 import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransaction';
+import TransactionSearchDispute from '../pages/TransactionSearchDispute/TransactionSearchDispute';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -146,6 +147,25 @@ export const AppRoutes = () => {
       <Route
         path="/toll-fare-report"
         element={<Navigate to="/transactional-reports/toll-fare-report" replace />}
+      />
+      <Route
+        path="/transactional-reports/transaction-search"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="transactional_report"
+          >
+            <TransactionSearchDispute />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transaction-search"
+        element={<Navigate to="/transactional-reports/transaction-search" replace />}
+      />
+      <Route
+        path="/transactional-reports/transaction-search-dispute"
+        element={<Navigate to="/transactional-reports/transaction-search" replace />}
       />
       <Route
         path="/reports/dynamicreport/8"
