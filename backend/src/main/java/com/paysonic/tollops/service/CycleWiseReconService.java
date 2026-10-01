@@ -149,16 +149,42 @@ public class CycleWiseReconService {
 
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
             Sheet sheet = workbook.createSheet("Cycle Wise Report");
-
             DataFormat df = workbook.createDataFormat();
 
-            // Header Style
+            // 1. Title Style (Bold Royal Blue, 16pt)
+            CellStyle titleStyle = workbook.createCellStyle();
+            Font titleFont = workbook.createFont();
+            titleFont.setFontName("Calibri");
+            titleFont.setFontHeightInPoints((short) 16);
+            titleFont.setBold(true);
+            titleFont.setColor(IndexedColors.DARK_BLUE.getIndex());
+            titleStyle.setFont(titleFont);
+            titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+            // 2. Subtitle Date Range Style (Muted Grey, 10pt)
+            CellStyle subTitleStyle = workbook.createCellStyle();
+            Font subFont = workbook.createFont();
+            subFont.setFontName("Calibri");
+            subFont.setFontHeightInPoints((short) 10);
+            subFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
+            subTitleStyle.setFont(subFont);
+            subTitleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+            // 3. Green Accent Line Style (Solid Green fill)
+            CellStyle greenBarStyle = workbook.createCellStyle();
+            greenBarStyle.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+            greenBarStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            // 4. Header Style (Deep Royal Blue fill, Bold White text, Centered, Borders)
             CellStyle headerStyle = workbook.createCellStyle();
             Font hFont = workbook.createFont();
             hFont.setBold(true);
             hFont.setFontName("Calibri");
             hFont.setFontHeightInPoints((short) 11);
+            hFont.setColor(IndexedColors.WHITE.getIndex());
             headerStyle.setFont(hFont);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
             headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
             headerStyle.setBorderBottom(BorderStyle.THIN);
@@ -166,7 +192,7 @@ public class CycleWiseReconService {
             headerStyle.setBorderLeft(BorderStyle.THIN);
             headerStyle.setBorderRight(BorderStyle.THIN);
 
-            // Text Cell Style (Left / Center)
+            // 5. Data Cell Styles (with thin borders)
             CellStyle textStyle = workbook.createCellStyle();
             textStyle.setVerticalAlignment(VerticalAlignment.CENTER);
             textStyle.setBorderBottom(BorderStyle.THIN);
@@ -201,6 +227,22 @@ public class CycleWiseReconService {
             decStyle.setBorderLeft(BorderStyle.THIN);
             decStyle.setBorderRight(BorderStyle.THIN);
 
+            // Settled Amount Highlight Style (Soft green fill, bold dark green text)
+            CellStyle settledStyle = workbook.createCellStyle();
+            settledStyle.setAlignment(HorizontalAlignment.RIGHT);
+            settledStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            settledStyle.setDataFormat(df.getFormat("#,##0.00"));
+            settledStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+            settledStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            settledStyle.setBorderBottom(BorderStyle.THIN);
+            settledStyle.setBorderTop(BorderStyle.THIN);
+            settledStyle.setBorderLeft(BorderStyle.THIN);
+            settledStyle.setBorderRight(BorderStyle.THIN);
+            Font settledFont = workbook.createFont();
+            settledFont.setBold(true);
+            settledFont.setColor(IndexedColors.DARK_GREEN.getIndex());
+            settledStyle.setFont(settledFont);
+
             String[] headers = {
                 "Plaza Id", "Plaza Name", "Plaza Settlement Date", "Recon Cycle",
                 "Txn Count", "Txn Amount", "Dispute Add Count", "Dispute Add Amount",
@@ -208,16 +250,43 @@ public class CycleWiseReconService {
                 "Service Fees", "Service GST", "0.013 GST(1.30%)", "GST(1.30%)", "Settled Amount"
             };
 
-            Row hRow = sheet.createRow(0);
-            hRow.setHeightInPoints(24);
+            // Row 0: Title Banner
+            Row titleRow = sheet.createRow(0);
+            titleRow.setHeightInPoints(28);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("CYCLE WISE RECONCILIATION REPORT");
+            titleCell.setCellStyle(titleStyle);
+
+            // Row 1: Subtitle with Date Range
+            Row subRow = sheet.createRow(1);
+            subRow.setHeightInPoints(18);
+            Cell subCell = subRow.createCell(0);
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+            String fromStr = fromDate != null ? fromDate.format(dtf) : "01-08-2026 00:00:00";
+            String toStr = toDate != null ? toDate.format(dtf) : "31-10-2026 23:59:59";
+            subCell.setCellValue("From Date: " + fromStr + "  |  To Date: " + toStr);
+            subCell.setCellStyle(subTitleStyle);
+
+            // Row 2: Green Accent Bar
+            Row greenRow = sheet.createRow(2);
+            greenRow.setHeightInPoints(5);
+            for (int i = 0; i < headers.length; i++) {
+                Cell gc = greenRow.createCell(i);
+                gc.setCellStyle(greenBarStyle);
+            }
+
+            // Row 3: Table Header Row
+            Row hRow = sheet.createRow(3);
+            hRow.setHeightInPoints(26);
             for (int i = 0; i < headers.length; i++) {
                 Cell c = hRow.createCell(i);
                 c.setCellValue(headers[i]);
                 c.setCellStyle(headerStyle);
             }
 
-            int rowIdx = 1;
-            int plazaStartRow = 1;
+            // Rows 4+: Data Rows
+            int rowIdx = 4;
+            int plazaStartRow = 4;
             String currentPlazaId = null;
 
             for (int r = 0; r < records.size(); r++) {
@@ -301,7 +370,7 @@ public class CycleWiseReconService {
 
                 Cell c15 = row.createCell(15);
                 c15.setCellValue(item.getSettledAmount().doubleValue());
-                c15.setCellStyle(decStyle);
+                c15.setCellStyle(settledStyle);
 
                 rowIdx++;
             }
@@ -312,9 +381,28 @@ public class CycleWiseReconService {
                 sheet.addMergedRegion(new CellRangeAddress(plazaStartRow, rowIdx - 1, 1, 1));
             }
 
-            // Auto column widths
+            // Generous column widths so Plaza Settlement Date never shows ########
+            int[] colWidths = {
+                14, // Plaza Id
+                26, // Plaza Name
+                24, // Plaza Settlement Date (prevents ########)
+                14, // Recon Cycle
+                14, // Txn Count
+                18, // Txn Amount
+                18, // Dispute Add Count
+                20, // Dispute Add Amount
+                18, // Dispute Sub Count
+                20, // Dispute Sub Amount
+                20, // Total Amount
+                18, // Service Fees
+                18, // Service GST
+                18, // 0.013 GST(1.30%)
+                18, // GST(1.30%)
+                22  // Settled Amount
+            };
             for (int i = 0; i < headers.length; i++) {
-                sheet.setColumnWidth(i, Math.max(16 * 256, (headers[i].length() + 5) * 256));
+                int w = (i < colWidths.length) ? colWidths[i] : 18;
+                sheet.setColumnWidth(i, w * 256);
             }
 
             workbook.write(outputStream);

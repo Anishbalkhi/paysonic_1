@@ -235,15 +235,23 @@
           position: sticky;
           top: 0;
           z-index: 5;
-          background: #1e293b;
-          color: #f8fafc;
+          border-top: 4px solid #10b981; // Green accent bar matching Image 2
+          background: #0d47a1; // Solid Royal Blue matching Image 2
+          color: #ffffff;
 
           tr th {
             padding: 11px 14px;
-            font-weight: 600;
+            font-weight: 700;
             text-align: left;
-            border-bottom: 2px solid #334155;
+            border-bottom: 2px solid #0a3880;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            background: #0d47a1;
+            color: #ffffff;
             letter-spacing: 0.02em;
+
+            &:last-child {
+              border-right: none;
+            }
 
             &.text-right {
               text-align: right;
@@ -294,7 +302,7 @@
               font-weight: 600;
               text-transform: capitalize;
 
-              &.settled {
+              &.settled, &.accepted {
                 background: #dcfce7;
                 color: #15803d;
               }
