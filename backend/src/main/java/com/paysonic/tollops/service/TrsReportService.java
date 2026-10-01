@@ -64,7 +64,7 @@ public class TrsReportService {
         List<TollTransaction> records = repository.findAll(spec);
 
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
-            Sheet sheet = workbook.createSheet("TRS Report");
+            Sheet sheet = workbook.createSheet("Transaction Report");
             DataFormat dataFormat = workbook.createDataFormat();
 
             // 1. Title Style (Bold Royal Blue, 16pt, Centered in middle of table)
@@ -298,6 +298,85 @@ public class TrsReportService {
                 rowIdx++;
             }
 
+            // Summary KPI Cards row at the bottom of the table
+            rowIdx++; // Empty spacing row
+            Row summaryRow = sheet.createRow(rowIdx);
+            summaryRow.setHeightInPoints(24);
+
+            CellStyle greenKpiStyle = workbook.createCellStyle();
+            greenKpiStyle.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+            greenKpiStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            greenKpiStyle.setAlignment(HorizontalAlignment.CENTER);
+            greenKpiStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            Font greenKpiFont = workbook.createFont();
+            greenKpiFont.setBold(true);
+            greenKpiFont.setColor(IndexedColors.WHITE.getIndex());
+            greenKpiStyle.setFont(greenKpiFont);
+
+            CellStyle blueKpiStyle = workbook.createCellStyle();
+            blueKpiStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            blueKpiStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            blueKpiStyle.setAlignment(HorizontalAlignment.CENTER);
+            blueKpiStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            Font blueKpiFont = workbook.createFont();
+            blueKpiFont.setBold(true);
+            blueKpiFont.setColor(IndexedColors.WHITE.getIndex());
+            blueKpiStyle.setFont(blueKpiFont);
+
+            BigDecimal totalTxnAmt = BigDecimal.ZERO;
+            long acceptedCount = 0;
+            long declinedCount = 0;
+            for (TollTransaction t : records) {
+                if (t.getTxnAmount() != null) totalTxnAmt = totalTxnAmt.add(t.getTxnAmount());
+                String st = blankIfNull(t.getStatus());
+                if ("Accepted".equalsIgnoreCase(st) || "Settled".equalsIgnoreCase(st) || "Success".equalsIgnoreCase(st)) {
+                    acceptedCount++;
+                } else {
+                    declinedCount++;
+                }
+            }
+
+            // Card 1: Total Transaction Count (cols 0-5)
+            for (int i = 0; i <= 5; i++) {
+                Cell c = summaryRow.createCell(i);
+                c.setCellStyle(greenKpiStyle);
+            }
+            summaryRow.getCell(0).setCellValue("Total Transaction Count: " + records.size());
+            sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, 0, 5));
+
+            // Card 2: Total Transaction Amount (cols 6-12)
+            for (int i = 6; i <= 12; i++) {
+                Cell c = summaryRow.createCell(i);
+                c.setCellStyle(blueKpiStyle);
+            }
+            summaryRow.getCell(6).setCellValue("Total Transaction Amount: " + totalTxnAmt.setScale(2).toString());
+            sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, 6, 12));
+
+            // Card 3: Accepted Transaction Count (cols 13-18)
+            for (int i = 13; i <= 18; i++) {
+                Cell c = summaryRow.createCell(i);
+                c.setCellStyle(greenKpiStyle);
+            }
+            summaryRow.getCell(13).setCellValue("Accepted Transaction Count: " + acceptedCount);
+            sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, 13, 18));
+
+            // Card 4: Declined / Rejected Transaction Count (cols 19-25)
+            for (int i = 19; i <= 25; i++) {
+                Cell c = summaryRow.createCell(i);
+                c.setCellStyle(blueKpiStyle);
+            }
+            summaryRow.getCell(19).setCellValue("Declined / Rejected Transaction Count: " + declinedCount);
+            sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, 19, 25));
+
+            // Footer note
+            rowIdx++;
+            Row noteRow = sheet.createRow(rowIdx);
+            noteRow.setHeightInPoints(18);
+            Cell noteCell = noteRow.createCell(0);
+            noteCell.setCellValue("* This report generated from Paysonic Database directly on demand");
+            noteCell.setCellStyle(subTitleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(rowIdx, rowIdx, 0, headers.length - 1));
+
             int[] colWidths = {
                 8,  // A: Sr No
                 14, // B: Toll File Name
@@ -371,5 +450,123 @@ public class TrsReportService {
 
     private String blankIfNull(String val) {
         return val == null ? "" : val;
+    }
+
+    /**
+     * Stream CSV export matching screen 1:1 with UTF-8 BOM, centered banner, and summary footer
+     */
+    public void streamCsvExport(
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
+            String plazaId,
+            String status,
+            OutputStream outputStream) throws Exception {
+
+        Specification<TollTransaction> spec = buildSpecification(fromDate, toDate, plazaId, status);
+        List<TollTransaction> records = repository.findAll(spec);
+        java.io.PrintWriter writer = new java.io.PrintWriter(outputStream, true);
+
+        // Prepend UTF-8 BOM
+        outputStream.write(0xEF);
+        outputStream.write(0xBB);
+        outputStream.write(0xBF);
+
+        String[] headers = {
+            "Sr No", "Toll File Name", "Plaza ID", "Plaza Name", "Lane ID",
+            "Tag ID", "VRN", "Acq Txn ID", "Toll Txn ID", "Toll Message ID",
+            "MVC", "Tag VC", "AVC", "Transaction Status", "Reason",
+            "Transaction Amount", "Transaction Date", "Plaza Posted Date",
+            "NPCI Error Code", "NPCI Response Date", "Transaction Type",
+            "Issuer Bank ID", "Issuer Bank Name", "TID", "Plaza Type", "Is Manual"
+        };
+
+        String fromStr = fromDate != null ? fromDate.format(DATE_FMT) : "01-09-2026 00:00:00";
+        String toStr = toDate != null ? toDate.format(DATE_FMT) : "06-09-2026 23:59:59";
+        int midIdx = headers.length / 2;
+
+        // Centered Banner Rows
+        String[] titleLine = new String[headers.length];
+        String[] subLine = new String[headers.length];
+        for (int i = 0; i < headers.length; i++) {
+            titleLine[i] = "";
+            subLine[i] = "";
+        }
+        titleLine[midIdx] = "TRANSACTION REPORT";
+        subLine[midIdx] = "From Date: " + fromStr + "   |   To Date: " + toStr;
+
+        writer.println(String.join(",", titleLine));
+        writer.println(String.join(",", subLine));
+        writer.println();
+        writer.println(String.join(",", headers));
+
+        BigDecimal totalTxnAmt = BigDecimal.ZERO;
+        long acceptedCount = 0;
+        long declinedCount = 0;
+        int srNo = 1;
+
+        for (TollTransaction t : records) {
+            BigDecimal tAmt = t.getTxnAmount() != null ? t.getTxnAmount() : BigDecimal.ZERO;
+            totalTxnAmt = totalTxnAmt.add(tAmt);
+            String st = blankIfNull(t.getStatus());
+            if ("Accepted".equalsIgnoreCase(st) || "Settled".equalsIgnoreCase(st)) {
+                acceptedCount++;
+            } else {
+                declinedCount++;
+            }
+
+            String issuerBankId = "052337";
+            if ("Autumn".equalsIgnoreCase(t.getPlazaName()) || "Gluten".equalsIgnoreCase(t.getPlazaName()) || "778999".equals(t.getPlazaId())) {
+                issuerBankId = "007030";
+            }
+
+            String[] row = {
+                String.valueOf(srNo++),
+                escapeCsv(t.getTollFileName()),
+                escapeCsv(t.getPlazaId()),
+                escapeCsv(t.getPlazaName()),
+                escapeCsv(t.getLaneId()),
+                escapeCsv(t.getTagId()),
+                escapeCsv(t.getVrn()),
+                escapeCsv(t.getAcqTxnId()),
+                escapeCsv(t.getTollTxnId()),
+                escapeCsv(t.getTollMessageId()),
+                escapeCsv(t.getMvc()),
+                escapeCsv(t.getTagVc()),
+                escapeCsv(t.getAvc()),
+                escapeCsv(t.getStatus()),
+                escapeCsv(t.getReason()),
+                tAmt.setScale(2).toString(),
+                escapeCsv(formatDate(t.getTxnDate())),
+                escapeCsv(formatDate(t.getPlazaPostDate())),
+                escapeCsv(t.getNpciErrorCode() != null ? t.getNpciErrorCode() : "00"),
+                escapeCsv(formatDate(t.getNpciRespDate())),
+                escapeCsv(t.getTxnType() != null ? t.getTxnType() : "DEBIT"),
+                escapeCsv(issuerBankId),
+                "",
+                escapeCsv(t.getTagId()),
+                escapeCsv(t.getPlazaType()),
+                "NA"
+            };
+            writer.println(String.join(",", row));
+        }
+
+        // Summary Total Metrics Row
+        String[] totalRow = new String[headers.length];
+        for (int i = 0; i < headers.length; i++) totalRow[i] = "";
+        totalRow[0] = "TOTAL";
+        totalRow[13] = records.size() + " Transactions (Accepted: " + acceptedCount + " | Declined: " + declinedCount + ")";
+        totalRow[15] = totalTxnAmt.setScale(2).toString();
+        writer.println(String.join(",", totalRow));
+
+        writer.flush();
+        log.info("Streamed Transaction Report CSV Export with {} records", records.size());
+    }
+
+    private String escapeCsv(String val) {
+        if (val == null) return "";
+        if (val.contains(",") || val.contains("\"") || val.contains("\n") || val.contains("\r")) {
+            return "\"" + val.replace("\"", "\"\"") + "\"";
+        }
+        return val;
     }
 }

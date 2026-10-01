@@ -61,8 +61,8 @@ public class TrsReportController {
         }
     }
 
-    @GetMapping("/export")
-    @Auditable(module = "Recon Management", action = "EXPORT_TRS_REPORT", actionLabel = "Exported TRS Report (Excel)", target = "TRS Report")
+    @GetMapping({"/export", "/excel"})
+    @Auditable(module = "Transactional Reports", action = "EXPORT_TRANSACTION_REPORT_EXCEL", actionLabel = "Exported Transaction Report (Excel)", target = "Transaction Report")
     public void exportExcel(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
@@ -76,7 +76,7 @@ public class TrsReportController {
 
             validateDateRange(effectiveFrom, effectiveTo);
 
-            String fileName = "TRS_Report_" + System.currentTimeMillis() + ".xlsx";
+            String fileName = "Transaction_Report_" + System.currentTimeMillis() + ".xlsx";
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
 
@@ -85,7 +85,36 @@ public class TrsReportController {
         } catch (IllegalArgumentException ex) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         } catch (Exception ex) {
-            log.error("Error exporting TRS Excel: {}", ex.getMessage(), ex);
+            log.error("Error exporting Transaction Report Excel: {}", ex.getMessage(), ex);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping({"/export/csv", "/csv"})
+    @Auditable(module = "Transactional Reports", action = "EXPORT_TRANSACTION_REPORT_CSV", actionLabel = "Exported Transaction Report (CSV)", target = "Transaction Report")
+    public void exportCsv(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+            @RequestParam(required = false) String plazaId,
+            @RequestParam(required = false) String status,
+            HttpServletResponse response) {
+
+        try {
+            LocalDateTime effectiveFrom = fromDate != null ? fromDate : LocalDateTime.now().withHour(0).withMinute(0).withSecond(1);
+            LocalDateTime effectiveTo = toDate != null ? toDate : LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
+
+            validateDateRange(effectiveFrom, effectiveTo);
+
+            String fileName = "Transaction_Report_" + System.currentTimeMillis() + ".csv";
+            response.setContentType("text/csv; charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+
+            trsReportService.streamCsvExport(effectiveFrom, effectiveTo, plazaId, status, response.getOutputStream());
+            response.flushBuffer();
+        } catch (IllegalArgumentException ex) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        } catch (Exception ex) {
+            log.error("Error exporting Transaction Report CSV: {}", ex.getMessage(), ex);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }

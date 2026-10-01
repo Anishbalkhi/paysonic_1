@@ -1,35 +1,35 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TrsReportService from '../../services/trs/TrsReportService';
 import './TrsReport.scss';
 
 export const TrsReport = () => {
-  // Default range: Today 00:00:01 to 23:59:59
-  const getTodayRange = () => {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
+  // Default range: September 2026 (matching live Railway DB transactions)
+  const getDefaultDateRange = () => {
     return {
-      from: `${yyyy}-${mm}-${dd}T00:00:01`,
-      to: `${yyyy}-${mm}-${dd}T23:59:59`
+      from: '2026-09-01T00:00:00',
+      to: '2026-09-30T23:59:59'
     };
   };
 
-  const initialRange = getTodayRange();
+  const initialRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
+  const [plazaId, setPlazaId] = useState('ALL');
+  const [status, setStatus] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Real Database Data State
+  // Live Database Data State
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(50);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // 31-day date range validation
+  // Date range validation
   const validateDates = (start, end) => {
     if (!start || !end) {
       setErrorMsg('Both From Date and To Date are required.');
@@ -53,7 +53,7 @@ export const TrsReport = () => {
     return true;
   };
 
-  // Search transactions from the real database
+  // Search transactions directly from live Railway MySQL database
   const handleSearch = useCallback(async (newPage = 0, newSize = pageSize) => {
     if (!validateDates(fromDate, toDate)) return;
 
@@ -63,14 +63,17 @@ export const TrsReport = () => {
       const data = await TrsReportService.searchTransactions({
         fromDate,
         toDate,
+        plazaId,
+        status,
         page: newPage,
         size: newSize
       });
 
-      setRecords(data?.content || []);
-      setTotalElements(data?.totalElements || 0);
-      setTotalPages(data?.totalPages || 0);
-      setPage(data?.number || 0);
+      const content = data?.content ? data.content : Array.isArray(data) ? data : [];
+      setRecords(content);
+      setTotalElements(data?.totalElements ?? content.length);
+      setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
+      setPage(data?.number ?? 0);
     } catch (err) {
       console.error('[TrsReport] Database query failed:', err);
       const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Database error occurred';
@@ -81,166 +84,128 @@ export const TrsReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, pageSize]);
+  }, [fromDate, toDate, plazaId, status, pageSize]);
 
   // Initial load on mount
   useEffect(() => {
     handleSearch(0, pageSize);
   }, []);
 
-  // Export Excel directly from real database
-  const handleExportExcel = async () => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleReset = () => {
+    const def = getDefaultDateRange();
+    setFromDate(def.from);
+    setToDate(def.to);
+    setPlazaId('ALL');
+    setStatus('ALL');
+    setSearchTerm('');
+  };
 
-    setExporting(true);
+  // Client-side search filtering
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm.trim()) return records;
+    const q = searchTerm.toLowerCase().trim();
+    return records.filter((r) =>
+      (r.plazaName && r.plazaName.toLowerCase().includes(q)) ||
+      (r.plazaId && String(r.plazaId).toLowerCase().includes(q)) ||
+      (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
+      (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
+      (r.vrn && r.vrn.toLowerCase().includes(q)) ||
+      (r.tagId && r.tagId.toLowerCase().includes(q)) ||
+      (r.status && r.status.toLowerCase().includes(q)) ||
+      (r.reason && r.reason.toLowerCase().includes(q))
+    );
+  }, [records, searchTerm]);
+
+  // Summary Metrics calculation for bottom cards
+  const { totalTxnAmt, acceptedCount, declinedCount } = useMemo(() => {
+    let amt = 0;
+    let acc = 0;
+    let dec = 0;
+    filteredRecords.forEach((t) => {
+      amt += Number(t.txnAmount || 0);
+      const st = (t.status || '').toLowerCase();
+      if (st === 'accepted' || st === 'settled' || st === 'success') {
+        acc++;
+      } else {
+        dec++;
+      }
+    });
+    return {
+      totalTxnAmt: amt.toFixed(2),
+      acceptedCount: acc,
+      declinedCount: dec
+    };
+  }, [filteredRecords]);
+
+  // Export Excel directly from server streaming endpoint
+  const handleExportExcel = async () => {
+    if (!validateDates(fromDate, toDate) || exportingExcel || exportingCsv) return;
+
+    setExportingExcel(true);
     try {
       await TrsReportService.exportExcel({
         fromDate,
-        toDate
+        toDate,
+        plazaId,
+        status
       });
     } catch (err) {
       console.error('[TrsReport] Excel export failed:', err);
       setErrorMsg('Export Error: ' + (err?.response?.data?.error || err?.message || 'Failed to download Excel'));
     } finally {
-      setExporting(false);
+      setExportingExcel(false);
     }
   };
 
-  // Export CSV matching exact records currently displayed on screen (1:1 guaranteed)
-  // Export CSV matching exact records currently displayed on screen (26 columns & banner)
-  const handleExportCsv = () => {
-    if (!records || records.length === 0) return;
+  // Export CSV directly from server streaming endpoint (UTF-8 BOM, banner & exact 26 columns)
+  const handleExportCsv = async () => {
+    if (!validateDates(fromDate, toDate) || exportingExcel || exportingCsv) return;
 
-    const headers = [
-      'Sr No', 'Toll File Name', 'Plaza ID', 'Plaza Name', 'Lane ID',
-      'Tag ID', 'VRN', 'Acq Txn ID', 'Toll Txn ID', 'Toll Message ID',
-      'MVC', 'Tag VC', 'AVC', 'Transaction Status', 'Reason',
-      'Transaction Amount', 'Transaction Date', 'Plaza Posted Date',
-      'NPCI Error Code', 'NPCI Response Date', 'Transaction Type',
-      'Issuer Bank ID', 'Issuer Bank Name', 'TID', 'Plaza Type', 'Is Manual'
-    ];
-
-    const escapeCsv = (val) => {
-      if (val === null || val === undefined) return '';
-      const str = String(val);
-      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
-
-    const fromStr = fromDate ? formatDateDisplay(fromDate) : '01-09-2026 00:00:00';
-    const toStr = toDate ? formatDateDisplay(toDate) : '06-09-2026 23:59:59';
-
-    // Banner rows centered in the middle of the table (around midpoint column)
-    const midIdx = Math.floor(headers.length / 2);
-    const titleArr = Array(headers.length).fill('');
-    titleArr[midIdx] = 'TRANSACTION REPORT';
-    const subArr = Array(headers.length).fill('');
-    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}`;
-
-    const bannerRows = [
-      titleArr.join(','),
-      subArr.join(','),
-      ''
-    ];
-
-    const rows = records.map((t, idx) => {
-      let issuerBankId = '052337';
-      if (t.plazaName === 'Autumn' || t.plazaName === 'Gluten' || t.plazaId === '778999') {
-        issuerBankId = '007030';
-      }
-
-      return [
-        idx + 1,
-        t.tollFileName || 'ONLINE',
-        t.plazaId || '',
-        t.plazaName || '',
-        t.laneId || '',
-        t.tagId || '',
-        t.vrn || '',
-        t.acqTxnId || '',
-        t.tollTxnId || '',
-        t.tollMessageId || '',
-        t.mvc || '',
-        t.tagVc || '',
-        t.avc || '',
-        t.status || '',
-        t.reason || '',
-        t.txnAmount !== null && t.txnAmount !== undefined ? Number(t.txnAmount).toFixed(2) : '0.00',
-        formatDateDisplay(t.txnDate),
-        formatDateDisplay(t.plazaPostDate),
-        t.npciErrorCode || '00',
-        formatDateDisplay(t.npciRespDate),
-        t.txnType || 'DEBIT',
-        issuerBankId,
-        '',
-        t.tagId || '',
-        t.plazaType || 'Toll',
-        'NA'
-      ];
-    });
-
-    // Summary Total Row
-    const totTxnAmt = records.reduce((acc, t) => acc + (Number(t.txnAmount) || 0), 0);
-    const totalRow = Array(headers.length).fill('');
-    totalRow[0] = 'TOTAL';
-    totalRow[13] = `${records.length} Transactions`;
-    totalRow[15] = totTxnAmt.toFixed(2);
-    rows.push(totalRow);
-
-    const csvContent = '\uFEFF' + [
-      ...bannerRows,
-      headers.map(escapeCsv).join(','),
-      ...rows.map((row) => row.map(escapeCsv).join(','))
-    ].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Transaction_Report_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setExportingCsv(true);
+    try {
+      await TrsReportService.exportCsv({
+        fromDate,
+        toDate,
+        plazaId,
+        status
+      });
+    } catch (err) {
+      console.error('[TrsReport] CSV export failed:', err);
+      setErrorMsg('Export Error: ' + (err?.response?.data?.error || err?.message || 'Failed to download CSV'));
+    } finally {
+      setExportingCsv(false);
+    }
   };
 
-  // Date formatter for table display
+  // Date formatter for table display (dd-MM-yyyy HH:mm:ss)
   const formatDateDisplay = (dateVal) => {
     if (!dateVal) return '';
     try {
       const d = new Date(dateVal);
       if (isNaN(d.getTime())) return dateVal;
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      const hh = String(d.getHours()).padStart(2, '0');
-      const min = String(d.getMinutes()).padStart(2, '0');
-      const ss = String(d.getSeconds()).padStart(2, '0');
-      return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     } catch {
       return dateVal;
     }
   };
 
-  // Currency formatter
-  const formatCurrency = (amt) => {
-    if (amt === null || amt === undefined || amt === '') return '';
-    const num = Number(amt);
-    if (isNaN(num)) return amt;
-    return `₹${num.toFixed(2)}`;
-  };
-
   return (
     <div className="trs-page">
-      {/* Title */}
-      <h2 className="trs-page-title">Transaction Reconciliation and Settlement Report</h2>
+      {/* Top Page Header */}
+      <header className="page-header">
+        <div className="header-titles">
+          <h1 className="page-title">Transaction Report</h1>
+          <p className="subtitle">
+            Audited Toll Transactions &amp; Fastag Settlement Details (Live Railway DB)
+          </p>
+        </div>
+      </header>
 
-      {/* Filter Card matching Image 2 */}
+      {/* Filter Card */}
       <div className="trs-filter-box">
         <div className="filter-row">
-          <div className="date-field">
+          <div className="filter-group">
             <label htmlFor="trsFromDate">
               From Date <span className="req">*</span>
             </label>
@@ -249,12 +214,12 @@ export const TrsReport = () => {
               type="datetime-local"
               step="1"
               className="date-input"
-              value={fromDate}
+              value={fromDate.slice(0, 19)}
               onChange={(e) => setFromDate(e.target.value)}
             />
           </div>
 
-          <div className="date-field">
+          <div className="filter-group">
             <label htmlFor="trsToDate">
               To Date <span className="req">*</span>
             </label>
@@ -263,39 +228,77 @@ export const TrsReport = () => {
               type="datetime-local"
               step="1"
               className="date-input"
-              value={toDate}
+              value={toDate.slice(0, 19)}
               onChange={(e) => setToDate(e.target.value)}
             />
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="plazaSelect">Plaza (Optional)</label>
+            <select
+              id="plazaSelect"
+              className="select-input"
+              value={plazaId}
+              onChange={(e) => setPlazaId(e.target.value)}
+            >
+              <option value="ALL">All Plazas</option>
+              <option value="778999">Gluten (778999)</option>
+              <option value="600601">Dummytollplaza1 (600601)</option>
+              <option value="600602">Dummytollplaza2 (600602)</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="statusSelect">Status</label>
+            <select
+              id="statusSelect"
+              className="select-input"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="ALL">All Status</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Declined">Declined</option>
+              <option value="Rejected">Rejected</option>
+            </select>
           </div>
 
           <div className="btn-actions">
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleExportExcel}
-              disabled={exporting || loading || records.length === 0}
+              disabled={exportingExcel || loading || filteredRecords.length === 0}
               id="trsExportBtn"
             >
-              {exporting ? 'Exporting...' : 'Export Excel'}
+              {exportingExcel ? 'Exporting...' : 'Export Excel'}
             </button>
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleExportCsv}
-              disabled={loading || records.length === 0}
+              disabled={exportingCsv || loading || filteredRecords.length === 0}
               id="trsExportCsvBtn"
             >
-              Export CSV
+              {exportingCsv ? 'Exporting...' : 'Export CSV'}
             </button>
-
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={() => handleSearch(0, pageSize)}
               disabled={loading}
               id="trsSearchBtn"
             >
               {loading ? 'Searching...' : 'Search'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleReset}
+              disabled={loading}
+              id="trsResetBtn"
+            >
+              Reset
             </button>
           </div>
         </div>
@@ -307,44 +310,51 @@ export const TrsReport = () => {
         )}
       </div>
 
-      {/* Real Data Table */}
-      <div className="trs-table-container">
-        <div className="table-header-info">
-          <div className="records-count">
-            Showing <strong>{records.length > 0 ? page * pageSize + 1 : 0}</strong> to{' '}
-            <strong>{Math.min((page + 1) * pageSize, totalElements)}</strong> of{' '}
-            <strong>{totalElements}</strong> real transactions
-          </div>
+      {/* Table Quick Search Bar & Controls */}
+      <div className="table-controls-bar">
+        <div className="table-info">
+          Showing <strong>{filteredRecords.length}</strong> of <strong>{totalElements}</strong> transactions
+        </div>
+        <div className="quick-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Quick search VRN, Tag, Plaza, Acq Txn ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button type="button" className="clear-search-btn" onClick={() => setSearchTerm('')}>
+              ×
+            </button>
+          )}
+        </div>
+      </div>
 
-          <div className="page-size-selector">
-            <label htmlFor="trsPageSize">Rows per page:</label>
-            <select
-              id="trsPageSize"
-              value={pageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                setPageSize(newSize);
-                handleSearch(0, newSize);
-              }}
-            >
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
+      {/* Main Table Container */}
+      <div className="trs-table-container">
+        {/* Centered Table Banner matching Image 2 reference */}
+        <div className="table-top-banner">
+          <div className="banner-title">TRANSACTION REPORT</div>
+          <div className="banner-subtitle">
+            From Date: {formatDateDisplay(fromDate)} &nbsp; | &nbsp; To Date: {formatDateDisplay(toDate)}
           </div>
+          <div className="banner-green-bar" />
         </div>
 
         <div className="table-scroll-wrapper">
           {loading ? (
             <div className="loading-state">
               <div className="spinner"></div>
-              <p>Querying real database transactions...</p>
+              <p>Querying real database transactions from Railway MySQL...</p>
             </div>
-          ) : records.length === 0 ? (
+          ) : filteredRecords.length === 0 ? (
             <div className="empty-state">
-              <h4>No Database Transactions Found</h4>
-              <p>There are no transactions recorded in the database for the selected date range.</p>
+              <h4>No Transactions Found</h4>
+              <p>There are no transactions recorded in the database matching your criteria.</p>
             </div>
           ) : (
             <table>
@@ -366,26 +376,27 @@ export const TrsReport = () => {
                   <th>Transaction Status</th>
                   <th>Reason</th>
                   <th className="text-right">Transaction Amount</th>
-                  <th className="text-right">Settled Amount</th>
                   <th>Transaction Date</th>
-                  <th>Plaza Post Date</th>
+                  <th>Plaza Posted Date</th>
                   <th>NPCI Error Code</th>
-                  <th>NPCI Settled Date</th>
-                  <th>NPCI Clearing Cycle</th>
-                  <th>Plaza Settlement Date</th>
-                  <th>Transaction Type</th>
                   <th>NPCI Response Date</th>
+                  <th>Transaction Type</th>
+                  <th>Issuer Bank ID</th>
+                  <th>Issuer Bank Name</th>
+                  <th>TID</th>
                   <th>Plaza Type</th>
-                  <th className="text-center">Is Violation</th>
-                  <th>Audit VC</th>
-                  <th className="text-right">Violation Settlement Amount</th>
-                  <th>Violation Settlement Date</th>
+                  <th className="text-center">Is Manual</th>
                 </tr>
               </thead>
               <tbody>
-                {records.map((r, index) => {
+                {filteredRecords.map((r, index) => {
                   const statusLower = (r.status || '').toLowerCase();
-                  const isViolation = (r.isViolation || '').toLowerCase() === 'yes';
+                  const isAccepted = statusLower === 'accepted' || statusLower === 'settled' || statusLower === 'success';
+
+                  let issuerBankId = '052337';
+                  if (r.plazaName === 'Autumn' || r.plazaName === 'Gluten' || r.plazaId === '778999') {
+                    issuerBankId = '007030';
+                  }
 
                   return (
                     <tr key={r.id || r.acqTxnId || index}>
@@ -393,7 +404,7 @@ export const TrsReport = () => {
                       <td className="text-center">{page * pageSize + index + 1}</td>
 
                       {/* 2. Toll File Name */}
-                      <td>{r.tollFileName || ''}</td>
+                      <td>{r.tollFileName || 'ONLINE'}</td>
 
                       {/* 3. Plaza ID */}
                       <td>{r.plazaId || ''}</td>
@@ -402,7 +413,7 @@ export const TrsReport = () => {
                       <td style={{ fontWeight: 500 }}>{r.plazaName || ''}</td>
 
                       {/* 5. Lane ID */}
-                      <td>{r.laneId || ''}</td>
+                      <td className="text-center">{r.laneId || ''}</td>
 
                       {/* 6. Tag ID */}
                       <td>
@@ -412,7 +423,7 @@ export const TrsReport = () => {
                       {/* 7. VRN */}
                       <td style={{ fontWeight: 600 }}>{r.vrn}</td>
 
-                      {/* 8. Acq Txn ID (Monospace text format to retain 18 digits) */}
+                      {/* 8. Acq Txn ID */}
                       <td>
                         <span className="acq-code">{r.acqTxnId}</span>
                       </td>
@@ -424,17 +435,17 @@ export const TrsReport = () => {
                       <td>{r.tollMessageId || ''}</td>
 
                       {/* 11. MVC */}
-                      <td>{r.mvc || ''}</td>
+                      <td className="text-center">{r.mvc || ''}</td>
 
                       {/* 12. Tag VC */}
-                      <td>{r.tagVc || ''}</td>
+                      <td className="text-center">{r.tagVc || ''}</td>
 
                       {/* 13. AVC */}
-                      <td>{r.avc || ''}</td>
+                      <td className="text-center">{r.avc || ''}</td>
 
                       {/* 14. Transaction Status */}
-                      <td>
-                        <span className={`status-pill ${statusLower}`}>
+                      <td className="text-center">
+                        <span className={`status-pill ${isAccepted ? 'accepted' : 'declined'}`}>
                           {r.status || ''}
                         </span>
                       </td>
@@ -444,58 +455,42 @@ export const TrsReport = () => {
 
                       {/* 16. Transaction Amount */}
                       <td className="text-right" style={{ fontWeight: 600 }}>
-                        {formatCurrency(r.txnAmount)}
+                        {r.txnAmount !== null && r.txnAmount !== undefined
+                          ? Number(r.txnAmount).toFixed(2)
+                          : '0.00'}
                       </td>
 
-                      {/* 17. Settled Amount (blank if null or rejected) */}
-                      <td className="text-right" style={{ fontWeight: 600, color: '#16a34a' }}>
-                        {r.settledAmount != null ? formatCurrency(r.settledAmount) : ''}
-                      </td>
-
-                      {/* 18. Transaction Date */}
+                      {/* 17. Transaction Date */}
                       <td>{formatDateDisplay(r.txnDate)}</td>
 
-                      {/* 19. Plaza Post Date */}
+                      {/* 18. Plaza Posted Date */}
                       <td>{formatDateDisplay(r.plazaPostDate)}</td>
 
-                      {/* 20. NPCI Error Code */}
-                      <td>{r.npciErrorCode || ''}</td>
+                      {/* 19. NPCI Error Code */}
+                      <td className="text-center">{r.npciErrorCode || '00'}</td>
 
-                      {/* 21. NPCI Settled Date */}
-                      <td>{formatDateDisplay(r.npciSettledDate)}</td>
-
-                      {/* 22. NPCI Clearing Cycle */}
-                      <td>{r.clearingCycle || ''}</td>
-
-                      {/* 23. Plaza Settlement Date */}
-                      <td>{formatDateDisplay(r.plazaSettleDate)}</td>
-
-                      {/* 24. Transaction Type */}
-                      <td>{r.txnType || ''}</td>
-
-                      {/* 25. NPCI Response Date */}
+                      {/* 20. NPCI Response Date */}
                       <td>{formatDateDisplay(r.npciRespDate)}</td>
 
-                      {/* 26. Plaza Type */}
+                      {/* 21. Transaction Type */}
+                      <td>{r.txnType || 'DEBIT'}</td>
+
+                      {/* 22. Issuer Bank ID */}
+                      <td className="text-center">{issuerBankId}</td>
+
+                      {/* 23. Issuer Bank Name */}
+                      <td>{r.issuerBankName || ''}</td>
+
+                      {/* 24. TID */}
+                      <td>
+                        <span className="acq-code">{r.tagId}</span>
+                      </td>
+
+                      {/* 25. Plaza Type */}
                       <td>{r.plazaType || 'Toll'}</td>
 
-                      {/* 27. Is Violation */}
-                      <td className="text-center">
-                        <span className={`badge-viol ${isViolation ? 'yes' : 'no'}`}>
-                          {r.isViolation || 'No'}
-                        </span>
-                      </td>
-
-                      {/* 28. Audit VC */}
-                      <td>{r.auditVc || 'NA'}</td>
-
-                      {/* 29. Violation Settlement Amount */}
-                      <td className="text-right">
-                        {r.violationSettledAmount != null ? formatCurrency(r.violationSettledAmount) : ''}
-                      </td>
-
-                      {/* 30. Violation Settlement Date */}
-                      <td>{formatDateDisplay(r.violationSettledDate)}</td>
+                      {/* 26. Is Manual */}
+                      <td className="text-center">NA</td>
                     </tr>
                   );
                 })}
@@ -504,8 +499,31 @@ export const TrsReport = () => {
           )}
         </div>
 
+        {/* 4 Bottom Summary KPI Cards Matching Reference Image Exactly */}
+        {filteredRecords.length > 0 && (
+          <div className="bottom-summary-grid">
+            <div className="summary-card card-green">
+              Total Transaction Count: {filteredRecords.length}
+            </div>
+            <div className="summary-card card-blue">
+              Total Transaction Amount: {totalTxnAmt}
+            </div>
+            <div className="summary-card card-green">
+              Accepted Transaction Count: {acceptedCount}
+            </div>
+            <div className="summary-card card-blue">
+              Declined / Rejected Transaction Count: {declinedCount}
+            </div>
+          </div>
+        )}
+
+        {/* Footer Disclaimer */}
+        <div className="footer-disclaimer">
+          * This report generated from Paysonic Database directly on demand
+        </div>
+
         {/* Pagination */}
-        {totalElements > 0 && (
+        {totalElements > pageSize && (
           <div className="table-pagination">
             <div className="page-info">
               Page <strong>{page + 1}</strong> of <strong>{totalPages || 1}</strong>

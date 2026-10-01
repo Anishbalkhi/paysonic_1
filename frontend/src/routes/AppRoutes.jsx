@@ -97,6 +97,21 @@ export const AppRoutes = () => {
         }
       />
       <Route
+        path="/transactional-reports/transaction-report"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="transactional_report"
+          >
+            <TrsReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transaction-report"
+        element={<Navigate to="/transactional-reports/transaction-report" replace />}
+      />
+      <Route
         path="/reports/dynamicreport/8"
         element={
           <ProtectedRoute
