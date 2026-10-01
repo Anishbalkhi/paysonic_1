@@ -3,8 +3,7 @@ import TrsReportService from '../../services/trs/TrsReportService';
 import './TrsReport.scss';
 
 export const TrsReport = () => {
-
-  // Helper to format ISO datetime for <input type="datetime-local" step="1" />
+  // Default range: Today 00:00:01 to 23:59:59
   const getTodayRange = () => {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -19,11 +18,8 @@ export const TrsReport = () => {
   const initialRange = getTodayRange();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
-  const [plazaId, setPlazaId] = useState('');
-  const [status, setStatus] = useState('All');
-  const [activePreset, setActivePreset] = useState('today');
 
-  // Table & Pagination state
+  // Real Database Data State
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -33,49 +29,14 @@ export const TrsReport = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Quick Date Presets
-  const applyPreset = (preset) => {
-    setActivePreset(preset);
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-
-    if (preset === 'today') {
-      setFromDate(`${yyyy}-${mm}-${dd}T00:00:01`);
-      setToDate(`${yyyy}-${mm}-${dd}T23:59:59`);
-    } else if (preset === 'yesterday') {
-      const yest = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const yyyyy = yest.getFullYear();
-      const ymm = String(yest.getMonth() + 1).padStart(2, '0');
-      const ydd = String(yest.getDate()).padStart(2, '0');
-      setFromDate(`${yyyyy}-${ymm}-${ydd}T00:00:01`);
-      setToDate(`${yyyyy}-${ymm}-${ydd}T23:59:59`);
-    } else if (preset === '7days') {
-      const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const pyyyy = past.getFullYear();
-      const pmm = String(past.getMonth() + 1).padStart(2, '0');
-      const pdd = String(past.getDate()).padStart(2, '0');
-      setFromDate(`${pyyyy}-${pmm}-${pdd}T00:00:01`);
-      setToDate(`${yyyy}-${mm}-${dd}T23:59:59`);
-    } else if (preset === '30days') {
-      const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const pyyyy = past.getFullYear();
-      const pmm = String(past.getMonth() + 1).padStart(2, '0');
-      const pdd = String(past.getDate()).padStart(2, '0');
-      setFromDate(`${pyyyy}-${pmm}-${pdd}T00:00:01`);
-      setToDate(`${yyyy}-${mm}-${dd}T23:59:59`);
-    }
-  };
-
-  // Validate 31-day range limit
-  const validateDates = () => {
-    if (!fromDate || !toDate) {
+  // 31-day date range validation
+  const validateDates = (start, end) => {
+    if (!start || !end) {
       setErrorMsg('Both From Date and To Date are required.');
       return false;
     }
-    const fromTime = new Date(fromDate).getTime();
-    const toTime = new Date(toDate).getTime();
+    const fromTime = new Date(start).getTime();
+    const toTime = new Date(end).getTime();
 
     if (fromTime > toTime) {
       setErrorMsg('From Date cannot be later than To Date.');
@@ -92,9 +53,9 @@ export const TrsReport = () => {
     return true;
   };
 
-  // Fetch data
+  // Search transactions from the real database
   const handleSearch = useCallback(async (newPage = 0, newSize = pageSize) => {
-    if (!validateDates()) return;
+    if (!validateDates(fromDate, toDate)) return;
 
     setLoading(true);
     setErrorMsg('');
@@ -102,58 +63,50 @@ export const TrsReport = () => {
       const data = await TrsReportService.searchTransactions({
         fromDate,
         toDate,
-        plazaId,
-        status,
         page: newPage,
         size: newSize
       });
 
-      setRecords(data.content || []);
-      setTotalElements(data.totalElements || 0);
-      setTotalPages(data.totalPages || 0);
-      setPage(data.number || 0);
+      setRecords(data?.content || []);
+      setTotalElements(data?.totalElements || 0);
+      setTotalPages(data?.totalPages || 0);
+      setPage(data?.number || 0);
     } catch (err) {
-      setErrorMsg(err?.response?.data?.error || err.message || 'Failed to fetch TRS records');
+      console.error('[TrsReport] Database query failed:', err);
+      const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Database error occurred';
+      setErrorMsg(`Database Query Error: ${msg}`);
+      setRecords([]);
+      setTotalElements(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaId, status, pageSize]);
+  }, [fromDate, toDate, pageSize]);
 
-  // Initial load
+  // Initial load on mount
   useEffect(() => {
     handleSearch(0, pageSize);
   }, []);
 
-  // Export Excel directly with current filters without requiring Search first
+  // Export Excel directly from real database
   const handleExportExcel = async () => {
-    if (!validateDates()) return;
+    if (!validateDates(fromDate, toDate)) return;
 
     setExporting(true);
     try {
       await TrsReportService.exportExcel({
         fromDate,
-        toDate,
-        plazaId,
-        status
+        toDate
       });
     } catch (err) {
-      setErrorMsg('Failed to export TRS report: ' + (err?.message || 'Server error'));
+      console.error('[TrsReport] Excel export failed:', err);
+      setErrorMsg('Export Error: ' + (err?.response?.data?.error || err?.message || 'Failed to download Excel'));
     } finally {
       setExporting(false);
     }
   };
 
-  const handleReset = () => {
-    const today = getTodayRange();
-    setFromDate(today.from);
-    setToDate(today.to);
-    setPlazaId('');
-    setStatus('All');
-    setActivePreset('today');
-    setErrorMsg('');
-  };
-
-  // Format date helper for table
+  // Date formatter for table display
   const formatDateDisplay = (dateVal) => {
     if (!dateVal) return '';
     try {
@@ -171,7 +124,7 @@ export const TrsReport = () => {
     }
   };
 
-  // Format currency
+  // Currency formatter
   const formatCurrency = (amt) => {
     if (amt === null || amt === undefined || amt === '') return '';
     const num = Number(amt);
@@ -179,214 +132,82 @@ export const TrsReport = () => {
     return `₹${num.toFixed(2)}`;
   };
 
-  // Metrics calculation
-  const totalAmountSettled = records
-    .filter(r => r.settledAmount != null)
-    .reduce((acc, curr) => acc + (Number(curr.settledAmount) || 0), 0);
-  const rejectedCount = records.filter(r => (r.status || '').toLowerCase() === 'rejected').length;
-  const pendingCount = records.filter(r => (r.status || '').toLowerCase() === 'pending').length;
-
   return (
-    <div className="trs-report-container">
-      {/* Header */}
-      <div className="trs-header">
-        <div className="header-left">
-          <div className="breadcrumb">
-            <span>Recon Management</span> › Transaction Reconciliation and Settlement Report
-          </div>
-          <h1>Transaction Reconciliation and Settlement Report</h1>
-        </div>
+    <div className="trs-page">
+      {/* Title */}
+      <h2 className="trs-page-title">Transaction Reconciliation and Settlement Report</h2>
 
-        {/* Quick Date Range Presets */}
-        <div className="header-quick-presets">
-          <button
-            type="button"
-            className={`preset-btn ${activePreset === 'today' ? 'active' : ''}`}
-            onClick={() => applyPreset('today')}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            className={`preset-btn ${activePreset === 'yesterday' ? 'active' : ''}`}
-            onClick={() => applyPreset('yesterday')}
-          >
-            Yesterday
-          </button>
-          <button
-            type="button"
-            className={`preset-btn ${activePreset === '7days' ? 'active' : ''}`}
-            onClick={() => applyPreset('7days')}
-          >
-            Last 7 Days
-          </button>
-          <button
-            type="button"
-            className={`preset-btn ${activePreset === '30days' ? 'active' : ''}`}
-            onClick={() => applyPreset('30days')}
-          >
-            Last 30 Days
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Card */}
-      <div className="trs-filter-card">
-        <div className="filter-grid">
-          <div className="form-group">
+      {/* Filter Card matching Image 2 */}
+      <div className="trs-filter-box">
+        <div className="filter-row">
+          <div className="date-field">
             <label htmlFor="trsFromDate">
-              From Date <span className="required">*</span>
+              From Date <span className="req">*</span>
             </label>
             <input
               id="trsFromDate"
               type="datetime-local"
               step="1"
-              className="input-control"
+              className="date-input"
               value={fromDate}
-              onChange={(e) => {
-                setFromDate(e.target.value);
-                setActivePreset('');
-              }}
+              onChange={(e) => setFromDate(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
+          <div className="date-field">
             <label htmlFor="trsToDate">
-              To Date <span className="required">*</span>
+              To Date <span className="req">*</span>
             </label>
             <input
               id="trsToDate"
               type="datetime-local"
               step="1"
-              className="input-control"
+              className="date-input"
               value={toDate}
-              onChange={(e) => {
-                setToDate(e.target.value);
-                setActivePreset('');
-              }}
+              onChange={(e) => setToDate(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="trsPlazaId">Plaza (Optional)</label>
-            <input
-              id="trsPlazaId"
-              type="text"
-              placeholder="e.g. 600601, Dummytoll"
-              className="input-control"
-              value={plazaId}
-              onChange={(e) => setPlazaId(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="trsStatus">Status</label>
-            <select
-              id="trsStatus"
-              className="input-control"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="All">All Statuses</option>
-              <option value="Settled">Settled</option>
-              <option value="Pending">Pending</option>
-              <option value="Rejected">Rejected</option>
-              <option value="Declined">Declined</option>
-            </select>
-          </div>
-
-          <div className="filter-actions">
+          <div className="btn-actions">
             <button
               type="button"
-              className="btn-search"
-              onClick={() => handleSearch(0, pageSize)}
-              disabled={loading}
-              id="trsSearchBtn"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              {loading ? 'Searching...' : 'Search'}
-            </button>
-
-            <button
-              type="button"
-              className="btn-export"
+              className="btn-orange"
               onClick={handleExportExcel}
               disabled={exporting}
               id="trsExportBtn"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
               {exporting ? 'Exporting...' : 'Export Excel'}
             </button>
 
             <button
               type="button"
-              className="btn-reset"
-              onClick={handleReset}
+              className="btn-orange"
+              onClick={() => handleSearch(0, pageSize)}
               disabled={loading}
+              id="trsSearchBtn"
             >
-              Reset
+              {loading ? 'Searching...' : 'Search'}
             </button>
           </div>
         </div>
 
         {errorMsg && (
-          <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '10px', fontWeight: '500' }}>
-            ⚠️ {errorMsg}
+          <div className="error-banner">
+            <span>⚠️</span> {errorMsg}
           </div>
         )}
-
-        <div className="filter-footer">
-          <div className="hint-text">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            * Filter criteria applies strictly to Transaction Date (Max range: 31 days). Export downloads filtered results directly.
-          </div>
-          <div className="range-status">
-            Active Window: {formatDateDisplay(fromDate)} → {formatDateDisplay(toDate)}
-          </div>
-        </div>
       </div>
 
-      {/* Metrics Ribbon */}
-      <div className="trs-metric-ribbon">
-        <div className="metric-card">
-          <span className="label">Total Records Found</span>
-          <span className="value">{totalElements}</span>
-        </div>
-        <div className="metric-card settled">
-          <span className="label">Current View Settled ₹</span>
-          <span className="value">₹{totalAmountSettled.toFixed(2)}</span>
-        </div>
-        <div className="metric-card pending">
-          <span className="label">Pending Records</span>
-          <span className="value">{pendingCount}</span>
-        </div>
-        <div className="metric-card rejected">
-          <span className="label">Rejected Records</span>
-          <span className="value">{rejectedCount}</span>
-        </div>
-      </div>
-
-      {/* Data Table Card */}
-      <div className="trs-table-card">
-        <div className="table-top-bar">
-          <div className="results-count">
-            Showing <span>{records.length > 0 ? page * pageSize + 1 : 0}</span> to{' '}
-            <span>{Math.min((page + 1) * pageSize, totalElements)}</span> of{' '}
-            <span>{totalElements}</span> transactions
+      {/* Real Data Table */}
+      <div className="trs-table-container">
+        <div className="table-header-info">
+          <div className="records-count">
+            Showing <strong>{records.length > 0 ? page * pageSize + 1 : 0}</strong> to{' '}
+            <strong>{Math.min((page + 1) * pageSize, totalElements)}</strong> of{' '}
+            <strong>{totalElements}</strong> real transactions
           </div>
 
-          <div className="table-page-size">
+          <div className="page-size-selector">
             <label htmlFor="trsPageSize">Rows per page:</label>
             <select
               id="trsPageSize"
@@ -405,21 +226,16 @@ export const TrsReport = () => {
           </div>
         </div>
 
-        {/* Scrollable Table */}
-        <div className="table-wrapper">
+        <div className="table-scroll-wrapper">
           {loading ? (
-            <div className="loading-container">
+            <div className="loading-state">
               <div className="spinner"></div>
-              <p>Loading transaction reconciliation data...</p>
+              <p>Querying real database transactions...</p>
             </div>
           ) : records.length === 0 ? (
             <div className="empty-state">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-              </svg>
-              <h3>No Transactions Found</h3>
-              <p>No toll transactions match the selected date range and filter criteria.</p>
+              <h4>No Database Transactions Found</h4>
+              <p>There are no transactions recorded in the database for the selected date range.</p>
             </div>
           ) : (
             <table>
@@ -463,110 +279,100 @@ export const TrsReport = () => {
                   const isViolation = (r.isViolation || '').toLowerCase() === 'yes';
 
                   return (
-                    <tr key={r.id || index}>
+                    <tr key={r.id || r.acqTxnId || index}>
                       {/* 1. Sr No */}
                       <td className="text-center">{page * pageSize + index + 1}</td>
 
                       {/* 2. Toll File Name */}
-                      <td>{r.tollFileName || <span className="empty-cell">—</span>}</td>
+                      <td>{r.tollFileName || ''}</td>
 
                       {/* 3. Plaza ID */}
-                      <td>{r.plazaId || <span className="empty-cell">—</span>}</td>
+                      <td>{r.plazaId || ''}</td>
 
                       {/* 4. Plaza Name */}
-                      <td style={{ fontWeight: 500 }}>{r.plazaName || <span className="empty-cell">—</span>}</td>
+                      <td style={{ fontWeight: 500 }}>{r.plazaName || ''}</td>
 
                       {/* 5. Lane ID */}
-                      <td>{r.laneId || <span className="empty-cell">—</span>}</td>
+                      <td>{r.laneId || ''}</td>
 
                       {/* 6. Tag ID */}
                       <td>
-                        <span className="code-val">{r.tagId}</span>
+                        <span className="acq-code">{r.tagId}</span>
                       </td>
 
                       {/* 7. VRN */}
-                      <td>
-                        <span className="vrn-tag">{r.vrn}</span>
-                      </td>
+                      <td style={{ fontWeight: 600 }}>{r.vrn}</td>
 
-                      {/* 8. Acq Txn ID (Monospace text format to display all 18 digits) */}
+                      {/* 8. Acq Txn ID (Monospace text format to retain 18 digits) */}
                       <td>
-                        <span className="code-val" style={{ background: '#f8fafc', borderColor: '#cbd5e1' }}>
-                          {r.acqTxnId}
-                        </span>
+                        <span className="acq-code">{r.acqTxnId}</span>
                       </td>
 
                       {/* 9. Toll Txn ID */}
-                      <td>{r.tollTxnId || <span className="empty-cell">—</span>}</td>
+                      <td>{r.tollTxnId || ''}</td>
 
                       {/* 10. Toll Message ID */}
-                      <td>{r.tollMessageId || <span className="empty-cell">—</span>}</td>
+                      <td>{r.tollMessageId || ''}</td>
 
                       {/* 11. MVC */}
-                      <td>{r.mvc || <span className="empty-cell">—</span>}</td>
+                      <td>{r.mvc || ''}</td>
 
                       {/* 12. Tag VC */}
-                      <td>{r.tagVc || <span className="empty-cell">—</span>}</td>
+                      <td>{r.tagVc || ''}</td>
 
                       {/* 13. AVC */}
-                      <td>{r.avc || <span className="empty-cell">—</span>}</td>
+                      <td>{r.avc || ''}</td>
 
                       {/* 14. Transaction Status */}
                       <td>
-                        <span className={`status-badge ${statusLower}`}>
-                          {r.status || 'Unknown'}
+                        <span className={`status-pill ${statusLower}`}>
+                          {r.status || ''}
                         </span>
                       </td>
 
                       {/* 15. Reason */}
-                      <td>{r.reason || <span className="empty-cell">—</span>}</td>
+                      <td>{r.reason || ''}</td>
 
                       {/* 16. Transaction Amount */}
-                      <td className="text-right">
-                        <span className="amount-val">{formatCurrency(r.txnAmount)}</span>
+                      <td className="text-right" style={{ fontWeight: 600 }}>
+                        {formatCurrency(r.txnAmount)}
                       </td>
 
-                      {/* 17. Settled Amount (blank if rejected or null) */}
-                      <td className="text-right">
-                        {r.settledAmount != null ? (
-                          <span className="amount-val" style={{ color: '#16a34a' }}>
-                            {formatCurrency(r.settledAmount)}
-                          </span>
-                        ) : (
-                          <span className="empty-cell">—</span>
-                        )}
+                      {/* 17. Settled Amount (blank if null or rejected) */}
+                      <td className="text-right" style={{ fontWeight: 600, color: '#16a34a' }}>
+                        {r.settledAmount != null ? formatCurrency(r.settledAmount) : ''}
                       </td>
 
                       {/* 18. Transaction Date */}
                       <td>{formatDateDisplay(r.txnDate)}</td>
 
                       {/* 19. Plaza Post Date */}
-                      <td>{formatDateDisplay(r.plazaPostDate) || <span className="empty-cell">—</span>}</td>
+                      <td>{formatDateDisplay(r.plazaPostDate)}</td>
 
                       {/* 20. NPCI Error Code */}
-                      <td>{r.npciErrorCode || <span className="empty-cell">—</span>}</td>
+                      <td>{r.npciErrorCode || ''}</td>
 
                       {/* 21. NPCI Settled Date */}
-                      <td>{formatDateDisplay(r.npciSettledDate) || <span className="empty-cell">—</span>}</td>
+                      <td>{formatDateDisplay(r.npciSettledDate)}</td>
 
                       {/* 22. NPCI Clearing Cycle */}
-                      <td>{r.clearingCycle || <span className="empty-cell">—</span>}</td>
+                      <td>{r.clearingCycle || ''}</td>
 
                       {/* 23. Plaza Settlement Date */}
-                      <td>{formatDateDisplay(r.plazaSettleDate) || <span className="empty-cell">—</span>}</td>
+                      <td>{formatDateDisplay(r.plazaSettleDate)}</td>
 
                       {/* 24. Transaction Type */}
-                      <td>{r.txnType || <span className="empty-cell">—</span>}</td>
+                      <td>{r.txnType || ''}</td>
 
                       {/* 25. NPCI Response Date */}
-                      <td>{formatDateDisplay(r.npciRespDate) || <span className="empty-cell">—</span>}</td>
+                      <td>{formatDateDisplay(r.npciRespDate)}</td>
 
                       {/* 26. Plaza Type */}
                       <td>{r.plazaType || 'Toll'}</td>
 
                       {/* 27. Is Violation */}
                       <td className="text-center">
-                        <span className={`violation-badge ${isViolation ? 'yes' : 'no'}`}>
+                        <span className={`badge-viol ${isViolation ? 'yes' : 'no'}`}>
                           {r.isViolation || 'No'}
                         </span>
                       </td>
@@ -576,11 +382,11 @@ export const TrsReport = () => {
 
                       {/* 29. Violation Settlement Amount */}
                       <td className="text-right">
-                        {r.violationSettledAmount != null ? formatCurrency(r.violationSettledAmount) : <span className="empty-cell">—</span>}
+                        {r.violationSettledAmount != null ? formatCurrency(r.violationSettledAmount) : ''}
                       </td>
 
                       {/* 30. Violation Settlement Date */}
-                      <td>{formatDateDisplay(r.violationSettledDate) || <span className="empty-cell">—</span>}</td>
+                      <td>{formatDateDisplay(r.violationSettledDate)}</td>
                     </tr>
                   );
                 })}
@@ -589,14 +395,14 @@ export const TrsReport = () => {
           )}
         </div>
 
-        {/* Pagination Controls */}
+        {/* Pagination */}
         {totalElements > 0 && (
           <div className="table-pagination">
-            <div className="pagination-info">
+            <div className="page-info">
               Page <strong>{page + 1}</strong> of <strong>{totalPages || 1}</strong>
             </div>
 
-            <div className="pagination-controls">
+            <div className="page-btns">
               <button
                 type="button"
                 onClick={() => handleSearch(0, pageSize)}
@@ -614,7 +420,6 @@ export const TrsReport = () => {
                 ‹ Prev
               </button>
 
-              {/* Render dynamic page window */}
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const pageNum = Math.max(0, Math.min(totalPages - 5, page - 2)) + i;
                 if (pageNum >= totalPages) return null;

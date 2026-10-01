@@ -176,3 +176,44 @@ CREATE TABLE IF NOT EXISTS `plaza_cch` (
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`plaza_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 11. Toll Transactions Table (TRS Report)
+CREATE TABLE IF NOT EXISTS `toll_transactions` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `acq_txn_id` VARCHAR(32) NOT NULL UNIQUE,
+    `toll_file_name` VARCHAR(50) NOT NULL DEFAULT 'ONLINE',
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `plaza_name` VARCHAR(120) NOT NULL,
+    `lane_id` VARCHAR(32) NOT NULL,
+    `tag_id` VARCHAR(64) NOT NULL,
+    `vrn` VARCHAR(32) NOT NULL,
+    `toll_txn_id` VARCHAR(32) NOT NULL,
+    `toll_message_id` VARCHAR(32) NOT NULL,
+    `mvc` VARCHAR(16) NULL,
+    `tag_vc` VARCHAR(16) NULL,
+    `avc` VARCHAR(16) NULL,
+    `status` VARCHAR(32) NOT NULL,
+    `reason` VARCHAR(64) NULL,
+    `txn_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `settled_amount` DECIMAL(10, 2) NULL,
+    `txn_date` DATETIME NOT NULL,
+    `plaza_post_date` DATETIME NULL,
+    `npci_error_code` VARCHAR(32) NULL,
+    `npci_settled_date` DATETIME NULL,
+    `clearing_cycle` VARCHAR(32) NULL,
+    `plaza_settle_date` DATETIME NULL,
+    `txn_type` VARCHAR(32) NULL,
+    `npci_resp_date` DATETIME NULL,
+    `plaza_type` VARCHAR(32) NOT NULL DEFAULT 'Toll',
+    `is_violation` VARCHAR(8) NOT NULL DEFAULT 'No',
+    `audit_vc` VARCHAR(32) NULL DEFAULT 'NA',
+    `violation_settled_amount` DECIMAL(10, 2) NULL,
+    `violation_settled_date` DATETIME NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_trs_txn_date` (`txn_date`),
+    INDEX `idx_trs_plaza_date` (`plaza_id`, `txn_date`),
+    INDEX `idx_trs_status` (`status`),
+    INDEX `idx_trs_acq_txn_id` (`acq_txn_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
