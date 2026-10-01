@@ -32,7 +32,10 @@ export const AuthProvider = ({ children }) => {
           (parsed.email && perms[parsed.email.toLowerCase()]) ||
           (parsed.username && perms[parsed.username.toLowerCase()]);
 
-        if (userCustomPerms) {
+        if (parsed.role === 'Master Admin') {
+          parsed.menuAccess = getRoleMenuDefaults('Master Admin');
+          parsed.permissions = parsed.menuAccess;
+        } else if (userCustomPerms) {
           parsed.menuAccess = userCustomPerms;
           parsed.permissions = userCustomPerms;
         } else if (!parsed.menuAccess) {

@@ -226,8 +226,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Recon Management',
       icon: ICONS.recon,
       children: [
-        { label: 'A. TRS Report', path: '/recon/trs-report' },
-        { label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
+        { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
+        { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
         { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
         { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
       ],
@@ -333,8 +333,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Recon Management',
       icon: ICONS.recon,
       children: [
-        { label: 'A. TRS Report', path: '/recon/trs-report' },
-        { label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
+        { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
+        { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
         { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
         { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
       ],
@@ -438,8 +438,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Recon Management',
       icon: ICONS.recon,
       children: [
-        { label: 'A. TRS Report', path: '/recon/trs-report' },
-        { label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
+        { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
+        { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
         { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
         { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
       ],
@@ -571,8 +571,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Recon Management',
       icon: ICONS.recon,
       children: [
-        { label: 'A. TRS Report', path: '/recon/trs-report' },
-        { label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
+        { subId: 'recon_management_trs_report', label: 'A. TRS Report', path: '/recon/trs-report' },
+        { subId: 'recon_management_date_wise_recon', label: 'B. Date Wise Recon', path: '/recon/date-wise-recon' },
         { label: 'C. Cycle Wise Report', path: '#cycle-wise-report' },
         { label: 'D. Violation Settlement Report', path: '#violation-settlement-recon' },
       ],

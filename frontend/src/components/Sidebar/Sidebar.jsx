@@ -63,12 +63,15 @@ export const Sidebar = ({
     border: '#dcfce7',
   };
 
-  // Fetch sections strictly filtered by user's assigned permissions.
-  // When customized menuAccess is present, evaluate against all system modules so any
-  // permissions granted by the creator are shown, and any removed permissions are hidden.
+  const isMasterAdmin = userRole === 'Master Admin';
   const allSystemSections = getRoleNavigation('Master Admin');
-  const baseSections = Array.isArray(currentUser?.menuAccess) ? allSystemSections : getRoleNavigation(userRole);
-  const userPermissions = Array.isArray(currentUser?.menuAccess) ? currentUser.menuAccess : getRoleMenuDefaults(userRole);
+  const roleDefaults = getRoleMenuDefaults(userRole);
+  const baseSections = isMasterAdmin ? allSystemSections : (Array.isArray(currentUser?.menuAccess) ? allSystemSections : getRoleNavigation(userRole));
+  const userPermissions = isMasterAdmin
+    ? getRoleMenuDefaults('Master Admin')
+    : Array.isArray(currentUser?.menuAccess)
+    ? Array.from(new Set([...currentUser.menuAccess, ...roleDefaults.filter((id) => id.includes('recon_management'))]))
+    : roleDefaults;
   const visibleSections = filterNavigationByPermissions(baseSections, userPermissions);
 
   return (
