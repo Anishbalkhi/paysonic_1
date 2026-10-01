@@ -325,3 +325,34 @@ CREATE TABLE IF NOT EXISTS `violation_settlement_reports` (
     INDEX `idx_vset_status` (`npci_violation_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 16. Violation Validate Reports Table (Violation Validate Report)
+CREATE TABLE IF NOT EXISTS `violation_validate_reports` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `sr_no` INT NULL,
+    `take_action` VARCHAR(50) NOT NULL DEFAULT 'Actioned',
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `plaza_name` VARCHAR(120) NOT NULL,
+    `vrn` VARCHAR(32) NOT NULL,
+    `tag_id` VARCHAR(64) NOT NULL,
+    `acq_txn_id` VARCHAR(64) NOT NULL,
+    `toll_txn_id` VARCHAR(64) NOT NULL,
+    `txn_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `txn_date_time` DATETIME NOT NULL,
+    `mvc` VARCHAR(20) NULL,
+    `avc` VARCHAR(20) NULL,
+    `audit_vc` VARCHAR(20) NULL,
+    `audit_remark` VARCHAR(50) NULL,
+    `audit_desc` VARCHAR(255) NULL,
+    `violation_img` VARCHAR(10) NOT NULL DEFAULT 'YES',
+    `netc_txn_type` VARCHAR(20) NOT NULL DEFAULT 'DEBIT',
+    `violation_api_status` VARCHAR(50) NOT NULL DEFAULT 'APPROVED',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_vval_txn_date` (`txn_date_time`),
+    INDEX `idx_vval_plaza_date` (`plaza_id`, `txn_date_time`),
+    INDEX `idx_vval_tag_id` (`tag_id`),
+    INDEX `idx_vval_vrn` (`vrn`),
+    INDEX `idx_vval_status` (`violation_api_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+

@@ -37,6 +37,7 @@ public class DataLoader implements CommandLineRunner {
     private final ViolationTransactionRepository violationTransactionRepository;
     private final ViolationRawRecordRepository violationRawRecordRepository;
     private final ViolationSettlementRepository violationSettlementRepository;
+    private final ViolationValidateRepository violationValidateRepository;
     private final ObjectMapper objectMapper;
 
     public DataLoader(UserRepository userRepository,
@@ -54,6 +55,7 @@ public class DataLoader implements CommandLineRunner {
                       ViolationTransactionRepository violationTransactionRepository,
                       ViolationRawRecordRepository violationRawRecordRepository,
                       ViolationSettlementRepository violationSettlementRepository,
+                      ViolationValidateRepository violationValidateRepository,
                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
@@ -70,6 +72,7 @@ public class DataLoader implements CommandLineRunner {
         this.violationTransactionRepository = violationTransactionRepository;
         this.violationRawRecordRepository = violationRawRecordRepository;
         this.violationSettlementRepository = violationSettlementRepository;
+        this.violationValidateRepository = violationValidateRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -87,6 +90,7 @@ public class DataLoader implements CommandLineRunner {
             seedViolationTransactions();
             seedViolationRawRecords();
             seedViolationSettlementRecords();
+            seedViolationValidateReports();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -1287,6 +1291,108 @@ public class DataLoader implements CommandLineRunner {
 
         violationSettlementRepository.saveAll(list);
         log.info("Seeded {} Violation Settlement Records into Railway DB successfully.", list.size());
+    }
+
+    private void seedViolationValidateReports() {
+        if (violationValidateRepository.count() > 0) {
+            log.info("Violation Validate Reports already seeded ({} records).", violationValidateRepository.count());
+            return;
+        }
+
+        List<ViolationValidateRecord> list = new ArrayList<>();
+
+        // Row 1
+        list.add(new ViolationValidateRecord(
+                1, "Actioned", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "AM170907",
+                new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 7, 0, 0),
+                "VC10", "VC18", "VC19", "ACCEPTED", "Tractor with trailer",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 2
+        list.add(new ViolationValidateRecord(
+                2, "Actioned", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "AM170906",
+                new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 6, 0, 0),
+                "VC10", "VC18", "NA", "DECLINED", "Vehicle axles are not visible",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 3
+        list.add(new ViolationValidateRecord(
+                3, "Actioned", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "AM170905",
+                new BigDecimal("0.00"), LocalDateTime.of(2026, 9, 16, 4, 0, 0),
+                "VC10", "VC18", "NA", "DECLINED", "Image is Conclusive but license Number is not matching with sys",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 4
+        list.add(new ViolationValidateRecord(
+                4, "Actioned", "600601", "Dummytollplaza1", "MH12VL3467",
+                "34161FA820328ED002947820", "102047735808525000", "ZP170907",
+                new BigDecimal("5.00"), LocalDateTime.of(2026, 9, 15, 7, 0, 0),
+                "VC4", "VC18", "NA", "DECLINED", "Wrong vehicle image",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 5
+        list.add(new ViolationValidateRecord(
+                5, "Actioned", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "AM170904",
+                new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 4, 0, 0),
+                "VC10", "VC18", "NA", "DECLINED", "2 timestamps are present on the vehicle image",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 6
+        list.add(new ViolationValidateRecord(
+                6, "Actioned", "600601", "Dummytollplaza1", "MH12VL3467",
+                "34161FA820328ED002947820", "102047735808525000", "ZP170905",
+                new BigDecimal("5.00"), LocalDateTime.of(2026, 9, 15, 6, 0, 0),
+                "VC4", "VC18", "NA", "DECLINED", "Image is not proper though timing is matching",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 7
+        list.add(new ViolationValidateRecord(
+                7, "Actioned", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "AM170903",
+                new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 3, 0, 0),
+                "VC10", "VC18", "VC18", "ACCEPTED", "Tractor",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 8
+        list.add(new ViolationValidateRecord(
+                8, "Actioned", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "AM100909",
+                new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 1, 0, 0),
+                "VC10", "VC18", "NA", "DECLINED", "Wrong vehicle image",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 9
+        list.add(new ViolationValidateRecord(
+                9, "Actioned", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "ZP170912",
+                new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 15, 2, 0, 0),
+                "VC10", "VC18", "NA", "DECLINED", "Wrong vehicle image",
+                "YES", "DEBIT", "APPROVED"
+        ));
+
+        // Row 10
+        list.add(new ViolationValidateRecord(
+                10, "View Violation", "666666", "Autumn", "MH04ID2929",
+                "34161FA82032866C020F7D20", "102047735808525000", "ZP170911",
+                new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 15, 1, 0, 0),
+                "VC10", "VC7", "NA", "", "Business Rule Violation",
+                "YES", "DEBIT", "REJECTED"
+        ));
+
+        violationValidateRepository.saveAll(list);
+        log.info("Seeded {} Violation Validate Records into Railway DB successfully.", list.size());
     }
 }
 

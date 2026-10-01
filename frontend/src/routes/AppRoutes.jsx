@@ -19,6 +19,7 @@ import TransactionSearchNormal from '../pages/TransactionSearchNormal/Transactio
 import ViolationBulkAction from '../pages/ViolationBulkAction/ViolationBulkAction';
 import ViolationRawFileReport from '../pages/ViolationRawFileReport/ViolationRawFileReport';
 import ViolationSettlementReport from '../pages/ViolationSettlementReport/ViolationSettlementReport';
+import ViolationValidateReport from '../pages/ViolationValidateReport/ViolationValidateReport';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -293,6 +294,29 @@ export const AppRoutes = () => {
       <Route
         path="/violation-settlement-report"
         element={<Navigate to="/violation-management/violation-settlement-report" replace />}
+      />
+      <Route
+        path="/violation-management/violation-validate-report"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="violation_management"
+          >
+            <ViolationValidateReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/violation-management/violation-validate"
+        element={<Navigate to="/violation-management/violation-validate-report" replace />}
+      />
+      <Route
+        path="/violation-validate-report"
+        element={<Navigate to="/violation-management/violation-validate-report" replace />}
+      />
+      <Route
+        path="/violation-validate"
+        element={<Navigate to="/violation-management/violation-validate-report" replace />}
       />
 
       {/* Catch-all */}
