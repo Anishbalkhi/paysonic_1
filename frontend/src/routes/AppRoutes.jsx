@@ -20,6 +20,7 @@ import ViolationBulkAction from '../pages/ViolationBulkAction/ViolationBulkActio
 import ViolationRawFileReport from '../pages/ViolationRawFileReport/ViolationRawFileReport';
 import ViolationSettlementReport from '../pages/ViolationSettlementReport/ViolationSettlementReport';
 import ViolationValidateReport from '../pages/ViolationValidateReport/ViolationValidateReport';
+import NhaiTrafficReport from '../pages/NhaiTrafficReport/NhaiTrafficReport';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -317,6 +318,25 @@ export const AppRoutes = () => {
       <Route
         path="/violation-validate"
         element={<Navigate to="/violation-management/violation-validate-report" replace />}
+      />
+      <Route
+        path="/summary-reports/nhai-traffic-report"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="summary_report"
+          >
+            <NhaiTrafficReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/nhai-traffic-report"
+        element={<Navigate to="/summary-reports/nhai-traffic-report" replace />}
+      />
+      <Route
+        path="/summary-reports/nhai-traffic"
+        element={<Navigate to="/summary-reports/nhai-traffic-report" replace />}
       />
 
       {/* Catch-all */}

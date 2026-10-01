@@ -38,6 +38,7 @@ public class DataLoader implements CommandLineRunner {
     private final ViolationRawRecordRepository violationRawRecordRepository;
     private final ViolationSettlementRepository violationSettlementRepository;
     private final ViolationValidateRepository violationValidateRepository;
+    private final NhaiTrafficRepository nhaiTrafficRepository;
     private final ObjectMapper objectMapper;
 
     public DataLoader(UserRepository userRepository,
@@ -56,6 +57,7 @@ public class DataLoader implements CommandLineRunner {
                       ViolationRawRecordRepository violationRawRecordRepository,
                       ViolationSettlementRepository violationSettlementRepository,
                       ViolationValidateRepository violationValidateRepository,
+                      NhaiTrafficRepository nhaiTrafficRepository,
                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
@@ -73,6 +75,7 @@ public class DataLoader implements CommandLineRunner {
         this.violationRawRecordRepository = violationRawRecordRepository;
         this.violationSettlementRepository = violationSettlementRepository;
         this.violationValidateRepository = violationValidateRepository;
+        this.nhaiTrafficRepository = nhaiTrafficRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -91,6 +94,7 @@ public class DataLoader implements CommandLineRunner {
             seedViolationRawRecords();
             seedViolationSettlementRecords();
             seedViolationValidateReports();
+            seedNhaiTrafficReports();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -1393,6 +1397,92 @@ public class DataLoader implements CommandLineRunner {
 
         violationValidateRepository.saveAll(list);
         log.info("Seeded {} Violation Validate Records into Railway DB successfully.", list.size());
+    }
+
+    private void seedNhaiTrafficReports() {
+        if (nhaiTrafficRepository.count() > 0) {
+            log.info("NHAI Traffic Reports already seeded ({} records).", nhaiTrafficRepository.count());
+            return;
+        }
+
+        List<NhaiTrafficRecord> list = new ArrayList<>();
+
+        record ClassMeta(String code, String name, int fare, int baseVol) {}
+        List<ClassMeta> classMetas = List.of(
+                new ClassMeta("VC4", "VC4 - Car/Jeep/Van", 85, 1420),
+                new ClassMeta("VC20", "VC20 - Tata Ace or Similar Mini LCV", 95, 540),
+                new ClassMeta("VC5", "VC5 - Light Commercial vehicle 2-axle", 140, 890),
+                new ClassMeta("VC6", "VC6 - Light Commercial vehicle 3-axle", 150, 420),
+                new ClassMeta("VC7", "VC7 - Bus 2-Axle", 280, 310),
+                new ClassMeta("VC8", "VC8 - Bus 3-Axle", 295, 180),
+                new ClassMeta("VC9", "VC9 - Mini Bus", 210, 240),
+                new ClassMeta("VC10", "VC10 - Truck 2-Axle", 295, 1120),
+                new ClassMeta("VC11", "VC11 - Truck 3-Axle", 320, 780),
+                new ClassMeta("VC12", "VC12 - Truck 4-Axle", 445, 620),
+                new ClassMeta("VC13", "VC13 - Truck 5-Axle", 465, 410),
+                new ClassMeta("VC14", "VC14 - Truck 6-Axle", 490, 350),
+                new ClassMeta("VC15", "VC15 - Truck Multi axle ( 7 and above)", 540, 280),
+                new ClassMeta("VC16", "VC16 - Earth Moving Machinery", 685, 95),
+                new ClassMeta("VC17", "VC17 - Heavy Construction Machinery", 710, 75)
+        );
+
+        record PlazaMeta(String code, String name) {}
+        List<PlazaMeta> plazas = List.of(
+                new PlazaMeta("600601", "Dummytollplaza1"),
+                new PlazaMeta("666666", "Autumn"),
+                new PlazaMeta("501101", "MUMBAI PLAZA NH-04")
+        );
+
+        // Seed across September 2026 dates (days 1, 5, 10, 15, 16, 20, 25, 30)
+        int[] days = {1, 5, 10, 15, 16, 20, 25, 30};
+
+        for (PlazaMeta p : plazas) {
+            for (int day : days) {
+                LocalDate dt = LocalDate.of(2026, 9, day);
+                int order = 1;
+
+                for (ClassMeta c : classMetas) {
+                    BigDecimal singleFare = BigDecimal.valueOf(c.fare());
+                    BigDecimal returnFare = BigDecimal.valueOf(Math.round(c.fare() * 1.5));
+                    BigDecimal discountFare = BigDecimal.valueOf(Math.round(c.fare() * 0.5));
+                    BigDecimal exemptFare = BigDecimal.ZERO;
+
+                    long singleCount = (long) (c.baseVol() * (0.8 + (day % 5) * 0.1));
+                    long returnCount = (long) (singleCount * 0.48);
+                    long discountCount = (long) (singleCount * 0.22);
+                    long exemptCount = (long) (singleCount * 0.14);
+
+                    BigDecimal singleAmt = singleFare.multiply(BigDecimal.valueOf(singleCount));
+                    BigDecimal returnAmt = returnFare.multiply(BigDecimal.valueOf(returnCount));
+                    BigDecimal discountAmt = discountFare.multiply(BigDecimal.valueOf(discountCount));
+                    BigDecimal exemptAmt = BigDecimal.ZERO;
+
+                    // 1. Single Journey
+                    list.add(new NhaiTrafficRecord(
+                            p.code(), p.name(), dt, c.code(), c.name(), "Single Journey",
+                            singleFare, singleCount, singleAmt, order++
+                    ));
+                    // 2. Return Journey
+                    list.add(new NhaiTrafficRecord(
+                            p.code(), p.name(), dt, c.code(), c.name(), "Return Journey",
+                            returnFare, returnCount, returnAmt, order++
+                    ));
+                    // 3. DiscountDC
+                    list.add(new NhaiTrafficRecord(
+                            p.code(), p.name(), dt, c.code(), c.name(), "DiscountDC",
+                            discountFare, discountCount, discountAmt, order++
+                    ));
+                    // 4. Exempted/ Pass vehicles
+                    list.add(new NhaiTrafficRecord(
+                            p.code(), p.name(), dt, c.code(), c.name(), "Exempted/ Pass vehicles",
+                            exemptFare, exemptCount, exemptAmt, order++
+                    ));
+                }
+            }
+        }
+
+        nhaiTrafficRepository.saveAll(list);
+        log.info("Seeded {} NHAI Traffic Records into Railway DB successfully.", list.size());
     }
 }
 

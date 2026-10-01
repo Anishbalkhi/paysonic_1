@@ -162,7 +162,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.summary,
       children: [
         { subId: 'summary_report_transaction_summary', label: 'A. Transaction Summary', path: '#transaction-summary' },
-        { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '#nhai-traffic-report' },
+        { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
         { subId: 'summary_report_settlement_summary', label: 'C. Settlement Summary', path: '#settlement-summary' },
         { subId: 'summary_report_pass_summary', label: 'D. Pass Summary', path: '#pass-summary' },
       ],
@@ -270,7 +270,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.summary,
       children: [
         { label: 'A. Transaction Summary', path: '#transaction-summary' },
-        { label: 'B. NHAI Traffic Report', path: '#nhai-traffic-report' },
+        { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
         { label: 'C. Settlement Summary', path: '#settlement-summary' },
         { label: 'D. Pass Summary', path: '#pass-summary' },
       ],
@@ -357,7 +357,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.summary,
       children: [
         { label: 'A. Transaction Summary', path: '#transaction-summary' },
-        { label: 'B. NHAI Traffic Report', path: '#nhai-traffic-report' },
+        { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
         { label: 'C. Settlement Summary', path: '#settlement-summary' },
         { label: 'D. Pass Summary', path: '#pass-summary' },
       ],
@@ -456,7 +456,7 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.summary,
       children: [
         { label: 'A. Transaction Summary', path: '#transaction-summary' },
-        { label: 'B. NHAI Traffic Report', path: '#nhai-traffic-report' },
+        { subId: 'summary_report_nhai_traffic_report', label: 'B. NHAI Traffic Report', path: '/summary-reports/nhai-traffic-report' },
         { label: 'C. Settlement Summary', path: '#settlement-summary' },
         { label: 'D. Pass Summary', path: '#pass-summary' },
       ],

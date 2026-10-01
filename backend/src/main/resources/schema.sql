@@ -355,4 +355,26 @@ CREATE TABLE IF NOT EXISTS `violation_validate_reports` (
     INDEX `idx_vval_status` (`violation_api_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 17. NHAI Traffic Reports Table (NHAI Traffic Report)
+CREATE TABLE IF NOT EXISTS `nhai_traffic_reports` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `plaza_code` VARCHAR(32) NOT NULL,
+    `plaza_name` VARCHAR(128) NOT NULL,
+    `report_date` DATE NOT NULL,
+    `vehicle_class_code` VARCHAR(20) NOT NULL,
+    `vehicle_class_name` VARCHAR(100) NOT NULL,
+    `journey_type` VARCHAR(50) NOT NULL,
+    `toll_fare` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `transaction_count` BIGINT NOT NULL DEFAULT 0,
+    `transaction_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `display_order` INT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_nhai_plaza_date` (`plaza_code`, `report_date`),
+    INDEX `idx_nhai_date` (`report_date`),
+    INDEX `idx_nhai_vc` (`vehicle_class_code`),
+    INDEX `idx_nhai_journey` (`journey_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 
