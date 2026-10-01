@@ -15,6 +15,7 @@ import DisputeDetailReport from '../pages/DisputeDetailReport/DisputeDetailRepor
 import TollFareReport from '../pages/TollFareReport/TollFareReport';
 import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransaction';
 import TransactionSearchDispute from '../pages/TransactionSearchDispute/TransactionSearchDispute';
+import TransactionSearchNormal from '../pages/TransactionSearchNormal/TransactionSearchNormal';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -149,7 +150,22 @@ export const AppRoutes = () => {
         element={<Navigate to="/transactional-reports/toll-fare-report" replace />}
       />
       <Route
-        path="/transactional-reports/transaction-search"
+        path="/transactional-reports/transaction-search-normal"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="transactional_report"
+          >
+            <TransactionSearchNormal />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transaction-search-normal"
+        element={<Navigate to="/transactional-reports/transaction-search-normal" replace />}
+      />
+      <Route
+        path="/transactional-reports/transaction-search-dispute"
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
@@ -160,12 +176,16 @@ export const AppRoutes = () => {
         }
       />
       <Route
-        path="/transaction-search"
-        element={<Navigate to="/transactional-reports/transaction-search" replace />}
+        path="/transaction-search-dispute"
+        element={<Navigate to="/transactional-reports/transaction-search-dispute" replace />}
       />
       <Route
-        path="/transactional-reports/transaction-search-dispute"
-        element={<Navigate to="/transactional-reports/transaction-search" replace />}
+        path="/transactional-reports/transaction-search"
+        element={<Navigate to="/transactional-reports/transaction-search-normal" replace />}
+      />
+      <Route
+        path="/transaction-search"
+        element={<Navigate to="/transactional-reports/transaction-search-normal" replace />}
       />
       <Route
         path="/reports/dynamicreport/8"

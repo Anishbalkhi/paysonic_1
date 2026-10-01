@@ -140,7 +140,8 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
         { subId: 'transactional_report_settled_transaction', label: 'C. Settled Transaction', path: '#settled-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
@@ -247,7 +248,8 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
         { label: 'C. Settled Transaction', path: '#settled-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
@@ -344,9 +346,9 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
-        { label: 'C. Settled Transactions', path: '#settled-transaction' },
-        { subId: 'transactional_report_transaction_search', label: 'D. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search' },
-        { subId: 'transactional_report_toll_fare_report', label: 'E. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
@@ -443,9 +445,9 @@ export const ROLE_NAVIGATION_MAP = {
       children: [
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
-        { label: 'C. Settled Transactions', path: '#settled-transaction' },
-        { subId: 'transactional_report_transaction_search', label: 'D. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search' },
-        { subId: 'transactional_report_toll_fare_report', label: 'E. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_toll_fare_report', label: 'D. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
+        { subId: 'transactional_report_transaction_search_normal', label: 'E. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
+        { subId: 'transactional_report_transaction_search_dispute', label: 'F. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
       ],
     },
     {
