@@ -217,3 +217,32 @@ CREATE TABLE IF NOT EXISTS `toll_transactions` (
     INDEX `idx_trs_acq_txn_id` (`acq_txn_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 12. Dispute Transactions Table
+CREATE TABLE IF NOT EXISTS `dispute_transactions` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `plaza_name` VARCHAR(120) NOT NULL,
+    `plaza_id` VARCHAR(32) NOT NULL,
+    `acq_txn_id` VARCHAR(32) NOT NULL,
+    `toll_txn_id` VARCHAR(32) NOT NULL,
+    `txn_date_time` DATETIME NOT NULL,
+    `txn_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `dispute_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `vehicle_no` VARCHAR(32) NOT NULL,
+    `tag_id` VARCHAR(64) NOT NULL,
+    `tid` VARCHAR(64) NOT NULL,
+    `issuer_id` VARCHAR(32) NOT NULL,
+    `int_tracking_no` VARCHAR(32) NULL DEFAULT 'NA',
+    `function_code` VARCHAR(64) NOT NULL,
+    `settlement_indicator` VARCHAR(10) NOT NULL,
+    `message_reason_code` VARCHAR(100) NULL,
+    `member_message_text` VARCHAR(255) NULL,
+    `npci_settlement_date` DATE NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_disp_txn_date` (`txn_date_time`),
+    INDEX `idx_disp_plaza_date` (`plaza_id`, `txn_date_time`),
+    INDEX `idx_disp_func_code` (`function_code`),
+    INDEX `idx_disp_tag_id` (`tag_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+

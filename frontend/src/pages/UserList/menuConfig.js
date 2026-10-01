@@ -59,15 +59,7 @@ export const MENU_TREE = [
   {
     id: 'dispute_handling',
     label: 'Dispute Handling',
-    subs: [
-      { id: 'dispute_handling_dispute_dashboard', label: 'Dispute Dashboard' },
-      { id: 'dispute_handling_dispute_file_upload', label: 'Dispute File Upload' },
-      { id: 'dispute_handling_dispute_file_status', label: 'Dispute File Status' },
-      { id: 'dispute_handling_chargeback_assign', label: 'Chargeback Assign' },
-      { id: 'dispute_handling_validate_dispute', label: 'Validate Dispute' },
-      { id: 'dispute_handling_approve_dispute', label: 'Approve Dispute' },
-      { id: 'dispute_handling_dispute_detail_report', label: 'Dispute Detail Report' }
-    ]
+    subs: []
   },
   {
     id: 'violation_management',

@@ -11,6 +11,7 @@ import Onboarding from '../pages/Onboarding/Onboarding';
 import TrsReport from '../pages/TrsReport/TrsReport';
 import DateWiseRecon from '../pages/DateWiseRecon/DateWiseRecon';
 import CycleWiseRecon from '../pages/CycleWiseRecon/CycleWiseRecon';
+import DisputeDetailReport from '../pages/DisputeDetailReport/DisputeDetailReport';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -133,6 +134,26 @@ export const AppRoutes = () => {
       <Route
         path="/recon/cycle-wise-recon"
         element={<Navigate to="/recon/cycle-wise-report" replace />}
+      />
+
+      <Route
+        path="/dispute-handling"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="dispute_handling"
+          >
+            <DisputeDetailReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dispute-detail-report"
+        element={<Navigate to="/dispute-handling" replace />}
+      />
+      <Route
+        path="/dispute/detail-report"
+        element={<Navigate to="/dispute-handling" replace />}
       />
 
       {/* Catch-all */}
