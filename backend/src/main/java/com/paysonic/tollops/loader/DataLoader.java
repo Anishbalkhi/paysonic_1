@@ -30,6 +30,7 @@ public class DataLoader implements CommandLineRunner {
     private final PlazaCallbackRepository plazaCallbackRepository;
     private final PlazaFareRepository plazaFareRepository;
     private final PlazaCchRepository plazaCchRepository;
+    private final TollTransactionRepository tollTransactionRepository;
     private final ObjectMapper objectMapper;
 
     public DataLoader(UserRepository userRepository,
@@ -42,6 +43,7 @@ public class DataLoader implements CommandLineRunner {
                       PlazaCallbackRepository plazaCallbackRepository,
                       PlazaFareRepository plazaFareRepository,
                       PlazaCchRepository plazaCchRepository,
+                      TollTransactionRepository tollTransactionRepository,
                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
@@ -53,6 +55,7 @@ public class DataLoader implements CommandLineRunner {
         this.plazaCallbackRepository = plazaCallbackRepository;
         this.plazaFareRepository = plazaFareRepository;
         this.plazaCchRepository = plazaCchRepository;
+        this.tollTransactionRepository = tollTransactionRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -64,6 +67,7 @@ public class DataLoader implements CommandLineRunner {
             seedLoginHistory();
             seedAuditLogs();
             seedOnboardingData();
+            seedTollTransactions();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
@@ -458,4 +462,200 @@ public class DataLoader implements CommandLineRunner {
             log.error("Failed to seed onboarding data into real database", e);
         }
     }
+
+    private void seedTollTransactions() {
+        if (tollTransactionRepository.count() > 0) {
+            log.info("Toll transactions table already contains {} records, skipping seed.", tollTransactionRepository.count());
+            return;
+        }
+
+        List<TollTransaction> txns = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Reference Screenshot Row 1 (Dummytoll 600601, Rejected, MALTAG)
+        TollTransaction t1 = new TollTransaction();
+        t1.setTollFileName("ONLINE");
+        t1.setPlazaId("600601");
+        t1.setPlazaName("Dummytoll");
+        t1.setLaneId("L4");
+        t1.setTagId("34161FA82032890123456781");
+        t1.setVrn("MH12VL3456");
+        t1.setAcqTxnId("102047738012345671");
+        t1.setTollTxnId("ZP170908");
+        t1.setTollMessageId("ZP170908");
+        t1.setMvc("VC4");
+        t1.setTagVc("4");
+        t1.setAvc("VC4");
+        t1.setStatus("Rejected");
+        t1.setReason("MALTAG");
+        t1.setTxnAmount(BigDecimal.ZERO);
+        t1.setSettledAmount(null);
+        t1.setTxnDate(LocalDateTime.of(2026, 9, 15, 10, 30, 0));
+        t1.setPlazaPostDate(LocalDateTime.of(2026, 9, 21, 12, 0, 0));
+        t1.setNpciRespDate(LocalDateTime.of(2026, 9, 21, 12, 5, 0));
+        t1.setPlazaType("Toll");
+        t1.setIsViolation("Yes");
+        t1.setAuditVc("NA");
+        t1.setViolationSettledAmount(BigDecimal.ZERO);
+        txns.add(t1);
+
+        // 2. Reference Screenshot Row 2 (Dummytoll 600601, Rejected, DUPLICATE)
+        TollTransaction t2 = new TollTransaction();
+        t2.setTollFileName("ONLINE");
+        t2.setPlazaId("600601");
+        t2.setPlazaName("Dummytoll");
+        t2.setLaneId("L4");
+        t2.setTagId("34161FA82032890123456782");
+        t2.setVrn("MH12VL3457");
+        t2.setAcqTxnId("102047738012345672");
+        t2.setTollTxnId("ZP170907");
+        t2.setTollMessageId("ZP170907");
+        t2.setMvc("VC4");
+        t2.setTagVc("4");
+        t2.setAvc("VC4");
+        t2.setStatus("Rejected");
+        t2.setReason("DUPLICATE");
+        t2.setTxnAmount(BigDecimal.ZERO);
+        t2.setSettledAmount(null);
+        t2.setTxnDate(LocalDateTime.of(2026, 9, 15, 11, 15, 0));
+        t2.setPlazaPostDate(LocalDateTime.of(2026, 9, 21, 12, 0, 0));
+        t2.setNpciRespDate(LocalDateTime.of(2026, 9, 21, 12, 5, 0));
+        t2.setPlazaType("Toll");
+        t2.setIsViolation("Yes");
+        t2.setAuditVc("NA");
+        t2.setViolationSettledAmount(BigDecimal.ZERO);
+        txns.add(t2);
+
+        // 3. Reference Screenshot Row 3 (Autumn 666666, Pending, ACCEPTED)
+        TollTransaction t3 = new TollTransaction();
+        t3.setTollFileName("ONLINE");
+        t3.setPlazaId("666666");
+        t3.setPlazaName("Autumn");
+        t3.setLaneId("L2");
+        t3.setTagId("34161FA82032890123456783");
+        t3.setVrn("MH04ID2901");
+        t3.setAcqTxnId("102047738012345673");
+        t3.setTollTxnId("AM170907");
+        t3.setTollMessageId("AM170907");
+        t3.setMvc("VC10");
+        t3.setTagVc("4");
+        t3.setAvc("VC10");
+        t3.setStatus("Pending");
+        t3.setReason("ACCEPTED");
+        t3.setTxnAmount(new BigDecimal("120.00"));
+        t3.setSettledAmount(BigDecimal.ZERO);
+        t3.setTxnDate(LocalDateTime.of(2026, 9, 16, 8, 20, 0));
+        t3.setPlazaPostDate(LocalDateTime.of(2026, 9, 17, 9, 0, 0));
+        t3.setTxnType("DEBIT");
+        t3.setNpciRespDate(LocalDateTime.of(2026, 9, 17, 9, 5, 0));
+        t3.setPlazaType("Toll");
+        t3.setIsViolation("Yes");
+        t3.setAuditVc("VC18");
+        t3.setViolationSettledAmount(BigDecimal.ZERO);
+        txns.add(t3);
+
+        // 4. Reference Screenshot Row 4 (Autumn 666666, Pending, ACCEPTED)
+        TollTransaction t4 = new TollTransaction();
+        t4.setTollFileName("ONLINE");
+        t4.setPlazaId("666666");
+        t4.setPlazaName("Autumn");
+        t4.setLaneId("L2");
+        t4.setTagId("34161FA82032890123456784");
+        t4.setVrn("MH04ID2902");
+        t4.setAcqTxnId("102047738012345674");
+        t4.setTollTxnId("AM170906");
+        t4.setTollMessageId("AM170906");
+        t4.setMvc("VC10");
+        t4.setTagVc("4");
+        t4.setAvc("VC10");
+        t4.setStatus("Pending");
+        t4.setReason("ACCEPTED");
+        t4.setTxnAmount(new BigDecimal("120.00"));
+        t4.setSettledAmount(BigDecimal.ZERO);
+        t4.setTxnDate(LocalDateTime.of(2026, 9, 16, 9, 45, 0));
+        t4.setPlazaPostDate(LocalDateTime.of(2026, 9, 17, 10, 0, 0));
+        t4.setTxnType("DEBIT");
+        t4.setNpciRespDate(LocalDateTime.of(2026, 9, 17, 10, 5, 0));
+        t4.setPlazaType("Toll");
+        t4.setIsViolation("Yes");
+        t4.setAuditVc("Decline");
+        t4.setViolationSettledAmount(BigDecimal.ZERO);
+        txns.add(t4);
+
+        // 5. Reference Screenshot Row 5 (Autumn 666666, Rejected, MALTAG)
+        TollTransaction t5 = new TollTransaction();
+        t5.setTollFileName("ONLINE");
+        t5.setPlazaId("666666");
+        t5.setPlazaName("Autumn");
+        t5.setLaneId("L2");
+        t5.setTagId("34161FA82032890123456785");
+        t5.setVrn("MH04ID2903");
+        t5.setAcqTxnId("102047738012345675");
+        t5.setTollTxnId("AM170905");
+        t5.setTollMessageId("AM170905");
+        t5.setMvc("VC10");
+        t5.setTagVc("4");
+        t5.setAvc("VC10");
+        t5.setStatus("Rejected");
+        t5.setReason("MALTAG");
+        t5.setTxnAmount(BigDecimal.ZERO);
+        t5.setSettledAmount(null);
+        t5.setTxnDate(LocalDateTime.of(2026, 9, 16, 11, 10, 0));
+        t5.setPlazaPostDate(LocalDateTime.of(2026, 9, 17, 12, 0, 0));
+        t5.setNpciRespDate(LocalDateTime.of(2026, 9, 17, 12, 5, 0));
+        t5.setPlazaType("Toll");
+        t5.setIsViolation("Yes");
+        t5.setAuditVc("Decline");
+        t5.setViolationSettledAmount(BigDecimal.ZERO);
+        txns.add(t5);
+
+        // 6-12. Seed today's operational transactions so opening TRS with default range displays live data
+        String[] statuses = {"Settled", "Settled", "Pending", "Settled", "Rejected", "Declined"};
+        String[] reasons = {"ACCEPTED", "ACCEPTED", "ACCEPTED", "ACCEPTED", "BLKLISTTAG", "LOW_BAL"};
+        BigDecimal[] txnAmts = {new BigDecimal("85.00"), new BigDecimal("130.00"), new BigDecimal("95.00"), new BigDecimal("240.00"), BigDecimal.ZERO, new BigDecimal("85.00")};
+        BigDecimal[] setAmts = {new BigDecimal("85.00"), new BigDecimal("130.00"), BigDecimal.ZERO, new BigDecimal("240.00"), null, null};
+        String[] cycles = {"C1", "C2", "", "C1", "", ""};
+        String[] vcs = {"VC4", "VC5", "VC4", "VC10", "VC4", "VC4"};
+        String[] vrns = {"MH12AB1001", "KA03CD2002", "DL01EF3003", "TS07GH4004", "UP16IJ5005", "HR26KL6006"};
+
+        for (int i = 0; i < statuses.length; i++) {
+            TollTransaction t = new TollTransaction();
+            t.setTollFileName("ONLINE");
+            t.setPlazaId(i % 2 == 0 ? "501101" : "502202");
+            t.setPlazaName(i % 2 == 0 ? "MUMBAI PLAZA NH-04" : "PUNE BYPASS PLAZA");
+            t.setLaneId("L" + (i + 1));
+            t.setTagId("34161FA820328909988100" + i);
+            t.setVrn(vrns[i]);
+            t.setAcqTxnId("1020477380998810" + String.format("%02d", i + 10));
+            t.setTollTxnId("TXN2610" + String.format("%04d", i + 1));
+            t.setTollMessageId("MSG2610" + String.format("%04d", i + 1));
+            t.setMvc(vcs[i]);
+            t.setTagVc(vcs[i].replace("VC", ""));
+            t.setAvc(vcs[i]);
+            t.setStatus(statuses[i]);
+            t.setReason(reasons[i]);
+            t.setTxnAmount(txnAmts[i]);
+            t.setSettledAmount(setAmts[i]);
+            t.setTxnDate(now.minusHours(i * 2 + 1));
+            t.setPlazaPostDate(now.minusHours(i * 2));
+            t.setNpciRespDate(now.minusHours(i * 2).plusMinutes(3));
+            if ("Settled".equals(statuses[i])) {
+                t.setNpciSettledDate(now.minusHours(i * 2).plusMinutes(30));
+                t.setClearingCycle(cycles[i]);
+                t.setPlazaSettleDate(now.minusHours(i * 2).plusHours(2));
+                t.setTxnType("DEBIT");
+            } else if ("Pending".equals(statuses[i])) {
+                t.setTxnType("DEBIT");
+            }
+            t.setPlazaType("Toll");
+            t.setIsViolation(i == 4 ? "Yes" : "No");
+            t.setAuditVc(i == 4 ? "Decline" : "NA");
+            t.setViolationSettledAmount(BigDecimal.ZERO);
+            txns.add(t);
+        }
+
+        tollTransactionRepository.saveAll(txns);
+        log.info("Seeded {} initial Toll Transactions for TRS Report.", txns.size());
+    }
 }
+

@@ -8,6 +8,7 @@ import UserActivity from '../pages/UserActivity/UserActivity';
 import TagDetails from '../pages/TagDetails/TagDetails';
 import PassIssuance from '../pages/PassIssuance/PassIssuance';
 import Onboarding from '../pages/Onboarding/Onboarding';
+import TrsReport from '../pages/TrsReport/TrsReport';
 import ProtectedRoute from '../components/ProtectedRoute/ProtectedRoute';
 
 export const AppRoutes = () => {
@@ -81,6 +82,28 @@ export const AppRoutes = () => {
         }
       />
       <Route path="/products" element={<Navigate to="/products/PROD-PAYSONIC-GATEWAY" replace />} />
+      <Route
+        path="/recon/trs-report"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank']}
+            requiredMenu="recon_management"
+          >
+            <TrsReport />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports/dynamicreport/8"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank']}
+            requiredMenu="recon_management"
+          >
+            <TrsReport />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />

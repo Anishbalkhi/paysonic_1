@@ -24,7 +24,7 @@ export const Sidebar = ({
 
   // Initialize open menus with active section open
   const [openMenus, setOpenMenus] = useState(() => {
-    const initial = { 'user_management': true, 'tag_details': true };
+    const initial = { 'user_management': true, 'tag_details': true, 'recon_management': true };
     return initial;
   });
 

@@ -76,6 +76,17 @@
             <artifactId>commons-csv</artifactId>
             <version>1.11.0</version>
         </dependency>
+        <!-- Apache POI for Streaming Excel (XLSX) Export -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.3.0</version>
+        </dependency>
 
         <!-- Testing -->
         <dependency>
