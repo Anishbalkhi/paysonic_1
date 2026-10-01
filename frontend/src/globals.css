@@ -1473,3 +1473,479 @@ button.btn-orange:disabled,
   cursor: not-allowed;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   REPORT PAGES — UNIFIED DARK MODE OVERRIDES
+   Covers every page that uses hardcoded light-mode colors in its own SCSS:
+   TrsReport, RejectedTransaction, TollFareReport, TransactionSearch (Normal/Dispute),
+   DisputeDetailReport, ViolationBulkAction, ViolationRawFileReport,
+   ViolationSettlementReport, ViolationValidateReport, NhaiTrafficReport,
+   TransactionSummaryReport, PassSummaryReport
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Page wrapper backgrounds ── */
+[data-theme="dark"] .trs-page,
+[data-theme="dark"] .rejected-txn-page,
+[data-theme="dark"] .toll-fare-page,
+[data-theme="dark"] .transaction-search-normal-page,
+[data-theme="dark"] .search-dispute-page,
+[data-theme="dark"] .dispute-report-page,
+[data-theme="dark"] .violation-bulk-action-page,
+[data-theme="dark"] .violation-raw-file-page,
+[data-theme="dark"] .violation-settlement-page,
+[data-theme="dark"] .violation-validate-page,
+[data-theme="dark"] .cycle-recon-page,
+[data-theme="dark"] .date-recon-page,
+[data-theme="dark"] .nhai-traffic-page,
+[data-theme="dark"] .txn-summary-page,
+[data-theme="dark"] .pass-summary-page {
+  background-color: var(--bg, #10151C) !important;
+  color: var(--ink, #E7ECF3) !important;
+}
+
+/* ── 2. Page title / header text ── */
+[data-theme="dark"] .page-title,
+[data-theme="dark"] .report-title {
+  color: #8b0000 !important;
+}
+
+[data-theme="dark"] .report-subtitle,
+[data-theme="dark"] .subtitle {
+  color: var(--muted, #9AA5B4) !important;
+}
+
+/* ── 3. Filter / search cards ── */
+[data-theme="dark"] .filter-card,
+[data-theme="dark"] .filter-box,
+[data-theme="dark"] .trs-filter-box,
+[data-theme="dark"] .viol-filter-box,
+[data-theme="dark"] .search-card {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--stroke, #262F3B) !important;
+  color: var(--ink, #E7ECF3) !important;
+}
+
+[data-theme="dark"] .filter-label,
+[data-theme="dark"] .filter-card label,
+[data-theme="dark"] .filter-box label,
+[data-theme="dark"] .trs-filter-box label {
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .filter-input,
+[data-theme="dark"] .filter-select,
+[data-theme="dark"] .date-input,
+[data-theme="dark"] .select-input,
+[data-theme="dark"] .filter-card input,
+[data-theme="dark"] .filter-card select,
+[data-theme="dark"] .filter-box input,
+[data-theme="dark"] .filter-box select,
+[data-theme="dark"] .trs-filter-box input,
+[data-theme="dark"] .trs-filter-box select {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--stroke, #262F3B) !important;
+  color: var(--ink, #E7ECF3) !important;
+}
+
+[data-theme="dark"] .filter-input:focus,
+[data-theme="dark"] .filter-select:focus,
+[data-theme="dark"] .date-input:focus,
+[data-theme="dark"] .select-input:focus {
+  border-color: #8b0000 !important;
+  box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .filter-error-msg,
+[data-theme="dark"] .error-msg,
+[data-theme="dark"] .viol-error-msg {
+  background-color: #3A1414 !important;
+  border-color: #5A1E1E !important;
+  color: #F87171 !important;
+}
+
+/* ── 4. Buttons ── */
+[data-theme="dark"] .btn-royal-blue,
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .btn-blue {
+  background-color: #1565c0 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+[data-theme="dark"] .btn-royal-blue:hover:not(:disabled),
+[data-theme="dark"] .btn-primary:hover:not(:disabled) {
+  background-color: #1976d2 !important;
+  box-shadow: 0 2px 8px rgba(21, 101, 192, 0.4) !important;
+}
+
+[data-theme="dark"] .filter-card .btn-secondary,
+[data-theme="dark"] .filter-box .btn-secondary,
+[data-theme="dark"] .trs-filter-box .btn-secondary,
+[data-theme="dark"] .btn-actions .btn-secondary {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--stroke, #262F3B) !important;
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .filter-card .btn-secondary:hover:not(:disabled),
+[data-theme="dark"] .filter-box .btn-secondary:hover:not(:disabled) {
+  background-color: var(--stroke, #262F3B) !important;
+  color: var(--ink, #E7ECF3) !important;
+}
+
+/* ── 5. Table wrappers & cards ── */
+[data-theme="dark"] .table-wrapper,
+[data-theme="dark"] .table-card,
+[data-theme="dark"] .viol-table-card,
+[data-theme="dark"] .data-table-wrapper {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--stroke, #262F3B) !important;
+}
+
+/* ── 6. Table headers (maroon/red headers stay — they're branded) ── */
+[data-theme="dark"] .nhai-styled-table thead,
+[data-theme="dark"] .txn-summary-table thead,
+[data-theme="dark"] .pass-summary-table thead,
+[data-theme="dark"] .viol-table thead,
+[data-theme="dark"] .trs-table thead,
+[data-theme="dark"] .report-table thead {
+  background-color: #6b0000 !important;
+  color: #ffffff !important;
+}
+
+/* Keep existing maroon brand on report pages' styled table headers */
+[data-theme="dark"] thead th {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ── 7. Table body — rows, cells, borders ── */
+[data-theme="dark"] .nhai-styled-table tbody tr,
+[data-theme="dark"] .txn-summary-table tbody tr,
+[data-theme="dark"] .pass-summary-table tbody tr,
+[data-theme="dark"] .viol-table tbody tr,
+[data-theme="dark"] .trs-table tbody tr,
+[data-theme="dark"] .report-table tbody tr,
+[data-theme="dark"] .table-wrapper table tbody tr {
+  border-bottom-color: var(--stroke, #262F3B) !important;
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] .nhai-styled-table tbody tr:hover,
+[data-theme="dark"] .txn-summary-table tbody tr:hover,
+[data-theme="dark"] .pass-summary-table tbody tr:hover,
+[data-theme="dark"] .viol-table tbody tr:hover,
+[data-theme="dark"] .trs-table tbody tr:hover,
+[data-theme="dark"] .report-table tbody tr:hover,
+[data-theme="dark"] .table-wrapper table tbody tr:hover {
+  background-color: var(--surface-raised, #1C2430) !important;
+}
+
+[data-theme="dark"] .nhai-styled-table tbody td,
+[data-theme="dark"] .txn-summary-table tbody td,
+[data-theme="dark"] .pass-summary-table tbody td,
+[data-theme="dark"] .viol-table tbody td,
+[data-theme="dark"] .trs-table tbody td,
+[data-theme="dark"] .report-table tbody td,
+[data-theme="dark"] .table-wrapper table tbody td {
+  color: var(--ink, #E7ECF3) !important;
+  border-color: var(--stroke, #262F3B) !important;
+}
+
+/* ── 8. Merged cells (Plaza, Status, PaymentMode) ── */
+[data-theme="dark"] .merged-cell,
+[data-theme="dark"] .border-merged-cell,
+[data-theme="dark"] .vc-title-cell {
+  background-color: var(--card, #161D27) !important;
+  color: var(--ink, #E7ECF3) !important;
+}
+
+[data-theme="dark"] .plaza-id-cell {
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .vc-title-cell {
+  color: #60a5fa !important;
+}
+
+/* ── 9. Status badge cells ── */
+[data-theme="dark"] .status-cell.status-accepted {
+  background-color: #0d2a1e !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .status-cell.status-declined {
+  background-color: #3A1414 !important;
+  color: #f87171 !important;
+}
+
+[data-theme="dark"] .status-cell.status-npcidecline,
+[data-theme="dark"] .status-cell.status-npci-decline {
+  background-color: #3a2a0f !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .payment-mode-cell.mode-cash {
+  background-color: #0d2a1e !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .payment-mode-cell.mode-online {
+  background-color: #13243d !important;
+  color: #60a5fa !important;
+}
+
+/* ── 10. Response code cells ── */
+[data-theme="dark"] .response-code-cell,
+[data-theme="dark"] .journey-type-cell,
+[data-theme="dark"] .pass-type-cell {
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+/* ── 11. Journey Total / Subtotal rows ── */
+[data-theme="dark"] .row-journey-total,
+[data-theme="dark"] .row-subtotal {
+  background-color: #2a2200 !important;
+}
+
+[data-theme="dark"] .row-journey-total:hover,
+[data-theme="dark"] .row-subtotal:hover {
+  background-color: #332a00 !important;
+}
+
+[data-theme="dark"] .row-journey-total td,
+[data-theme="dark"] .row-subtotal td {
+  border-color: #4a3800 !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .journey-total-label-cell,
+[data-theme="dark"] .subtotal-label-cell {
+  background-color: #3a2e00 !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .highlight-cell,
+[data-theme="dark"] .subtotal-val-cell {
+  background-color: #3a2e00 !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .journey-total-type-cell {
+  color: #f59e0b !important;
+}
+
+/* ── 12. Grand Total rows ── */
+[data-theme="dark"] .row-grand-total {
+  background-color: #2a2000 !important;
+}
+
+[data-theme="dark"] .row-grand-total td {
+  border-color: #5c4500 !important;
+}
+
+[data-theme="dark"] .grand-total-label-cell {
+  background-color: #3d2e00 !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .grand-total-val-cell {
+  background-color: #3a2800 !important;
+  color: #f59e0b !important;
+}
+
+/* ── 13. Empty / loading table cells ── */
+[data-theme="dark"] .table-empty-cell,
+[data-theme="dark"] .table-loading-cell,
+[data-theme="dark"] .no-data-cell {
+  color: var(--muted, #9AA5B4) !important;
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] .table-loading-cell .spinner {
+  border-color: rgba(139, 0, 0, 0.25) !important;
+  border-top-color: #c0392b !important;
+}
+
+/* ── 14. KPI / Summary cards ── */
+[data-theme="dark"] .report-kpi-summary-bar .kpi-card,
+[data-theme="dark"] .kpi-bar .kpi-card {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--stroke, #262F3B) !important;
+}
+
+[data-theme="dark"] .kpi-card .kpi-label {
+  color: var(--muted, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .kpi-card .kpi-val {
+  color: var(--ink, #E7ECF3) !important;
+}
+
+/* Override specific colored KPI values in dark mode */
+[data-theme="dark"] .kpi-card.kpi-red .kpi-val { color: #f87171 !important; }
+[data-theme="dark"] .kpi-card.kpi-blue .kpi-val { color: #60a5fa !important; }
+[data-theme="dark"] .kpi-card.kpi-green .kpi-val { color: #4ade80 !important; }
+[data-theme="dark"] .kpi-card.kpi-amber .kpi-val { color: #fbbf24 !important; }
+[data-theme="dark"] .kpi-card.kpi-purple .kpi-val { color: #a78bfa !important; }
+
+/* ── 15. Footer meta / Live DB badge ── */
+[data-theme="dark"] .report-footer-meta {
+  color: var(--muted, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .live-db-badge {
+  background-color: #0d2a1e !important;
+  border-color: #1a4a33 !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .disclaimer-note {
+  color: var(--muted, #9AA5B4) !important;
+}
+
+/* ── 16. Inline table-level styles for older pages (TrsReport, etc.) ── */
+
+/* Table head in older pages */
+[data-theme="dark"] .t-head,
+[data-theme="dark"] table.styled thead tr,
+[data-theme="dark"] .trs-table thead tr,
+[data-theme="dark"] .rpt-table thead tr {
+  background-color: #6b0000 !important;
+}
+
+/* Status badge pills */
+[data-theme="dark"] .status-badge,
+[data-theme="dark"] .txn-status-badge {
+  filter: brightness(0.85) saturate(1.2);
+}
+
+[data-theme="dark"] .status-badge.success,
+[data-theme="dark"] .badge-accepted {
+  background-color: #0d2a1e !important;
+  color: #4ade80 !important;
+  border-color: #1a4a33 !important;
+}
+
+[data-theme="dark"] .status-badge.danger,
+[data-theme="dark"] .badge-declined,
+[data-theme="dark"] .badge-rejected {
+  background-color: #3A1414 !important;
+  color: #f87171 !important;
+  border-color: #5A1E1E !important;
+}
+
+[data-theme="dark"] .status-badge.warning,
+[data-theme="dark"] .badge-pending {
+  background-color: #3a2a0f !important;
+  color: #fbbf24 !important;
+  border-color: #5c4010 !important;
+}
+
+/* ── 17. Pagination ── */
+[data-theme="dark"] .pagination-bar,
+[data-theme="dark"] .pager {
+  background-color: var(--card, #161D27) !important;
+  border-top-color: var(--stroke, #262F3B) !important;
+  color: var(--muted, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .pagination-bar button,
+[data-theme="dark"] .pager button,
+[data-theme="dark"] .page-btn {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--stroke, #262F3B) !important;
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .pagination-bar button:hover:not(:disabled),
+[data-theme="dark"] .pager button:hover:not(:disabled) {
+  background-color: var(--stroke, #262F3B) !important;
+  color: var(--ink, #E7ECF3) !important;
+}
+
+[data-theme="dark"] .pagination-bar button.active,
+[data-theme="dark"] .pager button.active,
+[data-theme="dark"] .page-btn.active {
+  background-color: #8b0000 !important;
+  color: #ffffff !important;
+  border-color: #8b0000 !important;
+}
+
+/* ── 18. Violation-specific panels ── */
+[data-theme="dark"] .violation-bulk-action-page .page-header,
+[data-theme="dark"] .violation-raw-file-page .page-header,
+[data-theme="dark"] .violation-settlement-page .page-header,
+[data-theme="dark"] .violation-validate-page .page-header {
+  color: var(--ink, #E7ECF3) !important;
+}
+
+[data-theme="dark"] .violation-bulk-action-page .filter-card,
+[data-theme="dark"] .violation-raw-file-page .filter-card,
+[data-theme="dark"] .violation-settlement-page .filter-card,
+[data-theme="dark"] .violation-validate-page .filter-card {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--stroke, #262F3B) !important;
+}
+
+/* ── 19. Scrollbar styling in dark mode for table wrappers ── */
+[data-theme="dark"] .table-responsive::-webkit-scrollbar,
+[data-theme="dark"] .table-wrapper::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+  background-color: var(--card, #161D27);
+}
+
+[data-theme="dark"] .table-responsive::-webkit-scrollbar-thumb,
+[data-theme="dark"] .table-wrapper::-webkit-scrollbar-thumb {
+  background-color: var(--stroke-strong, #354152);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] .table-responsive::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .table-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: var(--border-hover, #4a5568);
+}
+
+/* ── 20. Skeleton shimmer — dark mode variant ── */
+[data-theme="dark"] .sk-pulse {
+  background: linear-gradient(
+    90deg,
+    #1C2430 25%,
+    #243040 50%,
+    #1C2430 75%
+  ) !important;
+  background-size: 1200px 100% !important;
+}
+
+/* ── 21. Global btn-secondary dark override (standalone, not inside filter) ── */
+[data-theme="dark"] button.btn-secondary,
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--stroke, #262F3B) !important;
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+[data-theme="dark"] button.btn-secondary:hover:not(:disabled),
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background-color: var(--stroke, #262F3B) !important;
+  color: var(--ink, #E7ECF3) !important;
+  border-color: var(--border-hover, #354152) !important;
+}
+
+/* ── 22. Green accent bar stays brand color ── */
+[data-theme="dark"] .report-green-accent-bar {
+  background: #10b981 !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+/* ── 23. Icon fill colors for SVG in dark mode ── */
+[data-theme="dark"] .icon-btn:hover {
+  background: var(--surface-raised, #1C2430) !important;
+  border-color: var(--border-hover, #354152) !important;
+}
+
+/* ── 24. Empty-cell backgrounds ── */
+[data-theme="dark"] .empty-cell {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--stroke, #262F3B) !important;
+}
+
