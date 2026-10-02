@@ -48,7 +48,7 @@ public class ViolationSettlementController {
 
             Page<ViolationSettlementRecord> pageResult = service.searchRecords(
                     fromDate, toDate, plazaId, status, vrn, tagId, acqTxnId,
-                    PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "srNo"))
+                    PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"))
             );
 
             Map<String, Object> summary = service.calculateSummary(
