@@ -40,12 +40,6 @@ export const CycleWiseRecon = () => {
       return false;
     }
 
-    const dayDiff = (toTime - fromTime) / (1000 * 60 * 60 * 24);
-    if (dayDiff > 90) {
-      setErrorMsg('Selected date range exceeds maximum allowed limit of 90 days.');
-      return false;
-    }
-
     setErrorMsg('');
     return true;
   };
@@ -371,7 +365,7 @@ export const CycleWiseRecon = () => {
           <div className="btn-group">
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleExport}
               disabled={exporting || loading || records.length === 0}
               id="cwrExportBtn"
@@ -380,7 +374,7 @@ export const CycleWiseRecon = () => {
             </button>
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleExportCsv}
               disabled={loading || records.length === 0}
               id="cwrExportCsvBtn"
@@ -389,7 +383,7 @@ export const CycleWiseRecon = () => {
             </button>
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleSearch}
               disabled={loading}
               id="cwrSearchBtn"

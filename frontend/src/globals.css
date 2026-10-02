@@ -1441,7 +1441,7 @@ button.btn-orange,
   font-weight: 600;
   font-family: inherit;
   color: #ffffff;
-  background-color: #ff7a00;
+  background-color: #1565c0;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -1452,14 +1452,14 @@ button.btn-orange,
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(255, 122, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(21, 101, 192, 0.2);
   box-sizing: border-box;
 }
 
 button.btn-orange:hover:not(:disabled),
 .btn-orange:hover:not(:disabled) {
-  background-color: #e66e00;
-  box-shadow: 0 2px 6px rgba(255, 122, 0, 0.35);
+  background-color: #0d47a1;
+  box-shadow: 0 2px 6px rgba(21, 101, 192, 0.35);
 }
 
 button.btn-orange:active:not(:disabled),
@@ -1505,10 +1505,11 @@ button.btn-orange:disabled,
 /* ── 2. Page title / header text ── */
 [data-theme="dark"] .page-title,
 [data-theme="dark"] .report-title {
-  color: #8b0000 !important;
+  color: #60a5fa !important;
 }
 
 [data-theme="dark"] .report-subtitle,
+[data-theme="dark"] .page-subtitle,
 [data-theme="dark"] .subtitle {
   color: var(--muted, #9AA5B4) !important;
 }
@@ -1550,8 +1551,8 @@ button.btn-orange:disabled,
 [data-theme="dark"] .filter-select:focus,
 [data-theme="dark"] .date-input:focus,
 [data-theme="dark"] .select-input:focus {
-  border-color: #8b0000 !important;
-  box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.25) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
 }
 
 [data-theme="dark"] .filter-error-msg,
@@ -1601,14 +1602,14 @@ button.btn-orange:disabled,
   border-color: var(--stroke, #262F3B) !important;
 }
 
-/* ── 6. Table headers (maroon/red headers stay — they're branded) ── */
+/* ── 6. Table headers — blue branded ── */
 [data-theme="dark"] .nhai-styled-table thead,
 [data-theme="dark"] .txn-summary-table thead,
 [data-theme="dark"] .pass-summary-table thead,
 [data-theme="dark"] .viol-table thead,
 [data-theme="dark"] .trs-table thead,
 [data-theme="dark"] .report-table thead {
-  background-color: #6b0000 !important;
+  background-color: #0a3880 !important;
   color: #ffffff !important;
 }
 
@@ -1761,8 +1762,8 @@ button.btn-orange:disabled,
 }
 
 [data-theme="dark"] .table-loading-cell .spinner {
-  border-color: rgba(139, 0, 0, 0.25) !important;
-  border-top-color: #c0392b !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  border-top-color: #3b82f6 !important;
 }
 
 /* ── 14. KPI / Summary cards ── */
@@ -1809,7 +1810,7 @@ button.btn-orange:disabled,
 [data-theme="dark"] table.styled thead tr,
 [data-theme="dark"] .trs-table thead tr,
 [data-theme="dark"] .rpt-table thead tr {
-  background-color: #6b0000 !important;
+  background-color: #0a3880 !important;
 }
 
 /* Status badge pills */
@@ -1865,9 +1866,9 @@ button.btn-orange:disabled,
 [data-theme="dark"] .pagination-bar button.active,
 [data-theme="dark"] .pager button.active,
 [data-theme="dark"] .page-btn.active {
-  background-color: #8b0000 !important;
+  background-color: #1565c0 !important;
   color: #ffffff !important;
-  border-color: #8b0000 !important;
+  border-color: #1565c0 !important;
 }
 
 /* ── 18. Violation-specific panels ── */

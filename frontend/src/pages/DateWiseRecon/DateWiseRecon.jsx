@@ -40,12 +40,6 @@ export const DateWiseRecon = () => {
       return false;
     }
 
-    const dayDiff = (toTime - fromTime) / (1000 * 60 * 60 * 24);
-    if (dayDiff > 90) {
-      setErrorMsg('Selected date range exceeds maximum allowed limit of 90 days.');
-      return false;
-    }
-
     setErrorMsg('');
     return true;
   };
@@ -278,7 +272,7 @@ export const DateWiseRecon = () => {
           <div className="btn-group">
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleExportExcel}
               disabled={exporting || loading || records.length === 0}
               id="dwrExportBtn"
@@ -287,7 +281,7 @@ export const DateWiseRecon = () => {
             </button>
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleExportCsv}
               disabled={loading || records.length === 0}
               id="dwrExportCsvBtn"
@@ -297,7 +291,7 @@ export const DateWiseRecon = () => {
 
             <button
               type="button"
-              className="btn-orange"
+              className="btn-royal-blue"
               onClick={handleSearch}
               disabled={loading}
               id="dwrSearchBtn"

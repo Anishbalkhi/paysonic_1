@@ -7,7 +7,7 @@
   .page-title {
     font-size: 19px;
     font-weight: 600;
-    color: #ff7a00;
+    color: #0d47a1;
     margin: 0 0 18px 0;
     letter-spacing: -0.01em;
   }
@@ -58,8 +58,8 @@
 
           &:focus {
             outline: none;
-            border-color: #ff7a00;
-            box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
+            border-color: #1565c0;
+            box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.15);
           }
         }
       }
@@ -77,7 +77,7 @@
           font-size: 14px;
           font-weight: 600;
           color: #ffffff;
-          background: #ff7a00;
+          background: #1565c0;
           border: none;
           border-radius: 6px;
           cursor: pointer;
@@ -89,8 +89,8 @@
           white-space: nowrap;
 
           &:hover:not(:disabled) {
-            background: #e66e00;
-            box-shadow: 0 2px 6px rgba(255, 122, 0, 0.3);
+            background: #0d47a1;
+            box-shadow: 0 2px 6px rgba(21, 101, 192, 0.3);
           }
 
           &:active:not(:disabled) {
@@ -209,8 +209,8 @@
           position: sticky;
           top: 0;
           z-index: 5;
-          border-top: 4px solid #10b981; // Green accent bar
-          background: #0d47a1; // Solid Royal Blue
+          border-top: 4px solid #10b981;
+          background: #0d47a1;
           color: #ffffff;
 
           tr th {
@@ -250,8 +250,8 @@
             }
 
             &.is-expanded {
-              background-color: #fffaf5;
-              border-bottom: 1px dashed #fdba74;
+              background-color: #eff6ff;
+              border-bottom: 1px dashed #93c5fd;
             }
 
             td {
@@ -273,7 +273,7 @@
                 border-radius: 4px;
                 border: 1px solid #d1d5db;
                 background: #ffffff;
-                color: #ff7a00;
+                color: #1565c0;
                 font-weight: 700;
                 font-size: 14px;
                 cursor: pointer;
@@ -284,9 +284,9 @@
                 transition: all 0.15s ease;
 
                 &:hover {
-                  background: #ff7a00;
+                  background: #1565c0;
                   color: #ffffff;
-                  border-color: #ff7a00;
+                  border-color: #1565c0;
                 }
               }
 
@@ -299,7 +299,7 @@
 
           /* Expanded sub-row area */
           tr.child-container-row {
-            background-color: #fffbf7;
+            background-color: #f0f7ff;
             border-bottom: 1px solid #e5e7eb;
 
             td {
@@ -308,11 +308,11 @@
 
             .child-table-wrapper {
               background: #ffffff;
-              border: 1px solid #fed7aa;
+              border: 1px solid #bfdbfe;
               border-radius: 6px;
               overflow: hidden;
               margin-right: 16px;
-              box-shadow: 0 1px 2px rgba(251, 146, 60, 0.08);
+              box-shadow: 0 1px 2px rgba(21, 101, 192, 0.08);
 
               table.child-table {
                 width: 100%;
@@ -320,14 +320,14 @@
                 font-size: 12.5px;
 
                 thead {
-                  background: #fff7ed;
-                  color: #9a3412;
+                  background: #eff6ff;
+                  color: #1e40af;
 
                   tr th {
                     padding: 8px 14px;
                     font-size: 12px;
                     font-weight: 600;
-                    border-bottom: 1px solid #fed7aa;
+                    border-bottom: 1px solid #bfdbfe;
                     text-align: left;
 
                     &.text-right {
@@ -340,19 +340,19 @@
                 }
 
                 tbody tr {
-                  border-bottom: 1px solid #ffedd5;
+                  border-bottom: 1px solid #dbeafe;
 
                   &:last-child {
                     border-bottom: none;
                   }
 
                   &:hover {
-                    background-color: #fffaf5;
+                    background-color: #f0f7ff;
                   }
 
                   td {
                     padding: 8px 14px;
-                    color: #431407;
+                    color: #1e3a8a;
 
                     &.text-right {
                       text-align: right;
@@ -410,7 +410,7 @@
         width: 32px;
         height: 32px;
         border: 3px solid #e5e7eb;
-        border-top-color: #ff7a00;
+        border-top-color: #1565c0;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
         margin: 0 auto 12px auto;

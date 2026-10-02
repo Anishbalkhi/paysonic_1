@@ -19,8 +19,6 @@ export const TransactionSummaryReport = () => {
   const validateDates = (start, end) => {
     if (!start || !end) { setErrorMsg('Both From Date and To Date are required.'); return false; }
     if (new Date(start) > new Date(end)) { setErrorMsg('From Date cannot be later than To Date.'); return false; }
-    const diff = (new Date(end) - new Date(start)) / 86400000;
-    if (diff > 90) { setErrorMsg('Date range exceeds 90-day limit.'); return false; }
     setErrorMsg(''); return true;
   };
 

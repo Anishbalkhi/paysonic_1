@@ -38,12 +38,6 @@ export const DisputeDetailReport = () => {
       return false;
     }
 
-    const dayDiff = (toTime - fromTime) / (1000 * 60 * 60 * 24);
-    if (dayDiff > 180) {
-      setErrorMsg('Selected date range exceeds maximum allowed limit of 180 days.');
-      return false;
-    }
-
     setErrorMsg('');
     return true;
   };

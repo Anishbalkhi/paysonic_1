@@ -43,12 +43,6 @@ export const ViolationRawFileReport = () => {
       return false;
     }
 
-    const dayDiff = (toTime - fromTime) / (1000 * 60 * 60 * 24);
-    if (dayDiff > 90) {
-      setErrorMsg('Selected date range exceeds maximum allowed limit of 90 days.');
-      return false;
-    }
-
     setErrorMsg('');
     return true;
   };
@@ -310,13 +304,6 @@ export const ViolationRawFileReport = () => {
               disabled={exportingCsv || loading}
             >
               {exportingCsv ? 'Exporting...' : 'Export CSV'}
-            </button>
-            <button
-              className="btn btn-royal-blue"
-              onClick={handleExportTxt}
-              disabled={exportingTxt || loading}
-            >
-              {exportingTxt ? 'Exporting...' : 'Export TXT'}
             </button>
           </div>
         </div>

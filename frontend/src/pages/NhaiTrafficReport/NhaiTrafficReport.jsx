@@ -33,12 +33,6 @@ export const NhaiTrafficReport = () => {
       return false;
     }
 
-    const dayDiff = (toTime - fromTime) / (1000 * 60 * 60 * 24);
-    if (dayDiff > 90) {
-      setErrorMsg('Selected date range exceeds maximum allowed limit of 90 days.');
-      return false;
-    }
-
     setErrorMsg('');
     return true;
   };

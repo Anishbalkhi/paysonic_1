@@ -14,7 +14,7 @@
       .page-title {
         font-size: 20px;
         font-weight: 700;
-        color: #ff7a00;
+        color: #0d47a1;
         margin: 0 0 4px 0;
         letter-spacing: -0.01em;
         display: flex;
@@ -72,7 +72,7 @@
       }
 
       &.primary {
-        border-left-color: #ff7a00;
+        border-left-color: #1565c0;
       }
       &.info {
         border-left-color: #3b82f6;
@@ -154,8 +154,8 @@
 
           &:focus {
             outline: none;
-            border-color: #ff7a00;
-            box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
+            border-color: #1565c0;
+            box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.15);
           }
         }
       }
@@ -172,7 +172,7 @@
           font-size: 14px;
           font-weight: 600;
           color: #ffffff;
-          background: #ff7a00;
+          background: #1565c0;
           border: none;
           border-radius: 6px;
           cursor: pointer;
@@ -184,8 +184,8 @@
           white-space: nowrap;
 
           &:hover:not(:disabled) {
-            background: #e66e00;
-            box-shadow: 0 2px 6px rgba(255, 122, 0, 0.3);
+            background: #0d47a1;
+            box-shadow: 0 2px 6px rgba(21, 101, 192, 0.3);
           }
 
           &:active:not(:disabled) {
@@ -308,7 +308,7 @@
           position: sticky;
           top: 0;
           z-index: 10;
-          border-top: 4px solid #10b981; // Green Accent Stripe
+          border-top: 4px solid #10b981;
           background: #0d47a1;
 
           tr th {
@@ -318,7 +318,7 @@
             color: #ffffff;
             border-bottom: 2px solid #0a3880;
             border-right: 1px solid rgba(255, 255, 255, 0.2);
-            background: #0d47a1; // Deep Royal Blue matching Image 2
+            background: #0d47a1;
             text-align: center;
             user-select: none;
             letter-spacing: 0.01em;
@@ -383,9 +383,9 @@
               }
 
               &.highlight-cell {
-                background: #fffbeb;
+                background: #eff6ff;
                 font-weight: 600;
-                color: #92400e;
+                color: #1e40af;
               }
 
               &.settled-cell {
@@ -438,7 +438,7 @@
         width: 32px;
         height: 32px;
         border: 3px solid #e5e7eb;
-        border-top-color: #ff7a00;
+        border-top-color: #1565c0;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
       }
