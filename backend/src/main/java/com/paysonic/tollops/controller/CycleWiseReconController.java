@@ -83,8 +83,5 @@ public class CycleWiseReconController {
         if (from.isAfter(to)) {
             throw new IllegalArgumentException("From Date must be earlier than or equal to To Date");
         }
-        if (Duration.between(from, to).toDays() > 90) {
-            throw new IllegalArgumentException("Selected date range exceeds maximum allowed limit of 90 days");
-        }
     }
 }

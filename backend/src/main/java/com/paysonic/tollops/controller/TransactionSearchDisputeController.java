@@ -123,8 +123,5 @@ public class TransactionSearchDisputeController {
         if (from.isAfter(to)) {
             throw new IllegalArgumentException("From Date must be earlier than or equal to To Date");
         }
-        if (Duration.between(from, to).toDays() > 180) {
-            throw new IllegalArgumentException("Selected date range exceeds maximum allowed limit of 180 days");
-        }
     }
 }
