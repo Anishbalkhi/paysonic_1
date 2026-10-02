@@ -23,37 +23,79 @@ public class PassSummaryController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<PassSummaryResponseDTO>> search(@RequestBody Map<String, String> body) {
-        String plazaId = body.getOrDefault("plazaId", "ALL");
-        LocalDate fromDate = LocalDate.parse(body.get("fromDate"));
-        LocalDate toDate = LocalDate.parse(body.get("toDate"));
-        return ResponseEntity.ok(service.getReport(plazaId, fromDate, toDate));
+    public ResponseEntity<?> search(@RequestBody Map<String, Object> body) {
+        try {
+            String plazaId = (String) body.getOrDefault("plazaId", "ALL");
+            LocalDate fromDate = parseLocalDate(body.get("fromDate"));
+            LocalDate toDate = parseLocalDate(body.get("toDate"));
+            if (fromDate == null) fromDate = LocalDate.of(2026, 9, 1);
+            if (toDate == null) toDate = LocalDate.of(2026, 9, 30);
+            return ResponseEntity.ok(service.getReport(plazaId, fromDate, toDate));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @PostMapping("/export")
-    public ResponseEntity<byte[]> exportExcel(@RequestBody Map<String, String> body) throws Exception {
-        String plazaId = body.getOrDefault("plazaId", "ALL");
-        LocalDate fromDate = LocalDate.parse(body.get("fromDate"));
-        LocalDate toDate = LocalDate.parse(body.get("toDate"));
-        byte[] data = service.exportExcel(plazaId, fromDate, toDate);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"Pass_Summary_Report.xlsx\"")
-                .contentType(MediaType.parseMediaType(
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(data);
+    public ResponseEntity<?> exportExcel(@RequestBody Map<String, Object> body) {
+        try {
+            String plazaId = (String) body.getOrDefault("plazaId", "ALL");
+            LocalDate fromDate = parseLocalDate(body.get("fromDate"));
+            LocalDate toDate = parseLocalDate(body.get("toDate"));
+            if (fromDate == null) fromDate = LocalDate.of(2026, 9, 1);
+            if (toDate == null) toDate = LocalDate.of(2026, 9, 30);
+
+            byte[] data = service.exportExcel(plazaId, fromDate, toDate);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"Pass_Summary_Report.xlsx\"")
+                    .contentType(MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(data);
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @PostMapping("/export/csv")
-    public ResponseEntity<byte[]> exportCsv(@RequestBody Map<String, String> body) throws Exception {
-        String plazaId = body.getOrDefault("plazaId", "ALL");
-        LocalDate fromDate = LocalDate.parse(body.get("fromDate"));
-        LocalDate toDate = LocalDate.parse(body.get("toDate"));
-        byte[] data = service.exportCsv(plazaId, fromDate, toDate);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"Pass_Summary_Report.csv\"")
-                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .body(data);
+    public ResponseEntity<?> exportCsv(@RequestBody Map<String, Object> body) {
+        try {
+            String plazaId = (String) body.getOrDefault("plazaId", "ALL");
+            LocalDate fromDate = parseLocalDate(body.get("fromDate"));
+            LocalDate toDate = parseLocalDate(body.get("toDate"));
+            if (fromDate == null) fromDate = LocalDate.of(2026, 9, 1);
+            if (toDate == null) toDate = LocalDate.of(2026, 9, 30);
+
+            byte[] data = service.exportCsv(plazaId, fromDate, toDate);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"Pass_Summary_Report.csv\"")
+                    .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                    .body(data);
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    private LocalDate parseLocalDate(Object obj) {
+        if (obj == null) return null;
+        String str = obj.toString().trim();
+        if (str.isEmpty()) return null;
+        try {
+            if (str.contains("T")) {
+                str = str.substring(0, str.indexOf("T"));
+            } else if (str.contains(" ")) {
+                str = str.substring(0, str.indexOf(" "));
+            }
+            if (str.contains("-") && str.indexOf("-") == 4) {
+                return LocalDate.parse(str, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+            }
+            if (str.contains("-")) {
+                return LocalDate.parse(str, java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            }
+            return LocalDate.parse(str);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

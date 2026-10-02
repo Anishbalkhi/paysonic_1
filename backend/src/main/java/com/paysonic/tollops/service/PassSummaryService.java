@@ -5,7 +5,7 @@ import com.paysonic.tollops.entity.PassSummaryRecord;
 import com.paysonic.tollops.repository.PassSummaryRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -96,7 +96,7 @@ public class PassSummaryService {
         List<PassSummaryResponseDTO> data = getReport(plazaId, fromDate, toDate);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
-        try (SXSSFWorkbook wb = new SXSSFWorkbook(100)) {
+        try (Workbook wb = new XSSFWorkbook()) {
             Sheet sheet = wb.createSheet("Pass Summary Report");
             sheet.setColumnWidth(0, 4000);
             sheet.setColumnWidth(1, 6000);
@@ -155,6 +155,14 @@ public class PassSummaryService {
                         amtCell.setCellStyle(dataStyle);
                     }
 
+                    // Merge Payment Mode column for pass type rows only
+                    int modeDataEndRow = rowNum - 1;
+                    if (modeDataEndRow > modeStartRow) {
+                        sheet.addMergedRegion(new CellRangeAddress(modeStartRow, modeDataEndRow, 2, 2));
+                    }
+                    // Set value in first cell of merged payment mode
+                    sheet.getRow(modeStartRow).getCell(2).setCellValue(mode.getPaymentMode());
+
                     // Subtotal row for payment mode
                     Row subRow = sheet.createRow(rowNum++);
                     subRow.createCell(0).setCellStyle(subtotalStyle);
@@ -169,41 +177,32 @@ public class PassSummaryService {
                     Cell subAmt = subRow.createCell(5);
                     subAmt.setCellValue(mode.getTotalAmount().doubleValue());
                     subAmt.setCellStyle(subtotalStyle);
-
-                    // Merge Payment Mode column
-                    int modeEndRow = rowNum - 1;
-                    if (modeEndRow > modeStartRow) {
-                        sheet.addMergedRegion(new CellRangeAddress(modeStartRow, modeEndRow, 2, 2));
-                    }
-                    // Set value in first cell of merged payment mode
-                    sheet.getRow(modeStartRow).getCell(2).setCellValue(mode.getPaymentMode());
                 }
 
-                // Grand Total row for plaza
+                // Merge Plaza ID + Plaza Name across all data & subtotal rows of this plaza (STOPS BEFORE Grand Total)
+                int plazaDataEndRow = rowNum - 1;
+                if (plazaDataEndRow > plazaStartRow) {
+                    sheet.addMergedRegion(new CellRangeAddress(plazaStartRow, plazaDataEndRow, 0, 0));
+                    sheet.addMergedRegion(new CellRangeAddress(plazaStartRow, plazaDataEndRow, 1, 1));
+                }
+                // Set plaza values in first row
+                sheet.getRow(plazaStartRow).getCell(0).setCellValue(plaza.getPlazaId());
+                sheet.getRow(plazaStartRow).getCell(1).setCellValue(plaza.getPlazaName());
+
+                // Grand Total row for plaza (distinct row without overlap)
                 Row gtRow = sheet.createRow(rowNum++);
                 for (int c = 0; c <= 3; c++) {
                     Cell gc = gtRow.createCell(c);
                     gc.setCellStyle(grandTotalStyle);
                 }
-                Cell gtLabel = gtRow.getCell(3);
-                gtLabel.setCellValue("Grand Total");
+                gtRow.getCell(0).setCellValue("GRAND TOTAL");
                 Cell gtCnt = gtRow.createCell(4);
                 gtCnt.setCellValue(plaza.getGrandTotalCount());
                 gtCnt.setCellStyle(grandTotalStyle);
                 Cell gtAmt = gtRow.createCell(5);
                 gtAmt.setCellValue(plaza.getGrandTotalAmount().doubleValue());
                 gtAmt.setCellStyle(grandTotalStyle);
-                sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 3));
-
-                // Merge Plaza ID + Plaza Name across all rows
-                int plazaEndRow = rowNum - 1;
-                if (plazaEndRow > plazaStartRow) {
-                    sheet.addMergedRegion(new CellRangeAddress(plazaStartRow, plazaEndRow, 0, 0));
-                    sheet.addMergedRegion(new CellRangeAddress(plazaStartRow, plazaEndRow, 1, 1));
-                }
-                // Set plaza values in first row
-                sheet.getRow(plazaStartRow).getCell(0).setCellValue(plaza.getPlazaId());
-                sheet.getRow(plazaStartRow).getCell(1).setCellValue(plaza.getPlazaName());
+                sheet.addMergedRegion(new CellRangeAddress(gtRow.getRowNum(), gtRow.getRowNum(), 0, 3));
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -254,7 +253,7 @@ public class PassSummaryService {
         f.setBold(true);
         f.setColor(IndexedColors.WHITE.getIndex());
         s.setFont(f);
-        s.setFillForegroundColor(IndexedColors.DARK_RED.getIndex());
+        s.setFillForegroundColor(IndexedColors.ROYAL_BLUE.getIndex());
         s.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         s.setBorderBottom(BorderStyle.THIN);
         s.setBorderTop(BorderStyle.THIN);
