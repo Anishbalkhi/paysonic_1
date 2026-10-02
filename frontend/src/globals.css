@@ -1950,3 +1950,88 @@ button.btn-orange:disabled,
   border-color: var(--stroke, #262F3B) !important;
 }
 
+/* ── 25. Universal Report Table Header Styles (Light Theme) ── */
+:root:not([data-theme="dark"]) .raw-file-styled-table thead th,
+:root:not([data-theme="dark"]) .violation-styled-table thead th,
+:root:not([data-theme="dark"]) .settlement-styled-table thead th,
+:root:not([data-theme="dark"]) .validate-styled-table thead th,
+:root:not([data-theme="dark"]) .dispute-styled-table thead th,
+:root:not([data-theme="dark"]) .nhai-styled-table thead th,
+:root:not([data-theme="dark"]) .txn-summary-table thead th,
+:root:not([data-theme="dark"]) .pass-summary-table thead th,
+:root:not([data-theme="dark"]) .recon-table thead th,
+:root:not([data-theme="dark"]) .report-table thead th,
+:root:not([data-theme="dark"]) .table-card table thead th,
+:root:not([data-theme="dark"]) .table-wrapper table.raw-file-styled-table thead th,
+:root:not([data-theme="dark"]) .table-wrapper table.violation-styled-table thead th,
+:root:not([data-theme="dark"]) .table-wrapper table.settlement-styled-table thead th,
+:root:not([data-theme="dark"]) .table-wrapper table.validate-styled-table thead th,
+:root:not([data-theme="dark"]) .table-wrapper table.dispute-styled-table thead th {
+  background-color: #0d47a1 !important;
+  color: #ffffff !important;
+  border: 1px solid #1557bf !important;
+}
+
+/* ── 26. Universal Report Table Header Styles (Dark Theme) ── */
+[data-theme="dark"] .raw-file-styled-table thead th,
+[data-theme="dark"] .violation-styled-table thead th,
+[data-theme="dark"] .settlement-styled-table thead th,
+[data-theme="dark"] .validate-styled-table thead th,
+[data-theme="dark"] .dispute-styled-table thead th,
+[data-theme="dark"] .nhai-styled-table thead th,
+[data-theme="dark"] .txn-summary-table thead th,
+[data-theme="dark"] .pass-summary-table thead th,
+[data-theme="dark"] .recon-table thead th,
+[data-theme="dark"] .report-table thead th,
+[data-theme="dark"] .table-card table thead th,
+[data-theme="dark"] .table-wrapper table.raw-file-styled-table thead th,
+[data-theme="dark"] .table-wrapper table.violation-styled-table thead th,
+[data-theme="dark"] .table-wrapper table.settlement-styled-table thead th,
+[data-theme="dark"] .table-wrapper table.validate-styled-table thead th,
+[data-theme="dark"] .table-wrapper table.dispute-styled-table thead th {
+  background-color: #0a3880 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ── 27. Universal Button Styles ── */
+.btn-royal-blue,
+.btn.btn-royal-blue {
+  height: 38px;
+  padding: 0 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff !important;
+  background-color: #0d47a1 !important;
+  border: 1px solid #0d47a1 !important;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-royal-blue:hover:not(:disabled),
+.btn.btn-royal-blue:hover:not(:disabled) {
+  background-color: #1565c0 !important;
+  border-color: #1565c0 !important;
+  box-shadow: 0 2px 6px rgba(13, 71, 161, 0.3);
+}
+
+.btn-royal-blue:active:not(:disabled),
+.btn.btn-royal-blue:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-royal-blue:disabled,
+.btn.btn-royal-blue:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background-color: #94a3b8 !important;
+  border-color: #94a3b8 !important;
+}
+

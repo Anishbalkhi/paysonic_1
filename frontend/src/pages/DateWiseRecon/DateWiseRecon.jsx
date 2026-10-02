@@ -76,6 +76,14 @@ export const DateWiseRecon = () => {
     }
   }, [fromDate, toDate, plazaId]);
 
+  const handleReset = () => {
+    const def = getDefaultDateRange();
+    setFromDate(def.from);
+    setToDate(def.to);
+    setPlazaId('');
+    setErrorMsg('');
+  };
+
   // Initial load
   useEffect(() => {
     handleSearch();
@@ -273,12 +281,33 @@ export const DateWiseRecon = () => {
             <button
               type="button"
               className="btn-royal-blue"
+              onClick={handleSearch}
+              disabled={loading}
+              id="dwrSearchBtn"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleReset}
+              disabled={loading}
+              id="dwrResetBtn"
+            >
+              Reset
+            </button>
+
+            <button
+              type="button"
+              className="btn-royal-blue"
               onClick={handleExportExcel}
               disabled={exporting || loading || records.length === 0}
               id="dwrExportBtn"
             >
               {exporting ? 'Exporting...' : 'Export Excel'}
             </button>
+
             <button
               type="button"
               className="btn-royal-blue"
@@ -287,16 +316,6 @@ export const DateWiseRecon = () => {
               id="dwrExportCsvBtn"
             >
               Export CSV
-            </button>
-
-            <button
-              type="button"
-              className="btn-royal-blue"
-              onClick={handleSearch}
-              disabled={loading}
-              id="dwrSearchBtn"
-            >
-              {loading ? 'Searching...' : 'Search'}
             </button>
           </div>
         </div>
