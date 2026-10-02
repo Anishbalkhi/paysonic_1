@@ -24,9 +24,9 @@ export const TransactionSummaryReport = () => {
   };
 
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
-    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
-    const tDate = overrideTo !== undefined ? overrideTo : toDate;
-    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+    const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
+    const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
 
     if (!validateDates(fDate, tDate)) return;
     setLoading(true); setErrorMsg('');
@@ -127,7 +127,15 @@ export const TransactionSummaryReport = () => {
           </div>
           <div className="filter-group filter-grow">
             <label className="filter-label">Plaza</label>
-            <select className="filter-select" value={plazaId} onChange={(e) => setPlazaId(e.target.value)}>
+            <select
+              className="filter-select"
+              value={plazaId}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPlazaId(val);
+                handleSearch(fromDate, toDate, val);
+              }}
+            >
               <option value="ALL">All Plazas</option>
               <option value="600601">600601 - Dummytollplaza1</option>
               <option value="666666">666666 - Autumn</option>
@@ -138,7 +146,7 @@ export const TransactionSummaryReport = () => {
             </select>
           </div>
           <div className="filter-actions">
-            <button className="btn btn-royal-blue" onClick={handleSearch} disabled={loading}>
+            <button className="btn btn-royal-blue" onClick={() => handleSearch()} disabled={loading}>
               {loading ? 'Loading...' : 'Search'}
             </button>
             <button className="btn btn-secondary" onClick={handleReset} disabled={loading}>Reset</button>
