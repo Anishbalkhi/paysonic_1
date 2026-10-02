@@ -373,6 +373,23 @@ export const CycleWiseRecon = () => {
             <button
               type="button"
               className="btn-royal-blue"
+              onClick={handleSearch}
+              disabled={loading}
+              id="cwrSearchBtn"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleReset}
+              disabled={loading}
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              className="btn-royal-blue"
               onClick={handleExport}
               disabled={exporting || loading || records.length === 0}
               id="cwrExportBtn"
@@ -387,23 +404,6 @@ export const CycleWiseRecon = () => {
               id="cwrExportCsvBtn"
             >
               Export CSV
-            </button>
-            <button
-              type="button"
-              className="btn-royal-blue"
-              onClick={handleSearch}
-              disabled={loading}
-              id="cwrSearchBtn"
-            >
-              {loading ? 'Searching...' : 'Search'}
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={handleReset}
-              disabled={loading}
-            >
-              Reset
             </button>
           </div>
         </div>
