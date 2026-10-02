@@ -18,4 +18,8 @@ public interface TransactionSummaryRepository extends JpaRepository<TransactionS
     List<TransactionSummaryRecord> findByReportDateBetweenOrderByDisplayOrderAsc(
             LocalDate startDate, LocalDate endDate
     );
+
+    List<TransactionSummaryRecord> findByPlazaIdOrderByDisplayOrderAsc(String plazaId);
+
+    List<TransactionSummaryRecord> findAllByOrderByDisplayOrderAsc();
 }

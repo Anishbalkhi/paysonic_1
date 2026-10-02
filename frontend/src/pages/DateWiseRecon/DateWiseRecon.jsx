@@ -45,16 +45,20 @@ export const DateWiseRecon = () => {
   };
 
   // Search from real database
-  const handleSearch = useCallback(async () => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
+    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
+    const tDate = overrideTo !== undefined ? overrideTo : toDate;
+    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+
+    if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await DateWiseReconService.searchDateWiseRecon({
-        fromDate,
-        toDate,
-        plazaId
+        fromDate: fDate,
+        toDate: tDate,
+        plazaId: pId
       });
 
       setRecords(data || []);
@@ -82,6 +86,7 @@ export const DateWiseRecon = () => {
     setToDate(def.to);
     setPlazaId('');
     setErrorMsg('');
+    handleSearch(def.from, def.to, '');
   };
 
   // Initial load

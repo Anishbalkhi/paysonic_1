@@ -45,17 +45,22 @@ export const CycleWiseRecon = () => {
   };
 
   // Search from real database
-  const handleSearch = useCallback(async () => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza, overrideCycle) => {
+    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
+    const tDate = overrideTo !== undefined ? overrideTo : toDate;
+    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+    const cyc = overrideCycle !== undefined ? overrideCycle : cycle;
+
+    if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await CycleWiseReconService.searchCycleWiseRecon({
-        fromDate,
-        toDate,
-        plazaId,
-        cycle
+        fromDate: fDate,
+        toDate: tDate,
+        plazaId: pId,
+        cycle: cyc
       });
 
       setRecords(data || []);
@@ -81,6 +86,8 @@ export const CycleWiseRecon = () => {
     setToDate(range.to);
     setPlazaId('');
     setCycle('');
+    setErrorMsg('');
+    handleSearch(range.from, range.to, '', '');
   };
 
   // Export to Excel (Server XLSX)

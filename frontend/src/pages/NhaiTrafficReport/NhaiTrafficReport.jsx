@@ -37,16 +37,20 @@ export const NhaiTrafficReport = () => {
     return true;
   };
 
-  const handleSearch = useCallback(async () => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
+    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
+    const tDate = overrideTo !== undefined ? overrideTo : toDate;
+    const pCode = overridePlaza !== undefined ? overridePlaza : plazaCode;
+
+    if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await NhaiTrafficService.getReport({
-        fromDate,
-        toDate,
-        plazaCode
+        fromDate: fDate,
+        toDate: tDate,
+        plazaCode: pCode
       });
       setReportData(data);
     } catch (err) {
@@ -69,6 +73,7 @@ export const NhaiTrafficReport = () => {
     setToDate(def.to);
     setPlazaCode('ALL');
     setErrorMsg('');
+    handleSearch(def.from, def.to, 'ALL');
   };
 
   const handleExportExcel = async () => {
@@ -187,6 +192,9 @@ export const NhaiTrafficReport = () => {
               <option value="600601">600601 - Dummytollplaza1</option>
               <option value="666666">666666 - Autumn</option>
               <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
+              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
+              <option value="Plaza 1">Plaza 1</option>
+              <option value="Plaza 2">Plaza 2</option>
             </select>
           </div>
 

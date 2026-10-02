@@ -47,20 +47,26 @@ export const ViolationRawFileReport = () => {
     return true;
   };
 
-  const handleSearch = useCallback(async (newPage = 0, newSize = pageSize) => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (newPage = 0, newSize = pageSize, overrides = {}) => {
+    const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
+    const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
+    const pId = overrides.plazaId !== undefined ? overrides.plazaId : plazaId;
+    const fCode = overrides.functionCode !== undefined ? overrides.functionCode : functionCode;
+    const sTerm = overrides.searchTerm !== undefined ? overrides.searchTerm : searchTerm;
+
+    if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await ViolationRawFileService.search({
-        fromDate,
-        toDate,
-        plazaId,
-        functionCode,
-        tagId: searchTerm.trim() || undefined,
-        txnId: searchTerm.trim() || undefined,
-        mmt: searchTerm.trim() || undefined,
+        fromDate: fDate,
+        toDate: tDate,
+        plazaId: pId,
+        functionCode: fCode,
+        tagId: sTerm.trim() || undefined,
+        txnId: sTerm.trim() || undefined,
+        mmt: sTerm.trim() || undefined,
         page: newPage,
         size: newSize
       });
@@ -97,6 +103,13 @@ export const ViolationRawFileReport = () => {
     setFunctionCode('ALL');
     setSearchTerm('');
     setErrorMsg('');
+    handleSearch(0, pageSize, {
+      fromDate: def.from,
+      toDate: def.to,
+      plazaId: 'ALL',
+      functionCode: 'ALL',
+      searchTerm: ''
+    });
   };
 
   const handleExportExcel = async () => {
@@ -249,6 +262,11 @@ export const ViolationRawFileReport = () => {
             >
               <option value="ALL">All Plazas</option>
               <option value="600601">600601 - Dummytollplaza1</option>
+              <option value="666666">666666 - Autumn</option>
+              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
+              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
+              <option value="Plaza 1">Plaza 1</option>
+              <option value="Plaza 2">Plaza 2</option>
             </select>
           </div>
 

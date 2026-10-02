@@ -43,17 +43,22 @@ export const DisputeDetailReport = () => {
   };
 
   // Search function from live Railway DB
-  const handleSearch = useCallback(async () => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza, overrideFunc) => {
+    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
+    const tDate = overrideTo !== undefined ? overrideTo : toDate;
+    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+    const fCode = overrideFunc !== undefined ? overrideFunc : functionCode;
+
+    if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await DisputeReportService.searchDisputes({
-        fromDate,
-        toDate,
-        plazaId,
-        functionCode,
+        fromDate: fDate,
+        toDate: tDate,
+        plazaId: pId,
+        functionCode: fCode,
         page: 0,
         size: 100
       });
@@ -81,6 +86,7 @@ export const DisputeDetailReport = () => {
     setPlazaId('ALL');
     setFunctionCode('ALL');
     setSearchTerm('');
+    handleSearch(def.from, def.to, 'ALL', 'ALL');
   };
 
   // Client-side quick filter
@@ -222,6 +228,11 @@ export const DisputeDetailReport = () => {
               <option value="778999">Gluten (778999)</option>
               <option value="600601">Dummytollplaza1 (600601)</option>
               <option value="600602">Dummytollplaza2 (600602)</option>
+              <option value="666666">Autumn (666666)</option>
+              <option value="501101">MUMBAI PLAZA NH-04 (501101)</option>
+              <option value="502202">PUNE BYPASS PLAZA (502202)</option>
+              <option value="Plaza 1">Plaza 1</option>
+              <option value="Plaza 2">Plaza 2</option>
             </select>
           </div>
 

@@ -22,11 +22,15 @@ export const PassSummaryReport = () => {
     setErrorMsg(''); return true;
   };
 
-  const handleSearch = useCallback(async () => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
+    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
+    const tDate = overrideTo !== undefined ? overrideTo : toDate;
+    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+
+    if (!validateDates(fDate, tDate)) return;
     setLoading(true); setErrorMsg('');
     try {
-      const data = await PassSummaryService.getReport({ fromDate, toDate, plazaId });
+      const data = await PassSummaryService.getReport({ fromDate: fDate, toDate: tDate, plazaId: pId });
       setReportData(data);
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Database error occurred';
@@ -40,6 +44,7 @@ export const PassSummaryReport = () => {
   const handleReset = () => {
     const def = getDefaultDateRange();
     setFromDate(def.from); setToDate(def.to); setPlazaId('ALL'); setErrorMsg('');
+    handleSearch(def.from, def.to, 'ALL');
   };
 
   const handleExportExcel = async () => {
@@ -110,6 +115,8 @@ export const PassSummaryReport = () => {
               <option value="555555">555555 - Plaza1</option>
               <option value="600601">600601 - Dummytollplaza1</option>
               <option value="666666">666666 - Autumn</option>
+              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
+              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
             </select>
           </div>
           <div className="filter-actions">

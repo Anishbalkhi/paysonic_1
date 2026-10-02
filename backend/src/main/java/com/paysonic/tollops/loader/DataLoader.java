@@ -1494,7 +1494,7 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void seedTransactionSummaryReports() {
-        if (transactionSummaryRepository.count() > 0) {
+        if (transactionSummaryRepository.count() >= 150) {
             log.info("Transaction Summary Reports already seeded ({} records).", transactionSummaryRepository.count());
             return;
         }
@@ -1507,7 +1507,8 @@ public class DataLoader implements CommandLineRunner {
                 new PlazaMeta("Plaza 2", "Plaza Name"),
                 new PlazaMeta("600601", "Dummytollplaza1"),
                 new PlazaMeta("666666", "Autumn"),
-                new PlazaMeta("501101", "MUMBAI PLAZA NH-04")
+                new PlazaMeta("501101", "MUMBAI PLAZA NH-04"),
+                new PlazaMeta("502202", "PUNE BYPASS PLAZA")
         );
 
         record RowMeta(String status, String code, long count, String amount, int order) {}
@@ -1521,21 +1522,35 @@ public class DataLoader implements CommandLineRunner {
                 new RowMeta("Accepted", "EXEMPTED", 15, "0.00", 7)
         );
 
-        LocalDate defaultDate = LocalDate.of(2026, 9, 15);
+        List<LocalDate> seedDates = List.of(
+                LocalDate.of(2026, 8, 15),
+                LocalDate.of(2026, 9, 1),
+                LocalDate.of(2026, 9, 15),
+                LocalDate.of(2026, 9, 30),
+                LocalDate.of(2026, 10, 1),
+                LocalDate.of(2026, 10, 2),
+                LocalDate.now()
+        );
 
-        for (PlazaMeta p : plazas) {
-            for (RowMeta r : rows) {
-                list.add(new TransactionSummaryRecord(
-                        p.id(), p.name(), defaultDate,
-                        r.status(), r.code(),
-                        r.count(), new BigDecimal(r.amount()),
-                        r.order()
-                ));
+        for (LocalDate d : seedDates) {
+            if (transactionSummaryRepository.findByReportDateBetweenOrderByDisplayOrderAsc(d, d).isEmpty()) {
+                for (PlazaMeta p : plazas) {
+                    for (RowMeta r : rows) {
+                        list.add(new TransactionSummaryRecord(
+                                p.id(), p.name(), d,
+                                r.status(), r.code(),
+                                r.count(), new BigDecimal(r.amount()),
+                                r.order()
+                        ));
+                    }
+                }
             }
         }
 
-        transactionSummaryRepository.saveAll(list);
-        log.info("Seeded {} Transaction Summary Records into Railway DB successfully.", list.size());
+        if (!list.isEmpty()) {
+            transactionSummaryRepository.saveAll(list);
+            log.info("Seeded {} new Transaction Summary Records across multiple dates into Railway DB.", list.size());
+        }
     }
 
     // ── Pass Summary Report Seed ─────────────────────────────────────────

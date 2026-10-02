@@ -46,20 +46,26 @@ export const ViolationSettlementReport = () => {
     return true;
   };
 
-  const handleSearch = useCallback(async (newPage = 0, newSize = pageSize) => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (newPage = 0, newSize = pageSize, overrides = {}) => {
+    const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
+    const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
+    const pId = overrides.plazaId !== undefined ? overrides.plazaId : plazaId;
+    const st = overrides.status !== undefined ? overrides.status : status;
+    const sTerm = overrides.searchTerm !== undefined ? overrides.searchTerm : searchTerm;
+
+    if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await ViolationSettlementService.search({
-        fromDate,
-        toDate,
-        plazaId,
-        status,
-        vrn: searchTerm.trim() || undefined,
-        tagId: searchTerm.trim() || undefined,
-        acqTxnId: searchTerm.trim() || undefined,
+        fromDate: fDate,
+        toDate: tDate,
+        plazaId: pId,
+        status: st,
+        vrn: sTerm.trim() || undefined,
+        tagId: sTerm.trim() || undefined,
+        acqTxnId: sTerm.trim() || undefined,
         page: newPage,
         size: newSize
       });
@@ -96,6 +102,13 @@ export const ViolationSettlementReport = () => {
     setStatus('ALL');
     setSearchTerm('');
     setErrorMsg('');
+    handleSearch(0, pageSize, {
+      fromDate: def.from,
+      toDate: def.to,
+      plazaId: 'ALL',
+      status: 'ALL',
+      searchTerm: ''
+    });
   };
 
   const handleExportExcel = async () => {
@@ -244,6 +257,11 @@ export const ViolationSettlementReport = () => {
             >
               <option value="ALL">All Plazas</option>
               <option value="600601">600601 - Dummytollplaza1</option>
+              <option value="666666">666666 - Autumn</option>
+              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
+              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
+              <option value="Plaza 1">Plaza 1</option>
+              <option value="Plaza 2">Plaza 2</option>
             </select>
           </div>
 

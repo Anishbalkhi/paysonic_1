@@ -39,8 +39,14 @@ public class TransactionSummaryService {
         List<TransactionSummaryRecord> rawList;
         if (plazaId != null && !plazaId.isBlank() && !"ALL".equalsIgnoreCase(plazaId)) {
             rawList = repository.findByPlazaIdAndReportDateBetweenOrderByDisplayOrderAsc(plazaId, fromDate, toDate);
+            if (rawList == null || rawList.isEmpty()) {
+                rawList = repository.findByPlazaIdOrderByDisplayOrderAsc(plazaId);
+            }
         } else {
             rawList = repository.findByReportDateBetweenOrderByDisplayOrderAsc(fromDate, toDate);
+            if (rawList == null || rawList.isEmpty()) {
+                rawList = repository.findAllByOrderByDisplayOrderAsc();
+            }
         }
 
         TransactionSummaryResponseDTO response = new TransactionSummaryResponseDTO();

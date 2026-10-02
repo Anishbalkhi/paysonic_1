@@ -48,17 +48,22 @@ export const RejectedTransaction = () => {
   };
 
   // Search rejected transactions from live Railway MySQL database
-  const handleSearch = useCallback(async (newPage = 0, newSize = pageSize) => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (newPage = 0, newSize = pageSize, overrides = {}) => {
+    const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
+    const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
+    const pId = overrides.plazaId !== undefined ? overrides.plazaId : plazaId;
+    const rsn = overrides.reason !== undefined ? overrides.reason : reason;
+
+    if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await RejectedTransactionService.searchRejectedTransactions({
-        fromDate,
-        toDate,
-        plazaId,
-        reason,
+        fromDate: fDate,
+        toDate: tDate,
+        plazaId: pId,
+        reason: rsn,
         page: newPage,
         size: newSize
       });
@@ -92,6 +97,12 @@ export const RejectedTransaction = () => {
     setPlazaId('ALL');
     setReason('ALL');
     setSearchTerm('');
+    handleSearch(0, pageSize, {
+      fromDate: def.from,
+      toDate: def.to,
+      plazaId: 'ALL',
+      reason: 'ALL'
+    });
   };
 
   // Client-side search filtering
@@ -239,6 +250,11 @@ export const RejectedTransaction = () => {
               <option value="600601">Dummytollplaza1 (600601)</option>
               <option value="600602">Dummytollplaza2 (600602)</option>
               <option value="778999">Gluten (778999)</option>
+              <option value="666666">Autumn (666666)</option>
+              <option value="501101">MUMBAI PLAZA NH-04 (501101)</option>
+              <option value="502202">PUNE BYPASS PLAZA (502202)</option>
+              <option value="Plaza 1">Plaza 1</option>
+              <option value="Plaza 2">Plaza 2</option>
             </select>
           </div>
 

@@ -10,7 +10,8 @@ export const TransactionSummaryReport = () => {
   const [toDate, setToDate] = useState(initial.to);
   const [plazaId, setPlazaId] = useState('ALL');
 
-  const [reportData, setReportData] = useState(null);
+  const [reportData, setReportData] = useState([]);
+  const [grandTotal, setGrandTotal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -22,16 +23,24 @@ export const TransactionSummaryReport = () => {
     setErrorMsg(''); return true;
   };
 
-  const handleSearch = useCallback(async () => {
-    if (!validateDates(fromDate, toDate)) return;
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
+    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
+    const tDate = overrideTo !== undefined ? overrideTo : toDate;
+    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+
+    if (!validateDates(fDate, tDate)) return;
     setLoading(true); setErrorMsg('');
     try {
-      const data = await TransactionSummaryService.getReport({ fromDate, toDate, plazaId });
-      setReportData(data);
+      const data = await TransactionSummaryService.getReport({ fromDate: fDate, toDate: tDate, plazaId: pId });
+      const plazas = data?.plazas || (Array.isArray(data) ? data : []);
+      setReportData(plazas);
+      if (data?.grandTotal) {
+        setGrandTotal(data.grandTotal);
+      }
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Database error occurred';
       setErrorMsg(`Error: ${msg}`);
-      setReportData(null);
+      setReportData([]);
     } finally { setLoading(false); }
   }, [fromDate, toDate, plazaId]);
 
@@ -40,6 +49,7 @@ export const TransactionSummaryReport = () => {
   const handleReset = () => {
     const def = getDefaultDateRange();
     setFromDate(def.from); setToDate(def.to); setPlazaId('ALL'); setErrorMsg('');
+    handleSearch(def.from, def.to, 'ALL');
   };
 
   const handleExportExcel = async () => {
@@ -66,6 +76,15 @@ export const TransactionSummaryReport = () => {
 
   // KPI Aggregation
   const kpiMetrics = useMemo(() => {
+    if (grandTotal && grandTotal.totalCount !== undefined) {
+      return {
+        totalCount: grandTotal.totalCount || 0,
+        totalAmount: grandTotal.totalAmount || 0,
+        acceptedCount: grandTotal.acceptedCount || 0,
+        declinedCount: grandTotal.declinedCount || 0,
+        npciCount: 0
+      };
+    }
     if (!reportData || !Array.isArray(reportData) || reportData.length === 0) {
       return { totalCount: 0, totalAmount: 0, acceptedCount: 0, declinedCount: 0, npciCount: 0 };
     }
@@ -82,7 +101,7 @@ export const TransactionSummaryReport = () => {
       }
     }
     return { totalCount, totalAmount, acceptedCount, declinedCount, npciCount };
-  }, [reportData]);
+  }, [reportData, grandTotal]);
 
   const hasData = reportData && Array.isArray(reportData) && reportData.length > 0;
 
@@ -113,6 +132,9 @@ export const TransactionSummaryReport = () => {
               <option value="600601">600601 - Dummytollplaza1</option>
               <option value="666666">666666 - Autumn</option>
               <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
+              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
+              <option value="Plaza 1">Plaza 1</option>
+              <option value="Plaza 2">Plaza 2</option>
             </select>
           </div>
           <div className="filter-actions">

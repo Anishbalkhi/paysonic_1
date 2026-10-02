@@ -15,13 +15,16 @@ export const TollFareReport = () => {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Search fares from Railway DB
-  const handleSearch = useCallback(async () => {
+  const handleSearch = useCallback(async (overridePlaza, overrideClass) => {
+    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+    const vClass = overrideClass !== undefined ? overrideClass : vehicleClass;
+
     setLoading(true);
     setErrorMsg('');
     try {
       const data = await TollFareReportService.searchTollFares({
-        plazaId,
-        vehicleClass
+        plazaId: pId,
+        vehicleClass: vClass
       });
       const content = Array.isArray(data) ? data : [];
       setRecords(content);
@@ -43,6 +46,7 @@ export const TollFareReport = () => {
     setPlazaId('600601');
     setVehicleClass('ALL');
     setSearchTerm('');
+    handleSearch('600601', 'ALL');
   };
 
   // Client-side quick search filtering
@@ -141,10 +145,15 @@ export const TollFareReport = () => {
               value={plazaId}
               onChange={(e) => setPlazaId(e.target.value)}
             >
+              <option value="ALL">All Plazas</option>
               <option value="600601">Dummytollplaza1 (600601)</option>
               <option value="600602">Dummytollplaza2 (600602)</option>
               <option value="778999">Gluten (778999)</option>
-              <option value="ALL">All Plazas</option>
+              <option value="666666">Autumn (666666)</option>
+              <option value="501101">MUMBAI PLAZA NH-04 (501101)</option>
+              <option value="502202">PUNE BYPASS PLAZA (502202)</option>
+              <option value="Plaza 1">Plaza 1</option>
+              <option value="Plaza 2">Plaza 2</option>
             </select>
           </div>
 
