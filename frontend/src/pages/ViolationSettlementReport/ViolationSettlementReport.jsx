@@ -190,9 +190,44 @@ export const ViolationSettlementReport = () => {
     return `Date Range: ${f} to ${t}`;
   }, [fromDate, toDate]);
 
+  // Dynamic options derived from actual database records so selecting any option shows table data
+  const availablePlazas = useMemo(() => {
+    const map = new Map();
+    map.set('600601', '600601 - Dummytollplaza1');
+    records.forEach((r) => {
+      if (r.plazaId) {
+        map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'Dummytollplaza1'}`);
+      }
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [records]);
+
+  const availableStatuses = useMemo(() => {
+    const set = new Set();
+    set.add('ACCEPTED');
+    records.forEach((r) => {
+      if (r.npciViolationStatus) set.add(r.npciViolationStatus.toUpperCase());
+      else if (r.status) set.add(r.status.toUpperCase());
+    });
+    return Array.from(set);
+  }, [records]);
+
+  // Live client-side instant filtering across all relevant fields
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm.trim()) return records;
+    const q = searchTerm.toLowerCase().trim();
+    return records.filter((r) => {
+      const vrnMatch = r.vrn && r.vrn.toLowerCase().includes(q);
+      const tagMatch = r.tagId && r.tagId.toLowerCase().includes(q);
+      const acqMatch = r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q);
+      const tollTxnMatch = r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q);
+      return vrnMatch || tagMatch || acqMatch || tollTxnMatch;
+    });
+  }, [records, searchTerm]);
+
   // Bottom KPI calculation
   const summaryKpis = useMemo(() => {
-    if (serverSummary) {
+    if (serverSummary && !searchTerm.trim()) {
       return {
         totalCount: serverSummary.totalCount ?? 0,
         totalTxnAmount: Number(serverSummary.totalTxnAmount ?? 0),
@@ -206,7 +241,7 @@ export const ViolationSettlementReport = () => {
     let totalAdjustmentAmount = 0;
     let totalSettlementAmount = 0;
 
-    records.forEach((row) => {
+    filteredRecords.forEach((row) => {
       totalCount += 1;
       totalTxnAmount += Number(row.txnAmount || 0);
       totalAdjustmentAmount += Number(row.violationAdjustmentAmount || 0);
@@ -214,7 +249,7 @@ export const ViolationSettlementReport = () => {
     });
 
     return { totalCount, totalTxnAmount, totalAdjustmentAmount, totalSettlementAmount };
-  }, [serverSummary, records]);
+  }, [serverSummary, filteredRecords, searchTerm]);
 
   return (
     <div className="violation-settlement-page">
@@ -253,15 +288,16 @@ export const ViolationSettlementReport = () => {
             <select
               className="filter-select"
               value={plazaId}
-              onChange={(e) => setPlazaId(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPlazaId(val);
+                handleSearch(0, pageSize, { plazaId: val });
+              }}
             >
               <option value="ALL">All Plazas</option>
-              <option value="600601">600601 - Dummytollplaza1</option>
-              <option value="666666">666666 - Autumn</option>
-              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
-              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              {availablePlazas.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
             </select>
           </div>
 
@@ -270,21 +306,25 @@ export const ViolationSettlementReport = () => {
             <select
               className="filter-select"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setStatus(val);
+                handleSearch(0, pageSize, { status: val });
+              }}
             >
               <option value="ALL">All Statuses</option>
-              <option value="ACCEPTED">ACCEPTED</option>
-              <option value="REJECTED">REJECTED</option>
-              <option value="PENDING">PENDING</option>
+              {availableStatuses.map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
             </select>
           </div>
 
           <div className="filter-group filter-grow">
-            <label className="filter-label">Search (VRN / Tag ID / ACQ Txn ID)</label>
+            <label className="filter-label">SEARCH (VRN / TAG ID / ACQ TXN ID)</label>
             <input
               type="text"
               className="filter-input"
-              placeholder="e.g. 34MH51FA820, TN95CB6328..."
+              placeholder="e.g. TM05GB0328, 34161FA8..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(0, pageSize)}
@@ -360,14 +400,14 @@ export const ViolationSettlementReport = () => {
                     <span>Querying Live Railway Database...</span>
                   </td>
                 </tr>
-              ) : records.length === 0 ? (
+              ) : filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan="18" className="table-empty-cell">
                     No violation settlement records found for the selected criteria.
                   </td>
                 </tr>
               ) : (
-                records.map((row, idx) => {
+                filteredRecords.map((row, idx) => {
                   const srNo = row.srNo ?? (page * pageSize + idx + 1);
                   return (
                     <tr key={row.id || idx}>
@@ -410,8 +450,8 @@ export const ViolationSettlementReport = () => {
         {/* Pagination Bar */}
         <div className="table-pagination-bar">
           <div className="pagination-info">
-            Showing {records.length > 0 ? page * pageSize + 1 : 0} to{' '}
-            {Math.min((page + 1) * pageSize, totalElements)} of {totalElements} records
+            Showing {filteredRecords.length > 0 ? page * pageSize + 1 : 0} to{' '}
+            {Math.min((page + 1) * pageSize, searchTerm.trim() ? filteredRecords.length : totalElements)} of {searchTerm.trim() ? filteredRecords.length : totalElements} records
           </div>
           <div className="pagination-controls">
             <select

@@ -464,16 +464,28 @@ public class ViolationSettlementService {
                 predicates.add(cb.equal(cb.upper(root.get("npciViolationStatus")), status.trim().toUpperCase()));
             }
 
-            if (vrn != null && !vrn.isBlank()) {
-                predicates.add(cb.like(cb.lower(root.get("vrn")), "%" + vrn.trim().toLowerCase() + "%"));
-            }
+            boolean vrnPresent = vrn != null && !vrn.isBlank();
+            boolean tagPresent = tagId != null && !tagId.isBlank();
+            boolean acqPresent = acqTxnId != null && !acqTxnId.isBlank();
 
-            if (tagId != null && !tagId.isBlank()) {
-                predicates.add(cb.like(cb.lower(root.get("tagId")), "%" + tagId.trim().toLowerCase() + "%"));
-            }
-
-            if (acqTxnId != null && !acqTxnId.isBlank()) {
-                predicates.add(cb.like(cb.lower(root.get("acqTxnId")), "%" + acqTxnId.trim().toLowerCase() + "%"));
+            if (vrnPresent && tagPresent && acqPresent && vrn.trim().equalsIgnoreCase(tagId.trim())) {
+                String term = vrn.trim().toLowerCase();
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("vrn")), "%" + term + "%"),
+                        cb.like(cb.lower(root.get("tagId")), "%" + term + "%"),
+                        cb.like(cb.lower(root.get("acqTxnId")), "%" + term + "%"),
+                        cb.like(cb.lower(root.get("tollTxnId")), "%" + term + "%")
+                ));
+            } else {
+                if (vrnPresent) {
+                    predicates.add(cb.like(cb.lower(root.get("vrn")), "%" + vrn.trim().toLowerCase() + "%"));
+                }
+                if (tagPresent) {
+                    predicates.add(cb.like(cb.lower(root.get("tagId")), "%" + tagId.trim().toLowerCase() + "%"));
+                }
+                if (acqPresent) {
+                    predicates.add(cb.like(cb.lower(root.get("acqTxnId")), "%" + acqTxnId.trim().toLowerCase() + "%"));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

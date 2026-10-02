@@ -126,7 +126,7 @@ export const ViolationBulkAction = () => {
   // Selection handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allIds = new Set(records.map(r => r.id));
+      const allIds = new Set(filteredRecords.map(r => r.id));
       setSelectedIds(allIds);
     } else {
       setSelectedIds(new Set());
@@ -243,9 +243,44 @@ export const ViolationBulkAction = () => {
     return `Date Range: ${f} to ${t}`;
   }, [fromDate, toDate]);
 
-  // Bottom KPI calculation
+  // Dynamic options derived from actual database records so selecting any option shows table data
+  const availablePlazas = useMemo(() => {
+    const map = new Map();
+    map.set('600601', '600601 - Dummytollplaza1');
+    records.forEach((r) => {
+      if (r.plazaId) {
+        map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'Dummytollplaza1'}`);
+      }
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [records]);
+
+  const availableStatuses = useMemo(() => {
+    const set = new Set();
+    set.add('ACCEPTED');
+    set.add('DECLINED');
+    records.forEach((r) => {
+      if (r.violationApiStatus) set.add(r.violationApiStatus.toUpperCase());
+    });
+    return Array.from(set);
+  }, [records]);
+
+  // Live client-side instant filtering across all relevant fields
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm.trim()) return records;
+    const q = searchTerm.toLowerCase().trim();
+    return records.filter((r) => {
+      const vrnMatch = r.vrn && r.vrn.toLowerCase().includes(q);
+      const tagMatch = r.tagId && r.tagId.toLowerCase().includes(q);
+      const acqMatch = r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q);
+      const tollTxnMatch = r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q);
+      return vrnMatch || tagMatch || acqMatch || tollTxnMatch;
+    });
+  }, [records, searchTerm]);
+
+  // Bottom KPI calculation based on filtered records
   const summaryKpis = useMemo(() => {
-    if (serverSummary) {
+    if (serverSummary && !searchTerm.trim()) {
       return {
         totalCount: serverSummary.totalCount ?? 0,
         totalAmount: Number(serverSummary.totalAmount ?? 0),
@@ -259,7 +294,7 @@ export const ViolationBulkAction = () => {
     let acceptedCount = 0;
     let declinedCount = 0;
 
-    records.forEach((row) => {
+    filteredRecords.forEach((row) => {
       totalCount += 1;
       const amt = Number(row.txnAmount || 0);
       totalAmount += amt;
@@ -269,10 +304,10 @@ export const ViolationBulkAction = () => {
     });
 
     return { totalCount, totalAmount, acceptedCount, declinedCount };
-  }, [serverSummary, records]);
+  }, [serverSummary, records, filteredRecords, searchTerm]);
 
-  const allSelected = records.length > 0 && records.every(r => selectedIds.has(r.id));
-  const someSelected = records.some(r => selectedIds.has(r.id)) && !allSelected;
+  const allSelected = filteredRecords.length > 0 && filteredRecords.every(r => selectedIds.has(r.id));
+  const someSelected = filteredRecords.some(r => selectedIds.has(r.id)) && !allSelected;
 
   return (
     <div className="violation-bulk-action-page">
@@ -311,15 +346,16 @@ export const ViolationBulkAction = () => {
             <select
               className="filter-select"
               value={plazaId}
-              onChange={(e) => setPlazaId(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPlazaId(val);
+                handleSearch(0, pageSize, { plazaId: val });
+              }}
             >
               <option value="ALL">All Plazas</option>
-              <option value="600601">600601 - Dummytollplaza1</option>
-              <option value="666666">666666 - Autumn</option>
-              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
-              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              {availablePlazas.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
             </select>
           </div>
 
@@ -328,20 +364,25 @@ export const ViolationBulkAction = () => {
             <select
               className="filter-select"
               value={apiStatus}
-              onChange={(e) => setApiStatus(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setApiStatus(val);
+                handleSearch(0, pageSize, { apiStatus: val });
+              }}
             >
               <option value="ALL">All Statuses</option>
-              <option value="ACCEPTED">ACCEPTED</option>
-              <option value="DECLINED">DECLINED</option>
+              {availableStatuses.map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
             </select>
           </div>
 
           <div className="filter-group filter-grow">
-            <label className="filter-label">Search (VRN / Tag ID / Acq Txn ID / Toll Txn ID)</label>
+            <label className="filter-label">SEARCH (VRN / TAG ID / ACQ TXN ID)</label>
             <input
               type="text"
               className="filter-input"
-              placeholder="e.g. MH12VL3467, ZP170907..."
+              placeholder="e.g. TM05GB0328, 34161FA8..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(0, pageSize)}
@@ -463,14 +504,14 @@ export const ViolationBulkAction = () => {
                     <span>Querying Live Railway Database...</span>
                   </td>
                 </tr>
-              ) : records.length === 0 ? (
+              ) : filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan="17" className="table-empty-cell">
                     No violation records found for the selected criteria.
                   </td>
                 </tr>
               ) : (
-                records.map((row) => {
+                filteredRecords.map((row) => {
                   const isSelected = selectedIds.has(row.id);
                   const apiSt = (row.violationApiStatus || '').trim().toUpperCase();
                   const isAccepted = apiSt === 'ACCEPTED';
@@ -526,8 +567,8 @@ export const ViolationBulkAction = () => {
         {/* Pagination Bar */}
         <div className="table-pagination-bar">
           <div className="pagination-info">
-            Showing {records.length > 0 ? page * pageSize + 1 : 0} to{' '}
-            {Math.min((page + 1) * pageSize, totalElements)} of {totalElements} records
+            Showing {filteredRecords.length > 0 ? page * pageSize + 1 : 0} to{' '}
+            {Math.min((page + 1) * pageSize, searchTerm.trim() ? filteredRecords.length : totalElements)} of {searchTerm.trim() ? filteredRecords.length : totalElements} records
           </div>
           <div className="pagination-controls">
             <select

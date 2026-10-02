@@ -179,9 +179,49 @@ export const TransactionSearchNormal = () => {
     return `From Date: ${f} | To Date: ${t}`;
   }, [fromDate, toDate]);
 
-  // Bottom KPI calculation
+  // Dynamic options derived from actual database records so selecting any option shows table data
+  const availablePlazas = useMemo(() => {
+    const map = new Map();
+    // Default known database plazas
+    map.set('600601', '600601 - Dummytollplaza1');
+    map.set('600602', '600602 - Dummytollplaza2');
+    records.forEach((r) => {
+      if (r.plazaId) {
+        map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'Plaza'}`);
+      }
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [records]);
+
+  const availableStatuses = useMemo(() => {
+    const set = new Set();
+    set.add('Settled');
+    set.add('Accepted');
+    set.add('Pending');
+    set.add('Declined');
+    records.forEach((r) => {
+      if (r.status) set.add(r.status);
+    });
+    return Array.from(set);
+  }, [records]);
+
+  // Live client-side instant filtering across all relevant fields
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm.trim()) return records;
+    const q = searchTerm.toLowerCase().trim();
+    return records.filter((r) => {
+      const vrnMatch = r.vrn && r.vrn.toLowerCase().includes(q);
+      const tagMatch = r.tagId && r.tagId.toLowerCase().includes(q);
+      const acqMatch = r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q);
+      const tollTxnMatch = r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q);
+      const msgMatch = r.tollMessageId && String(r.tollMessageId).toLowerCase().includes(q);
+      return vrnMatch || tagMatch || acqMatch || tollTxnMatch || msgMatch;
+    });
+  }, [records, searchTerm]);
+
+  // Bottom KPI calculation based on filtered records
   const summaryKpis = useMemo(() => {
-    if (serverSummary) {
+    if (serverSummary && !searchTerm.trim()) {
       return {
         totalCount: serverSummary.totalCount ?? 0,
         totalAmount: Number(serverSummary.totalAmount ?? 0),
@@ -195,7 +235,7 @@ export const TransactionSearchNormal = () => {
     let acceptedCount = 0;
     let acceptedAmount = 0;
 
-    records.forEach((row) => {
+    filteredRecords.forEach((row) => {
       totalCount += 1;
       const amt = Number(row.txnAmount || 0);
       totalAmount += amt;
@@ -207,7 +247,7 @@ export const TransactionSearchNormal = () => {
     });
 
     return { totalCount, totalAmount, acceptedCount, acceptedAmount };
-  }, [serverSummary, records]);
+  }, [serverSummary, records, filteredRecords, searchTerm]);
 
   // Issuer bank determination matching live DB
   const getIssuerBankId = (row) => {
@@ -254,16 +294,16 @@ export const TransactionSearchNormal = () => {
             <select
               className="filter-select"
               value={plazaId}
-              onChange={(e) => setPlazaId(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPlazaId(val);
+                handleSearch(0, pageSize, { plazaId: val });
+              }}
             >
               <option value="ALL">All Plazas</option>
-              <option value="600601">Dummy tollplaza1 (600601)</option>
-              <option value="666666">Autumn (666666)</option>
-              <option value="778899">Gluten (778899)</option>
-              <option value="501101">MUMBAI PLAZA NH-04 (501101)</option>
-              <option value="502202">PUNE BYPASS PLAZA (502202)</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              {availablePlazas.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
             </select>
           </div>
 
@@ -272,18 +312,21 @@ export const TransactionSearchNormal = () => {
             <select
               className="filter-select"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setStatus(val);
+                handleSearch(0, pageSize, { status: val });
+              }}
             >
               <option value="ALL">All Statuses</option>
-              <option value="Accepted">Accepted</option>
-              <option value="Declined">Declined</option>
-              <option value="Rejected">Rejected</option>
-              <option value="Pending">Pending</option>
+              {availableStatuses.map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
             </select>
           </div>
 
           <div className="filter-group filter-grow">
-            <label className="filter-label">Search (VRN / Tag ID / Acq Txn ID)</label>
+            <label className="filter-label">SEARCH (VRN / TAG ID / ACQ TXN ID)</label>
             <input
               type="text"
               className="filter-input"
@@ -371,14 +414,14 @@ export const TransactionSearchNormal = () => {
                     <span>Querying Live Railway Database...</span>
                   </td>
                 </tr>
-              ) : records.length === 0 ? (
+              ) : filteredRecords.length === 0 ? (
                 <tr>
                   <td colSpan="26" className="table-empty-cell">
                     No transactions found for the selected filter criteria.
                   </td>
                 </tr>
               ) : (
-                records.map((row, idx) => {
+                filteredRecords.map((row, idx) => {
                   const st = (row.status || '').toLowerCase();
                   const isAccepted = st === 'accepted' || st === 'settled' || st === 'success';
                   const isDeclined = st === 'declined' || st === 'failed';
@@ -437,8 +480,8 @@ export const TransactionSearchNormal = () => {
         {/* Pagination Bar */}
         <div className="table-pagination-bar">
           <div className="pagination-info">
-            Showing {records.length > 0 ? page * pageSize + 1 : 0} to{' '}
-            {Math.min((page + 1) * pageSize, totalElements)} of {totalElements} records
+            Showing {filteredRecords.length > 0 ? page * pageSize + 1 : 0} to{' '}
+            {Math.min((page + 1) * pageSize, searchTerm.trim() ? filteredRecords.length : totalElements)} of {searchTerm.trim() ? filteredRecords.length : totalElements} records
           </div>
           <div className="pagination-controls">
             <select

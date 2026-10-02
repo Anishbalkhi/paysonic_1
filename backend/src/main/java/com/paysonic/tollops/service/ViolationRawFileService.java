@@ -427,16 +427,28 @@ public class ViolationRawFileService {
                 predicates.add(cb.equal(root.get("functionCode"), functionCode.trim()));
             }
 
-            if (tagId != null && !tagId.isBlank()) {
-                predicates.add(cb.like(cb.lower(root.get("tagId")), "%" + tagId.trim().toLowerCase() + "%"));
-            }
+            boolean tagPresent = tagId != null && !tagId.isBlank();
+            boolean txnPresent = txnId != null && !txnId.isBlank();
+            boolean mmtPresent = mmt != null && !mmt.isBlank();
 
-            if (txnId != null && !txnId.isBlank()) {
-                predicates.add(cb.like(cb.lower(root.get("txnId")), "%" + txnId.trim().toLowerCase() + "%"));
-            }
-
-            if (mmt != null && !mmt.isBlank()) {
-                predicates.add(cb.like(cb.lower(root.get("mmt")), "%" + mmt.trim().toLowerCase() + "%"));
+            if (tagPresent && txnPresent && tagId.trim().equalsIgnoreCase(txnId.trim())) {
+                String term = tagId.trim().toLowerCase();
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("tagId")), "%" + term + "%"),
+                        cb.like(cb.lower(root.get("txnId")), "%" + term + "%"),
+                        cb.like(cb.lower(root.get("mmt")), "%" + term + "%"),
+                        cb.like(cb.lower(root.get("tid")), "%" + term + "%")
+                ));
+            } else {
+                if (tagPresent) {
+                    predicates.add(cb.like(cb.lower(root.get("tagId")), "%" + tagId.trim().toLowerCase() + "%"));
+                }
+                if (txnPresent) {
+                    predicates.add(cb.like(cb.lower(root.get("txnId")), "%" + txnId.trim().toLowerCase() + "%"));
+                }
+                if (mmtPresent) {
+                    predicates.add(cb.like(cb.lower(root.get("mmt")), "%" + mmt.trim().toLowerCase() + "%"));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

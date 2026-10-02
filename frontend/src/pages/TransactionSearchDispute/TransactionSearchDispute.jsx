@@ -255,17 +255,16 @@ export const TransactionSearchDispute = () => {
               id="dispPlazaSelect"
               className="select-input"
               value={plazaId}
-              onChange={(e) => setPlazaId(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPlazaId(val);
+                handleSearch(0, pageSize, { plazaId: val });
+              }}
             >
               <option value="ALL">All Plazas</option>
-              <option value="778999">Gluten (778999)</option>
               <option value="600601">Dummytollplaza1 (600601)</option>
               <option value="600602">Dummytollplaza2 (600602)</option>
-              <option value="666666">Autumn (666666)</option>
-              <option value="501101">MUMBAI PLAZA NH-04 (501101)</option>
-              <option value="502202">PUNE BYPASS PLAZA (502202)</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              <option value="778999">Gluten (778999)</option>
             </select>
           </div>
 
