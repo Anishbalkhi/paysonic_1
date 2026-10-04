@@ -137,8 +137,7 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_transaction_search', label: 'D. Transaction Search', path: '/transactional-reports/transaction-search' },
       ],
     },
     {
@@ -234,8 +233,7 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transaction', path: '/transactional-reports/rejected-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_transaction_search', label: 'D. Transaction Search', path: '/transactional-reports/transaction-search' },
       ],
     },
     {
@@ -322,8 +320,7 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_transaction_search', label: 'D. Transaction Search', path: '/transactional-reports/transaction-search' },
       ],
     },
     {
@@ -410,8 +407,7 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'transactional_report_transaction_report', label: 'A. Transaction Report', path: '/transactional-reports/transaction-report' },
         { subId: 'transactional_report_rejected_transaction', label: 'B. Rejected Transactions', path: '/transactional-reports/rejected-transaction' },
         { subId: 'transactional_report_toll_fare_report', label: 'C. Toll Fare Report', path: '/transactional-reports/toll-fare-report' },
-        { subId: 'transactional_report_transaction_search_normal', label: 'D. Transaction Search - Normal Txn', path: '/transactional-reports/transaction-search-normal' },
-        { subId: 'transactional_report_transaction_search_dispute', label: 'E. Transaction Search - Dispute Transaction', path: '/transactional-reports/transaction-search-dispute' },
+        { subId: 'transactional_report_transaction_search', label: 'D. Transaction Search', path: '/transactional-reports/transaction-search' },
       ],
     },
     {
@@ -571,6 +567,13 @@ export const filterNavigationByPermissions = (sections, menuAccess) => {
         // Direct match by explicit subId or child id
         if (child.subId && allowedSet.has(child.subId)) return true;
         if (child.id && allowedSet.has(child.id)) return true;
+
+        if (child.subId === 'transactional_report_transaction_search' &&
+           (allowedSet.has('transactional_report_transaction_search') ||
+            allowedSet.has('transactional_report_transaction_search_normal') ||
+            allowedSet.has('transactional_report_transaction_search_dispute'))) {
+          return true;
+        }
 
         // Match child label against MENU_TREE sub-items for permission lookup
         const cleanChildLabel = normalize(child.label);

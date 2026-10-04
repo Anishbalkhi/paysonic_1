@@ -78,8 +78,7 @@ export const MENU_TREE = [
       { id: 'transactional_report_transaction_report', label: 'Transaction Report' },
       { id: 'transactional_report_rejected_transaction', label: 'Rejected Transaction' },
       { id: 'transactional_report_toll_fare_report', label: 'Toll Fare Report' },
-      { id: 'transactional_report_transaction_search_normal', label: 'Transaction Search - Normal' },
-      { id: 'transactional_report_transaction_search_dispute', label: 'Transaction Search - Dispute' }
+      { id: 'transactional_report_transaction_search', label: 'Transaction Search' }
     ]
   },
   {
@@ -133,7 +132,7 @@ export const ROLE_MENU_DEFAULTS = {
     'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_validate', 'violation_management_violation_settlement_report', 'violation_management_violation_raw_file', 'violation_management_violation_bulk_action',
-    'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_toll_fare_report', 'transactional_report_transaction_search_normal', 'transactional_report_transaction_search_dispute',
+    'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_toll_fare_report', 'transactional_report_transaction_search',
     'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval',
     'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_pass_summary',
     'on_boarding', 'on_boarding_view_plaza', 'on_boarding_add_concessionaire', 'on_boarding_add_plaza', 'on_boarding_lane_details', 'on_boarding_callback_url', 'on_boarding_fare_mapping', 'on_boarding_cch_mapping'
@@ -145,7 +144,7 @@ export const ROLE_MENU_DEFAULTS = {
     'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_settlement_report',
-    'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_transaction_search_normal', 'transactional_report_transaction_search_dispute', 'transactional_report_toll_fare_report',
+    'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
     'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_pass_summary',
     'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval',
     'on_boarding', 'on_boarding_view_plaza', 'on_boarding_lane_details', 'on_boarding_callback_url', 'on_boarding_fare_mapping', 'on_boarding_cch_mapping'
@@ -157,7 +156,7 @@ export const ROLE_MENU_DEFAULTS = {
     'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
     'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_settlement_report',
-    'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_transaction_search_normal', 'transactional_report_transaction_search_dispute', 'transactional_report_toll_fare_report',
+    'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
     'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_pass_summary',
     'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval',
     'on_boarding', 'on_boarding_view_plaza', 'on_boarding_add_concessionaire', 'on_boarding_add_plaza', 'on_boarding_lane_details', 'on_boarding_callback_url', 'on_boarding_fare_mapping', 'on_boarding_cch_mapping'

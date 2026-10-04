@@ -16,6 +16,7 @@ import TollFareReport from '../pages/TollFareReport/TollFareReport';
 import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransaction';
 import TransactionSearchDispute from '../pages/TransactionSearchDispute/TransactionSearchDispute';
 import TransactionSearchNormal from '../pages/TransactionSearchNormal/TransactionSearchNormal';
+import TransactionSearch from '../pages/TransactionSearch/TransactionSearch';
 import ViolationBulkAction from '../pages/ViolationBulkAction/ViolationBulkAction';
 import ViolationRawFileReport from '../pages/ViolationRawFileReport/ViolationRawFileReport';
 import ViolationSettlementReport from '../pages/ViolationSettlementReport/ViolationSettlementReport';
@@ -157,42 +158,35 @@ export const AppRoutes = () => {
         element={<Navigate to="/transactional-reports/toll-fare-report" replace />}
       />
       <Route
-        path="/transactional-reports/transaction-search-normal"
-        element={
-          <ProtectedRoute
-            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="transactional_report"
-          >
-            <TransactionSearchNormal />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/transaction-search-normal"
-        element={<Navigate to="/transactional-reports/transaction-search-normal" replace />}
-      />
-      <Route
-        path="/transactional-reports/transaction-search-dispute"
-        element={
-          <ProtectedRoute
-            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="transactional_report"
-          >
-            <TransactionSearchDispute />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/transaction-search-dispute"
-        element={<Navigate to="/transactional-reports/transaction-search-dispute" replace />}
-      />
-      <Route
         path="/transactional-reports/transaction-search"
-        element={<Navigate to="/transactional-reports/transaction-search-normal" replace />}
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="transactional_report"
+          >
+            <TransactionSearch />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/transaction-search"
-        element={<Navigate to="/transactional-reports/transaction-search-normal" replace />}
+        element={<Navigate to="/transactional-reports/transaction-search" replace />}
+      />
+      <Route
+        path="/transactional-reports/transaction-search-normal"
+        element={<Navigate to="/transactional-reports/transaction-search?type=normal" replace />}
+      />
+      <Route
+        path="/transaction-search-normal"
+        element={<Navigate to="/transactional-reports/transaction-search?type=normal" replace />}
+      />
+      <Route
+        path="/transactional-reports/transaction-search-dispute"
+        element={<Navigate to="/transactional-reports/transaction-search?type=dispute" replace />}
+      />
+      <Route
+        path="/transaction-search-dispute"
+        element={<Navigate to="/transactional-reports/transaction-search?type=dispute" replace />}
       />
       <Route
         path="/reports/dynamicreport/8"
