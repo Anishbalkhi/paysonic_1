@@ -166,16 +166,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'on_boarding',
       label: 'On Boarding',
+      path: '/onboarding',
       icon: ICONS.onboarding,
-      children: [
-        { subId: 'on_boarding_view_plaza', label: 'A. View Plaza', path: '/onboarding?tab=view' },
-        { subId: 'on_boarding_add_concessionaire', label: 'B. Add Concessionaire', path: '/onboarding?tab=concess' },
-        { subId: 'on_boarding_add_plaza', label: 'C. Add Plaza', path: '/onboarding?tab=addplaza' },
-        { subId: 'on_boarding_lane_details', label: 'D. Lane Details', path: '/onboarding?tab=lanes' },
-        { subId: 'on_boarding_callback_url', label: 'E. Callback URLs', path: '/onboarding?tab=callback' },
-        { subId: 'on_boarding_fare_mapping', label: 'F. Fare Mapping', path: '/onboarding?tab=fare' },
-        { subId: 'on_boarding_cch_mapping', label: 'G. CCH Mapping', path: '/onboarding?tab=cch' },
-      ],
     },
   ],
 
@@ -271,16 +263,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'on_boarding',
       label: 'On Boarding',
+      path: '/onboarding',
       icon: ICONS.onboarding,
-      children: [
-        { label: 'A. View Plaza', path: '/onboarding?tab=view' },
-        { label: 'B. Add Concessionaire', path: '/onboarding?tab=concess' },
-        { label: 'C. Add Plaza', path: '/onboarding?tab=addplaza' },
-        { label: 'D. Lane Details', path: '/onboarding?tab=lanes' },
-        { label: 'E. Callback URLs', path: '/onboarding?tab=callback' },
-        { label: 'F. Fare Mapping', path: '/onboarding?tab=fare' },
-        { label: 'G. CCH Mapping', path: '/onboarding?tab=cch' },
-      ],
     },
   ],
 
@@ -367,16 +351,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'on_boarding',
       label: 'On Boarding',
+      path: '/onboarding',
       icon: ICONS.onboarding,
-      children: [
-        { label: 'A. View Plaza', path: '/onboarding?tab=view' },
-        { label: 'B. Add Concessionaire', path: '/onboarding?tab=concess' },
-        { label: 'C. Add Plaza', path: '/onboarding?tab=addplaza' },
-        { label: 'D. Lane Details', path: '/onboarding?tab=lanes' },
-        { label: 'E. Callback URLs', path: '/onboarding?tab=callback' },
-        { label: 'F. Fare Mapping', path: '/onboarding?tab=fare' },
-        { label: 'G. CCH Mapping', path: '/onboarding?tab=cch' },
-      ],
     },
   ],
 
@@ -463,16 +439,8 @@ export const ROLE_NAVIGATION_MAP = {
     {
       id: 'on_boarding',
       label: 'On Boarding',
+      path: '/onboarding',
       icon: ICONS.onboarding,
-      children: [
-        { label: 'A. View Plaza', path: '/onboarding?tab=view' },
-        { label: 'B. Add Concessionaire', path: '/onboarding?tab=concess' },
-        { label: 'C. Add Plaza', path: '/onboarding?tab=addplaza' },
-        { label: 'D. Lane Details', path: '/onboarding?tab=lanes' },
-        { label: 'E. Callback URLs', path: '/onboarding?tab=callback' },
-        { label: 'F. Fare Mapping', path: '/onboarding?tab=fare' },
-        { label: 'G. CCH Mapping', path: '/onboarding?tab=cch' },
-      ],
     },
   ],
 
