@@ -250,68 +250,33 @@ export default function Dashboard() {
 
         <div className="dashboard-content">
           {/* Dynamic Role Banner */}
-          <div className="clearance-banner" style={{
-          margin: '0 0 16px 0',
-          padding: '12px 18px',
-          background: 'var(--role-soft, #f0fdf4)',
-          border: '1px solid var(--role-border, #bbf7d0)',
-          boxShadow: '0 2px 10px var(--role-glow, rgba(34, 197, 94, 0.12))',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          flexWrap: 'wrap',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="clearance-dot" style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: 'var(--role-accent, #22c55e)',
-              boxShadow: '0 0 0 3px var(--role-border, #bbf7d0)',
-            }} />
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--ink, #0f172a)' }}>
-                {currentBanner.title}
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--muted, #64748b)', marginTop: '1px' }}>
-                {currentBanner.desc}
+          <div className="clearance-banner">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="clearance-dot" />
+              <div>
+                <div className="clearance-title">
+                  {currentBanner.title}
+                </div>
+                <div className="clearance-desc">
+                  {currentBanner.desc}
+                </div>
               </div>
             </div>
-          </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}>
-            <span className="clearance-pill" style={{
-              padding: '4px 10px',
-              background: '#fff',
-              border: '1px solid var(--role-border, #bbf7d0)',
-              color: 'var(--role-primary, #15803d)',
-              borderRadius: '9999px',
-              fontSize: '11px',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
             }}>
-              {currentBanner.badge}
-            </span>
-            {currentUser?.assignedPlaza && (
-              <span style={{
-                padding: '4px 10px',
-                background: 'rgba(255,255,255,0.7)',
-                color: '#475569',
-                borderRadius: '9999px',
-                fontSize: '11px',
-                fontWeight: '600',
-              }}>
-                📍 {currentUser.assignedPlaza}
+              <span className="clearance-pill">
+                {currentBanner.badge}
               </span>
-            )}
+              {currentUser?.assignedPlaza && (
+                <span className="clearance-assigned-badge">
+                  📍 {currentUser.assignedPlaza}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
 
         {userRole === 'Plaza POS' || userRole === 'Request Tag Details' ? (
           <WorkstationTerminal
@@ -697,6 +662,7 @@ function Topbar() {
 function Hero({ d }) {
   const canvasRef = useRef(null);
   const [threeReady, setThreeReady] = useState(false);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -720,27 +686,31 @@ function Hero({ d }) {
     const cv = canvasRef.current;
     const heroEl = cv.closest(".hero");
 
+    const fogColor = isDark ? 0x10151c : 0xedf3fc;
+    const roadColor = isDark ? 0x18202c : 0xc7d2e0;
+    const ambientIntensity = isDark ? 0.6 : 0.85;
+
     const renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xedf3fc, 0.0052);
+    scene.fog = new THREE.FogExp2(fogColor, 0.0052);
     const camera = new THREE.PerspectiveCamera(46, 2, 1, 600);
     camera.position.set(-58, 24, 54);
     camera.lookAt(14, 5, 0);
     const clock = new THREE.Clock();
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xdbe6f5, 0.85));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.75);
+    scene.add(new THREE.AmbientLight(0xffffff, ambientIntensity));
+    scene.add(new THREE.HemisphereLight(0xffffff, isDark ? 0x10151c : 0xdbe6f5, isDark ? 0.65 : 0.85));
+    const dir = new THREE.DirectionalLight(0xffffff, isDark ? 0.6 : 0.75);
     dir.position.set(-24, 60, 42);
     scene.add(dir);
-    const pb = new THREE.PointLight(0x2563eb, 0.5, 160);
+    const pb = new THREE.PointLight(isDark ? 0x38bdf8 : 0x2563eb, isDark ? 0.8 : 0.5, 160);
     pb.position.set(-30, 20, -10);
     scene.add(pb);
 
     const road = new THREE.Mesh(
       new THREE.PlaneGeometry(260, 64),
-      new THREE.MeshStandardMaterial({ color: 0xc7d2e0, roughness: 0.96, metalness: 0.02 })
+      new THREE.MeshStandardMaterial({ color: roadColor, roughness: 0.96, metalness: isDark ? 0.08 : 0.02 })
     );
     road.rotation.x = -Math.PI / 2;
     scene.add(road);
@@ -909,7 +879,7 @@ function Hero({ d }) {
       window.removeEventListener("resize", sizeRenderer);
       renderer.dispose();
     };
-  }, [threeReady]);
+  }, [threeReady, isDark]);
 
   return (
     <section className="hero">

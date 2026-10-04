@@ -144,8 +144,8 @@
 
   /* 3. Table Wrapper */
   .table-wrapper {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--card, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     overflow: hidden;
@@ -183,20 +183,20 @@
 
       tbody {
         tr {
-          border-bottom: 1px solid #e2e8f0;
+          border-bottom: 1px solid var(--border-light, #e2e8f0);
 
           &:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: var(--surface, #f8fafc);
           }
 
           &:hover {
-            background-color: #f1f5f9;
+            background-color: var(--surface-raised, #f1f5f9);
           }
 
           td {
             padding: 8px 12px;
-            color: #334155;
-            border: 1px solid #e2e8f0;
+            color: var(--body-text, #334155);
+            border: 1px solid var(--border-light, #e2e8f0);
             vertical-align: middle;
 
             &.text-center {
@@ -215,6 +215,7 @@
               font-family: 'Consolas', 'Courier New', monospace;
               font-size: 0.78rem;
               letter-spacing: 0.3px;
+              color: var(--ink, #1e293b);
             }
           }
         }
@@ -413,6 +414,118 @@
 
     .disclaimer-note {
       font-style: italic;
+    }
+  }
+
+  /* Explicit Dark Theme Overrides for Transaction Search Normal Page */
+  [data-theme="dark"] & {
+    background-color: var(--bg, #10151C);
+    color: var(--text, #E7ECF3);
+
+    .report-title {
+      color: #60a5fa;
+    }
+
+    .search-card {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .card-title {
+        color: var(--text, #E7ECF3);
+      }
+
+      .form-group label {
+        color: var(--text-soft, #9AA5B4);
+      }
+
+      .form-control {
+        background-color: var(--surface-raised, #1C2430);
+        border-color: var(--border, #262F3B);
+        color: var(--text, #E7ECF3);
+
+        &::placeholder {
+          color: var(--faint, #6B7A8D);
+        }
+      }
+
+      .btn-secondary {
+        background-color: var(--surface-raised, #1C2430);
+        border-color: var(--border, #262F3B);
+        color: var(--text-soft, #9AA5B4);
+
+        &:hover:not(:disabled) {
+          background-color: var(--border, #262F3B);
+          color: var(--text, #E7ECF3);
+        }
+      }
+    }
+
+    .table-wrapper {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .table-top-bar {
+        background: #131A24;
+        border-bottom-color: var(--border, #262F3B);
+        color: var(--text-soft, #9AA5B4);
+
+        .record-count {
+          color: var(--text, #E7ECF3);
+        }
+      }
+
+      tbody tr {
+        border-bottom-color: var(--border, #262F3B);
+
+        &:nth-child(even) {
+          background-color: var(--surface-raised, #1C2430);
+        }
+
+        &:hover {
+          background-color: var(--blue-soft, #182A3F);
+        }
+
+        td {
+          color: var(--text, #E7ECF3);
+          border-color: var(--border, #262F3B);
+
+          &.monospace-cell {
+            color: #93c5fd !important;
+            background: rgba(30, 58, 138, 0.35);
+            padding: 2px 7px;
+            border-radius: 4px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            font-weight: 600;
+          }
+        }
+      }
+
+      .table-pagination-bar {
+        background: var(--surface-raised, #1C2430);
+        border-top-color: var(--border, #262F3B);
+
+        .pagination-info {
+          color: var(--text-soft, #9AA5B4);
+        }
+
+        .pagination-controls {
+          .page-size-select,
+          .page-nav-btn {
+            background-color: var(--card, #161D27);
+            border-color: var(--border, #262F3B);
+            color: var(--text, #E7ECF3);
+
+            &:hover:not(:disabled) {
+              background-color: var(--blue-soft, #182A3F);
+              border-color: #3b82f6;
+            }
+          }
+
+          .page-current {
+            color: var(--text, #E7ECF3);
+          }
+        }
+      }
     }
   }
 }

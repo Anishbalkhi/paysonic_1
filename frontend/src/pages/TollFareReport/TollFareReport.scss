@@ -222,8 +222,8 @@
 
   /* Main Table Container */
   .fare-table-container {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--card, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     overflow: hidden;
@@ -232,7 +232,7 @@
     .table-top-banner {
       padding: 16px 20px 10px 20px;
       text-align: center;
-      background: #ffffff;
+      background: var(--card, #ffffff);
 
       .banner-title {
         font-size: 18px;
@@ -246,7 +246,7 @@
       .banner-subtitle {
         font-size: 12px;
         font-weight: 500;
-        color: #64748b;
+        color: var(--muted, #64748b);
         margin-bottom: 8px;
       }
 
@@ -315,21 +315,21 @@
         }
 
         tbody tr {
-          border-bottom: 1px solid #f1f5f9;
+          border-bottom: 1px solid var(--border-light, #f1f5f9);
           transition: background-color 0.1s ease;
 
           &:nth-child(even) {
-            background-color: #fafbfc;
+            background-color: var(--surface, #fafbfc);
           }
 
           &:hover {
-            background-color: #eff6ff; // Soft blue hover
+            background-color: var(--surface-raised, #eff6ff); // Soft blue hover
           }
 
           td {
             padding: 10px 14px;
-            color: #334155;
-            border-right: 1px solid #f1f5f9;
+            color: var(--body-text, #334155);
+            border-right: 1px solid var(--border-light, #f1f5f9);
 
             &:last-child {
               border-right: none;
@@ -346,6 +346,7 @@
             &.code-font {
               font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
               font-size: 12px;
+              color: var(--ink, #1e293b);
             }
 
             &.vc-cell {
@@ -355,7 +356,7 @@
 
             &.desc-cell {
               font-weight: 500;
-              color: #1e293b;
+              color: var(--ink, #1e293b);
             }
 
             &.num-cell {
@@ -448,5 +449,105 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Explicit Dark Theme Overrides for Toll Fare Report Page */
+  [data-theme="dark"] & {
+    background-color: var(--bg, #10151C);
+    color: var(--text, #E7ECF3);
+
+    .page-title {
+      color: #60a5fa;
+    }
+
+    .fare-filter-box {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      label {
+        color: var(--text-soft, #9AA5B4);
+      }
+
+      .select-input,
+      .search-input {
+        background-color: var(--surface-raised, #1C2430);
+        border-color: var(--border, #262F3B);
+        color: var(--text, #E7ECF3);
+
+        &::placeholder {
+          color: var(--faint, #6B7A8D);
+        }
+      }
+
+      .btn-secondary {
+        background-color: var(--surface-raised, #1C2430);
+        border-color: var(--border, #262F3B);
+        color: var(--text-soft, #9AA5B4);
+
+        &:hover:not(:disabled) {
+          background-color: var(--border, #262F3B);
+          color: var(--text, #E7ECF3);
+        }
+      }
+    }
+
+    .fare-table-container {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .table-top-banner {
+        background: var(--card, #161D27);
+        border-bottom: 1px solid var(--border, #262F3B);
+
+        .banner-title {
+          color: #60a5fa;
+        }
+
+        .banner-subtitle {
+          color: var(--text-soft, #9AA5B4);
+        }
+      }
+
+      tbody tr {
+        border-bottom-color: var(--border, #262F3B);
+
+        &:nth-child(even) {
+          background-color: var(--surface-raised, #1C2430);
+        }
+
+        &:hover {
+          background-color: var(--blue-soft, #182A3F);
+        }
+
+        td {
+          color: var(--text, #E7ECF3);
+          border-color: var(--border, #262F3B);
+
+          &.vc-cell {
+            color: #60a5fa;
+          }
+
+          &.desc-cell {
+            color: var(--text, #E7ECF3);
+          }
+
+          &.code-font,
+          &.num-cell {
+            color: #93c5fd;
+          }
+        }
+      }
+
+      .bottom-summary-grid {
+        background: var(--card, #161D27);
+        border-top-color: var(--border, #262F3B);
+      }
+
+      .footer-disclaimer {
+        background: var(--card, #161D27);
+        color: var(--text-soft, #9AA5B4);
+        border-top-color: var(--border, #262F3B);
+      }
+    }
   }
 }

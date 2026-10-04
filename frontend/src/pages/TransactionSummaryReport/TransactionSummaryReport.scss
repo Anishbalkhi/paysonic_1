@@ -149,8 +149,8 @@
 
   /* 3. Table Wrapper */
   .table-wrapper {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
+    background: var(--card, #ffffff);
+    border: 1px solid var(--border, #cbd5e1);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     overflow: hidden;
@@ -190,24 +190,25 @@
 
       tbody {
         tr {
-          border-bottom: 1px solid #e2e8f0;
+          border-bottom: 1px solid var(--border-light, #e2e8f0);
           transition: background-color 0.12s ease;
 
           &:hover {
-            background-color: #f1f5f9;
+            background-color: var(--surface-raised, #f1f5f9);
           }
         }
 
         td {
           padding: 8px 12px;
-          color: #1e293b;
-          border: 1px solid #cbd5e1;
+          color: var(--body-text, #1e293b);
+          border: 1px solid var(--border-light, #cbd5e1);
           vertical-align: middle;
         }
 
         .merged-cell {
           vertical-align: middle;
-          background-color: #ffffff;
+          background-color: var(--card, #ffffff);
+          color: var(--ink, #1e293b);
           font-weight: 600;
         }
 
@@ -234,7 +235,7 @@
         }
 
         .response-code-cell {
-          color: #334155;
+          color: var(--muted, #334155);
           font-weight: 500;
           font-family: 'Courier New', monospace;
           font-size: 0.8rem;
@@ -371,6 +372,105 @@
     }
 
     .disclaimer-note { font-style: italic; }
+  }
+
+  /* Explicit Dark Theme Overrides for Transaction Summary Report Page */
+  [data-theme="dark"] & {
+    background-color: var(--bg, #10151C);
+    color: var(--text, #E7ECF3);
+
+    .report-title {
+      color: #60a5fa;
+    }
+
+    .filter-card {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .filter-label {
+        color: var(--text-soft, #9AA5B4);
+      }
+
+      .filter-input,
+      .filter-select {
+        background-color: var(--surface-raised, #1C2430);
+        border-color: var(--border, #262F3B);
+        color: var(--text, #E7ECF3);
+
+        &::placeholder {
+          color: var(--faint, #6B7A8D);
+        }
+      }
+
+      .btn-secondary {
+        background-color: var(--surface-raised, #1C2430);
+        border-color: var(--border, #262F3B);
+        color: var(--text-soft, #9AA5B4);
+
+        &:hover:not(:disabled) {
+          background-color: var(--border, #262F3B);
+          color: var(--text, #E7ECF3);
+        }
+      }
+    }
+
+    .table-wrapper {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      tbody tr {
+        border-bottom-color: var(--border, #262F3B);
+
+        &:hover {
+          background-color: var(--blue-soft, #182A3F);
+        }
+
+        td {
+          color: var(--text, #E7ECF3);
+          border-color: var(--border, #262F3B);
+        }
+
+        .merged-cell {
+          background-color: var(--card, #161D27);
+          color: var(--text, #E7ECF3);
+          border-color: var(--border, #262F3B);
+        }
+
+        .response-code-cell {
+          color: #93c5fd;
+          background: rgba(30, 58, 138, 0.35);
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+
+        .row-subtotal td {
+          background-color: #241c06;
+          color: #fde047;
+          border-color: #713f12;
+        }
+
+        .row-grand-total td {
+          background-color: #2d1e04;
+          color: #fef08a;
+          border-color: #854d0e;
+        }
+      }
+    }
+
+    .summary-kpi-bar {
+      .kpi-block {
+        background: var(--card, #161D27);
+        border-color: var(--border, #262F3B);
+
+        .kpi-lbl {
+          color: var(--text-soft, #9AA5B4);
+        }
+
+        .kpi-val {
+          color: var(--text, #E7ECF3);
+        }
+      }
+    }
   }
 }
 
