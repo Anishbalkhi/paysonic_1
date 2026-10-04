@@ -133,7 +133,7 @@ export const DateWiseRecon = () => {
     }
   };
 
-  // Export CSV matching exact records currently displayed on screen (1:1 guaranteed)
+  // Export CSV matching exact hierarchical structure displayed on screen (Image 2)
   const handleExportCsv = () => {
     if (!records || records.length === 0) return;
 
@@ -149,6 +149,27 @@ export const DateWiseRecon = () => {
 
     const rows = [];
     records.forEach((r) => {
+      // 1. Parent Summary Row (Level 1 in Image 2)
+      rows.push([
+        r.plazaId || '',
+        r.plazaName || '',
+        formatDate(r.txnDate),
+        '—',
+        r.txnCount || 0,
+        (Number(r.settledAmount) || 0).toFixed(2)
+      ]);
+
+      // 2. Child Breakdown Sub-Header Row (Level 2 header in Image 2)
+      rows.push([
+        'PLAZA ID',
+        'PLAZA NAME',
+        'TXN DATE',
+        'SETTLEMENT DATE',
+        'TXN COUNT',
+        'SETTLED AMOUNT'
+      ]);
+
+      // 3. Child Breakdown Rows
       if (r.breakdowns && r.breakdowns.length > 0) {
         r.breakdowns.forEach((b) => {
           rows.push([
@@ -186,10 +207,8 @@ export const DateWiseRecon = () => {
       ''
     ];
 
-    // Summary Total Row
-    const totalTxnCount = rows.reduce((acc, r) => acc + (Number(r[4]) || 0), 0);
-    const totalSettledAmt = rows.reduce((acc, r) => acc + (Number(r[5]) || 0), 0);
-    rows.push(['TOTAL', '', '', '', totalTxnCount, totalSettledAmt.toFixed(2)]);
+    // Summary Total Row (Matching tfoot in Image 2)
+    rows.push(['Total', '', '', '', grandTotalCount, grandTotalAmount.toFixed(2)]);
 
     const csvContent = '\uFEFF' + [
       ...bannerRows,
