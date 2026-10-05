@@ -16,6 +16,29 @@ export const Login = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Time-based theme & video detection
+  const getIsDayTime = () => {
+    const hours = new Date().getHours();
+    return hours >= 6 && hours < 18; // 6:00 AM to 5:59 PM is Day
+  };
+
+  const [timeMode, setTimeMode] = useState('auto'); // 'auto' | 'day' | 'night'
+  const [currentIsDay, setCurrentIsDay] = useState(getIsDayTime);
+
+  // Re-check system time periodically
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIsDay(getIsDayTime());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const isDay = timeMode === 'auto' ? currentIsDay : timeMode === 'day';
+  const activeTheme = isDay ? 'light' : 'dark';
+
+  // Video selection based on Day / Night
+  const videoSrc = isDay ? '/data/toll-plaza-day.mp4' : '/data/toll-plaza-night.mp4';
+
   const from = location.state?.from?.pathname;
 
   React.useEffect(() => {
@@ -45,12 +68,20 @@ export const Login = () => {
   };
 
   return (
-    <div className="login-page">
+    <div className={`login-page login-page--${activeTheme}`} data-theme={activeTheme}>
 
-      {/* ── LEFT: Video ── */}
+      {/* ── LEFT: Dynamic Day/Night Video ── */}
       <div className="login-left">
-        <video className="login-video" src="/toll-plaza.mp4" autoPlay loop muted playsInline />
-        <div className="login-video-overlay" />
+        <video
+          key={videoSrc}
+          className="login-video"
+          src={videoSrc}
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+        <div className={`login-video-overlay login-video-overlay--${isDay ? 'day' : 'night'}`} />
         <div className="login-brand-badge">
           <div className="login-brand-mark">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -60,8 +91,8 @@ export const Login = () => {
           <span>Pay<b>sonic</b></span>
         </div>
         <div className="login-live-badge">
-          <span className="live-dot" />
-          Live Video Feed
+          <span className={`live-dot ${isDay ? 'amber' : 'red'}`} />
+          {isDay ? '☀️ Day Operations • Live Feed' : '🌙 Night Operations • Live Feed'}
         </div>
         <div className="login-left-footer">
           <div className="left-stat"><span className="stat-dot green" />RFID FASTag</div>
@@ -70,8 +101,38 @@ export const Login = () => {
         </div>
       </div>
 
-      {/* ── RIGHT: Form ── */}
+      {/* ── RIGHT: Form with Theme Switcher ── */}
       <div className="login-right">
+        {/* Subtle Theme Switcher Pill */}
+        <div className="login-theme-switch">
+          <button
+            type="button"
+            className={`theme-pill-btn ${timeMode === 'auto' ? 'active' : ''}`}
+            onClick={() => setTimeMode('auto')}
+            title="Auto mode: changes according to local time"
+          >
+            <span className="pill-icon">⏱️</span>
+            <span className="pill-text">Auto ({isDay ? 'Day' : 'Night'})</span>
+          </button>
+          <button
+            type="button"
+            className={`theme-pill-btn ${timeMode === 'day' ? 'active' : ''}`}
+            onClick={() => setTimeMode('day')}
+            title="Day / Light mode"
+          >
+            <span className="pill-icon">☀️</span>
+            <span className="pill-text">Day</span>
+          </button>
+          <button
+            type="button"
+            className={`theme-pill-btn ${timeMode === 'night' ? 'active' : ''}`}
+            onClick={() => setTimeMode('night')}
+            title="Night / Dark mode"
+          >
+            <span className="pill-icon">🌙</span>
+            <span className="pill-text">Night</span>
+          </button>
+        </div>
         <div className="login-form-wrap">
 
           {/* Logo */}
