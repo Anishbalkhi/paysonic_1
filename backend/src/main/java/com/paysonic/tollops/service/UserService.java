@@ -51,6 +51,7 @@ public class UserService {
     public List<UserResponseDTO> getAllUsers() {
         return userRepository.findAll()
                 .stream()
+                .peek(this::checkAndApplyDormancy)
                 .sorted((a, b) -> {
                     if (a.getCreatedAt() != null && b.getCreatedAt() != null) {
                         return b.getCreatedAt().compareTo(a.getCreatedAt());
@@ -65,6 +66,7 @@ public class UserService {
 
     public Map<String, Object> getPagedUsers(int page, int size, String search, String role, String status, String plaza) {
         List<User> all = userRepository.findAll();
+        all.forEach(this::checkAndApplyDormancy);
         all.sort((a, b) -> {
             if (a.getCreatedAt() != null && b.getCreatedAt() != null) {
                 return b.getCreatedAt().compareTo(a.getCreatedAt());
@@ -132,6 +134,7 @@ public class UserService {
     public UserResponseDTO getUserById(String id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + id));
+        checkAndApplyDormancy(user);
         return UserResponseDTO.fromEntity(user, objectMapper);
     }
 
@@ -226,7 +229,13 @@ public class UserService {
         // Hierarchy validation: check if actor has authority to disable/lock this target user
         validateHierarchyAction(actorId, "MANAGE", null, null, user);
 
-        user.setLocked(!user.isLocked());
+        boolean willBeLocked = !user.isLocked();
+        user.setLocked(willBeLocked);
+        if (!willBeLocked) {
+            // Unlocking user (including dormant accounts): reset lastActive to current time
+            user.setLastActive(LocalDateTime.now());
+        }
+        user.setUpdatedAt(LocalDateTime.now());
         User updated = userRepository.save(user);
         return UserResponseDTO.fromEntity(updated, objectMapper);
     }
@@ -571,5 +580,39 @@ public class UserService {
             user.setAssignedPlaza(plaza);
             user.setPlazasJson("[\"" + plaza + "\"]");
         }
+    }
+
+    /**
+     * Checks if a user has not logged in for 72+ hours.
+     * If so, automatically sets their status to locked (dormant).
+     */
+    public boolean checkAndApplyDormancy(User user) {
+        if (user == null || "Master Admin".equalsIgnoreCase(user.getRole())) {
+            return false;
+        }
+        LocalDateTime refTime = user.getLastActive() != null ? user.getLastActive() : user.getCreatedAt();
+        if (refTime != null && refTime.isBefore(LocalDateTime.now().minusHours(72))) {
+            if (!user.isLocked()) {
+                user.setLocked(true);
+                user.setUpdatedAt(LocalDateTime.now());
+                try {
+                    userRepository.save(user);
+                } catch (Exception ignored) {}
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Records a login / activity touch to renew lastActive timestamp
+     */
+    @Transactional
+    public void recordLogin(String id) {
+        userRepository.findById(id).ifPresent(user -> {
+            user.setLastActive(LocalDateTime.now());
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+        });
     }
 }

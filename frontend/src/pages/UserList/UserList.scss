@@ -293,6 +293,18 @@
     background: var(--warning-bg);
     color: var(--warning-text);
   }
+
+  &-locked {
+    background: #FEF3F2;
+    color: #B42318;
+    border: 1px solid rgba(180, 35, 24, 0.25);
+  }
+
+  &-dormant {
+    background: #FFF6ED;
+    color: #C4320A;
+    border: 1px solid rgba(196, 50, 10, 0.3);
+  }
 }
 
 .btn-table-approve {
@@ -1355,6 +1367,18 @@ html[data-theme="dark"],
     background-color: var(--blue-soft, #182A3F) !important;
     color: #60A5FA !important;
     border: 1px solid #284B72 !important;
+  }
+
+  .badge-locked {
+    background-color: #381a1c !important;
+    color: #f87171 !important;
+    border: 1px solid #7f1d1d !important;
+  }
+
+  .badge-dormant {
+    background-color: #3b2314 !important;
+    color: #fb923c !important;
+    border: 1px solid #9a3412 !important;
   }
 
   .btn-table-approve {

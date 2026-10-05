@@ -541,8 +541,26 @@ export const UserList = () => {
 
   // Actions
   const handleToggleLock = async (id) => {
-    const updated = await UserService.toggleLock(id);
-    setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+    try {
+      const updated = await UserService.toggleLock(id);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id
+            ? {
+                ...u,
+                ...updated,
+                locked: updated.locked,
+                isDormant: false,
+                dormant: false,
+                lastActive: updated.lastActive || (updated.locked ? u.lastActive : new Date().toISOString()),
+              }
+            : u
+        )
+      );
+    } catch (err) {
+      console.error('Failed to toggle lock:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to update user lock status.');
+    }
   };
 
   const handleApproveUser = async (id) => {
@@ -1260,7 +1278,7 @@ export const UserList = () => {
         statusFilter === 'All statuses' ||
         (statusFilter === 'Pending' && (u.approval === 'Pending' || u.status === 'Pending')) ||
         (statusFilter === 'Locked' && u.locked) ||
-        (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved') ||
+        (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved' && !u.locked) ||
         (statusFilter === 'Inactive' && u.status === 'Inactive') ||
         u.status.toLowerCase() === statusFilter.toLowerCase();
 
@@ -1427,9 +1445,9 @@ export const UserList = () => {
           className="stat"
           style={{ cursor: 'pointer' }}
           onClick={() => setStatusFilter(statusFilter === 'Locked' ? 'All statuses' : 'Locked')}
-          title="Filter: Locked accounts"
+          title="Filter: Locked & Dormant accounts"
         >
-          <span>Locked accounts</span>
+          <span>Locked / Dormant</span>
           <strong style={{ color: 'var(--danger-text)' }}>
             {hierarchyScopedUsers.filter((u) => u.locked).length}
           </strong>
@@ -1471,7 +1489,7 @@ export const UserList = () => {
           <option value="Active">Active</option>
           <option value="Inactive">Inactive</option>
           <option value="Pending">Pending Approval</option>
-          <option value="Locked">Locked Accounts</option>
+          <option value="Locked">Locked / Dormant Accounts</option>
         </select>
 
         <select value={plazaFilter} onChange={(e) => setPlazaFilter(e.target.value)}>
@@ -1497,8 +1515,10 @@ export const UserList = () => {
         <div className="table-body">
           {paginatedUsers.map((u) => {
             const isApproved = u.approval === 'Approved';
+            const isDormant = Boolean(u.dormant || u.isDormant);
+            const isLocked = Boolean(u.locked) || isDormant;
             const statusLabel = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
-            const statusActive = statusLabel === 'Active';
+            const statusActive = !isLocked && statusLabel === 'Active';
             const approved = isApproved;
             return (
               <div key={u.id} className="t-row">
@@ -1524,8 +1544,19 @@ export const UserList = () => {
                 <div className="plaza-cell">{u.plaza}</div>
 
                 <div>
-                  <span className={`badge ${statusActive ? 'badge-active' : (statusLabel === 'Pending' ? 'badge-pending' : 'badge-inactive')}`}>
-                    {statusLabel}
+                  <span
+                    className={`badge ${
+                      isLocked
+                        ? (isDormant ? 'badge-dormant' : 'badge-locked')
+                        : (statusActive ? 'badge-active' : (statusLabel === 'Pending' ? 'badge-pending' : 'badge-inactive'))
+                    }`}
+                    title={
+                      isDormant
+                        ? 'Dormant: User inactive for >72 hrs without login. Account locked. Can be unlocked from Actions.'
+                        : (isLocked ? 'Account locked by administrator' : `Status: ${statusLabel}`)
+                    }
+                  >
+                    {isLocked ? (isDormant ? 'Dormant (Locked)' : 'Locked') : statusLabel}
                   </span>
                 </div>
 
@@ -1605,11 +1636,25 @@ export const UserList = () => {
                     <button
                       type="button"
                       className="icon-btn"
-                      title="Lock or unlock user"
+                      title={
+                        isLocked
+                          ? (isDormant
+                              ? 'Dormant account (>72 hrs inactive): Click to unlock user and restore login access'
+                              : 'Locked account: Click to unlock user')
+                          : 'Active account: Click to lock user'
+                      }
                       onClick={() => handleToggleLock(u.id)}
+                      style={
+                        isLocked
+                          ? {
+                              borderColor: isDormant ? 'rgba(196, 50, 10, 0.4)' : 'rgba(180, 35, 24, 0.4)',
+                              background: isDormant ? '#FFF6ED' : '#FEF3F2',
+                            }
+                          : {}
+                      }
                     >
-                      {u.locked ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
+                      {isLocked ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isDormant ? '#C4320A' : '#B42318'} strokeWidth="1.9">
                           <rect x="4" y="10" width="16" height="10" rx="2" />
                           <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                         </svg>
@@ -2746,11 +2791,22 @@ export const UserList = () => {
                       borderRadius: '12px',
                       fontSize: '11px',
                       fontWeight: 600,
-                      background: viewingUser.status === 'Active' ? '#ecfdf5' : '#fef2f2',
-                      color: viewingUser.status === 'Active' ? '#047857' : '#b91c1c',
+                      background: (viewingUser.locked || viewingUser.isDormant)
+                        ? (viewingUser.isDormant ? '#FFF6ED' : '#fef2f2')
+                        : (viewingUser.status === 'Active' ? '#ecfdf5' : '#f3f4f6'),
+                      color: (viewingUser.locked || viewingUser.isDormant)
+                        ? (viewingUser.isDormant ? '#C4320A' : '#b91c1c')
+                        : (viewingUser.status === 'Active' ? '#047857' : '#4b5563'),
+                      border: (viewingUser.locked || viewingUser.isDormant)
+                        ? (viewingUser.isDormant ? '1px solid #fdba74' : '1px solid #fca5a5')
+                        : 'none',
                     }}
                   >
-                    {viewingUser.status || 'Active'}
+                    {viewingUser.isDormant
+                      ? 'Dormant (Locked - 72h Inactivity)'
+                      : viewingUser.locked
+                      ? 'Locked'
+                      : viewingUser.status || 'Active'}
                   </span>
                 </div>
 

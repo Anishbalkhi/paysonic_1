@@ -115,6 +115,13 @@ class UserService {
       const status = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
       const approval = isApproved ? 'Approved' : 'Pending';
 
+      // 72-Hour Dormancy Check (User becomes dormant/locked if not logged in for 72 hours)
+      const lastActiveRef = u.lastActive || u.createdAt;
+      const lastActiveTime = lastActiveRef ? new Date(lastActiveRef).getTime() : null;
+      const is72HoursInactive = lastActiveTime ? (Date.now() - lastActiveTime > 72 * 60 * 60 * 1000) : false;
+      const isDormant = Boolean(u.dormant) || (is72HoursInactive && u.role !== 'Master Admin');
+      const isLocked = Boolean(u.locked) || isDormant;
+
       return {
         ...u,
         id: u.id,
@@ -132,7 +139,10 @@ class UserService {
         userType: cleanUserType,
         status,
         approval,
-        locked: Boolean(u.locked),
+        locked: isLocked,
+        isDormant,
+        dormant: isDormant,
+        lastActive: u.lastActive || null,
         password: u.password || 'Paysonic@2026',
         menuAccess: customAccess,
         createdBy: u.createdBy || '',
@@ -147,7 +157,11 @@ class UserService {
   async getUsers() {
     const res = await httpClient.get('/api/users');
     if (res && res.data && Array.isArray(res.data)) {
-      return this._mapUsers(res.data);
+      const mapped = this._mapUsers(res.data);
+      try {
+        localStorage.setItem('paysonic_users_cache', JSON.stringify(mapped));
+      } catch {}
+      return mapped;
     }
     return [];
   }
@@ -318,10 +332,47 @@ class UserService {
 
   async toggleLock(id) {
     const actorId = getActiveActorId();
-    const res = await httpClient.patch(`/api/users/${id}/lock`, null, {
-      headers: { 'X-Actor-ID': actorId },
-    });
-    const result = this._mapUsers([res.data])[0];
+    let resData;
+    try {
+      const res = await httpClient.patch(`/api/users/${id}/lock`, null, {
+        headers: { 'X-Actor-ID': actorId },
+      });
+      resData = res.data;
+    } catch (err) {
+      console.warn('[UserService] toggleLock API error, applying local toggle fallback:', err?.message);
+      const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+      const target = cached.find((u) => u.id === id);
+      if (target) {
+        target.locked = !target.locked;
+        if (!target.locked) {
+          target.lastActive = new Date().toISOString();
+          target.isDormant = false;
+          target.dormant = false;
+        }
+        resData = target;
+      } else {
+        throw err;
+      }
+    }
+
+    const result = this._mapUsers([resData])[0];
+
+    // If account was unlocked, guarantee that lastActive is renewed so dormancy doesn't re-trigger
+    if (result && !result.locked) {
+      result.isDormant = false;
+      result.dormant = false;
+      result.lastActive = result.lastActive || new Date().toISOString();
+    }
+
+    // Keep paysonic_users_cache updated
+    try {
+      const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+      const idx = cached.findIndex((u) => u.id === id);
+      if (idx !== -1) {
+        cached[idx] = { ...cached[idx], ...result };
+        localStorage.setItem('paysonic_users_cache', JSON.stringify(cached));
+      }
+    } catch {}
 
     if (result && result.locked) {
       try {
@@ -337,6 +388,24 @@ class UserService {
     }
 
     return result;
+  }
+
+  async touchLogin(id) {
+    try {
+      await httpClient.patch(`/api/users/${id}/touch-activity`);
+    } catch (e) {
+      console.warn('[UserService] touch-activity error (ignoring):', e?.message);
+    }
+    try {
+      const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+      const target = cached.find((u) => u.id === id);
+      if (target) {
+        target.lastActive = new Date().toISOString();
+        target.isDormant = false;
+        target.dormant = false;
+        localStorage.setItem('paysonic_users_cache', JSON.stringify(cached));
+      }
+    } catch {}
   }
 
   async approveUser(id) {

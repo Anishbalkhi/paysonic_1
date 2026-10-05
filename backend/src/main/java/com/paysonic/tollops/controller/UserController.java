@@ -91,4 +91,10 @@ public class UserController {
             @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         return ResponseEntity.ok(userService.bulkUpload(file, actorId));
     }
+
+    @PatchMapping("/{id}/touch-activity")
+    public ResponseEntity<Map<String, Object>> touchActivity(@PathVariable String id) {
+        userService.recordLogin(id);
+        return ResponseEntity.ok(Map.of("success", true, "id", id));
+    }
 }

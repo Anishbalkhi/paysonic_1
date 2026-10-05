@@ -25,6 +25,7 @@ public class UserResponseDTO {
     private String status;
     private String approval;
     private boolean locked;
+    private boolean dormant;
     private String avatar;
     private String password;
     
@@ -48,13 +49,20 @@ public class UserResponseDTO {
         dto.setAssignedPlaza(user.getAssignedPlaza());
         dto.setStatus(user.getStatus());
         dto.setApproval(user.getApproval());
-        dto.setLocked(user.isLocked());
         dto.setAvatar(user.getAvatar());
         dto.setPassword(user.getPassword() != null && !user.getPassword().isBlank() ? user.getPassword() : "Paysonic@2026");
         dto.setLastActive(user.getLastActive());
         dto.setCreatedBy(user.getCreatedBy());
         dto.setApprovedBy(user.getApprovedBy());
         dto.setCreatedAt(user.getCreatedAt());
+
+        // 72-Hour Dormancy Check: User becomes dormant (locked) if not logged in for 72 hours
+        LocalDateTime refTime = user.getLastActive() != null ? user.getLastActive() : user.getCreatedAt();
+        boolean isDormant = !"Master Admin".equalsIgnoreCase(user.getRole()) &&
+                refTime != null &&
+                refTime.isBefore(LocalDateTime.now().minusHours(72));
+        dto.setDormant(isDormant);
+        dto.setLocked(user.isLocked() || isDormant);
 
         List<String> rawPlazas = new ArrayList<>();
         if (user.getPlazasJson() != null && !user.getPlazasJson().isBlank()) {
@@ -121,6 +129,9 @@ public class UserResponseDTO {
 
     public boolean isLocked() { return locked; }
     public void setLocked(boolean locked) { this.locked = locked; }
+
+    public boolean isDormant() { return dormant; }
+    public void setDormant(boolean dormant) { this.dormant = dormant; }
 
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }

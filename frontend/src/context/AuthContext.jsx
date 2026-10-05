@@ -306,16 +306,29 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    if (match.locked) {
+    // 72-Hour Dormancy Check (User becomes dormant/locked if not logged in for 72 hours)
+    const now = Date.now();
+    const lastActiveRef = match.lastActive || match.createdAt;
+    const lastActiveTime = lastActiveRef ? new Date(lastActiveRef).getTime() : null;
+    const is72HoursInactive = lastActiveTime ? (now - lastActiveTime > 72 * 60 * 60 * 1000) : false;
+    const isDormant = Boolean(match.dormant || match.isDormant) || (is72HoursInactive && match.role !== 'Master Admin');
+
+    if (match.locked || isDormant) {
       UserActivityService.recordLoginAttempt({
         userId: match.id,
         email: match.email,
         name: match.name,
         role: match.role,
         status: 'Failed',
-        failureReason: 'Account locked: profile suspended by administrator',
+        failureReason: isDormant
+          ? 'Account locked: dormant due to inactivity (>72 hrs without login)'
+          : 'Account locked: profile suspended by administrator',
       });
-      throw new Error('Account locked: Your profile has been suspended. Please contact your system administrator.');
+      throw new Error(
+        isDormant
+          ? 'Account locked: Your account has become dormant due to inactivity (not logged in for 72+ hours). Please contact an administrator to unlock your account from User Management.'
+          : 'Account locked: Your profile has been suspended. Please contact your system administrator.'
+      );
     }
     if (match.approval !== 'Approved' || match.status === 'Pending') {
       UserActivityService.recordLoginAttempt({
@@ -385,12 +398,21 @@ export const AuthProvider = ({ children }) => {
           (match.username && perms[match.username.toLowerCase()]) ||
           getRoleMenuDefaults(match.role);
 
+    // Renew lastActive in backend database & local cache upon login
+    try {
+      UserService.touchLogin(match.id);
+    } catch {}
+
     const sessionData = {
       ...match,
       sessionId,
       menuAccess: assignedPermissions,
       permissions: assignedPermissions,
       loginTimestamp: new Date().toISOString(),
+      lastActive: new Date().toISOString(),
+      isDormant: false,
+      dormant: false,
+      locked: false,
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
