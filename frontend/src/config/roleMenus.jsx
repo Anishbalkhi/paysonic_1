@@ -116,7 +116,14 @@ export const ROLE_NAVIGATION_MAP = {
       id: 'dispute_handling',
       label: 'Dispute Handling',
       icon: ICONS.dispute,
-      path: '/dispute-handling',
+      children: [
+        { subId: 'dispute_handling_dispute_dashboard', label: 'A. Dispute DashBoard', path: '/dispute-handling/dashboard' },
+        { subId: 'dispute_handling_file_upload', label: 'B. Dispute File Upload', path: '/dispute-handling/file-upload' },
+        { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
+        { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
+        { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+      ],
     },
     {
       id: 'violation_management',
@@ -212,7 +219,14 @@ export const ROLE_NAVIGATION_MAP = {
       id: 'dispute_handling',
       label: 'Dispute Handling',
       icon: ICONS.dispute,
-      path: '/dispute-handling',
+      children: [
+        { subId: 'dispute_handling_dispute_dashboard', label: 'A. Dispute DashBoard', path: '/dispute-handling/dashboard' },
+        { subId: 'dispute_handling_file_upload', label: 'B. Dispute File Upload', path: '/dispute-handling/file-upload' },
+        { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
+        { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
+        { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+      ],
     },
     {
       id: 'violation_management',
@@ -302,7 +316,14 @@ export const ROLE_NAVIGATION_MAP = {
       id: 'dispute_handling',
       label: 'Dispute Handling',
       icon: ICONS.dispute,
-      path: '/dispute-handling',
+      children: [
+        { subId: 'dispute_handling_dispute_dashboard', label: 'A. Dispute DashBoard', path: '/dispute-handling/dashboard' },
+        { subId: 'dispute_handling_file_upload', label: 'B. Dispute File Upload', path: '/dispute-handling/file-upload' },
+        { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
+        { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
+        { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+      ],
     },
     {
       id: 'violation_management',
@@ -389,7 +410,14 @@ export const ROLE_NAVIGATION_MAP = {
       id: 'dispute_handling',
       label: 'Dispute Handling',
       icon: ICONS.dispute,
-      path: '/dispute-handling',
+      children: [
+        { subId: 'dispute_handling_dispute_dashboard', label: 'A. Dispute DashBoard', path: '/dispute-handling/dashboard' },
+        { subId: 'dispute_handling_file_upload', label: 'B. Dispute File Upload', path: '/dispute-handling/file-upload' },
+        { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
+        { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
+        { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+      ],
     },
     {
       id: 'violation_management',
@@ -504,7 +532,9 @@ export const ROLE_NAVIGATION_MAP = {
       id: 'dispute_handling',
       label: 'Dispute Handling',
       icon: ICONS.dispute,
-      path: '/dispute-handling',
+      children: [
+        { subId: 'dispute_handling_dispute_detail_report', label: 'A. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+      ],
     },
     {
       id: 'summary_report',

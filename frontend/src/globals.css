@@ -2143,13 +2143,13 @@ button.btn-orange:disabled,
   color: var(--ink, #E7ECF3) !important;
 }
 
-/* Monospace / ID codes (Tag ID, Acq Txn ID, TID, Error Codes) in Dark Mode */
-[data-theme="dark"] .acq-code,
-[data-theme="dark"] .code-font,
-[data-theme="dark"] .monospace-cell,
-[data-theme="dark"] td.code,
-[data-theme="dark"] td .acq-code,
-[data-theme="dark"] td.monospace-cell {
+/* Monospace / ID codes badge elements in Dark Mode (spans, badges, code tags) */
+[data-theme="dark"] span.acq-code,
+[data-theme="dark"] span.code-font,
+[data-theme="dark"] span.monospace-cell,
+[data-theme="dark"] code.code-font,
+[data-theme="dark"] code.acq-code,
+[data-theme="dark"] .badge-code {
   color: #93c5fd !important;
   background: rgba(30, 58, 138, 0.35) !important;
   padding: 2px 7px !important;
@@ -2157,6 +2157,36 @@ button.btn-orange:disabled,
   border: 1px solid rgba(59, 130, 246, 0.3) !important;
   font-weight: 600 !important;
   display: inline-block !important;
+}
+
+/* Monospace table cells in Dark Mode (MUST strictly remain table-cell to prevent column misplacement) */
+[data-theme="dark"] td.code-font,
+[data-theme="dark"] td.monospace-cell,
+[data-theme="dark"] td.code,
+[data-theme="dark"] td.acq-code,
+[data-theme="dark"] th.code-font,
+[data-theme="dark"] th.monospace-cell {
+  color: #93c5fd !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-weight: 600 !important;
+  display: table-cell !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* Universal Table Cell Layout Guard: NEVER allow table headers or cells to become inline-block or block */
+table th,
+table td,
+thead th,
+tbody td,
+tfoot td,
+[data-theme="dark"] table th,
+[data-theme="dark"] table td,
+[data-theme="dark"] thead th,
+[data-theme="dark"] tbody td,
+[data-theme="dark"] tfoot td {
+  display: table-cell !important;
+  box-sizing: border-box !important;
 }
 
 /* ── 9. Merged cells (Plaza, Status, PaymentMode) ── */
@@ -2510,5 +2540,77 @@ button.btn-orange:disabled,
     #1C2430 75%
   ) !important;
   background-size: 1200px 100% !important;
+}
+
+/* ── 18. Universal Dark Mode Report Page & Text Visibility Overrides ── */
+[data-theme="dark"] .report-header-banner,
+[data-theme="dark"] .table-top-banner,
+[data-theme="dark"] .page-header {
+  background-color: var(--card, #161D27) !important;
+  border-bottom-color: var(--border, #262F3B) !important;
+}
+
+[data-theme="dark"] .report-title,
+[data-theme="dark"] .banner-title,
+[data-theme="dark"] .page-title,
+[data-theme="dark"] .table-top-banner .banner-title,
+[data-theme="dark"] .report-header-banner .report-title,
+[data-theme="dark"] .onboarding-header h1,
+[data-theme="dark"] .onboarding-module h1,
+[data-theme="dark"] .module-header h1 {
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .report-subtitle,
+[data-theme="dark"] .banner-subtitle,
+[data-theme="dark"] .page-header .subtitle,
+[data-theme="dark"] .table-top-banner .banner-subtitle,
+[data-theme="dark"] .onboarding-header .subtext,
+[data-theme="dark"] .table-info {
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .filter-card,
+[data-theme="dark"] .filter-box,
+[data-theme="dark"] .filter-toolbar {
+  background-color: var(--card, #161D27) !important;
+  border-color: var(--border, #262F3B) !important;
+}
+
+[data-theme="dark"] .filter-label,
+[data-theme="dark"] .filter-group label,
+[data-theme="dark"] label {
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+[data-theme="dark"] .filter-input,
+[data-theme="dark"] .filter-select,
+[data-theme="dark"] .bulk-select,
+[data-theme="dark"] .bulk-remarks-input,
+[data-theme="dark"] .quick-search input {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--border, #262F3B) !important;
+  color: var(--text, #E7ECF3) !important;
+}
+
+[data-theme="dark"] .bulk-action-bar {
+  background-color: var(--surface-raised, #1C2430) !important;
+  border-color: var(--border, #262F3B) !important;
+}
+
+[data-theme="dark"] .bulk-action-bar .bulk-hint {
+  color: var(--text-soft, #9AA5B4) !important;
+}
+
+/* Dispute amount in reports */
+[data-theme="dark"] .dispute-amount-cell,
+[data-theme="dark"] td.dispute-amount {
+  color: #60a5fa !important;
+}
+
+/* DateWise Recon Settlement Date */
+[data-theme="dark"] .settlement-date-cell,
+[data-theme="dark"] td.settlement-date {
+  color: #fb923c !important;
 }
 

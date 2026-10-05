@@ -12,6 +12,11 @@ import TrsReport from '../pages/TrsReport/TrsReport';
 import DateWiseRecon from '../pages/DateWiseRecon/DateWiseRecon';
 import CycleWiseRecon from '../pages/CycleWiseRecon/CycleWiseRecon';
 import DisputeDetailReport from '../pages/DisputeDetailReport/DisputeDetailReport';
+import DisputeDashboard from '../pages/DisputeDashboard/DisputeDashboard';
+import DisputeFileUpload from '../pages/DisputeFileUpload/DisputeFileUpload';
+import DisputeFileStatus from '../pages/DisputeFileStatus/DisputeFileStatus';
+import ChargebackAssign from '../pages/ChargebackAssign/ChargebackAssign';
+import DisputeValidate from '../pages/DisputeValidate/DisputeValidate';
 import TollFareReport from '../pages/TollFareReport/TollFareReport';
 import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransaction';
 import TransactionSearchDispute from '../pages/TransactionSearchDispute/TransactionSearchDispute';
@@ -230,6 +235,65 @@ export const AppRoutes = () => {
 
       <Route
         path="/dispute-handling"
+        element={<Navigate to="/dispute-handling/dashboard" replace />}
+      />
+      <Route
+        path="/dispute-handling/dashboard"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="dispute_handling"
+          >
+            <DisputeDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dispute-handling/file-upload"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Concessionaire']}
+            requiredMenu="dispute_handling"
+          >
+            <DisputeFileUpload />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dispute-handling/file-status"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Concessionaire']}
+            requiredMenu="dispute_handling"
+          >
+            <DisputeFileStatus />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dispute-handling/chargeback-assign"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Concessionaire']}
+            requiredMenu="dispute_handling"
+          >
+            <ChargebackAssign />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dispute-handling/validate"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire']}
+            requiredMenu="dispute_handling"
+          >
+            <DisputeValidate />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dispute-handling/detail-report"
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
@@ -241,7 +305,7 @@ export const AppRoutes = () => {
       />
       <Route
         path="/dispute-detail-report"
-        element={<Navigate to="/dispute-handling" replace />}
+        element={<Navigate to="/dispute-handling/detail-report" replace />}
       />
       <Route
         path="/violation-management/violation-bulk-action"

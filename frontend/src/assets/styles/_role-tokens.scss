@@ -1475,12 +1475,12 @@ html[data-theme="dark"],
         }
       }
 
-      // Monospace / ID codes (Tag ID, Acq Txn ID, TID, Error Codes)
-      .acq-code,
-      .code-font,
-      .monospace-cell,
-      td.code,
-      td .acq-code {
+      // Monospace / ID codes badge elements (spans, badges)
+      span.acq-code,
+      span.code-font,
+      span.monospace-cell,
+      code.code-font,
+      td span.acq-code {
         color: #93c5fd !important;
         background: rgba(30, 58, 138, 0.35) !important;
         padding: 2px 7px !important;
@@ -1488,6 +1488,19 @@ html[data-theme="dark"],
         border: 1px solid rgba(59, 130, 246, 0.3) !important;
         font-weight: 600 !important;
         display: inline-block !important;
+      }
+
+      // Monospace table cells MUST strictly remain table-cell to avoid column misalignment
+      td.code,
+      td.code-font,
+      td.monospace-cell,
+      td.acq-code {
+        color: #93c5fd !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+        font-weight: 600 !important;
+        display: table-cell !important;
+        background: transparent !important;
+        border-radius: 0 !important;
       }
 
       // 4 Bottom Summary Cards

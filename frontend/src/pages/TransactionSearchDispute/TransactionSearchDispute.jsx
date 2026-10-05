@@ -436,7 +436,7 @@ export const TransactionSearchDispute = () => {
                       </td>
 
                       {/* 8. Dispute Amount */}
-                      <td className="text-right font-bold" style={{ color: '#0d47a1' }}>
+                      <td className="text-right font-bold dispute-amount-cell">
                         {d.disputeAmount !== null && d.disputeAmount !== undefined
                           ? Number(d.disputeAmount).toFixed(2)
                           : '0.00'}

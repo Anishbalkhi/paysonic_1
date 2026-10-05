@@ -440,7 +440,7 @@ export const DateWiseRecon = () => {
                                         <td>{summary.plazaId}</td>
                                         <td>{summary.plazaName}</td>
                                         <td>{formatDate(summary.txnDate)}</td>
-                                        <td style={{ fontWeight: 600, color: '#c2410c' }}>
+                                        <td className="settlement-date-cell" style={{ fontWeight: 600 }}>
                                           {formatDate(b.settlementDate)}
                                         </td>
                                         <td className="text-right">{b.txnCount}</td>

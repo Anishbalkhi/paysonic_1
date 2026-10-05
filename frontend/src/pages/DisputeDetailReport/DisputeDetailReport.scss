@@ -521,4 +521,191 @@
       transform: translateY(0);
     }
   }
+
+  // ── Dark Mode Overrides ──────────────────────────────────────
+  [data-theme="dark"] & {
+    background-color: var(--bg, #10151C);
+    color: var(--text, #E7ECF3);
+
+    .page-title {
+      color: #60a5fa;
+    }
+
+    .subtitle {
+      color: var(--text-soft, #9AA5B4);
+    }
+
+    .filter-card {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .filter-group {
+        label {
+          color: var(--text-soft, #9AA5B4);
+        }
+
+        input, select {
+          background-color: var(--surface-raised, #1C2430);
+          border-color: var(--border, #262F3B);
+          color: var(--text, #E7ECF3);
+
+          &:focus {
+            border-color: #3b82f6;
+            background-color: var(--surface-raised, #1C2430);
+          }
+        }
+      }
+
+      .btn-group {
+        .btn-secondary {
+          background: var(--surface-raised, #1C2430);
+          border-color: var(--border, #262F3B);
+          color: var(--text-soft, #9AA5B4);
+
+          &:hover:not(:disabled) {
+            background: var(--border, #262F3B);
+            color: var(--text, #E7ECF3);
+          }
+        }
+      }
+    }
+
+    .kpi-grid {
+      .kpi-card {
+        background: var(--card, #161D27);
+        border-color: var(--border, #262F3B);
+
+        .kpi-label {
+          color: var(--text-soft, #9AA5B4);
+        }
+
+        .kpi-value {
+          color: var(--text, #E7ECF3);
+
+          &.live-badge {
+            background: #064e3b;
+            color: #34d399;
+          }
+        }
+
+        .kpi-sub {
+          color: var(--faint, #6B7A8D);
+        }
+
+        &.highlight-blue {
+          border-left-color: #2563eb;
+          .kpi-value {
+            color: #60a5fa;
+          }
+        }
+
+        &.highlight-purple {
+          border-left-color: #a855f7;
+          .kpi-value {
+            color: #c084fc;
+          }
+        }
+      }
+    }
+
+    .table-controls-bar {
+      .table-info {
+        color: var(--text-soft, #9AA5B4);
+      }
+
+      .quick-search {
+        input {
+          background: var(--surface-raised, #1C2430);
+          border-color: var(--border, #262F3B);
+          color: var(--text, #E7ECF3);
+
+          &:focus {
+            border-color: #3b82f6;
+          }
+        }
+      }
+    }
+
+    .table-wrapper {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .table-top-banner {
+        background: var(--card, #161D27);
+        border-bottom-color: var(--border, #262F3B);
+
+        .banner-title {
+          color: #60a5fa !important;
+        }
+
+        .banner-subtitle {
+          color: var(--text-soft, #9AA5B4) !important;
+        }
+      }
+
+      .table-responsive {
+        .dispute-table {
+          thead tr th {
+            background-color: #0d47a1 !important;
+            color: #ffffff !important;
+            border-color: rgba(255, 255, 255, 0.18) !important;
+          }
+
+          tbody {
+            tr {
+              border-bottom: 1px solid var(--border, #262F3B);
+
+              &:nth-child(even) {
+                background-color: var(--surface-raised, #1C2430);
+              }
+              &:hover {
+                background-color: var(--blue-soft, #182A3F);
+              }
+
+              td {
+                color: var(--text, #E7ECF3);
+                border-color: var(--border, #262F3B);
+
+                &.msg-cell {
+                  color: var(--text-soft, #9AA5B4);
+                }
+
+                .func-code-badge {
+                  background-color: #1e3a8a;
+                  color: #93c5fd;
+                }
+
+                .settle-badge.badge-neutral {
+                  background-color: var(--surface-raised, #1C2430);
+                  color: var(--text-soft, #9AA5B4);
+                }
+              }
+            }
+
+            .empty-state {
+              color: var(--text-soft, #9AA5B4);
+            }
+          }
+
+          tfoot .total-summary-row {
+            background-color: var(--surface-raised, #1C2430);
+            border-top-color: #2563eb;
+
+            td {
+              color: var(--text, #E7ECF3);
+              border-color: var(--border, #262F3B);
+
+              &.total-label {
+                color: #60a5fa !important;
+              }
+
+              &.total-amount {
+                color: #60a5fa !important;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }

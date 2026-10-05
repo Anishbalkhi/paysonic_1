@@ -59,7 +59,14 @@ export const MENU_TREE = [
   {
     id: 'dispute_handling',
     label: 'Dispute Handling',
-    subs: []
+    subs: [
+      { id: 'dispute_handling_dispute_dashboard', label: 'Dispute DashBoard' },
+      { id: 'dispute_handling_file_upload', label: 'Dispute File Upload' },
+      { id: 'dispute_handling_file_status', label: 'Dispute File Status' },
+      { id: 'dispute_handling_chargeback_assign', label: 'Chargeback Assign' },
+      { id: 'dispute_handling_validate_dispute', label: 'Validate Dispute' },
+      { id: 'dispute_handling_dispute_detail_report', label: 'Dispute Detail Report' }
+    ]
   },
   {
     id: 'violation_management',
@@ -130,7 +137,7 @@ export const ROLE_MENU_DEFAULTS = {
     'user_activity',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
     'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
-    'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
+    'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_file_upload', 'dispute_handling_file_status', 'dispute_handling_chargeback_assign', 'dispute_handling_validate_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_validate', 'violation_management_violation_settlement_report', 'violation_management_violation_raw_file', 'violation_management_violation_bulk_action',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_toll_fare_report', 'transactional_report_transaction_search',
     'pass_issuance', 'pass_issuance_pass_issuance', 'pass_issuance_pass_issuance_approval', 'pass_issuance_pass_issuance_view', 'pass_issuance_view_customer', 'pass_issuance_customer_approval',
@@ -142,7 +149,7 @@ export const ROLE_MENU_DEFAULTS = {
     'user_management', 'user_management_create_user', 'user_management_approve_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
     'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
-    'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
+    'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_file_upload', 'dispute_handling_file_status', 'dispute_handling_chargeback_assign', 'dispute_handling_validate_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_settlement_report',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
     'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_pass_summary',
@@ -154,7 +161,7 @@ export const ROLE_MENU_DEFAULTS = {
     'user_management', 'user_management_create_user', 'user_management_approve_user', 'user_management_assign_user', 'user_management_lock_unlock_user',
     'tag_details', 'tag_details_request_tag_details', 'tag_details_blacklist_search_history',
     'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
-    'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_validate_dispute', 'dispute_handling_approve_dispute', 'dispute_handling_dispute_detail_report',
+    'dispute_handling', 'dispute_handling_dispute_dashboard', 'dispute_handling_file_upload', 'dispute_handling_file_status', 'dispute_handling_chargeback_assign', 'dispute_handling_validate_dispute', 'dispute_handling_dispute_detail_report',
     'violation_management', 'violation_management_violation_settlement_report',
     'transactional_report', 'transactional_report_transaction_report', 'transactional_report_rejected_transaction', 'transactional_report_transaction_search', 'transactional_report_toll_fare_report',
     'summary_report', 'summary_report_transaction_summary', 'summary_report_nhai_traffic_report', 'summary_report_pass_summary',
@@ -170,7 +177,8 @@ export const ROLE_MENU_DEFAULTS = {
   ],
   Bank: [
     'dashboard',
-    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report'
+    'recon_management', 'recon_management_trs_report', 'recon_management_date_wise_recon', 'recon_management_cycle_wise_report',
+    'dispute_handling', 'dispute_handling_dispute_detail_report'
   ]
 };
 

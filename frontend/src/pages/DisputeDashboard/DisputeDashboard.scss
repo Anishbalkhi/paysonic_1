@@ -1,0 +1,378 @@
+.dispute-dashboard-page {
+  padding: 24px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background-color: var(--bg-page, #f8fafc);
+  min-height: calc(100vh - 64px);
+
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    .header-left {
+      h1 {
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.02em;
+      }
+
+      .subtitle {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #64748b;
+      }
+    }
+
+    .live-indicator-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 999px;
+      color: #065f46;
+      font-size: 0.8rem;
+      font-weight: 700;
+
+      .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 8px #10b981;
+        animation: pulse 1.6s infinite;
+      }
+    }
+  }
+
+  /* TAT Warning Box */
+  .tat-banner-box {
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+
+    &.tat-alert {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+
+      .tat-banner-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #be123c;
+      }
+
+      .tat-dispute-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .tat-item-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 14px;
+          background: #ffffff;
+          border: 1px solid #ffe4e6;
+          border-radius: 8px;
+          font-size: 0.84rem;
+
+          .tat-item-info {
+            color: #334155;
+            strong {
+              color: #0f172a;
+              font-family: ui-monospace, monospace;
+            }
+          }
+        }
+      }
+    }
+
+    &.tat-safe {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+
+      .tat-safe-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+    }
+  }
+
+  /* Open vs Closed Summary Stats */
+  .summary-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+
+      .stat-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+      }
+
+      .stat-value {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      .stat-subtext {
+        font-size: 0.78rem;
+        color: #94a3b8;
+      }
+
+      &.highlight-open {
+        border-left: 4px solid #f59e0b;
+        .stat-value { color: #d97706; }
+      }
+
+      &.highlight-closed {
+        border-left: 4px solid #10b981;
+        .stat-value { color: #059669; }
+      }
+
+      &.highlight-split {
+        border-left: 4px solid #3b82f6;
+        .stat-value { color: #2563eb; }
+      }
+    }
+  }
+
+  /* Day-Wise 5 Cards Horizontal Scroll */
+  .day-cards-scroll-container {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+
+    .daycard {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      min-width: 230px;
+      flex: 1;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+
+      .daycard-header {
+        background: linear-gradient(135deg, #4f46e5, #6366f1);
+        color: #ffffff;
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th, td {
+          padding: 8px 12px;
+          font-size: 0.78rem;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        th {
+          background: #f8fafc;
+          color: #64748b;
+          text-align: right;
+          font-weight: 600;
+
+          &:first-child {
+            text-align: left;
+          }
+        }
+
+        td {
+          text-align: right;
+
+          &:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #334155;
+          }
+
+          &.val-count {
+            font-weight: 700;
+          }
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+      }
+    }
+  }
+
+  /* Filter Card */
+  .search-dashboard-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 14px;
+    }
+
+    .filter-fields-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 16px;
+
+      .field-box {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 200px;
+
+        label {
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #475569;
+          text-transform: uppercase;
+        }
+
+        input {
+          height: 38px;
+          padding: 8px 12px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 0.85rem;
+          outline: none;
+
+          &:focus {
+            border-color: #2563eb;
+          }
+        }
+      }
+    }
+  }
+
+  /* Dark mode overrides */
+  [data-theme="dark"] & {
+    background-color: var(--bg, #10151C);
+    color: var(--text, #E7ECF3);
+
+    .dashboard-header .header-left {
+      h1 { color: #60a5fa; }
+      .subtitle { color: var(--text-soft, #9AA5B4); }
+    }
+
+    .live-indicator-badge {
+      background: #064e3b;
+      border-color: #047857;
+      color: #34d399;
+    }
+
+    .tat-banner-box {
+      &.tat-alert {
+        background: #3b1111;
+        border-color: #7f1d1d;
+        .tat-banner-title { color: #f87171; }
+        .tat-dispute-list .tat-item-row {
+          background: #251010;
+          border-color: #551919;
+          .tat-item-info {
+            color: var(--text, #E7ECF3);
+            strong { color: #fca5a5; }
+          }
+        }
+      }
+
+      &.tat-safe {
+        background: #064e3b;
+        border-color: #047857;
+        color: #34d399;
+      }
+    }
+
+    .summary-metrics-grid .stat-card {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .stat-label { color: var(--text-soft, #9AA5B4); }
+      .stat-value { color: var(--text, #E7ECF3); }
+      .stat-subtext { color: var(--faint, #6B7A8D); }
+
+      &.highlight-open .stat-value { color: #fbbf24; }
+      &.highlight-closed .stat-value { color: #4ade80; }
+      &.highlight-split .stat-value { color: #60a5fa; }
+    }
+
+    .day-cards-scroll-container .daycard {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      table {
+        th {
+          background: var(--surface-raised, #1C2430);
+          color: var(--text-soft, #9AA5B4);
+        }
+        td {
+          border-bottom-color: var(--border, #262F3B);
+          color: var(--text, #E7ECF3);
+          &:first-child { color: var(--text-soft, #9AA5B4); }
+        }
+      }
+    }
+
+    .search-dashboard-card {
+      background: var(--card, #161D27);
+      border-color: var(--border, #262F3B);
+
+      .card-title { color: var(--text, #E7ECF3); }
+      .filter-fields-row .field-box {
+        label { color: var(--text-soft, #9AA5B4); }
+        input {
+          background: var(--surface-raised, #1C2430);
+          border-color: var(--border, #262F3B);
+          color: var(--text, #E7ECF3);
+        }
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
