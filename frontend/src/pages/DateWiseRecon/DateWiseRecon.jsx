@@ -341,29 +341,6 @@ export const DateWiseRecon = () => {
 `;
 
     items.forEach((summary) => {
-      // 1. Parent Summary Group Row (Image 1 Level 1)
-      xml += `
-   <Row ss:Height="24">
-    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
-    <Cell ss:StyleID="sParentGroup"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
-    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
-    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">—</Data></Cell>
-    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="Number">${summary.txnCount || 0}</Data></Cell>
-    <Cell ss:StyleID="sParentGroupAmt"><Data ss:Type="Number">${Number(summary.settledAmount || 0).toFixed(2)}</Data></Cell>
-   </Row>
-
-   <!-- Child Breakdown Sub-Header Row (Image 1 Subtable) -->
-   <Row ss:Height="20">
-    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">PLAZA ID</Data></Cell>
-    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">PLAZA NAME</Data></Cell>
-    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">TXN DATE</Data></Cell>
-    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">SETTLEMENT DATE</Data></Cell>
-    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">TXN COUNT</Data></Cell>
-    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">SETTLED AMOUNT</Data></Cell>
-   </Row>
-`;
-
-      // 2. Child Breakdown Rows
       if (summary.breakdowns && summary.breakdowns.length > 0) {
         summary.breakdowns.forEach((b) => {
           xml += `
@@ -371,7 +348,7 @@ export const DateWiseRecon = () => {
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
-    <Cell ss:StyleID="sDataSettlementDate"><Data ss:Type="String">${escapeXml(formatDate(b.settlementDate))}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(b.settlementDate))}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${b.txnCount || 0}</Data></Cell>
     <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${Number(b.settledAmount || 0).toFixed(2)}</Data></Cell>
    </Row>
@@ -383,7 +360,7 @@ export const DateWiseRecon = () => {
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
-    <Cell ss:StyleID="sDataSettlementDate"><Data ss:Type="String">-</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">-</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${summary.txnCount || 0}</Data></Cell>
     <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${Number(summary.settledAmount || 0).toFixed(2)}</Data></Cell>
    </Row>
@@ -475,27 +452,6 @@ export const DateWiseRecon = () => {
     rows.push(headers);
 
     records.forEach((r) => {
-      // 1. Parent Summary Row (Level 1 in Image 1)
-      rows.push([
-        r.plazaId || '',
-        r.plazaName || '',
-        formatDate(r.txnDate),
-        '—',
-        r.txnCount || 0,
-        (Number(r.settledAmount) || 0).toFixed(2)
-      ]);
-
-      // 2. Child Breakdown Sub-Header Row (Subtable header in Image 1)
-      rows.push([
-        'PLAZA ID',
-        'PLAZA NAME',
-        'TXN DATE',
-        'SETTLEMENT DATE',
-        'TXN COUNT',
-        'SETTLED AMOUNT'
-      ]);
-
-      // 3. Child Breakdown Rows
       if (r.breakdowns && r.breakdowns.length > 0) {
         r.breakdowns.forEach((b) => {
           rows.push([
