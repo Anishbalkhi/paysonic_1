@@ -47,9 +47,9 @@ export const DateWiseRecon = () => {
 
   // Search from real database
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
-    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
-    const tDate = overrideTo !== undefined ? overrideTo : toDate;
-    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+    const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
+    const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
 
     if (!validateDates(fDate, tDate)) return;
 
@@ -614,7 +614,7 @@ export const DateWiseRecon = () => {
             <button
               type="button"
               className="btn-royal-blue"
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={loading}
               id="dwrSearchBtn"
             >

@@ -39,9 +39,9 @@ export const NhaiTrafficReport = () => {
   };
 
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
-    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
-    const tDate = overrideTo !== undefined ? overrideTo : toDate;
-    const pCode = overridePlaza !== undefined ? overridePlaza : plazaCode;
+    const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
+    const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
+    const pCode = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaCode;
 
     if (!validateDates(fDate, tDate)) return;
 
@@ -200,7 +200,7 @@ export const NhaiTrafficReport = () => {
           <div className="filter-actions">
             <button
               className="btn btn-royal-blue"
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={loading}
             >
               {loading ? 'Generating...' : 'Search'}

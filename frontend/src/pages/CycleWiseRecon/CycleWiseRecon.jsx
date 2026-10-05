@@ -47,10 +47,10 @@ export const CycleWiseRecon = () => {
 
   // Search from real database
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza, overrideCycle) => {
-    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
-    const tDate = overrideTo !== undefined ? overrideTo : toDate;
-    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
-    const cyc = overrideCycle !== undefined ? overrideCycle : cycle;
+    const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
+    const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
+    const cyc = (typeof overrideCycle === 'string' && overrideCycle) ? overrideCycle : cycle;
 
     if (!validateDates(fDate, tDate)) return;
 
@@ -340,7 +340,7 @@ export const CycleWiseRecon = () => {
             <button
               type="button"
               className="btn-royal-blue"
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={loading}
               id="cwrSearchBtn"
             >

@@ -45,10 +45,10 @@ export const DisputeDetailReport = () => {
 
   // Search function from live Railway DB
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza, overrideFunc) => {
-    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
-    const tDate = overrideTo !== undefined ? overrideTo : toDate;
-    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
-    const fCode = overrideFunc !== undefined ? overrideFunc : functionCode;
+    const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
+    const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
+    const fCode = (typeof overrideFunc === 'string' && overrideFunc) ? overrideFunc : functionCode;
 
     if (!validateDates(fDate, tDate)) return;
 
@@ -267,7 +267,7 @@ export const DisputeDetailReport = () => {
             <button
               type="button"
               className="btn-royal-blue"
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={loading}
               id="dispSearchBtn"
             >

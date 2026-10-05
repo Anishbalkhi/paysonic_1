@@ -24,9 +24,9 @@ export const PassSummaryReport = () => {
   };
 
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
-    const fDate = overrideFrom !== undefined ? overrideFrom : fromDate;
-    const tDate = overrideTo !== undefined ? overrideTo : toDate;
-    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
+    const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
+    const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
 
     if (!validateDates(fDate, tDate)) return;
     setLoading(true); setErrorMsg('');
@@ -138,7 +138,7 @@ export const PassSummaryReport = () => {
             </select>
           </div>
           <div className="filter-actions">
-            <button className="btn btn-royal-blue" onClick={handleSearch} disabled={loading}>
+            <button className="btn btn-royal-blue" onClick={() => handleSearch()} disabled={loading}>
               {loading ? 'Loading...' : 'Search'}
             </button>
             <button className="btn btn-secondary" onClick={handleReset} disabled={loading}>Reset</button>

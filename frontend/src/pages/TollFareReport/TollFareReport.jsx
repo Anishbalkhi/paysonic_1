@@ -17,8 +17,8 @@ export const TollFareReport = () => {
 
   // Search fares from Railway DB
   const handleSearch = useCallback(async (overridePlaza, overrideClass) => {
-    const pId = overridePlaza !== undefined ? overridePlaza : plazaId;
-    const vClass = overrideClass !== undefined ? overrideClass : vehicleClass;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
+    const vClass = (typeof overrideClass === 'string' && overrideClass) ? overrideClass : vehicleClass;
 
     setLoading(true);
     setErrorMsg('');
@@ -216,7 +216,7 @@ export const TollFareReport = () => {
             <button
               type="button"
               className="btn-royal-blue"
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               disabled={loading}
               id="fareSearchBtn"
             >
