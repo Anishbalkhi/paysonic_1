@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DateWiseReconService from '../../services/recon/DateWiseReconService';
+import UserActivityService from '../../services/userActivity/UserActivityService';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './DateWiseRecon.scss';
 
@@ -19,6 +20,7 @@ export const DateWiseRecon = () => {
   const [fromDate, setFromDate] = useState(defaultRange.from);
   const [toDate, setToDate] = useState(defaultRange.to);
   const [plazaId, setPlazaId] = useState('');
+  const [exportMode, setExportMode] = useState('detailed'); // 'detailed' | 'collapsed' | 'currentView'
 
   // Data State
   const [records, setRecords] = useState([]);
@@ -137,7 +139,9 @@ export const DateWiseRecon = () => {
   };
 
   // Generate Excel XML Spreadsheet matching Image 1 (Two-tier parent-child hierarchy & total row)
-  const buildExcelXml = (items, fromStr, toStr, totalCount, totalAmount) => {
+  const buildExcelXml = (items, fromStr, toStr, totalCount, totalAmount, mode = 'detailed', expandedMap = {}) => {
+    const isCollapsedMode = mode === 'collapsed';
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -213,17 +217,6 @@ export const DateWiseRecon = () => {
    <Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/>
    <NumberFormat ss:Format="#,##0.00"/>
   </Style>
-  <Style ss:ID="sSubHeader">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
-   </Borders>
-   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#0B4EA2" ss:Pattern="Solid"/>
-  </Style>
   <Style ss:ID="sDataText">
    <Alignment ss:Vertical="Center"/>
    <Borders>
@@ -243,16 +236,6 @@ export const DateWiseRecon = () => {
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
    </Borders>
    <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#111827"/>
-  </Style>
-  <Style ss:ID="sDataSettlementDate">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
-   </Borders>
-   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#C2410C"/>
   </Style>
   <Style ss:ID="sDataAmt">
    <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
@@ -302,8 +285,76 @@ export const DateWiseRecon = () => {
  </Styles>
  <Worksheet ss:Name="Date Wise Recon">
   <Table ss:DefaultRowHeight="20">
-   <Column ss:Width="90"/>
-   <Column ss:Width="200"/>
+`;
+
+    if (isCollapsedMode) {
+      xml += `   <Column ss:Width="90"/>
+   <Column ss:Width="230"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="130"/>
+
+   <!-- Row 1: Title -->
+   <Row ss:Height="30">
+    <Cell ss:MergeAcross="4" ss:StyleID="sTitle"><Data ss:Type="String">DATE WISE RECONCILIATION REPORT (SUMMARY)</Data></Cell>
+   </Row>
+
+   <!-- Row 2: Subtitle -->
+   <Row ss:Height="20">
+    <Cell ss:MergeAcross="4" ss:StyleID="sSubtitle"><Data ss:Type="String">From Date: ${escapeXml(fromStr)}   |   To Date: ${escapeXml(toStr)}</Data></Cell>
+   </Row>
+
+   <!-- Row 3: Green Accent Stripe -->
+   <Row ss:Height="4">
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+   </Row>
+
+   <!-- Row 4: Main Table Header Row -->
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Plaza ID</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Plaza Name</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Txn Date</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Txn Count</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Settled Amount</Data></Cell>
+   </Row>
+`;
+
+      items.forEach((summary) => {
+        xml += `
+   <Row ss:Height="21">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${summary.txnCount || 0}</Data></Cell>
+    <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${Number(summary.settledAmount || 0).toFixed(2)}</Data></Cell>
+   </Row>
+`;
+      });
+
+      xml += `
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sTotalRow"><Data ss:Type="String">Total</Data></Cell>
+    <Cell ss:StyleID="sTotalRow"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="sTotalRow"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="sTotalCenter"><Data ss:Type="Number">${totalCount}</Data></Cell>
+    <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${Number(totalAmount).toFixed(2)}</Data></Cell>
+   </Row>
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <DoNotDisplayGridlines/>
+  </WorksheetOptions>
+ </Worksheet>
+</Workbook>`;
+      return xml;
+    }
+
+    // Detailed or Current View Mode (with native Excel outline collapsible groups)
+    xml += `   <Column ss:Width="90"/>
+   <Column ss:Width="210"/>
    <Column ss:Width="110"/>
    <Column ss:Width="120"/>
    <Column ss:Width="90"/>
@@ -341,10 +392,26 @@ export const DateWiseRecon = () => {
 `;
 
     items.forEach((summary) => {
-      if (summary.breakdowns && summary.breakdowns.length > 0) {
+      const isCurrentViewCollapsed = mode === 'currentView' && !expandedMap[summary.rowId];
+      const hasChildren = summary.breakdowns && summary.breakdowns.length > 0;
+
+      // 1. Parent Summary Group Row
+      xml += `
+   <Row ss:Height="22">
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
+    <Cell ss:StyleID="sParentGroup"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">${isCurrentViewCollapsed ? 'All Dates (Collapsed)' : 'All Dates'}</Data></Cell>
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="Number">${summary.txnCount || 0}</Data></Cell>
+    <Cell ss:StyleID="sParentGroupAmt"><Data ss:Type="Number">${Number(summary.settledAmount || 0).toFixed(2)}</Data></Cell>
+   </Row>
+`;
+
+      // 2. Child Breakdown Rows with native ss:OutlineLevel="1"
+      if (!isCurrentViewCollapsed && hasChildren) {
         summary.breakdowns.forEach((b) => {
           xml += `
-   <Row ss:Height="20">
+   <Row ss:OutlineLevel="1" ss:Height="20">
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
@@ -354,17 +421,6 @@ export const DateWiseRecon = () => {
    </Row>
 `;
         });
-      } else {
-        xml += `
-   <Row ss:Height="20">
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
-    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">-</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${summary.txnCount || 0}</Data></Cell>
-    <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${Number(summary.settledAmount || 0).toFixed(2)}</Data></Cell>
-   </Row>
-`;
       }
     });
 
@@ -379,13 +435,17 @@ export const DateWiseRecon = () => {
     <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${Number(totalAmount).toFixed(2)}</Data></Cell>
    </Row>
   </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <DoNotDisplayGridlines/>
+   <SummaryBelow>0</SummaryBelow>
+  </WorksheetOptions>
  </Worksheet>
 </Workbook>`;
 
     return xml;
   };
 
-  // Export Excel directly matching exact hierarchical structure displayed on screen (Image 1)
+  // Export Excel with native outline collapsible groups or summary format
   const handleExportExcel = async () => {
     if (!validateDates(fromDate, toDate)) return;
     if (!records || records.length === 0) {
@@ -401,10 +461,10 @@ export const DateWiseRecon = () => {
         UserActivityService.recordAuditEvent({
           module: 'Recon Management',
           action: 'EXPORT_DATE_WISE_RECON',
-          actionLabel: 'Exported Date Wise Recon Report (Excel)',
+          actionLabel: `Exported Date Wise Recon Report (Excel - ${exportMode})`,
           status: 'SUCCESS',
           target: 'Date Wise Recon',
-          details: `Exported Date Wise Recon report range: ${fromDate} to ${toDate}`,
+          details: `Exported Date Wise Recon report (${exportMode}) range: ${fromDate} to ${toDate}`,
           actor: session.name ? { id: session.id, name: session.name, role: session.role } : undefined
         });
       } catch (e) {
@@ -414,13 +474,14 @@ export const DateWiseRecon = () => {
       const fromStr = fromDate ? fromDate.replace('T', ' ') : '01-08-2026 00:00:00';
       const toStr = toDate ? toDate.replace('T', ' ') : '31-10-2026 23:59:59';
 
-      const xml = buildExcelXml(records, fromStr, toStr, grandTotalCount, grandTotalAmount);
+      const xml = buildExcelXml(records, fromStr, toStr, grandTotalCount, grandTotalAmount, exportMode, expandedRows);
       const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
       const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
-      link.setAttribute('download', `Date_Wise_Recon_${timestamp}.xls`);
+      const modeSuffix = exportMode === 'collapsed' ? 'Summary' : exportMode === 'currentView' ? 'View' : 'Detailed';
+      link.setAttribute('download', `Date_Wise_Recon_${modeSuffix}_${timestamp}.xls`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -433,59 +494,84 @@ export const DateWiseRecon = () => {
     }
   };
 
-  // Export CSV matching exact hierarchical structure displayed on screen (Image 1)
+  // Export CSV matching selected export mode (Detailed, Collapsed Summary, or Current View)
   const handleExportCsv = () => {
     if (!records || records.length === 0) return;
 
-    const headers = ['Plaza ID', 'Plaza Name', 'Txn Date', 'Settlement Date', 'Txn Count', 'Settled Amount'];
-
     const fromStr = fromDate ? fromDate.replace('T', ' ') : '01-08-2026 00:00:00';
     const toStr = toDate ? toDate.replace('T', ' ') : '31-10-2026 23:59:59';
-
     const rows = [];
-    // Banner & Date subtitle
-    rows.push(['DATE WISE RECONCILIATION REPORT', '', '', '', '', '']);
-    rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}`, '', '', '', '', '']);
-    rows.push(['', '', '', '', '', '']);
 
-    // Main header
-    rows.push(headers);
+    if (exportMode === 'collapsed') {
+      rows.push(['DATE WISE RECONCILIATION REPORT (SUMMARY)', '', '', '', '']);
+      rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}`, '', '', '', '']);
+      rows.push(['', '', '', '', '']);
+      rows.push(['Plaza ID', 'Plaza Name', 'Txn Date', 'Txn Count', 'Settled Amount']);
 
-    records.forEach((r) => {
-      if (r.breakdowns && r.breakdowns.length > 0) {
-        r.breakdowns.forEach((b) => {
-          rows.push([
-            r.plazaId || '',
-            r.plazaName || '',
-            formatDate(r.txnDate),
-            formatDate(b.settlementDate),
-            b.txnCount || 0,
-            (Number(b.settledAmount) || 0).toFixed(2)
-          ]);
-        });
-      } else {
+      records.forEach((r) => {
         rows.push([
           r.plazaId || '',
           r.plazaName || '',
           formatDate(r.txnDate),
-          '-',
           r.txnCount || 0,
           (Number(r.settledAmount) || 0).toFixed(2)
         ]);
-      }
-    });
+      });
 
-    // Summary Total Row (Matching tfoot in Image 1)
-    rows.push(['Total', '', '', '', grandTotalCount, grandTotalAmount.toFixed(2)]);
+      rows.push(['Total', '', '', grandTotalCount, grandTotalAmount.toFixed(2)]);
+    } else {
+      // Detailed or Current View Mode
+      rows.push(['DATE WISE RECONCILIATION REPORT', '', '', '', '', '']);
+      rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}`, '', '', '', '']);
+      rows.push(['', '', '', '', '']);
+      rows.push(['Plaza ID', 'Plaza Name', 'Txn Date', 'Settlement Date', 'Txn Count', 'Settled Amount']);
+
+      records.forEach((r) => {
+        const isCurrentViewCollapsed = exportMode === 'currentView' && !expandedRows[r.rowId];
+
+        if (isCurrentViewCollapsed) {
+          rows.push([
+            r.plazaId || '',
+            r.plazaName || '',
+            formatDate(r.txnDate),
+            'All Dates (Collapsed)',
+            r.txnCount || 0,
+            (Number(r.settledAmount) || 0).toFixed(2)
+          ]);
+        } else if (r.breakdowns && r.breakdowns.length > 0) {
+          r.breakdowns.forEach((b) => {
+            rows.push([
+              r.plazaId || '',
+              r.plazaName || '',
+              formatDate(r.txnDate),
+              formatDate(b.settlementDate),
+              b.txnCount || 0,
+              (Number(b.settledAmount) || 0).toFixed(2)
+            ]);
+          });
+        } else {
+          rows.push([
+            r.plazaId || '',
+            r.plazaName || '',
+            formatDate(r.txnDate),
+            '-',
+            r.txnCount || 0,
+            (Number(r.settledAmount) || 0).toFixed(2)
+          ]);
+        }
+      });
+
+      rows.push(['Total', '', '', '', grandTotalCount, grandTotalAmount.toFixed(2)]);
+    }
 
     const csvContent = '\uFEFF' + rows.map((row) => row.map(escapeCsv).join(',')).join('\r\n');
-
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
-    link.setAttribute('download', `Date_Wise_Recon_${timestamp}.csv`);
+    const modeSuffix = exportMode === 'collapsed' ? 'Summary' : exportMode === 'currentView' ? 'View' : 'Detailed';
+    link.setAttribute('download', `Date_Wise_Recon_${modeSuffix}_${timestamp}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -564,6 +650,21 @@ export const DateWiseRecon = () => {
               value={plazaId}
               onChange={(e) => setPlazaId(e.target.value)}
             />
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="dwrExportMode">Export Format</label>
+            <select
+              id="dwrExportMode"
+              className="form-input"
+              value={exportMode}
+              onChange={(e) => setExportMode(e.target.value)}
+              title="Choose how Excel and CSV files are exported"
+            >
+              <option value="detailed">Detailed (Excel +/- Outline Groups)</option>
+              <option value="collapsed">Collapsed Summary Only (Plaza Totals)</option>
+              <option value="currentView">Current Screen View (As Displayed)</option>
+            </select>
           </div>
 
           <div className="btn-group">
