@@ -201,8 +201,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Tag Details',
       icon: ICONS.tag,
       children: [
-        { label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
-        { label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
+        { subId: 'tag_details_request_tag_details', label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
+        { subId: 'tag_details_blacklist_search_history', label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
       ],
     },
     {
@@ -255,11 +255,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Pass Issuance',
       icon: ICONS.pass,
       children: [
-        { label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
-        { label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
-        { label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
-        { label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
-        { label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
+        { subId: 'pass_issuance_pass_issuance', label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
+        { subId: 'pass_issuance_pass_issuance_approval', label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
+        { subId: 'pass_issuance_pass_issuance_view', label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
+        { subId: 'pass_issuance_view_customer', label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
+        { subId: 'pass_issuance_customer_approval', label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
       ],
     },
     {
@@ -298,8 +298,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Tag Details',
       icon: ICONS.tag,
       children: [
-        { label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
-        { label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
+        { subId: 'tag_details_request_tag_details', label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
+        { subId: 'tag_details_blacklist_search_history', label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
       ],
     },
     {
@@ -359,11 +359,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Pass Issuance',
       icon: ICONS.pass,
       children: [
-        { label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
-        { label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
-        { label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
-        { label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
-        { label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
+        { subId: 'pass_issuance_pass_issuance', label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
+        { subId: 'pass_issuance_pass_issuance_approval', label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
+        { subId: 'pass_issuance_pass_issuance_view', label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
+        { subId: 'pass_issuance_view_customer', label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
+        { subId: 'pass_issuance_customer_approval', label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
       ],
     },
     {
@@ -392,8 +392,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Tag Details',
       icon: ICONS.tag,
       children: [
-        { label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
-        { label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
+        { subId: 'tag_details_request_tag_details', label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
+        { subId: 'tag_details_blacklist_search_history', label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
       ],
     },
     {
@@ -453,11 +453,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Pass Issuance',
       icon: ICONS.pass,
       children: [
-        { label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
-        { label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
-        { label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
-        { label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
-        { label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
+        { subId: 'pass_issuance_pass_issuance', label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
+        { subId: 'pass_issuance_pass_issuance_approval', label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
+        { subId: 'pass_issuance_pass_issuance_view', label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
+        { subId: 'pass_issuance_view_customer', label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
+        { subId: 'pass_issuance_customer_approval', label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
       ],
     },
     {
@@ -474,8 +474,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Tag Details',
       icon: ICONS.tag,
       children: [
-        { label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
-        { label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
+        { subId: 'tag_details_request_tag_details', label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
+        { subId: 'tag_details_blacklist_search_history', label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
       ],
     },
     {
@@ -483,11 +483,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Pass Issuance',
       icon: ICONS.pass,
       children: [
-        { label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
-        { label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
-        { label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
-        { label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
-        { label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
+        { subId: 'pass_issuance_pass_issuance', label: 'A. Pass Issuance', path: '/pass-issuance?tab=issue' },
+        { subId: 'pass_issuance_pass_issuance_approval', label: 'B. Pass Issuance Approval', path: '/pass-issuance?tab=approval' },
+        { subId: 'pass_issuance_pass_issuance_view', label: 'C. Pass Issuance View', path: '/pass-issuance?tab=view' },
+        { subId: 'pass_issuance_view_customer', label: 'D. View Customer', path: '/pass-issuance?tab=customer' },
+        { subId: 'pass_issuance_customer_approval', label: 'E. Customer Approval', path: '/pass-issuance?tab=cust-approval' },
       ],
     },
   ],
@@ -498,8 +498,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Tag Details',
       icon: ICONS.tag,
       children: [
-        { label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
-        { label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
+        { subId: 'tag_details_request_tag_details', label: 'A. Request Tag Details', path: '/tag-details?tab=request' },
+        { subId: 'tag_details_blacklist_search_history', label: 'B. Blacklist Search History', path: '/tag-details?tab=blacklist' },
       ],
     },
   ],
@@ -678,9 +678,25 @@ export const hasDashboardAccess = (userOrRole) => {
 
 export const hasMenuAccess = (user, menuId) => {
   if (!user) return false;
+  if (user.role === 'Master Admin') return true;
   const menuAccess = user.menuAccess || getRoleMenuDefaults(user.role);
   if (!menuAccess || !Array.isArray(menuAccess)) return true;
-  return menuAccess.includes(menuId);
+
+  if (Array.isArray(menuId)) {
+    return menuId.every((id) => hasMenuAccess(user, id));
+  }
+
+  if (menuAccess.includes(menuId)) return true;
+
+  if (
+    menuId === 'transactional_report_transaction_search' &&
+    (menuAccess.includes('transactional_report_transaction_search_normal') ||
+      menuAccess.includes('transactional_report_transaction_search_dispute'))
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 export const getDefaultRouteForUser = (user) => {

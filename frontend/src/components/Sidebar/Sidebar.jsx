@@ -70,7 +70,7 @@ export const Sidebar = ({
   const userPermissions = isMasterAdmin
     ? getRoleMenuDefaults('Master Admin')
     : Array.isArray(currentUser?.menuAccess)
-    ? Array.from(new Set([...currentUser.menuAccess, ...roleDefaults.filter((id) => id.includes('recon_management'))]))
+    ? currentUser.menuAccess
     : roleDefaults;
   const visibleSections = filterNavigationByPermissions(baseSections, userPermissions);
 

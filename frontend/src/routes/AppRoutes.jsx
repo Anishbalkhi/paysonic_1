@@ -107,7 +107,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank']}
-            requiredMenu="recon_management"
+            requiredMenu="recon_management_trs_report"
           >
             <TrsReport />
           </ProtectedRoute>
@@ -118,7 +118,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="transactional_report"
+            requiredMenu="transactional_report_transaction_report"
           >
             <TrsReport />
           </ProtectedRoute>
@@ -133,7 +133,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="transactional_report"
+            requiredMenu="transactional_report_rejected_transaction"
           >
             <RejectedTransaction />
           </ProtectedRoute>
@@ -152,7 +152,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="transactional_report"
+            requiredMenu="transactional_report_toll_fare_report"
           >
             <TollFareReport />
           </ProtectedRoute>
@@ -167,7 +167,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="transactional_report"
+            requiredMenu="transactional_report_transaction_search"
           >
             <TransactionSearch />
           </ProtectedRoute>
@@ -198,7 +198,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank']}
-            requiredMenu="recon_management"
+            requiredMenu="recon_management_trs_report"
           >
             <TrsReport />
           </ProtectedRoute>
@@ -210,7 +210,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank']}
-            requiredMenu="recon_management"
+            requiredMenu="recon_management_date_wise_recon"
           >
             <DateWiseRecon />
           </ProtectedRoute>
@@ -222,7 +222,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank']}
-            requiredMenu="recon_management"
+            requiredMenu="recon_management_cycle_wise_report"
           >
             <CycleWiseRecon />
           </ProtectedRoute>
@@ -242,7 +242,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="dispute_handling"
+            requiredMenu="dispute_handling_dispute_dashboard"
           >
             <DisputeDashboard />
           </ProtectedRoute>
@@ -253,7 +253,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Concessionaire']}
-            requiredMenu="dispute_handling"
+            requiredMenu="dispute_handling_file_upload"
           >
             <DisputeFileUpload />
           </ProtectedRoute>
@@ -264,7 +264,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Concessionaire']}
-            requiredMenu="dispute_handling"
+            requiredMenu="dispute_handling_file_status"
           >
             <DisputeFileStatus />
           </ProtectedRoute>
@@ -275,7 +275,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Concessionaire']}
-            requiredMenu="dispute_handling"
+            requiredMenu="dispute_handling_chargeback_assign"
           >
             <ChargebackAssign />
           </ProtectedRoute>
@@ -286,7 +286,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire']}
-            requiredMenu="dispute_handling"
+            requiredMenu="dispute_handling_validate_dispute"
           >
             <DisputeValidate />
           </ProtectedRoute>
@@ -297,7 +297,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="dispute_handling"
+            requiredMenu="dispute_handling_dispute_detail_report"
           >
             <DisputeDetailReport />
           </ProtectedRoute>
@@ -312,7 +312,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="violation_management"
+            requiredMenu="violation_management_violation_bulk_action"
           >
             <ViolationBulkAction />
           </ProtectedRoute>
@@ -327,7 +327,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="violation_management"
+            requiredMenu="violation_management_violation_raw_file"
           >
             <ViolationRawFileReport />
           </ProtectedRoute>
@@ -346,7 +346,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="violation_management"
+            requiredMenu="violation_management_violation_settlement_report"
           >
             <ViolationSettlementReport />
           </ProtectedRoute>
@@ -361,7 +361,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="violation_management"
+            requiredMenu="violation_management_violation_validate"
           >
             <ViolationValidateReport />
           </ProtectedRoute>
@@ -384,7 +384,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="summary_report"
+            requiredMenu="summary_report_nhai_traffic_report"
           >
             <NhaiTrafficReport />
           </ProtectedRoute>
@@ -403,7 +403,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="summary_report"
+            requiredMenu="summary_report_transaction_summary"
           >
             <TransactionSummaryReport />
           </ProtectedRoute>
@@ -418,7 +418,7 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute
             allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
-            requiredMenu="summary_report"
+            requiredMenu="summary_report_pass_summary"
           >
             <PassSummaryReport />
           </ProtectedRoute>

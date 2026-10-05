@@ -1,13 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { hasMenuAccess } from '../../config/roleMenus';
 import './PassIssuance.scss';
 
 export const PassIssuance = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser } = useAuth();
-  const tabParam = searchParams.get('tab') || 'issue';
-  const [activeTab, setActiveTab] = useState(tabParam);
+
+  const TABS = [
+    { key: 'issue', num: 'A', title: 'Pass Issuance', perm: 'pass_issuance_pass_issuance' },
+    { key: 'approval', num: 'B', title: 'Pass Issuance Approval', perm: 'pass_issuance_pass_issuance_approval', count: '2 Pending' },
+    { key: 'view', num: 'C', title: 'Pass Issuance View', perm: 'pass_issuance_pass_issuance_view' },
+    { key: 'customer', num: 'D', title: 'View Customer', perm: 'pass_issuance_view_customer' },
+    { key: 'cust-approval', num: 'E', title: 'Customer Approval', perm: 'pass_issuance_customer_approval' },
+  ];
+
+  const allowedTabs = TABS.filter((t) => hasMenuAccess(currentUser, t.perm));
+  const fallbackTab = allowedTabs[0]?.key || 'issue';
+  const tabParam = searchParams.get('tab') || fallbackTab;
+  const currentTabAllowed = allowedTabs.some((t) => t.key === tabParam);
+  const activeTab = currentTabAllowed ? tabParam : fallbackTab;
+
+  useEffect(() => {
+    if (!currentTabAllowed && allowedTabs.length > 0) {
+      setSearchParams({ tab: fallbackTab });
+    }
+  }, [currentTabAllowed, fallbackTab, allowedTabs.length, setSearchParams]);
 
   const [passData, setPassData] = useState({
     vehicleNo: 'MH 02 CZ 4402',
@@ -50,49 +69,22 @@ export const PassIssuance = () => {
         </div>
       </div>
 
-      <div className="module-tabs">
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'issue' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('issue'); setSearchParams({ tab: 'issue' }); }}
-        >
-          <span className="tab-num">A</span>
-          <span className="tab-title">Pass Issuance</span>
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'approval' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('approval'); setSearchParams({ tab: 'approval' }); }}
-        >
-          <span className="tab-num">B</span>
-          <span className="tab-title">Pass Issuance Approval</span>
-          <span className="tab-count">2 Pending</span>
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'view' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('view'); setSearchParams({ tab: 'view' }); }}
-        >
-          <span className="tab-num">C</span>
-          <span className="tab-title">Pass Issuance View</span>
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'customer' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('customer'); setSearchParams({ tab: 'customer' }); }}
-        >
-          <span className="tab-num">D</span>
-          <span className="tab-title">View Customer</span>
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'cust-approval' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('cust-approval'); setSearchParams({ tab: 'cust-approval' }); }}
-        >
-          <span className="tab-num">E</span>
-          <span className="tab-title">Customer Approval</span>
-        </button>
-      </div>
+      {allowedTabs.length > 0 && (
+        <div className="module-tabs">
+          {allowedTabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
+              onClick={() => { setSearchParams({ tab: t.key }); }}
+            >
+              <span className="tab-num">{t.num}</span>
+              <span className="tab-title">{t.title}</span>
+              {t.count && <span className="tab-count">{t.count}</span>}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="tab-content">
         {activeTab === 'issue' && (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { hasMenuAccess } from '../../config/roleMenus';
 import './TagDetails.scss';
 
 export const TagDetails = () => {
@@ -9,12 +10,23 @@ export const TagDetails = () => {
   const { currentUser } = useAuth();
   const userRole = currentUser?.role || 'Admin';
 
-  const tabParam = searchParams.get('tab') || 'request';
+  const canAccessRequest = hasMenuAccess(currentUser, 'tag_details_request_tag_details');
+  const canAccessBlacklist = hasMenuAccess(currentUser, 'tag_details_blacklist_search_history');
+
+  const tabParam = searchParams.get('tab') || (canAccessRequest ? 'request' : (canAccessBlacklist ? 'blacklist' : 'request'));
   const [activeTab, setActiveTab] = useState(tabParam);
 
   useEffect(() => {
-    if (tabParam) setActiveTab(tabParam);
-  }, [tabParam]);
+    if (tabParam === 'request' && !canAccessRequest && canAccessBlacklist) {
+      setActiveTab('blacklist');
+      setSearchParams({ tab: 'blacklist' });
+    } else if (tabParam === 'blacklist' && !canAccessBlacklist && canAccessRequest) {
+      setActiveTab('request');
+      setSearchParams({ tab: 'request' });
+    } else if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam, canAccessRequest, canAccessBlacklist, setSearchParams]);
 
   const handleTabChange = (tabKey) => {
     setActiveTab(tabKey);
@@ -181,25 +193,31 @@ export const TagDetails = () => {
       </div>
 
       {/* Module Sub-tabs */}
-      <div className="module-tabs">
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'request' ? 'active' : ''}`}
-          onClick={() => handleTabChange('request')}
-        >
-          <span className="tab-num">A</span>
-          <span className="tab-title">Request Tag Details</span>
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'blacklist' ? 'active' : ''}`}
-          onClick={() => handleTabChange('blacklist')}
-        >
-          <span className="tab-num">B</span>
-          <span className="tab-title">Blacklist Search History</span>
-          <span className="tab-count">{MOCK_BLACKLIST_RECORDS.length}</span>
-        </button>
-      </div>
+      {(canAccessRequest || canAccessBlacklist) && (
+        <div className="module-tabs">
+          {canAccessRequest && (
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'request' ? 'active' : ''}`}
+              onClick={() => handleTabChange('request')}
+            >
+              <span className="tab-num">A</span>
+              <span className="tab-title">Request Tag Details</span>
+            </button>
+          )}
+          {canAccessBlacklist && (
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === 'blacklist' ? 'active' : ''}`}
+              onClick={() => handleTabChange('blacklist')}
+            >
+              <span className="tab-num">B</span>
+              <span className="tab-title">Blacklist Search History</span>
+              <span className="tab-count">{MOCK_BLACKLIST_RECORDS.length}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* TAB 1: Request Tag Details */}
       {activeTab === 'request' && (

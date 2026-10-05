@@ -82,10 +82,11 @@ export const UserList = () => {
   };
 
   // Sub-action permissions under User Management
-  const hasCreateUserPerm = isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin || hasMenuPerm('user_management_create_user');
-  const hasApproveUserPerm = isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin || hasMenuPerm('user_management_approve_user');
-  const hasAssignUserPerm = hasMenuPerm('user_management_assign_user');
-  const hasLockUnlockPerm = hasMenuPerm('user_management_lock_unlock_user');
+  const hasCustomPerms = Array.isArray(currentUser?.menuAccess) && currentUser.menuAccess.length > 0;
+  const hasCreateUserPerm = isMasterAdmin || hasMenuPerm('user_management_create_user') || (!hasCustomPerms && (isAdmin || isConcessionaire || isPlazaAdmin));
+  const hasApproveUserPerm = isMasterAdmin || hasMenuPerm('user_management_approve_user') || (!hasCustomPerms && (isAdmin || isConcessionaire || isPlazaAdmin));
+  const hasAssignUserPerm = isMasterAdmin || hasMenuPerm('user_management_assign_user');
+  const hasLockUnlockPerm = isMasterAdmin || hasMenuPerm('user_management_lock_unlock_user');
 
   // Creation & approval permissions: role allowed AND actor possesses specific permission
   const canCreate = (isMasterAdmin || isAdmin || isConcessionaire || isPlazaAdmin) && hasCreateUserPerm;

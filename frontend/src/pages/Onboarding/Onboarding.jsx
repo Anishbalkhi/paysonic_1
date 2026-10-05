@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import OnboardingService from '../../services/onboarding/OnboardingService';
 import StateCitySelect from '../../components/StateCitySelect/StateCitySelect';
+import { hasMenuAccess } from '../../config/roleMenus';
 import './Onboarding.scss';
 
 // Vehicle classes VC4 through VC20 (NETC / NPCI Standard FASTag Specifications)
@@ -61,7 +62,31 @@ export const Onboarding = () => {
   const { currentUser } = useAuth();
 
   // Tab management
-  const activeTab = searchParams.get('tab') || 'view';
+  const ONBOARDING_TABS_CONFIG = [
+    { key: 'view', idx: 'A', title: 'View Plaza', perm: 'on_boarding_view_plaza' },
+    { key: 'concess', idx: 'B', title: 'Add Concessionaire', perm: 'on_boarding_add_concessionaire' },
+    { key: 'addplaza', idx: 'C', title: 'Add Plaza', perm: 'on_boarding_add_plaza' },
+    { key: 'lanes', idx: 'D', title: 'Lane Details', perm: 'on_boarding_lane_details' },
+    { key: 'callback', idx: 'E', title: 'Callback URLs', perm: 'on_boarding_callback_url', count: '14' },
+    { key: 'fare', idx: 'F', title: 'Fare Mapping', perm: 'on_boarding_fare_mapping', count: '17 Classes' },
+    { key: 'cch', idx: 'G', title: 'CCH Mapping', perm: 'on_boarding_cch_mapping', count: '17 Classes' },
+  ];
+
+  const allowedTabs = useMemo(() => {
+    return ONBOARDING_TABS_CONFIG.filter((t) => hasMenuAccess(currentUser, t.perm));
+  }, [currentUser]);
+
+  const fallbackTab = allowedTabs[0]?.key || 'view';
+  const tabParam = searchParams.get('tab') || fallbackTab;
+  const currentTabAllowed = allowedTabs.some((t) => t.key === tabParam);
+  const activeTab = currentTabAllowed ? tabParam : fallbackTab;
+
+  useEffect(() => {
+    if (!currentTabAllowed && allowedTabs.length > 0) {
+      setSearchParams({ tab: fallbackTab });
+    }
+  }, [currentTabAllowed, fallbackTab, allowedTabs.length, setSearchParams]);
+
   const setTab = (tab) => {
     setSearchParams({ tab });
   };
@@ -1249,90 +1274,50 @@ export const Onboarding = () => {
           <h1>Plaza Onboarding Module</h1>
         </div>
         <div className="header-actions">
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => {
-              handleResetPlazaForm();
-              setTab('addplaza');
-            }}
-          >
-            + Add New Plaza
-          </button>
+          {hasMenuAccess(currentUser, 'on_boarding_add_plaza') && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                handleResetPlazaForm();
+                setTab('addplaza');
+              }}
+            >
+              + Add New Plaza
+            </button>
+          )}
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="module-tabs">
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'view' ? 'active' : ''}`}
-          onClick={() => setTab('view')}
-        >
-          <span className="tab-idx">A</span>
-          <span className="tab-title">View Plaza</span>
-          <span className="tab-count">{store.plazas.length}</span>
-        </button>
+      {allowedTabs.length > 0 && (
+        <div className="module-tabs">
+          {allowedTabs.map((t) => {
+            const count =
+              t.key === 'view'
+                ? store.plazas.length
+                : t.key === 'concess'
+                ? store.concessionaires.length
+                : t.key === 'lanes'
+                ? plazaLanes.length
+                : t.count;
+            const title = t.key === 'addplaza' && isEditingPlaza ? 'Edit Plaza' : t.title;
 
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'concess' ? 'active' : ''}`}
-          onClick={() => setTab('concess')}
-        >
-          <span className="tab-idx">B</span>
-          <span className="tab-title">Add Concessionaire</span>
-          <span className="tab-count">{store.concessionaires.length}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'addplaza' ? 'active' : ''}`}
-          onClick={() => setTab('addplaza')}
-        >
-          <span className="tab-idx">C</span>
-          <span className="tab-title">{isEditingPlaza ? 'Edit Plaza' : 'Add Plaza'}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'lanes' ? 'active' : ''}`}
-          onClick={() => setTab('lanes')}
-        >
-          <span className="tab-idx">D</span>
-          <span className="tab-title">Lane Details</span>
-          <span className="tab-count">{plazaLanes.length}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'callback' ? 'active' : ''}`}
-          onClick={() => setTab('callback')}
-        >
-          <span className="tab-idx">E</span>
-          <span className="tab-title">Callback URLs</span>
-          <span className="tab-count">14</span>
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'fare' ? 'active' : ''}`}
-          onClick={() => setTab('fare')}
-        >
-          <span className="tab-idx">F</span>
-          <span className="tab-title">Fare Mapping</span>
-          <span className="tab-count">17 Classes</span>
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === 'cch' ? 'active' : ''}`}
-          onClick={() => setTab('cch')}
-        >
-          <span className="tab-idx">G</span>
-          <span className="tab-title">CCH Mapping</span>
-          <span className="tab-count">17 Classes</span>
-        </button>
-      </div>
+            return (
+              <button
+                key={t.key}
+                type="button"
+                className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
+                onClick={() => setTab(t.key)}
+              >
+                <span className="tab-idx">{t.idx}</span>
+                <span className="tab-title">{title}</span>
+                {count !== undefined && <span className="tab-count">{count}</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Live Railway Database Loading State */}
       {railwayLoading && (
