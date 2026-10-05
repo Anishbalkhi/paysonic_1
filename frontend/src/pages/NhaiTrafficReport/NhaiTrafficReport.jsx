@@ -190,12 +190,10 @@ export const NhaiTrafficReport = () => {
               onChange={(e) => setPlazaCode(e.target.value)}
             >
               <option value="ALL">All Plazas Network</option>
-              <option value="600601">600601 - Dummytollplaza1</option>
-              <option value="666666">666666 - Autumn</option>
               <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
               <option value="502202">502202 - PUNE BYPASS PLAZA</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              <option value="600601">600601 - Dummytollplaza1</option>
+              <option value="666666">666666 - Autumn</option>
             </select>
           </div>
 

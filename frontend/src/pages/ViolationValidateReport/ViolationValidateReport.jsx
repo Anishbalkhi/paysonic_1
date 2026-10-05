@@ -224,6 +224,44 @@ export const ViolationValidateReport = () => {
     };
   }, [serverSummary, records]);
 
+  // Dynamic filter options derived from active database records
+  const availablePlazas = useMemo(() => {
+    const map = new Map();
+    map.set('600601', '600601 - Dummytollplaza1');
+    records.forEach((r) => {
+      const pid = r.plazaId || r.tollPlazaId;
+      if (pid) {
+        map.set(String(pid), `${pid} - ${r.plazaName || (String(pid) === '600601' ? 'Dummytollplaza1' : String(pid) === '666666' ? 'Autumn' : 'Toll Plaza ' + pid)}`);
+      }
+    });
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [records]);
+
+  const availableRemarks = useMemo(() => {
+    const set = new Set();
+    records.forEach((r) => {
+      if (r.auditRemark) set.add(r.auditRemark.toUpperCase());
+    });
+    if (set.size === 0) {
+      set.add('ACCEPTED');
+      set.add('DECLINED');
+    }
+    return Array.from(set);
+  }, [records]);
+
+  const availableStatuses = useMemo(() => {
+    const set = new Set();
+    records.forEach((r) => {
+      if (r.violationApiStatus) set.add(r.violationApiStatus.toUpperCase());
+      else if (r.apiStatus) set.add(r.apiStatus.toUpperCase());
+    });
+    if (set.size === 0) {
+      set.add('APPROVED');
+      set.add('REJECTED');
+    }
+    return Array.from(set);
+  }, [records]);
+
   return (
     <div className="violation-validate-page">
       {/* 1. Header Banner */}
@@ -264,12 +302,9 @@ export const ViolationValidateReport = () => {
               onChange={(e) => setPlazaId(e.target.value)}
             >
               <option value="ALL">All Plazas</option>
-              <option value="666666">666666 - Autumn</option>
-              <option value="600601">600601 - Dummytollplaza1</option>
-              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
-              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              {availablePlazas.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
             </select>
           </div>
 
@@ -281,8 +316,9 @@ export const ViolationValidateReport = () => {
               onChange={(e) => setAuditRemark(e.target.value)}
             >
               <option value="ALL">All Remarks</option>
-              <option value="ACCEPTED">ACCEPTED</option>
-              <option value="DECLINED">DECLINED</option>
+              {availableRemarks.map((rem) => (
+                <option key={rem} value={rem}>{rem}</option>
+              ))}
             </select>
           </div>
 
@@ -294,8 +330,9 @@ export const ViolationValidateReport = () => {
               onChange={(e) => setApiStatus(e.target.value)}
             >
               <option value="ALL">All Statuses</option>
-              <option value="APPROVED">APPROVED</option>
-              <option value="REJECTED">REJECTED</option>
+              {availableStatuses.map((st) => (
+                <option key={st} value={st}>{st}</option>
+              ))}
             </select>
           </div>
 

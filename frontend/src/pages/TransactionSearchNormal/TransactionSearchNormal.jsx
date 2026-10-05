@@ -183,7 +183,8 @@ export const TransactionSearchNormal = () => {
   // Dynamic options derived from actual database records so selecting any option shows table data
   const availablePlazas = useMemo(() => {
     const map = new Map();
-    // Default known database plazas
+    map.set('501101', '501101 - MUMBAI PLAZA NH-04');
+    map.set('502202', '502202 - PUNE BYPASS PLAZA');
     map.set('600601', '600601 - Dummytollplaza1');
     map.set('600602', '600602 - Dummytollplaza2');
     records.forEach((r) => {

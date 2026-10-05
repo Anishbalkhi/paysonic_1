@@ -89,6 +89,25 @@ export const PassSummaryReport = () => {
 
   const hasData = reportData && Array.isArray(reportData) && reportData.length > 0;
 
+  const [knownPlazas, setKnownPlazas] = useState([]);
+
+  useEffect(() => {
+    if (reportData && Array.isArray(reportData) && reportData.length > 0) {
+      setKnownPlazas((prev) => {
+        const map = new Map(prev.map((p) => [p.id, p]));
+        reportData.forEach((p) => {
+          if (p.plazaId && !map.has(p.plazaId)) {
+            map.set(p.plazaId, {
+              id: p.plazaId,
+              label: p.plazaName ? `${p.plazaId} - ${p.plazaName}` : p.plazaId
+            });
+          }
+        });
+        return Array.from(map.values());
+      });
+    }
+  }, [reportData]);
+
   return (
     <div className="pass-summary-page">
       {/* Header */}
@@ -113,11 +132,9 @@ export const PassSummaryReport = () => {
             <label className="filter-label">Plaza</label>
             <select className="filter-select" value={plazaId} onChange={(e) => setPlazaId(e.target.value)}>
               <option value="ALL">All Plazas</option>
-              <option value="555555">555555 - Plaza1</option>
-              <option value="600601">600601 - Dummytollplaza1</option>
-              <option value="666666">666666 - Autumn</option>
-              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
-              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
+              {knownPlazas.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
             </select>
           </div>
           <div className="filter-actions">

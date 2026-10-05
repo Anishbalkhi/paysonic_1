@@ -75,8 +75,27 @@ export const TransactionSummaryReport = () => {
     return `Report Period: ${f(fromDate)} — ${f(toDate)}`;
   }, [fromDate, toDate]);
 
+  const [knownPlazas, setKnownPlazas] = useState([]);
+
+  useEffect(() => {
+    if (reportData && Array.isArray(reportData) && reportData.length > 0) {
+      setKnownPlazas((prev) => {
+        const map = new Map(prev.map((p) => [p.id, p]));
+        reportData.forEach((p) => {
+          if (p.plazaId && !map.has(p.plazaId)) {
+            map.set(p.plazaId, {
+              id: p.plazaId,
+              label: p.plazaName && p.plazaName !== 'Plaza Name' ? `${p.plazaId} - ${p.plazaName}` : p.plazaId
+            });
+          }
+        });
+        return Array.from(map.values());
+      });
+    }
+  }, [reportData]);
+
   // KPI Aggregation
-  const kpiMetrics = useMemo(() => {
+  const summaryKpis = useMemo(() => {
     if (grandTotal && grandTotal.totalCount !== undefined) {
       return {
         totalCount: grandTotal.totalCount || 0,
@@ -138,12 +157,9 @@ export const TransactionSummaryReport = () => {
               }}
             >
               <option value="ALL">All Plazas</option>
-              <option value="600601">600601 - Dummytollplaza1</option>
-              <option value="666666">666666 - Autumn</option>
-              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
-              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              {knownPlazas.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
             </select>
           </div>
           <div className="filter-actions">

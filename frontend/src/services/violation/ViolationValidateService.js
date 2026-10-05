@@ -1,4 +1,4 @@
-import axios from 'axios';
+import httpClient from '../api/httpClient';
 
 const API_BASE = '/api/violation/validate';
 
@@ -7,7 +7,7 @@ class ViolationValidateService {
    * Search violation validate records with pagination and filters
    */
   async search(params) {
-    const response = await axios.post(`${API_BASE}/search`, params);
+    const response = await httpClient.post(`${API_BASE}/search`, params);
     return response.data;
   }
 
@@ -15,7 +15,7 @@ class ViolationValidateService {
    * Export violation validate records as Excel (.xlsx)
    */
   async exportExcel(params) {
-    const response = await axios.post(`${API_BASE}/export`, params, {
+    const response = await httpClient.post(`${API_BASE}/export`, params, {
       responseType: 'blob'
     });
     const blob = new Blob([response.data], {
@@ -35,7 +35,7 @@ class ViolationValidateService {
    * Export violation validate records as CSV (.csv)
    */
   async exportCsv(params) {
-    const response = await axios.post(`${API_BASE}/export/csv`, params, {
+    const response = await httpClient.post(`${API_BASE}/export/csv`, params, {
       responseType: 'blob'
     });
     const blob = new Blob([response.data], {

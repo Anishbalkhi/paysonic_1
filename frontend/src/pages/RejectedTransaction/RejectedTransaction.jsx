@@ -248,14 +248,10 @@ export const RejectedTransaction = () => {
               onChange={(e) => setPlazaId(e.target.value)}
             >
               <option value="ALL">All Plazas</option>
-              <option value="600601">Dummytollplaza1 (600601)</option>
-              <option value="600602">Dummytollplaza2 (600602)</option>
-              <option value="778999">Gluten (778999)</option>
-              <option value="666666">Autumn (666666)</option>
               <option value="501101">MUMBAI PLAZA NH-04 (501101)</option>
               <option value="502202">PUNE BYPASS PLAZA (502202)</option>
-              <option value="Plaza 1">Plaza 1</option>
-              <option value="Plaza 2">Plaza 2</option>
+              <option value="600601">Dummytollplaza1 (600601)</option>
+              <option value="600602">Dummytollplaza2 (600602)</option>
             </select>
           </div>
 
@@ -269,9 +265,9 @@ export const RejectedTransaction = () => {
             >
               <option value="ALL">All Reasons</option>
               <option value="DUPLICATE">DUPLICATE</option>
+              <option value="BLKLISTTAG">BLKLISTTAG</option>
+              <option value="MALTAG">MALTAG</option>
               <option value="FAILING">FAILING</option>
-              <option value="TAG_INV">TAG_INV</option>
-              <option value="TAG_EXP">TAG_EXP</option>
             </select>
           </div>
 
