@@ -123,6 +123,8 @@ export const TransactionSummaryReport = () => {
     return { totalCount, totalAmount, acceptedCount, declinedCount, npciCount };
   }, [reportData, grandTotal]);
 
+  const kpiMetrics = summaryKpis;
+
   const hasData = reportData && Array.isArray(reportData) && reportData.length > 0;
 
   return (
@@ -248,7 +250,7 @@ export const TransactionSummaryReport = () => {
                         const isStatusFirst = !sgFirstRendered && (sgFirstRendered = true);
 
                         return (
-                          <tr key={`${plaza.plazaId}-${statusGroup.transactionStatus}-${row.responseCode}`}>
+                          <tr key={`${plaza.plazaId}-${statusGroup.transactionStatus}-${row.responseCode}-${rIdx}`}>
                             {isPlazaFirst && (
                               <td rowSpan={plazaTotalRows} className="merged-cell text-center font-semibold">
                                 {plaza.plazaId}
@@ -279,10 +281,10 @@ export const TransactionSummaryReport = () => {
                   <tr className="row-grand-total">
                     <td colSpan="4" className="grand-total-label-cell">Grand Total</td>
                     <td className="grand-total-val-cell text-right">
-                      {kpiMetrics.totalCount.toLocaleString()}
+                      {summaryKpis.totalCount.toLocaleString()}
                     </td>
                     <td className="grand-total-val-cell text-right">
-                      {kpiMetrics.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {summaryKpis.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </>
@@ -296,23 +298,23 @@ export const TransactionSummaryReport = () => {
       <div className="report-kpi-summary-bar">
         <div className="kpi-card kpi-blue">
           <span className="kpi-label">Total Transactions</span>
-          <span className="kpi-val">{kpiMetrics.totalCount.toLocaleString()}</span>
+          <span className="kpi-val">{summaryKpis.totalCount.toLocaleString()}</span>
         </div>
         <div className="kpi-card kpi-green">
           <span className="kpi-label">Accepted</span>
-          <span className="kpi-val">{kpiMetrics.acceptedCount.toLocaleString()}</span>
+          <span className="kpi-val">{summaryKpis.acceptedCount.toLocaleString()}</span>
         </div>
         <div className="kpi-card kpi-red">
           <span className="kpi-label">Declined</span>
-          <span className="kpi-val">{kpiMetrics.declinedCount.toLocaleString()}</span>
+          <span className="kpi-val">{summaryKpis.declinedCount.toLocaleString()}</span>
         </div>
         <div className="kpi-card kpi-amber">
           <span className="kpi-label">NPCI Decline</span>
-          <span className="kpi-val">{kpiMetrics.npciCount.toLocaleString()}</span>
+          <span className="kpi-val">{summaryKpis.npciCount.toLocaleString()}</span>
         </div>
         <div className="kpi-card kpi-purple">
           <span className="kpi-label">Total Revenue (₹)</span>
-          <span className="kpi-val">₹{kpiMetrics.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="kpi-val">₹{summaryKpis.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       </div>
 
