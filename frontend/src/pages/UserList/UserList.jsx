@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import UserService from '../../services/user/UserService';
+import UserService, { sortUsersNewestFirst } from '../../services/user/UserService';
 import OnboardingService from '../../services/onboarding/OnboardingService';
 import { useAuth } from '../../context/AuthContext';
 import { getDefaultRouteForUser } from '../../config/roleMenus';
@@ -456,7 +456,7 @@ export const UserList = () => {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    UserService.getUsers().then(setUsers);
+    UserService.getUsers().then((res) => setUsers(sortUsersNewestFirst(res)));
   }, []);
 
   const getInitials = (name) => {
@@ -879,7 +879,15 @@ export const UserList = () => {
           menuAccess: finalMenuAccess,
           createdBy: currentUser?.id || 'PSN0001',
         });
-        setUsers((prev) => [{ ...created, status: initialStatus, approval: initialApproval, menuAccess: finalMenuAccess }, ...prev]);
+        const newlyCreated = {
+          ...created,
+          status: initialStatus,
+          approval: initialApproval,
+          menuAccess: finalMenuAccess,
+          createdAt: created?.createdAt || new Date().toISOString(),
+        };
+        setUsers((prev) => sortUsersNewestFirst([newlyCreated, ...prev]));
+        setCurrentPage(1);
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -1135,31 +1143,35 @@ export const UserList = () => {
     return [];
   }, [users, isMasterAdmin, isAdmin, isConcessionaire, isPlazaAdmin, concessionairePlazas, currentUser]);
 
-  // Filtered Users
-  const filteredUsers = hierarchyScopedUsers.filter((u) => {
-    const matchesSearch =
-      !searchQuery ||
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.id.toLowerCase().includes(searchQuery.toLowerCase());
+  // Filtered Users (Strictly sorted newest first)
+  const filteredUsers = useMemo(() => {
+    const list = hierarchyScopedUsers.filter((u) => {
+      const matchesSearch =
+        !searchQuery ||
+        u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesRole =
-      roleFilter === 'All roles' || u.role.toLowerCase() === roleFilter.toLowerCase();
+      const matchesRole =
+        roleFilter === 'All roles' || u.role.toLowerCase() === roleFilter.toLowerCase();
 
-    const matchesStatus =
-      statusFilter === 'All statuses' ||
-      (statusFilter === 'Pending' && (u.approval === 'Pending' || u.status === 'Pending')) ||
-      (statusFilter === 'Locked' && u.locked) ||
-      (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved') ||
-      (statusFilter === 'Inactive' && u.status === 'Inactive') ||
-      u.status.toLowerCase() === statusFilter.toLowerCase();
+      const matchesStatus =
+        statusFilter === 'All statuses' ||
+        (statusFilter === 'Pending' && (u.approval === 'Pending' || u.status === 'Pending')) ||
+        (statusFilter === 'Locked' && u.locked) ||
+        (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved') ||
+        (statusFilter === 'Inactive' && u.status === 'Inactive') ||
+        u.status.toLowerCase() === statusFilter.toLowerCase();
 
-    const matchesPlaza =
-      plazaFilter === 'All plazas' ||
-      u.plaza.toLowerCase().includes(plazaFilter.toLowerCase());
+      const matchesPlaza =
+        plazaFilter === 'All plazas' ||
+        u.plaza.toLowerCase().includes(plazaFilter.toLowerCase());
 
-    return matchesSearch && matchesRole && matchesStatus && matchesPlaza;
-  });
+      return matchesSearch && matchesRole && matchesStatus && matchesPlaza;
+    });
+
+    return sortUsersNewestFirst(list);
+  }, [hierarchyScopedUsers, searchQuery, roleFilter, statusFilter, plazaFilter]);
 
   // Server-side paginated slice (Maximum 10 records per page)
   const totalFilteredCount = filteredUsers.length;
@@ -1284,46 +1296,6 @@ export const UserList = () => {
         </div>
       </div>
 
-      {/* Role Operational Scope Banner */}
-      <div style={{
-        margin: '0 0 20px 0',
-        padding: '12px 18px',
-        borderRadius: '10px',
-        background: isPlazaAdmin ? '#f8fafc' : isConcessionaire ? '#f5f3ff' : '#f0fdf4',
-        border: `1px solid ${isPlazaAdmin ? '#cbd5e1' : isConcessionaire ? '#ddd6fe' : '#bbf7d0'}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '18px' }}>{isPlazaAdmin ? '🛡️' : isConcessionaire ? '🏢' : '👑'}</span>
-          <span style={{
-            fontSize: '11px',
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            padding: '3px 8px',
-            borderRadius: '6px',
-            background: isPlazaAdmin ? '#0284c7' : isConcessionaire ? '#7c3aed' : '#16a34a',
-            color: '#ffffff',
-          }}>
-            {currentUser?.role || 'Admin'} Scope
-          </span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
-            {isPlazaAdmin
-              ? `Managing POS & Tag personnel for ${currentUser?.assignedPlaza || 'assigned plaza'}.`
-              : isConcessionaire
-              ? `Managing personnel across assigned plazas: ${concessionairePlazas.length > 0 ? concessionairePlazas.join(', ') : (currentUser?.assignedPlaza || 'None')}`
-              : 'Central Governance Scope — Unrestricted access across all plazas, concessions & roles.'}
-          </span>
-        </div>
-        {currentUser?.assignedPlaza && (
-          <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
-            📍 Jurisdiction: {currentUser.assignedPlaza}
-          </span>
-        )}
-      </div>
 
       {/* Stats Cards */}
       <div className="stats">

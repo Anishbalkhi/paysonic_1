@@ -51,12 +51,28 @@ public class UserService {
     public List<UserResponseDTO> getAllUsers() {
         return userRepository.findAll()
                 .stream()
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() != null && b.getCreatedAt() != null) {
+                        return b.getCreatedAt().compareTo(a.getCreatedAt());
+                    }
+                    if (a.getCreatedAt() != null) return -1;
+                    if (b.getCreatedAt() != null) return 1;
+                    return b.getId().compareTo(a.getId());
+                })
                 .map(user -> UserResponseDTO.fromEntity(user, objectMapper))
                 .collect(Collectors.toList());
     }
 
     public Map<String, Object> getPagedUsers(int page, int size, String search, String role, String status, String plaza) {
         List<User> all = userRepository.findAll();
+        all.sort((a, b) -> {
+            if (a.getCreatedAt() != null && b.getCreatedAt() != null) {
+                return b.getCreatedAt().compareTo(a.getCreatedAt());
+            }
+            if (a.getCreatedAt() != null) return -1;
+            if (b.getCreatedAt() != null) return 1;
+            return b.getId().compareTo(a.getId());
+        });
 
         Stream<User> stream = all.stream();
 

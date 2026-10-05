@@ -77,11 +77,29 @@ const getActiveActorId = () => {
   return localStorage.getItem('actorId') || 'PSN1000';
 };
 
+export function sortUsersNewestFirst(users) {
+  if (!Array.isArray(users)) return [];
+  return [...users].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (timeA !== timeB) {
+      return timeB - timeA; // newest timestamp first
+    }
+    // Fallback: extract numeric value from ID (e.g. PSN9037 > PSN0001)
+    const numA = parseInt(String(a.id || '').replace(/\D/g, ''), 10) || 0;
+    const numB = parseInt(String(b.id || '').replace(/\D/g, ''), 10) || 0;
+    if (numA !== numB) {
+      return numB - numA;
+    }
+    return String(b.id || '').localeCompare(String(a.id || ''));
+  });
+}
+
 class UserService {
   _mapUsers(rawList) {
     if (!Array.isArray(rawList)) return [];
 
-    return rawList.map((u) => {
+    const mapped = rawList.map((u) => {
       const username = u.username || (u.email ? u.email.split('@')[0] : u.id);
       const email = u.email || '';
       const parsedUserType = parseUserTypeWithPermissions(u.userType);
@@ -119,8 +137,11 @@ class UserService {
         menuAccess: customAccess,
         createdBy: u.createdBy || '',
         approvedBy: u.approvedBy || '',
+        createdAt: u.createdAt || null,
       };
     });
+
+    return sortUsersNewestFirst(mapped);
   }
 
   async getUsers() {

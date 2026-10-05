@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getRoleNavigation, filterNavigationByPermissions } from '../../config/roleMenus';
 import { getRoleMenuDefaults } from '../../pages/UserList/menuConfig';
@@ -13,14 +13,8 @@ export const Sidebar = ({
   onToggleCollapse = () => {},
 }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const [activeOp, setActiveOp] = useState(null);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
 
   // Initialize open menus with active section open
   const [openMenus, setOpenMenus] = useState(() => {
@@ -220,21 +214,6 @@ export const Sidebar = ({
             );
           })}
         </nav>
-
-        <div className="sidebar-foot">
-          <div className="avatar-row">
-            <div className="avatar">{currentUser?.avatar || 'A'}</div>
-            <div className="who">
-              <span className="who-name">{currentUser?.name || 'Admin'}</span>
-              <span className="who-role">{currentUser?.role || 'Operator'}</span>
-              {currentUser?.assignedPlaza && (
-                <span className="who-scope" style={{ fontSize: '10px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={currentUser.assignedPlaza}>
-                  {currentUser.assignedPlaza}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
       </aside>
       <OperationsModal operation={activeOp} onClose={() => setActiveOp(null)} />
     </>
