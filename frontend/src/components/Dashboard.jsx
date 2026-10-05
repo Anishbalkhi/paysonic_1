@@ -475,9 +475,37 @@ function Topbar() {
   const [query, setQuery] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const menuRef = useRef(null);
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const { toggleTheme, isDark } = useTheme();
+
+  // Close dropdown when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!showMenu) return;
+
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showMenu]);
 
   const handleLogout = () => {
     logout();
@@ -562,7 +590,7 @@ function Topbar() {
       </button>
 
       {/* User profile with logout menu */}
-      <div style={{ position: 'relative' }}>
+      <div ref={menuRef} style={{ position: 'relative' }}>
         <button
           type="button"
           onClick={() => setShowMenu(v => !v)}

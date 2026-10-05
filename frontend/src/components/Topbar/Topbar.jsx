@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -15,6 +15,34 @@ export const Topbar = ({
   const { theme, toggleTheme, isDark } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close dropdown when clicking outside or pressing Escape
+  useEffect(() => {
+    if (!showMenu) return;
+
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showMenu]);
 
   const handleLogout = () => {
     logout();
@@ -99,7 +127,7 @@ export const Topbar = ({
         </button>
 
         {/* User avatar + logout dropdown */}
-        <div className="topbar-user" onClick={() => setShowMenu(v => !v)}>
+        <div ref={menuRef} className="topbar-user" onClick={() => setShowMenu(v => !v)}>
           <div className="topbar-avatar">{initials}</div>
           {showMenu && (
             <div className="topbar-user-menu">
