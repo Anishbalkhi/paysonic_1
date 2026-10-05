@@ -296,6 +296,29 @@
   margin-top: 2px;
 }
 
+.tum-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text, #334155);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  text-align: left;
+
+  &:hover {
+    background: var(--surface-raised, #f1f5f9);
+    color: var(--blue, #2563eb);
+  }
+}
+
 .tum-logout {
   width: 100%;
   display: flex;

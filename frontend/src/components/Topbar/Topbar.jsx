@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import ChangePasswordModal from '../ChangePasswordModal/ChangePasswordModal';
 import './Topbar.scss';
 
 export const Topbar = ({
@@ -13,6 +14,7 @@ export const Topbar = ({
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -105,6 +107,21 @@ export const Topbar = ({
                 <span className="tum-name">{currentUser?.name || 'Admin'}</span>
                 <span className="tum-role">{currentUser?.role || 'Super Admin'}</span>
               </div>
+              <button
+                type="button"
+                className="tum-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(false);
+                  setIsChangePasswordOpen(true);
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Change Password
+              </button>
               <button className="tum-logout" onClick={handleLogout}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -117,6 +134,10 @@ export const Topbar = ({
           )}
         </div>
       </div>
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </header>
   );
 };

@@ -11,6 +11,7 @@ import Sparkline from "./Sparkline";
 import Sidebar from "./Sidebar/Sidebar";
 import WorkstationTerminal from "./WorkstationTerminal/WorkstationTerminal";
 import OperationsModal from "./OperationsModal/OperationsModal";
+import ChangePasswordModal from "./ChangePasswordModal/ChangePasswordModal";
 import { getRoleSlug } from "../config/roleMenus";
 
 function inr(n) {
@@ -473,6 +474,7 @@ function PanelNotConnected({ label, style }) {
 function Topbar() {
   const [query, setQuery] = useState("");
   const [showMenu, setShowMenu] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const { toggleTheme, isDark } = useTheme();
@@ -628,10 +630,49 @@ function Topbar() {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              type="button"
+              onClick={() => {
+                setShowMenu(false);
+                setIsChangePasswordOpen(true);
+              }}
               style={{
                 width: '100%',
                 marginTop: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 10px',
+                background: 'var(--surface-raised, #f8fafc)',
+                color: 'var(--text, #1e293b)',
+                border: '1px solid var(--border, #e2e8f0)',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--blue-soft, #eff6ff)';
+                e.currentTarget.style.color = 'var(--blue, #2563eb)';
+                e.currentTarget.style.borderColor = 'var(--blue-soft, #bfdbfe)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--surface-raised, #f8fafc)';
+                e.currentTarget.style.color = 'var(--text, #1e293b)';
+                e.currentTarget.style.borderColor = 'var(--border, #e2e8f0)';
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Change Password
+            </button>
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                marginTop: '6px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -655,6 +696,10 @@ function Topbar() {
           </div>
         )}
       </div>
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </div>
   );
 }
