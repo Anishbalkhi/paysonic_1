@@ -445,6 +445,68 @@ export const UserList = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [openGroupIds, setOpenGroupIds] = useState({});
 
+  // Industry Standard Password Validation Criteria & Strength Analysis
+  const passwordCriteria = useMemo(() => {
+    const pwd = formValues.password || '';
+    const hasMinLen = pwd.length >= 8;
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasLower = /[a-z]/.test(pwd);
+    const hasDigit = /[0-9]/.test(pwd);
+    const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/.test(pwd);
+
+    const passedCount = [hasMinLen, hasUpper, hasLower, hasDigit, hasSpecial].filter(Boolean).length;
+    let strengthLevel = 'weak';
+    let strengthText = 'Weak';
+    if (passedCount >= 5) {
+      strengthLevel = 'strong';
+      strengthText = 'Strong (Industry Standard ✓)';
+    } else if (passedCount >= 3) {
+      strengthLevel = 'medium';
+      strengthText = 'Medium';
+    }
+
+    const isValid = hasMinLen && hasUpper && hasLower && hasDigit && hasSpecial;
+
+    return {
+      hasMinLen,
+      hasUpper,
+      hasLower,
+      hasDigit,
+      hasSpecial,
+      passedCount,
+      strengthLevel,
+      strengthText,
+      isValid,
+    };
+  }, [formValues.password]);
+
+  const handleGenerateStrongPassword = () => {
+    const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lowers = 'abcdefghijkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const symbols = '!@#$%^&*';
+    const all = uppers + lowers + digits + symbols;
+
+    let generated = '';
+    generated += uppers[Math.floor(Math.random() * uppers.length)];
+    generated += lowers[Math.floor(Math.random() * lowers.length)];
+    generated += digits[Math.floor(Math.random() * digits.length)];
+    generated += symbols[Math.floor(Math.random() * symbols.length)];
+    for (let i = 0; i < 8; i++) {
+      generated += all[Math.floor(Math.random() * all.length)];
+    }
+    generated = generated.split('').sort(() => 0.5 - Math.random()).join('');
+
+    setFormValues((prev) => ({
+      ...prev,
+      password: generated,
+      confirmPassword: generated,
+    }));
+    setShowPassword(true);
+    setShowConfirmPassword(true);
+    setFormErrors((prev) => ({ ...prev, password: '', confirmPassword: '' }));
+  };
+
   // Bulk Upload State
   const [bulkErrors, setBulkErrors] = useState([]);
   const [bulkSuccessMsg, setBulkSuccessMsg] = useState('');
@@ -541,6 +603,8 @@ export const UserList = () => {
     const initialSubset = isMasterAdmin ? initialDefaults : initialDefaults.filter((id) => delegatableIdSet.has(id));
     setSelectedMenuIds(initialSubset);
     setOpenGroupIds({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setIsModalOpen(true);
   };
 
@@ -571,10 +635,12 @@ export const UserList = () => {
         : '',
       status: u.status || 'Active',
       plaza: u.role !== 'Concessionaire' ? u.plaza : '',
-      password: u.password || 'Paysonic@2026',
-      confirmPassword: u.password || 'Paysonic@2026',
+      password: '',
+      confirmPassword: '',
     });
     setFormErrors({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
 
     if (u.role === 'Concessionaire' && u.plaza) {
       setSelectedPlazas(u.plaza.split(', ').map((p) => p.trim()));
@@ -669,6 +735,35 @@ export const UserList = () => {
     ) {
       if (!value) {
         error = 'Plaza is required';
+      }
+    }
+
+    if (name === 'password') {
+      if (editingId && (!value || !value.trim())) {
+        return '';
+      }
+      if (!value || !value.trim()) {
+        error = 'Password is required';
+      } else if (value.length < 8) {
+        error = 'Password must be at least 8 characters long';
+      } else if (!/[A-Z]/.test(value)) {
+        error = 'Password must contain at least one uppercase letter (A-Z)';
+      } else if (!/[a-z]/.test(value)) {
+        error = 'Password must contain at least one lowercase letter (a-z)';
+      } else if (!/[0-9]/.test(value)) {
+        error = 'Password must contain at least one number (0-9)';
+      } else if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/.test(value)) {
+        error = 'Password must contain at least one special character (!@#$%^&*...)';
+      }
+    }
+
+    if (name === 'confirmPassword') {
+      if (!editingId || (formValues.password && formValues.password.trim())) {
+        if (!value || !value.trim()) {
+          error = 'Please confirm the password';
+        } else if (value !== formValues.password) {
+          error = 'Passwords do not match';
+        }
       }
     }
 
@@ -781,6 +876,8 @@ export const UserList = () => {
       plaza: formValues.role === 'Concessionaire'
         ? (selectedPlazas.length === 0 ? 'Please select at least one plaza' : '')
         : validateField('plaza', formValues.plaza),
+      password: validateField('password', formValues.password),
+      confirmPassword: validateField('confirmPassword', formValues.confirmPassword),
     };
 
     const hasError = Object.values(errors).some(Boolean);
@@ -840,7 +937,7 @@ export const UserList = () => {
         const isCurrentlyPending = existingUser && existingUser.approval !== 'Approved';
         const finalStatus = isCurrentlyPending ? 'Pending' : (formValues.status || 'Active');
 
-        const updated = await UserService.updateUser(editingId, {
+        const updatePayload = {
           name: formValues.name || 'Updated User',
           username: formValues.username || 'user',
           email: formValues.email,
@@ -852,9 +949,13 @@ export const UserList = () => {
           plaza: finalPlazaLabel,
           plazas: finalPlazas,
           status: finalStatus,
-          password: formValues.password || 'Paysonic@2026',
           menuAccess: finalMenuAccess,
-        });
+        };
+        if (formValues.password && formValues.password.trim()) {
+          updatePayload.password = formValues.password.trim();
+        }
+
+        const updated = await UserService.updateUser(editingId, updatePayload);
         setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, status: finalStatus, menuAccess: finalMenuAccess } : u)));
       } else {
         const initialStatus = isMasterAdmin && formValues.status === 'Active' ? 'Active' : 'Pending';
@@ -873,7 +974,7 @@ export const UserList = () => {
           plazas: finalPlazas,
           status: initialStatus,
           approval: initialApproval,
-          password: formValues.password || 'Paysonic@2026',
+          password: formValues.password.trim(),
           locked: false,
           avatarBg: '#3762F2',
           menuAccess: finalMenuAccess,
@@ -1689,6 +1790,165 @@ export const UserList = () => {
                   <div className="hint" style={{ marginTop: '10px' }}>
                     Up to 100 alphanumeric characters. This is the name the user sees on the login screen.
                   </div>
+                </div>
+
+                {/* Security & Credentials */}
+                <div className="section-divider">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div className="section-label">
+                      Security &amp; credentials
+                      {editingId && (
+                        <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)', marginLeft: '8px' }}>
+                          (Leave blank to keep existing password)
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGenerateStrongPassword}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--blue, #2563eb)',
+                        fontSize: '12.5px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                      }}
+                      title="Generate an industry-standard compliant strong password"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 2l-2 2m-6 6l-3-3L3 14l3 3 7-7zm0 0l3 3m-3-3l4-4 3 3-4 4" />
+                      </svg>
+                      Generate strong password
+                    </button>
+                  </div>
+
+                  <div className="form-grid" style={{ marginTop: '14px' }}>
+                    <div className="field">
+                      <label>
+                        Password {editingId ? '' : <span className="req">*</span>}
+                      </label>
+                      <div className="pw-field-wrap">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder={editingId ? 'Leave blank to retain current' : 'Min 8 chars, uppercase, number, symbol'}
+                          value={formValues.password}
+                          onChange={(e) => {
+                            setFormValues({ ...formValues, password: e.target.value });
+                            setFormErrors((prev) => ({ ...prev, password: '' }));
+                          }}
+                          onBlur={() => handleBlur('password')}
+                        />
+                        <button
+                          type="button"
+                          className="pw-toggle-btn"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          tabIndex={-1}
+                        >
+                          {showPassword ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                              <line x1="1" y1="1" x2="23" y2="23" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                      {formErrors.password && (
+                        <span className="field-error">{formErrors.password}</span>
+                      )}
+                    </div>
+
+                    <div className="field">
+                      <label>
+                        Confirm password {editingId && !formValues.password ? '' : <span className="req">*</span>}
+                      </label>
+                      <div className="pw-field-wrap">
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder={editingId && !formValues.password ? 'Optional' : 'Re-enter password'}
+                          value={formValues.confirmPassword}
+                          onChange={(e) => {
+                            setFormValues({ ...formValues, confirmPassword: e.target.value });
+                            setFormErrors((prev) => ({ ...prev, confirmPassword: '' }));
+                          }}
+                          onBlur={() => handleBlur('confirmPassword')}
+                        />
+                        <button
+                          type="button"
+                          className="pw-toggle-btn"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                          aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                          tabIndex={-1}
+                        >
+                          {showConfirmPassword ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                              <line x1="1" y1="1" x2="23" y2="23" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                      {formErrors.confirmPassword && (
+                        <span className="field-error">{formErrors.confirmPassword}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Real-time Industry Standard Password Checklist & Strength Meter */}
+                  {formValues.password && (
+                    <div className="pw-validation-card">
+                      <div className="pw-strength-header">
+                        <span className="pw-meter-title">Password Security:</span>
+                        <div className="pw-meter-track">
+                          <div
+                            className={`pw-meter-fill ${passwordCriteria.strengthLevel}`}
+                            style={{ width: `${(passwordCriteria.passedCount / 5) * 100}%` }}
+                          />
+                        </div>
+                        <span className={`pw-meter-badge ${passwordCriteria.strengthLevel}`}>
+                          {passwordCriteria.strengthText}
+                        </span>
+                      </div>
+                      <div className="pw-criteria-list">
+                        <div className={`pw-check-pill ${passwordCriteria.hasMinLen ? 'checked' : ''}`}>
+                          <span className="pill-dot">{passwordCriteria.hasMinLen ? '✓' : '•'}</span>
+                          At least 8 characters
+                        </div>
+                        <div className={`pw-check-pill ${passwordCriteria.hasUpper ? 'checked' : ''}`}>
+                          <span className="pill-dot">{passwordCriteria.hasUpper ? '✓' : '•'}</span>
+                          1 uppercase letter (A-Z)
+                        </div>
+                        <div className={`pw-check-pill ${passwordCriteria.hasLower ? 'checked' : ''}`}>
+                          <span className="pill-dot">{passwordCriteria.hasLower ? '✓' : '•'}</span>
+                          1 lowercase letter (a-z)
+                        </div>
+                        <div className={`pw-check-pill ${passwordCriteria.hasDigit ? 'checked' : ''}`}>
+                          <span className="pill-dot">{passwordCriteria.hasDigit ? '✓' : '•'}</span>
+                          1 number (0-9)
+                        </div>
+                        <div className={`pw-check-pill ${passwordCriteria.hasSpecial ? 'checked' : ''}`}>
+                          <span className="pill-dot">{passwordCriteria.hasSpecial ? '✓' : '•'}</span>
+                          1 special character (!@#$%...)
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Role & Access */}
