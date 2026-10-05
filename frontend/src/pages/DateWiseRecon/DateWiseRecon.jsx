@@ -115,42 +115,367 @@ export const DateWiseRecon = () => {
     setExpandedRows(nextState);
   };
 
-  // Export Excel directly from server
+  // Helper: XML string escape for Excel SpreadsheetML
+  const escapeXml = (unsafe) => {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  // Helper: CSV cell escape
+  const escapeCsv = (val) => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  // Generate Excel XML Spreadsheet matching Image 1 (Two-tier parent-child hierarchy & total row)
+  const buildExcelXml = (items, fromStr, toStr, totalCount, totalAmount) => {
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Paysonic Operations</Author>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#000000"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="sTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="16" ss:Bold="1" ss:Color="#00186B"/>
+  </Style>
+  <Style ss:ID="sSubtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#6B7280"/>
+  </Style>
+  <Style ss:ID="sGreenBar">
+   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sMainHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#00186B"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#00186B"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#00186B"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#00186B"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#002060" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sParentGroup">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#00186B"/>
+   <Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sParentGroupCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#00186B"/>
+   <Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sParentGroupAmt">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#BFDBFE"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#00186B"/>
+   <Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+  <Style ss:ID="sSubHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0B4EA2"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#0B4EA2" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sDataText">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#111827"/>
+  </Style>
+  <Style ss:ID="sDataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#111827"/>
+  </Style>
+  <Style ss:ID="sDataSettlementDate">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#C2410C"/>
+  </Style>
+  <Style ss:ID="sDataAmt">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#111827"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+  <Style ss:ID="sTotalRow">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#9CA3AF"/>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#4B5563"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#000000"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sTotalCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#9CA3AF"/>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#4B5563"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#000000"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sTotalAmt">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#9CA3AF"/>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#4B5563"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#000000"/>
+   <Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Date Wise Recon">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="90"/>
+   <Column ss:Width="200"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="120"/>
+
+   <!-- Row 1: Title -->
+   <Row ss:Height="30">
+    <Cell ss:MergeAcross="5" ss:StyleID="sTitle"><Data ss:Type="String">DATE WISE RECONCILIATION REPORT</Data></Cell>
+   </Row>
+
+   <!-- Row 2: Subtitle -->
+   <Row ss:Height="20">
+    <Cell ss:MergeAcross="5" ss:StyleID="sSubtitle"><Data ss:Type="String">From Date: ${escapeXml(fromStr)}   |   To Date: ${escapeXml(toStr)}</Data></Cell>
+   </Row>
+
+   <!-- Row 3: Green Accent Stripe -->
+   <Row ss:Height="4">
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+    <Cell ss:StyleID="sGreenBar"/>
+   </Row>
+
+   <!-- Row 4: Main Table Header Row -->
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Plaza ID</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Plaza Name</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Txn Date</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Settlement Date</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Txn Count</Data></Cell>
+    <Cell ss:StyleID="sMainHeader"><Data ss:Type="String">Settled Amount</Data></Cell>
+   </Row>
+`;
+
+    items.forEach((summary) => {
+      // 1. Parent Summary Group Row (Image 1 Level 1)
+      xml += `
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
+    <Cell ss:StyleID="sParentGroup"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="String">—</Data></Cell>
+    <Cell ss:StyleID="sParentGroupCenter"><Data ss:Type="Number">${summary.txnCount || 0}</Data></Cell>
+    <Cell ss:StyleID="sParentGroupAmt"><Data ss:Type="Number">${Number(summary.settledAmount || 0).toFixed(2)}</Data></Cell>
+   </Row>
+
+   <!-- Child Breakdown Sub-Header Row (Image 1 Subtable) -->
+   <Row ss:Height="20">
+    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">PLAZA ID</Data></Cell>
+    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">PLAZA NAME</Data></Cell>
+    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">TXN DATE</Data></Cell>
+    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">SETTLEMENT DATE</Data></Cell>
+    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">TXN COUNT</Data></Cell>
+    <Cell ss:StyleID="sSubHeader"><Data ss:Type="String">SETTLED AMOUNT</Data></Cell>
+   </Row>
+`;
+
+      // 2. Child Breakdown Rows
+      if (summary.breakdowns && summary.breakdowns.length > 0) {
+        summary.breakdowns.forEach((b) => {
+          xml += `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
+    <Cell ss:StyleID="sDataSettlementDate"><Data ss:Type="String">${escapeXml(formatDate(b.settlementDate))}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${b.txnCount || 0}</Data></Cell>
+    <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${Number(b.settledAmount || 0).toFixed(2)}</Data></Cell>
+   </Row>
+`;
+        });
+      } else {
+        xml += `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(summary.plazaId)}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(summary.plazaName)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(formatDate(summary.txnDate))}</Data></Cell>
+    <Cell ss:StyleID="sDataSettlementDate"><Data ss:Type="String">-</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${summary.txnCount || 0}</Data></Cell>
+    <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${Number(summary.settledAmount || 0).toFixed(2)}</Data></Cell>
+   </Row>
+`;
+      }
+    });
+
+    // 3. Grand Total Summary Row
+    xml += `
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sTotalRow"><Data ss:Type="String">Total</Data></Cell>
+    <Cell ss:StyleID="sTotalRow"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="sTotalRow"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="sTotalRow"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="sTotalCenter"><Data ss:Type="Number">${totalCount}</Data></Cell>
+    <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${Number(totalAmount).toFixed(2)}</Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    return xml;
+  };
+
+  // Export Excel directly matching exact hierarchical structure displayed on screen (Image 1)
   const handleExportExcel = async () => {
     if (!validateDates(fromDate, toDate)) return;
+    if (!records || records.length === 0) {
+      setErrorMsg('No reconciliation records to export.');
+      return;
+    }
 
     setExporting(true);
     try {
-      await DateWiseReconService.exportExcel({
-        fromDate,
-        toDate,
-        plazaId
-      });
+      // Record audit activity
+      try {
+        const session = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+        UserActivityService.recordAuditEvent({
+          module: 'Recon Management',
+          action: 'EXPORT_DATE_WISE_RECON',
+          actionLabel: 'Exported Date Wise Recon Report (Excel)',
+          status: 'SUCCESS',
+          target: 'Date Wise Recon',
+          details: `Exported Date Wise Recon report range: ${fromDate} to ${toDate}`,
+          actor: session.name ? { id: session.id, name: session.name, role: session.role } : undefined
+        });
+      } catch (e) {
+        console.warn('[DateWiseRecon] Audit logging failed:', e);
+      }
+
+      const fromStr = fromDate ? fromDate.replace('T', ' ') : '01-08-2026 00:00:00';
+      const toStr = toDate ? toDate.replace('T', ' ') : '31-10-2026 23:59:59';
+
+      const xml = buildExcelXml(records, fromStr, toStr, grandTotalCount, grandTotalAmount);
+      const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+      link.setAttribute('download', `Date_Wise_Recon_${timestamp}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('[DateWiseRecon] Export failed:', err);
-      setErrorMsg('Export Error: ' + (err?.response?.data?.error || err?.message || 'Failed to export Excel'));
+      setErrorMsg('Export Error: ' + (err?.message || 'Failed to export Excel'));
     } finally {
       setExporting(false);
     }
   };
 
-  // Export CSV matching exact hierarchical structure displayed on screen (Image 2)
+  // Export CSV matching exact hierarchical structure displayed on screen (Image 1)
   const handleExportCsv = () => {
     if (!records || records.length === 0) return;
 
     const headers = ['Plaza ID', 'Plaza Name', 'Txn Date', 'Settlement Date', 'Txn Count', 'Settled Amount'];
-    const escapeCsv = (val) => {
-      if (val === null || val === undefined) return '';
-      const str = String(val);
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
+
+    const fromStr = fromDate ? fromDate.replace('T', ' ') : '01-08-2026 00:00:00';
+    const toStr = toDate ? toDate.replace('T', ' ') : '31-10-2026 23:59:59';
 
     const rows = [];
+    // Banner & Date subtitle
+    rows.push(['DATE WISE RECONCILIATION REPORT', '', '', '', '', '']);
+    rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}`, '', '', '', '', '']);
+    rows.push(['', '', '', '', '', '']);
+
+    // Main header
+    rows.push(headers);
+
     records.forEach((r) => {
-      // 1. Parent Summary Row (Level 1 in Image 2)
+      // 1. Parent Summary Row (Level 1 in Image 1)
       rows.push([
         r.plazaId || '',
         r.plazaName || '',
@@ -160,7 +485,7 @@ export const DateWiseRecon = () => {
         (Number(r.settledAmount) || 0).toFixed(2)
       ]);
 
-      // 2. Child Breakdown Sub-Header Row (Level 2 header in Image 2)
+      // 2. Child Breakdown Sub-Header Row (Subtable header in Image 1)
       rows.push([
         'PLAZA ID',
         'PLAZA NAME',
@@ -194,34 +519,17 @@ export const DateWiseRecon = () => {
       }
     });
 
-    const fromStr = fromDate ? fromDate.replace('T', ' ') : '01-08-2026 00:00:00';
-    const toStr = toDate ? toDate.replace('T', ' ') : '31-10-2026 23:59:59';
-    const midIdx = Math.floor(headers.length / 2);
-    const titleArr = Array(headers.length).fill('');
-    titleArr[midIdx] = 'DATE WISE RECONCILIATION REPORT';
-    const subArr = Array(headers.length).fill('');
-    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}`;
-
-    const bannerRows = [
-      titleArr.join(','),
-      subArr.join(','),
-      ''
-    ];
-
-    // Summary Total Row (Matching tfoot in Image 2)
+    // Summary Total Row (Matching tfoot in Image 1)
     rows.push(['Total', '', '', '', grandTotalCount, grandTotalAmount.toFixed(2)]);
 
-    const csvContent = '\uFEFF' + [
-      ...bannerRows,
-      headers.map(escapeCsv).join(','),
-      ...rows.map((row) => row.map(escapeCsv).join(','))
-    ].join('\r\n');
+    const csvContent = '\uFEFF' + rows.map((row) => row.map(escapeCsv).join(',')).join('\r\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `Date_Wise_Recon_${Date.now()}.csv`);
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    link.setAttribute('download', `Date_Wise_Recon_${timestamp}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
