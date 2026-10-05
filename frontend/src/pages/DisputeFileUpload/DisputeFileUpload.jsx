@@ -3,12 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import './DisputeFileUpload.scss';
 
-const SAMPLE_CSV_CONTENT = `"Tag ID","Internal Tracking Number","Function Code","Transaction Date and time","RRN","Issuer ID","Acquirer ID","Transaction Amount","Settlement Amount","Settlement indicator Dr/Cr","Settlement Currency","Message Reason Code","Document Indicator","Member Message Text","Full/Partial Indicator","Financial/Non-Financial Indicator","Case Number","Date Settlement","Fee Type Code 1","Interchange Category 1","Fee amount 1","Fee DR/CR Indicator 1","Fee Currency 1","Fee Type Code 2","Interchange Category 2","Fee amount 2","Fee DR/CR Indicator 2","Fee Currency 2","Fee Type Code 3","Interchange Category 3","Fee amount 3","Fee DR/CR Indicator 3","Fee Currency 3","Processing Status","EGCS Record Reject Reason Code","Merchant ID","TID","Vehicle Registration Number"
-"34161FA82032866C03B7B640","350","450","'260830120000","102047735808524451","608032","720026","500","","","356","3009","Y","Testing 1","P","N","IBKL231581cc","260901","","","","",""," ","","","","","","","","","","DEBIT","","778899","34161FA82032866C03B7B320","GH92DD6152"
-"34161FA82032866C03B7B640","350","450","'260830130000","102047735808524453","608032","720026","500","","","356","3009","Y","Testing 1","P","N","IBKL231581cc","260901","","","","",""," ","","","","","","","","","","DEBIT","","778899","34161FA82032866C03B7B320","GH92DD6152"
-"34161FA82032866C03B7B640","350","450","'260830140000","102047735808524455","608032","720026","500","","","356","3009","Y","Testing 1","P","N","IBKL231581cc","260901","","","","",""," ","","","","","","","","","","DEBIT","","778899","34161FA82032866C03B7B320","GH92DD6152"
-"34161FA82032866C03B7B640","350","450","'260830150000","102047735808524457","608032","720026","500","","","356","3009","Y","Testing 1","P","N","IBKL231581cc","260901","","","","",""," ","","","","","","","","","","DEBIT","","778899","34161FA82032866C03B7B320","GH92DD6152"
-"34161FA82032866C03B7B640","350","450","'260830160000","102047735808524459","608032","720026","500","","","356","3009","Y","Testing 1","P","N","IBKL231581cc","260901","","","","",""," ","","","","","","","","","","DEBIT","","778899","34161FA82032866C03B7B320","GH92DD6152"`;
 
 export const DisputeFileUpload = () => {
   const navigate = useNavigate();
@@ -55,12 +49,6 @@ export const DisputeFileUpload = () => {
     reader.readAsText(file);
   };
 
-  const handleLoadSample = () => {
-    setSelectedFileName('011IBKL2590002223106.csv');
-    const rows = parseCsvText(SAMPLE_CSV_CONTENT);
-    setParsedRows(rows);
-    setAlertMsg('✓ Sample Acquirer File 011IBKL2590002223106.csv loaded.');
-  };
 
   const handleRunMatching = () => {
     if (parsedRows.length === 0) {
@@ -136,29 +124,19 @@ export const DisputeFileUpload = () => {
           />
         </label>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={handleLoadSample}
-          >
-            📋 Use Sample File (011IBKL2590002223106.csv)
-          </button>
-
-          {selectedFileName && (
-            <div className="file-selected-bar" style={{ flex: 1 }}>
-              <span className="file-name-meta">📄 {selectedFileName} ({parsedRows.length} rows parsed)</span>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={handleRunMatching}
-                disabled={isMatching}
-              >
-                {isMatching ? 'Matching...' : 'Match Against Txn Master'}
-              </button>
-            </div>
-          )}
-        </div>
+        {selectedFileName && (
+          <div className="file-selected-bar">
+            <span className="file-name-meta">📄 {selectedFileName} ({parsedRows.length} rows parsed)</span>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={handleRunMatching}
+              disabled={isMatching}
+            >
+              {isMatching ? 'Matching...' : 'Match Against Txn Master'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Step 2: Match Results */}
