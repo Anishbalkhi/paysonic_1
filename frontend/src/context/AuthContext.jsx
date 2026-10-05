@@ -4,6 +4,9 @@ import UserService, { getStoredUserPermissions } from '../services/user/UserServ
 import UserActivityService from '../services/userActivity/UserActivityService';
 
 const STORAGE_KEY = 'paysonic_auth_session';
+export const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+export const LAST_ACTIVITY_KEY = 'paysonic_last_activity';
+export const TIMEOUT_NOTICE_KEY = 'paysonic_timeout_notice';
 
 const AuthContext = createContext(null);
 
@@ -152,6 +155,9 @@ export const AuthProvider = ({ children }) => {
         } catch {}
       } else if (e.key === 'paysonic_user_permissions' || e.key === 'paysonic_users_cache') {
         validateLiveSession();
+      } else if (e.key === 'paysonic_session_expired') {
+        logout();
+        window.location.href = '/login?reason=inactivity';
       }
     };
 
@@ -168,6 +174,73 @@ export const AuthProvider = ({ children }) => {
       window.removeEventListener('storage', handleStorage);
     };
   }, []);
+
+  // ─── 5-Minute Inactivity Auto-Logout Monitor ──────────────────────────────
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Initialize last activity timestamp if absent
+    if (!localStorage.getItem(LAST_ACTIVITY_KEY)) {
+      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+    }
+
+    let lastWriteTime = 0;
+    const recordActivity = () => {
+      const now = Date.now();
+      // Throttle localStorage updates to at most once every 3 seconds
+      if (now - lastWriteTime > 3000) {
+        lastWriteTime = now;
+        localStorage.setItem(LAST_ACTIVITY_KEY, now.toString());
+      }
+    };
+
+    const activityEvents = [
+      'mousedown',
+      'mousemove',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click',
+      'wheel',
+    ];
+
+    activityEvents.forEach((evt) => {
+      window.addEventListener(evt, recordActivity, { passive: true });
+    });
+
+    // Heartbeat check every 4 seconds
+    const intervalId = setInterval(() => {
+      const lastActivityStr = localStorage.getItem(LAST_ACTIVITY_KEY);
+      const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : Date.now();
+      const elapsed = Date.now() - lastActivity;
+
+      if (elapsed >= INACTIVITY_TIMEOUT_MS) {
+        console.warn(`[AuthContext] Auto logging out after ${Math.round(elapsed / 1000)}s of inactivity.`);
+
+        try {
+          const active = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+          if (active && active.sessionId) {
+            UserActivityService.terminateSession(active.sessionId, 'Session timed out after 5 minutes of inactivity');
+          }
+        } catch {}
+
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('actorId');
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+        localStorage.setItem('paysonic_session_expired', Date.now().toString());
+        sessionStorage.setItem(TIMEOUT_NOTICE_KEY, 'You have been automatically logged out due to 5 minutes of inactivity.');
+        setCurrentUser(null);
+        window.location.href = '/login?reason=inactivity';
+      }
+    }, 4000);
+
+    return () => {
+      activityEvents.forEach((evt) => {
+        window.removeEventListener(evt, recordActivity);
+      });
+      clearInterval(intervalId);
+    };
+  }, [currentUser]);
 
   /**
    * Real-time Login against Railway MySQL Database
@@ -322,6 +395,7 @@ export const AuthProvider = ({ children }) => {
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
     localStorage.setItem('actorId', sessionData.id);
+    localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
     setCurrentUser(sessionData);
     return sessionData;
   };
@@ -335,6 +409,7 @@ export const AuthProvider = ({ children }) => {
     } catch {}
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('actorId');
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
     setCurrentUser(null);
   };
 

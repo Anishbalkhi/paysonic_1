@@ -14,7 +14,22 @@ export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
+  const [timeoutNotice, setTimeoutNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Check for inactivity timeout message from session or query param
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const notice =
+      sessionStorage.getItem('paysonic_timeout_notice') ||
+      (params.get('reason') === 'inactivity'
+        ? 'You have been automatically logged out due to 5 minutes of inactivity.'
+        : '');
+    if (notice) {
+      setTimeoutNotice(notice);
+      sessionStorage.removeItem('paysonic_timeout_notice');
+    }
+  }, [location.search]);
 
   // Time-based theme & video detection
   const getIsDayTime = () => {
@@ -51,6 +66,7 @@ export const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setTimeoutNotice('');
     if (!identifier.trim()) { setError('Please enter your email address.'); return; }
     if (!password)           { setError('Please enter your password.'); return; }
     setIsSubmitting(true);
@@ -156,6 +172,33 @@ export const Login = () => {
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
               {error}
+            </div>
+          )}
+
+          {/* Inactivity Timeout Notice */}
+          {timeoutNotice && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '12px 14px',
+                borderRadius: '8px',
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                color: '#b45309',
+                fontSize: '13px',
+                fontWeight: 500,
+                marginBottom: '16px',
+                lineHeight: 1.4,
+              }}
+              role="alert"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>{timeoutNotice}</span>
             </div>
           )}
 
