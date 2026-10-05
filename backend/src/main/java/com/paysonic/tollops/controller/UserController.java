@@ -97,4 +97,15 @@ public class UserController {
         userService.recordLogin(id);
         return ResponseEntity.ok(Map.of("success", true, "id", id));
     }
+
+    @PatchMapping("/{id}/change-password")
+    public ResponseEntity<Map<String, Object>> changePassword(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "X-Actor-ID", required = false) String actorId) {
+        String currentPassword = body.get("currentPassword");
+        String newPassword = body.get("newPassword");
+        userService.changePassword(id, currentPassword, newPassword, actorId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Password changed successfully"));
+    }
 }

@@ -159,9 +159,11 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
 
     setIsSubmitting(true);
     try {
-      await UserService.updateUser(currentUser.id, {
-        password: newPassword.trim(),
-      });
+      await UserService.changePassword(
+        currentUser.id,
+        currentPassword.trim(),
+        newPassword.trim()
+      );
 
       // Update local storage session
       try {
@@ -169,6 +171,20 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
         active.password = newPassword.trim();
         localStorage.setItem('paysonic_auth_session', JSON.stringify(active));
         window.dispatchEvent(new CustomEvent('paysonic_auth_change', { detail: active }));
+      } catch {}
+
+      // Keep paysonic_users_cache updated
+      try {
+        const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+        const idx = cached.findIndex(
+          (u) =>
+            u.id === currentUser.id ||
+            (u.email && u.email.toLowerCase() === currentUser.email?.toLowerCase())
+        );
+        if (idx !== -1) {
+          cached[idx].password = newPassword.trim();
+          localStorage.setItem('paysonic_users_cache', JSON.stringify(cached));
+        }
       } catch {}
 
       setSuccess('✓ Password updated successfully! Your new password is now active.');

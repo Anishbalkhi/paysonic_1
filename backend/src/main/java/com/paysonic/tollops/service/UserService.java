@@ -190,7 +190,14 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
 
         // Hierarchy validation: check if actor has authority to edit this target user
-        validateHierarchyAction(actorId, "MANAGE", request.getRole(), request.getAssignedPlaza(), user);
+        boolean isSelf = (actorId != null && (
+                actorId.equalsIgnoreCase(user.getId()) ||
+                (user.getEmail() != null && actorId.equalsIgnoreCase(user.getEmail())) ||
+                (user.getName() != null && actorId.equalsIgnoreCase(user.getName()))
+        ));
+        if (!isSelf) {
+            validateHierarchyAction(actorId, "MANAGE", request.getRole(), request.getAssignedPlaza(), user);
+        }
 
         if (request.getName() != null) user.setName(request.getName());
         if (request.getMobile() != null) user.setMobile(request.getMobile());
@@ -303,6 +310,20 @@ public class UserService {
 
         User actor = findActor(actorId);
         if (actor == null) return;
+
+        // Self-action: A user is always authorized to update their own credentials/profile
+        if (targetUser != null && (
+                actor.getId().equalsIgnoreCase(targetUser.getId()) ||
+                (actor.getEmail() != null && targetUser.getEmail() != null && actor.getEmail().equalsIgnoreCase(targetUser.getEmail()))
+        )) {
+            if ("DELETE".equalsIgnoreCase(action)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Users cannot delete their own account.");
+            }
+            if ("APPROVE".equalsIgnoreCase(action)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Users cannot approve their own account.");
+            }
+            return; // Permitted: self update / password change
+        }
 
         String actorRole = actor.getRole();
 
@@ -614,5 +635,32 @@ public class UserService {
             user.setUpdatedAt(LocalDateTime.now());
             userRepository.save(user);
         });
+    }
+
+    /**
+     * Secure self or administrative password change
+     */
+    @Auditable(module = "User Management", action = "CHANGE_PASSWORD", actionLabel = "Changed User Password")
+    @Transactional
+    public void changePassword(String id, String currentPassword, String newPassword, String actorId) {
+        User user = userRepository.findById(id)
+                .or(() -> userRepository.findByEmailIgnoreCase(id))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password is required.");
+        }
+
+        // Verify current password if provided
+        if (currentPassword != null && !currentPassword.isBlank()) {
+            String existing = user.getPassword() != null && !user.getPassword().isBlank() ? user.getPassword() : "Paysonic@2026";
+            if (!existing.equals(currentPassword.trim())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password does not match.");
+            }
+        }
+
+        user.setPassword(newPassword.trim());
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
     }
 }

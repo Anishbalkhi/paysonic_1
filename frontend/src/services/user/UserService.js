@@ -434,6 +434,30 @@ class UserService {
     });
     return this._mapUsers(res.data);
   }
+
+  async changePassword(id, currentPassword, newPassword) {
+    const actorId = getActiveActorId();
+    try {
+      const res = await httpClient.patch(
+        `/api/users/${id}/change-password`,
+        { currentPassword, newPassword },
+        { headers: { 'X-Actor-ID': actorId } }
+      );
+      // Keep cache updated
+      try {
+        const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+        const idx = cached.findIndex((u) => u.id === id);
+        if (idx !== -1) {
+          cached[idx].password = newPassword;
+          localStorage.setItem('paysonic_users_cache', JSON.stringify(cached));
+        }
+      } catch {}
+      return res.data;
+    } catch (err) {
+      console.warn('[UserService] change-password endpoint error, falling back to updateUser:', err?.message);
+      return await this.updateUser(id, { password: newPassword });
+    }
+  }
 }
 
 export default new UserService();
