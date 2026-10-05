@@ -20,10 +20,13 @@ export const Login = () => {
   // Check for inactivity timeout message from session or query param
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
+    const reason = params.get('reason');
     const notice =
       sessionStorage.getItem('paysonic_timeout_notice') ||
-      (params.get('reason') === 'inactivity'
+      (reason === 'inactivity'
         ? 'You have been automatically logged out due to 5 minutes of inactivity.'
+        : reason === 'concurrent_device'
+        ? 'You have been logged out because your account was logged in on another device. (Only Master Admin accounts permit multiple simultaneous device logins).'
         : '');
     if (notice) {
       setTimeoutNotice(notice);

@@ -49,6 +49,19 @@ public class ActivityController {
         return ResponseEntity.ok(activityService.getActiveSessions());
     }
 
+    @PostMapping("/sessions")
+    public ResponseEntity<UserSession> registerSession(@RequestBody UserSession session, HttpServletRequest httpRequest) {
+        if (session.getIpAddress() == null || session.getIpAddress().isBlank()) {
+            session.setIpAddress(httpRequest != null ? httpRequest.getRemoteAddr() : "127.0.0.1");
+        }
+        return ResponseEntity.ok(activityService.registerSession(session));
+    }
+
+    @GetMapping("/sessions/{sessionId}/status")
+    public ResponseEntity<Map<String, Object>> getSessionStatus(@PathVariable String sessionId) {
+        return ResponseEntity.ok(activityService.getSessionStatus(sessionId));
+    }
+
     @PostMapping("/sessions/{sessionId}/terminate")
     public ResponseEntity<Map<String, Object>> forceLogout(
             @PathVariable String sessionId,

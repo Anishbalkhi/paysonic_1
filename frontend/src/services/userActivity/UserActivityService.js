@@ -123,14 +123,19 @@ class UserActivityService {
   }
 
   /**
-   * Register a live active session locally on login.
+   * Register a live active session on login.
+   * Single device login rule (FR #7):
+   * - Only Master Admin can be logged in on multiple devices concurrently.
+   * - For all other roles, any previous active sessions are terminated upon new login.
    */
-  registerActiveSession({ userId, username, name, role, plaza, ipAddress, device }) {
+  async registerActiveSession({ userId, username, name, role, plaza, ipAddress, device }) {
+    const isMasterAdmin = role === 'Master Admin';
     const sessions = getStoredActiveSessions();
-    // Mark any prior active sessions for this user as Terminated
+
+    // Mark prior active sessions for this user as Terminated ONLY if not Master Admin
     const updated = sessions.map((s) =>
-      s.userId === userId && s.status === 'Active'
-        ? { ...s, status: 'Terminated', lastActive: 'Closed' }
+      !isMasterAdmin && s.userId === userId && s.status === 'Active'
+        ? { ...s, status: 'Terminated', lastActive: 'Closed (Another device login)' }
         : s
     );
 
@@ -164,7 +169,35 @@ class UserActivityService {
     };
     updated.unshift(newSession);
     saveStoredActiveSessions(updated);
+
+    // Sync session to backend / Railway database so other devices can detect concurrent logins
+    try {
+      await httpClient.post('/api/activity/sessions', newSession);
+    } catch (err) {
+      console.warn('[UserActivityService] Session sync to backend error (ignoring):', err?.message);
+    }
+
     return sessionId;
+  }
+
+  /**
+   * Verify if a session is still active or has been superseded/terminated.
+   */
+  async checkSessionStatus(sessionId) {
+    if (!sessionId) return { active: false, status: 'Terminated' };
+    try {
+      const res = await httpClient.get(`/api/activity/sessions/${sessionId}/status`);
+      if (res && res.data) {
+        return res.data;
+      }
+    } catch (err) {
+      // Fallback to local active sessions cache if network is temporarily unreachable
+      const local = getStoredActiveSessions().find((s) => s.sessionId === sessionId);
+      if (local) {
+        return { active: local.status === 'Active', status: local.status };
+      }
+    }
+    return { active: true, status: 'Active' };
   }
 
   /**

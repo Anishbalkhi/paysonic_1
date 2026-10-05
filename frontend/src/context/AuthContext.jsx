@@ -93,6 +93,41 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
+        // ── Single-Device Concurrent Login Validation (FR #7) ──
+        // Only Master Admin is permitted to be logged in on multiple devices concurrently.
+        // For all other roles, check if this session was superseded/terminated by another device.
+        if (active.role !== 'Master Admin' && active.sessionId) {
+          try {
+            // 1. Check local cross-tab / cross-window session tracker
+            const lastSessionId = localStorage.getItem('paysonic_active_device_session_' + active.id);
+            if (lastSessionId && lastSessionId !== active.sessionId) {
+              console.warn('[AuthContext] Session superseded locally by another login. Terminating.');
+              sessionStorage.setItem(
+                TIMEOUT_NOTICE_KEY,
+                'You have been logged out because your account was logged in on another device. (Only Master Admin accounts permit multiple simultaneous device logins).'
+              );
+              logout();
+              window.location.href = '/login?reason=concurrent_device';
+              return;
+            }
+
+            // 2. Check remote database session status (multi-device)
+            const statusCheck = await UserActivityService.checkSessionStatus(active.sessionId);
+            if (statusCheck && statusCheck.active === false) {
+              console.warn('[AuthContext] Remote session terminated or superseded by another device. Revoking session.');
+              sessionStorage.setItem(
+                TIMEOUT_NOTICE_KEY,
+                'You have been logged out because your account was logged in on another device. (Only Master Admin accounts permit multiple simultaneous device logins).'
+              );
+              logout();
+              window.location.href = '/login?reason=concurrent_device';
+              return;
+            }
+          } catch (sessionErr) {
+            console.warn('[AuthContext] Session status check error (ignoring):', sessionErr?.message);
+          }
+        }
+
         // Keep session updated with any changes from DB
         if (isMounted) {
           const perms = getStoredUserPermissions();
@@ -151,6 +186,22 @@ export const AuthProvider = ({ children }) => {
           const active = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
           if (active && active.id === id) {
             logout();
+          }
+        } catch {}
+      } else if (e.key === 'paysonic_device_login_event') {
+        try {
+          const { userId, sessionId } = JSON.parse(e.newValue || '{}');
+          const active = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+          if (active && active.id === userId && active.role !== 'Master Admin') {
+            if (active.sessionId && active.sessionId !== sessionId) {
+              console.warn('[AuthContext] Account logged in on another window/device. Revoking old session.');
+              sessionStorage.setItem(
+                TIMEOUT_NOTICE_KEY,
+                'You have been logged out because your account was logged in on another device. (Only Master Admin accounts permit multiple simultaneous device logins).'
+              );
+              logout();
+              window.location.href = '/login?reason=concurrent_device';
+            }
           }
         } catch {}
       } else if (e.key === 'paysonic_user_permissions' || e.key === 'paysonic_users_cache') {
@@ -379,14 +430,24 @@ export const AuthProvider = ({ children }) => {
       status: 'Success',
     });
 
-    // Register REAL active session
-    const sessionId = UserActivityService.registerActiveSession({
+    // Register REAL active session (enforces single-device login for non-Master Admin)
+    const sessionId = await UserActivityService.registerActiveSession({
       userId: match.id,
       username: match.username || match.email.split('@')[0],
       name: match.name,
       role: match.role,
       plaza: match.assignedPlaza || match.plaza || 'All plazas',
     });
+
+    // Enforce Single Device Rule across tabs and devices
+    if (match.role !== 'Master Admin') {
+      localStorage.setItem('paysonic_active_device_session_' + match.id, sessionId);
+      localStorage.setItem('paysonic_device_login_event', JSON.stringify({
+        userId: match.id,
+        sessionId,
+        timestamp: Date.now(),
+      }));
+    }
 
     // Retrieve customized permissions for this specific user
     const perms = getStoredUserPermissions();

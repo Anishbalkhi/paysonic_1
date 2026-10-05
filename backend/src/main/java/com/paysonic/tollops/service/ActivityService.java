@@ -182,6 +182,64 @@ public class ActivityService {
         return result;
     }
 
+    /**
+     * Registers a new active session.
+     * Enforces the Single Device Rule:
+     * - Only Master Admin can be logged in on multiple devices concurrently.
+     * - All other roles are restricted to one active session at a time on a single device;
+     *   any previous active sessions for that user are terminated immediately.
+     */
+    @Transactional
+    public UserSession registerSession(UserSession session) {
+        if (session.getSessionId() == null || session.getSessionId().isBlank()) {
+            session.setSessionId("SES-" + System.currentTimeMillis());
+        }
+        if (session.getLoginTime() == null) {
+            session.setLoginTime(LocalDateTime.now());
+        }
+        if (session.getLastActive() == null) {
+            session.setLastActive(LocalDateTime.now());
+        }
+        session.setStatus("Active");
+
+        // Single device login rule (FR #7):
+        // One user can be logged in at a time on a single device EXCEPT Master Admin.
+        // Only Master Admin can be logged in on multiple devices.
+        if (!"Master Admin".equalsIgnoreCase(session.getRole())) {
+            List<UserSession> existingSessions = userSessionRepository.findByUserId(session.getUserId());
+            for (UserSession s : existingSessions) {
+                if ("Active".equalsIgnoreCase(s.getStatus()) && !s.getSessionId().equals(session.getSessionId())) {
+                    s.setStatus("Terminated");
+                    s.setLastActive(LocalDateTime.now());
+                    userSessionRepository.save(s);
+                }
+            }
+        }
+
+        return userSessionRepository.save(session);
+    }
+
+    /**
+     * Checks if a session is currently active or has been superseded/terminated.
+     */
+    public Map<String, Object> getSessionStatus(String sessionId) {
+        Optional<UserSession> sessionOpt = userSessionRepository.findById(sessionId);
+        if (sessionOpt.isEmpty()) {
+            return Map.of("active", false, "status", "Terminated", "reason", "Session terminated or superseded by another device");
+        }
+        UserSession session = sessionOpt.get();
+        boolean active = "Active".equalsIgnoreCase(session.getStatus());
+        Map<String, Object> res = new HashMap<>();
+        res.put("active", active);
+        res.put("status", session.getStatus());
+        res.put("sessionId", sessionId);
+        res.put("userId", session.getUserId());
+        if (!active) {
+            res.put("reason", "Account was logged in on another device");
+        }
+        return res;
+    }
+
     public List<LoginHistory> getLoginHistory(String status) {
         Sort sort = Sort.by(Sort.Direction.DESC, "timestamp");
         if (status != null && !status.isBlank() && !"All".equalsIgnoreCase(status)) {
