@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DisputeReportService from '../../services/dispute/DisputeReportService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './DisputeDetailReport.scss';
 
 export const DisputeDetailReport = () => {
@@ -286,29 +287,34 @@ export const DisputeDetailReport = () => {
         {errorMsg && <div className="error-alert">{errorMsg}</div>}
       </div>
 
-      {/* Summary KPI Cards */}
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-label">Total Disputes</div>
-          <div className="kpi-value">{filteredRecords.length}</div>
-          <div className="kpi-sub">Filtered Transactions</div>
-        </div>
-        <div className="kpi-card highlight-blue">
-          <div className="kpi-label">Total Transaction Amount</div>
-          <div className="kpi-value">₹ {Number(totalTxnAmt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-          <div className="kpi-sub">Gross Toll Amount</div>
-        </div>
-        <div className="kpi-card highlight-purple">
-          <div className="kpi-label">Total Dispute Amount</div>
-          <div className="kpi-value">₹ {Number(totalDisputeAmt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-          <div className="kpi-sub">Adjusted / Chargebacked</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-label">Live Railway DB</div>
-          <div className="kpi-value live-badge">ONLINE</div>
-          <div className="kpi-sub">dispute_transactions</div>
-        </div>
-      </div>
+      {/* Summary KPI Cards / Small Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Disputes',
+            value: filteredRecords.length,
+            sub: 'Filtered Transactions'
+          },
+          {
+            label: 'Total Transaction Amount',
+            value: `₹ ${Number(totalTxnAmt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+            sub: 'Gross Toll Amount',
+            highlight: 'blue'
+          },
+          {
+            label: 'Total Dispute Amount',
+            value: `₹ ${Number(totalDisputeAmt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+            sub: 'Adjusted / Chargebacked',
+            highlight: 'amber'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'dispute_transactions',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Search Bar for Quick Filtering */}
       <div className="table-controls-bar">
