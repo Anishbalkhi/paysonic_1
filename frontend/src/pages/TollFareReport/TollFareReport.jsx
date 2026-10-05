@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TollFareReportService from '../../services/tollFare/TollFareReportService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TollFareReport.scss';
 
 export const TollFareReport = () => {
@@ -120,6 +121,17 @@ export const TollFareReport = () => {
     return isNaN(num) ? String(amt) : num.toFixed(2);
   };
 
+  const fareKpis = useMemo(() => {
+    if (!filteredRecords.length) return { avgSingle: '0.00', avgReturn: '0.00', totalClasses: 0 };
+    const totalSingle = filteredRecords.reduce((sum, r) => sum + Number(r.singleJourneyFare || r.singleFare || 0), 0);
+    const totalReturn = filteredRecords.reduce((sum, r) => sum + Number(r.returnJourneyFare || r.returnFare || 0), 0);
+    return {
+      totalClasses: filteredRecords.length,
+      avgSingle: (totalSingle / filteredRecords.length).toFixed(2),
+      avgReturn: (totalReturn / filteredRecords.length).toFixed(2)
+    };
+  }, [filteredRecords]);
+
   return (
     <div className="toll-fare-page">
       {/* Top Header */}
@@ -232,6 +244,35 @@ export const TollFareReport = () => {
           </div>
         )}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Configured Vehicle Classes',
+            value: fareKpis.totalClasses,
+            sub: 'Active Toll Matrix Rates'
+          },
+          {
+            label: 'Avg Single Journey Fare',
+            value: `₹ ${fareKpis.avgSingle}`,
+            sub: 'Standard Single Pass',
+            highlight: 'blue'
+          },
+          {
+            label: 'Avg Return Journey Fare',
+            value: `₹ ${fareKpis.avgReturn}`,
+            sub: '24-Hour Return Pass',
+            highlight: 'purple'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'toll_fare_matrix',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Quick Search Bar */}
       <div className="table-controls-bar">

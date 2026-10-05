@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationValidateService from '../../services/violation/ViolationValidateService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationValidateReport.scss';
 
 export const ViolationValidateReport = () => {
@@ -344,6 +345,35 @@ export const ViolationValidateReport = () => {
 
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Violations',
+            value: (totalElements || summaryKpis.totalCount).toLocaleString('en-IN'),
+            sub: 'Filtered Records'
+          },
+          {
+            label: 'Total Transaction Amount',
+            value: `₹ ${Number(summaryKpis.totalTxnAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross Toll Value',
+            highlight: 'blue'
+          },
+          {
+            label: 'Approved / Rejected',
+            value: `${summaryKpis.totalApproved} / ${summaryKpis.totalRejected}`,
+            sub: 'Audit Decision Breakdown',
+            highlight: 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'violation_validation',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* 3. Table Area */}
       <div className="table-wrapper">

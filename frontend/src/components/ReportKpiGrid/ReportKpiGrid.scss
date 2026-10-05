@@ -1,0 +1,152 @@
+.report-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+
+  .report-kpi-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .report-kpi-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+    }
+
+    .report-kpi-value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.2;
+
+      &.live-badge {
+        display: inline-block;
+        font-size: 0.85rem;
+        background: #dcfce7;
+        color: #166534;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        font-weight: 700;
+        width: fit-content;
+      }
+    }
+
+    .report-kpi-sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    &.highlight-blue {
+      border-left: 4px solid #0d47a1;
+      .report-kpi-value {
+        color: #0d47a1;
+      }
+    }
+
+    &.highlight-purple {
+      border-left: 4px solid #7c3aed;
+      .report-kpi-value {
+        color: #7c3aed;
+      }
+    }
+
+    &.highlight-green {
+      border-left: 4px solid #16a34a;
+      .report-kpi-value {
+        color: #16a34a;
+      }
+    }
+
+    &.highlight-amber {
+      border-left: 4px solid #d97706;
+      .report-kpi-value {
+        color: #d97706;
+      }
+    }
+
+    &.highlight-red {
+      border-left: 4px solid #dc2626;
+      .report-kpi-value {
+        color: #dc2626;
+      }
+    }
+  }
+}
+
+/* Dark mode styling */
+[data-theme="dark"] .report-kpi-grid,
+:root[data-theme="dark"] .report-kpi-grid {
+  .report-kpi-card {
+    background: var(--card, #161D27);
+    border-color: var(--border, #262F3B);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+
+    .report-kpi-label {
+      color: var(--text-soft, #9AA5B4);
+    }
+
+    .report-kpi-value {
+      color: var(--text, #E7ECF3);
+
+      &.live-badge {
+        background: #064e3b;
+        color: #34d399;
+      }
+    }
+
+    .report-kpi-sub {
+      color: var(--faint, #6B7A8D);
+    }
+
+    &.highlight-blue {
+      border-left-color: #2563eb;
+      .report-kpi-value {
+        color: #60a5fa;
+      }
+    }
+
+    &.highlight-purple {
+      border-left-color: #a855f7;
+      .report-kpi-value {
+        color: #c084fc;
+      }
+    }
+
+    &.highlight-green {
+      border-left-color: #16a34a;
+      .report-kpi-value {
+        color: #4ade80;
+      }
+    }
+
+    &.highlight-amber {
+      border-left-color: #d97706;
+      .report-kpi-value {
+        color: #fbbf24;
+      }
+    }
+
+    &.highlight-red {
+      border-left-color: #dc2626;
+      .report-kpi-value {
+        color: #f87171;
+      }
+    }
+  }
+}

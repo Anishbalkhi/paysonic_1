@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearch.scss';
 
 export const TransactionSearch = () => {
@@ -357,6 +358,35 @@ export const TransactionSearch = () => {
     return colonIdx > 0 ? desc.substring(0, colonIdx).trim() : desc.trim();
   };
 
+  const searchKpis = useMemo(() => {
+    if (txnType === 'NORMAL') {
+      const totalAmt = filteredRecords.reduce((sum, r) => sum + Number(r.txnAmount || r.amount || 0), 0);
+      const successCount = filteredRecords.filter((r) => {
+        const s = String(r.status || '').toUpperCase();
+        return s === 'SUCCESS' || s === 'ACCEPTED' || s === 'SETTLED';
+      }).length;
+      return {
+        count: totalElements || filteredRecords.length,
+        totalAmt: totalAmt.toFixed(2),
+        successCount,
+        breakdownLabel: 'Success / Processed',
+        breakdownValue: `${successCount} / ${filteredRecords.length}`,
+        endpoint: 'toll_transactions'
+      };
+    } else {
+      const totalAmt = filteredRecords.reduce((sum, r) => sum + Number(r.disputeAmount || r.adjustmentAmount || 0), 0);
+      const debitCount = filteredRecords.filter((r) => String(r.functionCode || '').includes('753') || String(r.functionCode || '').toLowerCase().includes('debit')).length;
+      const creditCount = filteredRecords.length - debitCount;
+      return {
+        count: totalElements || filteredRecords.length,
+        totalAmt: totalAmt.toFixed(2),
+        breakdownLabel: 'Debit / Credit Adj',
+        breakdownValue: `${debitCount} / ${creditCount}`,
+        endpoint: 'dispute_transactions'
+      };
+    }
+  }, [txnType, filteredRecords, totalElements]);
+
   return (
     <div className="transaction-search-page">
       {/* 1. Header Banner */}
@@ -554,6 +584,35 @@ export const TransactionSearch = () => {
 
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: txnType === 'NORMAL' ? 'Total Transactions' : 'Total Disputes',
+            value: searchKpis.count.toLocaleString('en-IN'),
+            sub: 'Filtered Records'
+          },
+          {
+            label: txnType === 'NORMAL' ? 'Total Transaction Amount' : 'Total Dispute Amount',
+            value: `₹ ${Number(searchKpis.totalAmt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: txnType === 'NORMAL' ? 'Gross Toll Value' : 'Adjusted / Chargebacked',
+            highlight: 'blue'
+          },
+          {
+            label: searchKpis.breakdownLabel,
+            value: searchKpis.breakdownValue,
+            sub: txnType === 'NORMAL' ? 'Successful Passes' : 'Function Code Breakdown',
+            highlight: txnType === 'NORMAL' ? 'green' : 'purple'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: searchKpis.endpoint,
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Results Header Info */}
       <div className="table-controls-bar">

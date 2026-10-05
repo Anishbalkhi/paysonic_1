@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSummaryService from '../../services/summary/TransactionSummaryService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSummaryReport.scss';
 
 export const TransactionSummaryReport = () => {
@@ -160,6 +161,35 @@ export const TransactionSummaryReport = () => {
         </div>
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Transactions',
+            value: Number(summaryKpis.totalCount).toLocaleString('en-IN'),
+            sub: 'Aggregated Processed Passes'
+          },
+          {
+            label: 'Total Transaction Amount',
+            value: `₹ ${Number(summaryKpis.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross FASTag Collection',
+            highlight: 'blue'
+          },
+          {
+            label: 'Accepted / Declined',
+            value: `${summaryKpis.acceptedCount} / ${summaryKpis.declinedCount}`,
+            sub: 'Transaction Status Ratio',
+            highlight: 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'transaction_summary',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Table */}
       <div className="table-wrapper">

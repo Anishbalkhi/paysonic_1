@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationRawFileService from '../../services/violation/ViolationRawFileService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationRawFileReport.scss';
 
 export const ViolationRawFileReport = () => {
@@ -372,6 +373,35 @@ export const ViolationRawFileReport = () => {
 
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Raw Records',
+            value: (totalElements || summaryKpis.totalCount).toLocaleString('en-IN'),
+            sub: 'Filtered NPCI File Lines'
+          },
+          {
+            label: 'Total Raw Amount',
+            value: `₹ ${Number(summaryKpis.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Cumulative File Value',
+            highlight: 'blue'
+          },
+          {
+            label: 'Covered Toll Plazas',
+            value: summaryKpis.uniquePlazas,
+            sub: 'Network Plazas Present',
+            highlight: 'purple'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'violation_raw_files',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* 3. Table Area */}
       <div className="table-wrapper">

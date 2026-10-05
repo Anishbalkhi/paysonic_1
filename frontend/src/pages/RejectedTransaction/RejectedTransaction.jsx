@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RejectedTransactionService from '../../services/rejectedTxn/RejectedTransactionService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './RejectedTransaction.scss';
 
 export const RejectedTransaction = () => {
@@ -320,6 +321,35 @@ export const RejectedTransaction = () => {
           </div>
         )}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Rejections',
+            value: (totalElements || filteredRecords.length).toLocaleString('en-IN'),
+            sub: 'Filtered Records'
+          },
+          {
+            label: 'Total Rejected Amount',
+            value: `₹ ${Number(totalRejectedAmt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Declined Toll Value',
+            highlight: 'red'
+          },
+          {
+            label: 'Duplicate / Other Errors',
+            value: `${duplicateCount} / ${otherCount}`,
+            sub: 'Failure Breakdown',
+            highlight: 'amber'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'rejected_transactions',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Table Quick Search Bar & Controls */}
       <div className="table-controls-bar">

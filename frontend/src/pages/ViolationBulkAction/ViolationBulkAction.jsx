@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationBulkActionService from '../../services/violation/ViolationBulkActionService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationBulkAction.scss';
 
 export const ViolationBulkAction = () => {
@@ -463,6 +464,35 @@ export const ViolationBulkAction = () => {
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
         {actionSuccessMsg && <div className="filter-success-msg">{actionSuccessMsg}</div>}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Violations in Scope',
+            value: (totalElements || summaryKpis.totalCount).toLocaleString('en-IN'),
+            sub: 'Filtered Records'
+          },
+          {
+            label: 'Total Violation Amount',
+            value: `₹ ${Number(summaryKpis.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross Penalty Amount',
+            highlight: 'blue'
+          },
+          {
+            label: 'Selected for Action',
+            value: `${selectedIds.size} / ${filteredRecords.length}`,
+            sub: 'Pending Batch Execution',
+            highlight: selectedIds.size > 0 ? 'green' : 'amber'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'violation_bulk_action',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* 3. Table Area */}
       <div className="table-wrapper">

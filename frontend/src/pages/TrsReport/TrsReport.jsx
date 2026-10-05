@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TrsReportService from '../../services/trs/TrsReportService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TrsReport.scss';
 
 export const TrsReport = () => {
@@ -319,6 +320,35 @@ export const TrsReport = () => {
           </div>
         )}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Transactions',
+            value: (totalElements || filteredRecords.length).toLocaleString('en-IN'),
+            sub: 'Filtered Records'
+          },
+          {
+            label: 'Total Transaction Amount',
+            value: `₹ ${Number(totalTxnAmt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross FASTag Revenue',
+            highlight: 'blue'
+          },
+          {
+            label: 'Accepted / Success',
+            value: `${acceptedCount} / ${filteredRecords.length}`,
+            sub: 'Successful Passes',
+            highlight: 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'toll_transactions',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Table Quick Search Bar & Controls */}
       <div className="table-controls-bar">

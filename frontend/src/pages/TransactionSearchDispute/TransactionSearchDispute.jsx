@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearchDispute.scss';
 
 export const TransactionSearchDispute = () => {
@@ -328,6 +329,35 @@ export const TransactionSearchDispute = () => {
           </div>
         )}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Disputes',
+            value: (totalElements || filteredRecords.length).toLocaleString('en-IN'),
+            sub: 'Filtered Records'
+          },
+          {
+            label: 'Total Transaction Amount',
+            value: `₹ ${Number(totalTxnAmt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross FASTag Toll Value',
+            highlight: 'blue'
+          },
+          {
+            label: 'Total Dispute Amount',
+            value: `₹ ${Number(totalDisputeAmt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Adjusted / Chargebacked',
+            highlight: 'purple'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'dispute_transactions',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Table Quick Search Bar & Controls */}
       <div className="table-controls-bar">

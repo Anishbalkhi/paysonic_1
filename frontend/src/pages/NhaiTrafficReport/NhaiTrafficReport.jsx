@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NhaiTrafficService from '../../services/summary/NhaiTrafficService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './NhaiTrafficReport.scss';
 
 export const NhaiTrafficReport = () => {
@@ -233,6 +234,35 @@ export const NhaiTrafficReport = () => {
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
 
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Traffic Count',
+            value: kpiMetrics.totalCount.toLocaleString('en-IN'),
+            sub: 'Filtered Fastag Vehicles'
+          },
+          {
+            label: 'Total Toll Revenue',
+            value: `₹ ${kpiMetrics.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross NHAI Toll Collection',
+            highlight: 'blue'
+          },
+          {
+            label: 'Single / Return / Passes',
+            value: `${kpiMetrics.singleCount} / ${kpiMetrics.returnCount} / ${kpiMetrics.passCount}`,
+            sub: 'Journey Type Distribution',
+            highlight: 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'nhai_traffic_report',
+            isBadge: true
+          }
+        ]}
+      />
+
       {/* 3. Table Area */}
       <div className="table-wrapper">
         <div className="table-responsive">
@@ -383,34 +413,6 @@ export const NhaiTrafficReport = () => {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* 4. Bottom Summary KPI Cards */}
-      <div className="report-kpi-summary-bar">
-        <div className="kpi-card kpi-red">
-          <span className="kpi-label">Total Traffic Count</span>
-          <span className="kpi-val">{kpiMetrics.totalCount.toLocaleString()}</span>
-        </div>
-
-        <div className="kpi-card kpi-blue">
-          <span className="kpi-label">Total Toll Revenue</span>
-          <span className="kpi-val">₹{kpiMetrics.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-        </div>
-
-        <div className="kpi-card kpi-green">
-          <span className="kpi-label">Single Journeys</span>
-          <span className="kpi-val">{kpiMetrics.singleCount.toLocaleString()}</span>
-        </div>
-
-        <div className="kpi-card kpi-amber">
-          <span className="kpi-label">Return Journeys</span>
-          <span className="kpi-val">{kpiMetrics.returnCount.toLocaleString()}</span>
-        </div>
-
-        <div className="kpi-card kpi-purple">
-          <span className="kpi-label">Passes & Exemptions</span>
-          <span className="kpi-val">{kpiMetrics.passCount.toLocaleString()}</span>
         </div>
       </div>
 

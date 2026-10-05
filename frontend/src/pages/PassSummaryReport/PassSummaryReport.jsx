@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PassSummaryService from '../../services/summary/PassSummaryService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './PassSummaryReport.scss';
 
 export const PassSummaryReport = () => {
@@ -135,6 +136,35 @@ export const PassSummaryReport = () => {
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
 
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Pass Count',
+            value: kpiMetrics.grandCount.toLocaleString('en-IN'),
+            sub: 'Issued FASTag Passes'
+          },
+          {
+            label: 'Total Pass Revenue',
+            value: `₹ ${kpiMetrics.grandAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross Pass Sales',
+            highlight: 'blue'
+          },
+          {
+            label: 'Cash vs Online',
+            value: `${kpiMetrics.cashCount} / ${kpiMetrics.onlineCount}`,
+            sub: 'Payment Mode Distribution',
+            highlight: 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'pass_summary',
+            isBadge: true
+          }
+        ]}
+      />
+
       {/* Table */}
       <div className="table-wrapper">
         <div className="table-responsive">
@@ -240,32 +270,6 @@ export const PassSummaryReport = () => {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="report-kpi-summary-bar">
-        <div className="kpi-card kpi-blue">
-          <span className="kpi-label">Total Pass Count</span>
-          <span className="kpi-val">{kpiMetrics.grandCount.toLocaleString()}</span>
-        </div>
-        <div className="kpi-card kpi-green">
-          <span className="kpi-label">Cash Passes</span>
-          <span className="kpi-val">{kpiMetrics.cashCount.toLocaleString()}</span>
-        </div>
-        <div className="kpi-card kpi-amber">
-          <span className="kpi-label">Online Passes</span>
-          <span className="kpi-val">{kpiMetrics.onlineCount.toLocaleString()}</span>
-        </div>
-        <div className="kpi-card kpi-purple">
-          <span className="kpi-label">Total Revenue (₹)</span>
-          <span className="kpi-val">
-            ₹{kpiMetrics.grandAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-        <div className="kpi-card kpi-red">
-          <span className="kpi-label">Plazas Covered</span>
-          <span className="kpi-val">{kpiMetrics.plazaCount}</span>
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import DateWiseReconService from '../../services/recon/DateWiseReconService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './DateWiseRecon.scss';
 
 export const DateWiseRecon = () => {
@@ -350,6 +351,35 @@ export const DateWiseRecon = () => {
           </div>
         )}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Recon Groups',
+            value: records.length,
+            sub: 'Filtered Dates & Plazas'
+          },
+          {
+            label: 'Total Settled Transactions',
+            value: grandTotalCount.toLocaleString('en-IN'),
+            sub: 'Consolidated Txn Count',
+            highlight: 'blue'
+          },
+          {
+            label: 'Total Settlement Amount',
+            value: formatCurrency(grandTotalAmount),
+            sub: 'Gross Remitted Funds',
+            highlight: 'purple'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'date_wise_recon',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Hierarchical Two-Tier Table */}
       <div className="table-card">

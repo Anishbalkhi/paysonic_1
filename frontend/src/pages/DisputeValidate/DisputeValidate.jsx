@@ -4,6 +4,7 @@ import { FUNCTION_CODES } from '../../config/disputeConstants';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import TakeActionModal from '../../components/DisputeModals/TakeActionModal';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './DisputeValidate.scss';
 
 export const DisputeValidate = () => {
@@ -223,6 +224,35 @@ export const DisputeValidate = () => {
           </button>
         </div>
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Assigned Disputes',
+            value: rows.length,
+            sub: `Plaza ID: ${plazaId}`
+          },
+          {
+            label: 'Total Dispute Amount',
+            value: `₹ ${rows.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Cumulative Queue Value',
+            highlight: 'blue'
+          },
+          {
+            label: 'Pending Plaza Action',
+            value: rows.filter(r => r.disputeStatus === 'NA').length,
+            sub: `Decided / Closed: ${rows.filter(r => r.disputeStatus !== 'NA').length}`,
+            highlight: rows.some(r => r.disputeStatus === 'NA') ? 'amber' : 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'plaza_dispute_validation',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Export Toolbar */}
       <div className="table-toolbar-row">

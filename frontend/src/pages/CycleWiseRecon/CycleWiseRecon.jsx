@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import CycleWiseReconService from '../../services/recon/CycleWiseReconService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './CycleWiseRecon.scss';
 
 export const CycleWiseRecon = () => {
@@ -281,40 +282,6 @@ export const CycleWiseRecon = () => {
 
       </div>
 
-      {/* KPI Cards */}
-      <div className="kpi-grid">
-        <div className="kpi-card primary">
-          <span className="kpi-title">Settlement Cycles</span>
-          <span className="kpi-value">{kpis.cyclesCount}</span>
-          <span className="kpi-sub">Across all plazas</span>
-        </div>
-        <div className="kpi-card info">
-          <span className="kpi-title">Total Txns</span>
-          <span className="kpi-value">{kpis.totalTxns.toLocaleString()}</span>
-          <span className="kpi-sub">Processed transactions</span>
-        </div>
-        <div className="kpi-card warning">
-          <span className="kpi-title">Gross Txn Amount</span>
-          <span className="kpi-value">₹{formatAmt(kpis.totalGross)}</span>
-          <span className="kpi-sub">Before fees & disputes</span>
-        </div>
-        <div className="kpi-card slate">
-          <span className="kpi-title">Net Dispute Adj.</span>
-          <span className="kpi-value">₹{formatAmt(kpis.netDispute)}</span>
-          <span className="kpi-sub">(+Credit / -Debit)</span>
-        </div>
-        <div className="kpi-card">
-          <span className="kpi-title">MDR & NPCI Switch</span>
-          <span className="kpi-value">₹{formatAmt(kpis.totalFees)}</span>
-          <span className="kpi-sub">Total service fee + GST</span>
-        </div>
-        <div className="kpi-card success">
-          <span className="kpi-title">Net Settled Amount</span>
-          <span className="kpi-value">₹{formatAmt(kpis.totalNetSettled)}</span>
-          <span className="kpi-sub">Final bank remittance</span>
-        </div>
-      </div>
-
       {/* Search & Filter Form */}
       <div className="filter-box">
         <div className="filter-row">
@@ -415,6 +382,41 @@ export const CycleWiseRecon = () => {
           </div>
         )}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Settlement Cycles',
+            value: kpis.cyclesCount,
+            sub: 'Across Filtered Plazas'
+          },
+          {
+            label: 'Total Processed Txns',
+            value: kpis.totalTxns.toLocaleString('en-IN'),
+            sub: 'Processed Transactions',
+            highlight: 'blue'
+          },
+          {
+            label: 'Gross Txn Amount',
+            value: `₹ ${formatAmt(kpis.totalGross)}`,
+            sub: 'Before Fees & Adjustments',
+            highlight: 'purple'
+          },
+          {
+            label: 'Net Settled Amount',
+            value: `₹ ${formatAmt(kpis.totalNetSettled)}`,
+            sub: 'Final Bank Remittance',
+            highlight: 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'cycle_wise_recon',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* Results Table Card */}
       <div className="table-card">

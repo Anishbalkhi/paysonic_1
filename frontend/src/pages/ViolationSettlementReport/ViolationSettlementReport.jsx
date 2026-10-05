@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationSettlementService from '../../services/violation/ViolationSettlementService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationSettlementReport.scss';
 
 export const ViolationSettlementReport = () => {
@@ -365,6 +366,35 @@ export const ViolationSettlementReport = () => {
 
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Settlement Records',
+            value: (totalElements || summaryKpis.totalCount).toLocaleString('en-IN'),
+            sub: 'Filtered Violations'
+          },
+          {
+            label: 'Total Transaction Amount',
+            value: `₹ ${Number(summaryKpis.totalTxnAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Original Txn Value',
+            highlight: 'blue'
+          },
+          {
+            label: 'Total Settlement Amount',
+            value: `₹ ${Number(summaryKpis.totalSettlementAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: `Adjustment: ₹ ${Number(summaryKpis.totalAdjustmentAmount).toFixed(2)}`,
+            highlight: 'purple'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'violation_settlement',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* 3. Table Area */}
       <div className="table-wrapper">

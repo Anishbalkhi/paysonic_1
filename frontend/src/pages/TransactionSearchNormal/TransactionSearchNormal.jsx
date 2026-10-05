@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
+import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearchNormal.scss';
 
 export const TransactionSearchNormal = () => {
@@ -371,6 +372,35 @@ export const TransactionSearchNormal = () => {
 
         {errorMsg && <div className="filter-error-msg">{errorMsg}</div>}
       </div>
+
+      {/* Summary KPI Cards / Mini Dashboard */}
+      <ReportKpiGrid
+        cards={[
+          {
+            label: 'Total Normal Transactions',
+            value: (totalElements || summaryKpis.totalCount).toLocaleString('en-IN'),
+            sub: 'Filtered Records'
+          },
+          {
+            label: 'Total Transaction Amount',
+            value: `₹ ${Number(summaryKpis.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross Toll Revenue',
+            highlight: 'blue'
+          },
+          {
+            label: 'Accepted / Success Count',
+            value: `${summaryKpis.acceptedCount} / ${filteredRecords.length}`,
+            sub: `Amount: ₹ ${Number(summaryKpis.acceptedAmount).toFixed(2)}`,
+            highlight: 'green'
+          },
+          {
+            label: 'Live Railway DB',
+            value: 'ONLINE',
+            sub: 'toll_transactions',
+            isBadge: true
+          }
+        ]}
+      />
 
       {/* 3. Table Area */}
       <div className="table-wrapper">
