@@ -70,6 +70,12 @@ public class OnboardingController {
                     .body(Map.of("error", "A valid Concessionaire ID is required to onboard a Plaza"));
         }
 
+        // Uniqueness validation: plazaId, name, orgId, geoCode
+        java.util.Optional<String> duplicateErr = onboardingService.checkPlazaUniqueness(plaza, null);
+        if (duplicateErr.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", duplicateErr.get()));
+        }
+
         Plaza saved = onboardingService.savePlaza(plaza);
         log.info("Created Plaza in Database: {} ({})", saved.getName(), saved.getId());
         return ResponseEntity.ok(saved);
@@ -84,6 +90,12 @@ public class OnboardingController {
                 !onboardingService.concessionaireExists(plaza.getConcessionaireId())) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Selected Concessionaire ID does not exist"));
+        }
+
+        // Uniqueness validation excluding current plaza ID
+        java.util.Optional<String> duplicateErr = onboardingService.checkPlazaUniqueness(plaza, id);
+        if (duplicateErr.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", duplicateErr.get()));
         }
 
         Plaza saved = onboardingService.savePlaza(plaza);

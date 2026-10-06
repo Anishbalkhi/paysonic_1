@@ -105,6 +105,39 @@ public class OnboardingBackendService {
         return plazaRepo.findById(id);
     }
 
+    public Optional<String> checkPlazaUniqueness(Plaza plaza, String excludeId) {
+        if (plaza.getId() != null && !plaza.getId().trim().isEmpty()) {
+            String trimmedId = plaza.getId().trim();
+            if (excludeId == null || !excludeId.equalsIgnoreCase(trimmedId)) {
+                if (plazaRepo.existsById(trimmedId)) {
+                    return Optional.of("Plaza ID '" + trimmedId + "' already exists! Each plaza must have a unique Plaza ID.");
+                }
+            }
+        }
+        if (plaza.getName() != null && !plaza.getName().trim().isEmpty()) {
+            String trimmedName = plaza.getName().trim();
+            Optional<Plaza> existing = plazaRepo.findByNameIgnoreCase(trimmedName);
+            if (existing.isPresent() && (excludeId == null || !existing.get().getId().equalsIgnoreCase(excludeId))) {
+                return Optional.of("Plaza Name '" + trimmedName + "' already exists! Each plaza must have a unique Plaza Name.");
+            }
+        }
+        if (plaza.getOrgId() != null && !plaza.getOrgId().trim().isEmpty()) {
+            String trimmedOrg = plaza.getOrgId().trim();
+            Optional<Plaza> existing = plazaRepo.findByOrgIdIgnoreCase(trimmedOrg);
+            if (existing.isPresent() && (excludeId == null || !existing.get().getId().equalsIgnoreCase(excludeId))) {
+                return Optional.of("Org ID '" + trimmedOrg + "' already exists! Each plaza must have a unique Org ID.");
+            }
+        }
+        if (plaza.getGeoCode() != null && !plaza.getGeoCode().trim().isEmpty()) {
+            String trimmedGeo = plaza.getGeoCode().trim();
+            Optional<Plaza> existing = plazaRepo.findByGeoCode(trimmedGeo);
+            if (existing.isPresent() && (excludeId == null || !existing.get().getId().equalsIgnoreCase(excludeId))) {
+                return Optional.of("Geo Code '" + trimmedGeo + "' already exists! Each plaza must have a unique Geo Code.");
+            }
+        }
+        return Optional.empty();
+    }
+
     public Plaza savePlaza(Plaza plaza) {
         return plazaRepo.save(plaza);
     }

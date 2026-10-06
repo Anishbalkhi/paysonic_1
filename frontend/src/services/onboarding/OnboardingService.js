@@ -146,12 +146,61 @@ class OnboardingService {
   // ============================================================
 
   /**
+   * Validate uniqueness of Plaza ID, Plaza Name, Org ID, and Geo Code against live database
+   */
+  async validatePlazaUniqueness(plaza, { isEdit = false, originalId } = {}) {
+    const targetLookupId = isEdit && originalId ? String(originalId).trim() : String(plaza.id).trim();
+    const existing = await this.getPlazas();
+
+    const dupId = existing.find(
+      (p) => String(p.id).trim() === String(plaza.id).trim() && String(p.id).trim() !== targetLookupId
+    );
+    if (dupId) {
+      throw new Error(`Plaza ID '${plaza.id}' already exists! Each plaza must have a unique Plaza ID.`);
+    }
+
+    const dupName = existing.find(
+      (p) =>
+        (p.name || '').trim().toUpperCase() === (plaza.name || '').trim().toUpperCase() &&
+        String(p.id).trim() !== targetLookupId
+    );
+    if (dupName) {
+      throw new Error(`Plaza Name '${plaza.name}' already exists! Each plaza must have a unique Plaza Name.`);
+    }
+
+    if (plaza.orgId && plaza.orgId.trim()) {
+      const dupOrg = existing.find(
+        (p) =>
+          (p.orgId || '').trim().toUpperCase() === (plaza.orgId || '').trim().toUpperCase() &&
+          String(p.id).trim() !== targetLookupId
+      );
+      if (dupOrg) {
+        throw new Error(`Org ID '${plaza.orgId}' already exists! Each plaza must have a unique Org ID.`);
+      }
+    }
+
+    if (plaza.geoCode && plaza.geoCode.trim()) {
+      const dupGeo = existing.find(
+        (p) =>
+          (p.geoCode || '').trim() === plaza.geoCode.trim() &&
+          String(p.id).trim() !== targetLookupId
+      );
+      if (dupGeo) {
+        throw new Error(`Geo Code '${plaza.geoCode}' already exists! Each plaza must have a unique Geo Code.`);
+      }
+    }
+  }
+
+  /**
    * Create or update a plaza.
    * POST /api/plazas (create) or PUT /api/plazas/:id (update).
    * Falls back to localStorage only if Railway is unavailable.
    * Fires audit event in both cases.
    */
   async savePlaza(plaza, { isEdit = false, originalId, actor: actorOverride } = {}) {
+    // Enforce uniqueness validation across ID, Name, Org ID, Geo Code
+    await this.validatePlazaUniqueness(plaza, { isEdit, originalId });
+
     const actor = actorOverride || getActor();
     const isUpdate = isEdit || Boolean(plaza._railwayId);
     const local = getLocalStore() || {};

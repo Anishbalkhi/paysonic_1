@@ -499,6 +499,9 @@ export const Onboarding = () => {
         if (!/^[A-Z0-9 -]{1,100}$/.test(v)) {
           return 'Alphanumeric, - and spaces only · max 100 chars';
         }
+        if (store.plazas.some((p) => (p.name || '').trim().toUpperCase() === v && p.id !== editingPlazaOriginalId)) {
+          return 'Plaza Name already exists! Each plaza must have a unique Plaza Name.';
+        }
         return '';
       }
       case 'id': {
@@ -507,8 +510,8 @@ export const Onboarding = () => {
         if (!/^\d{6}$/.test(v)) {
           return 'Plaza ID must be exactly 6 digits';
         }
-        if (store.plazas.some((p) => p.id === v && p.id !== editingPlazaOriginalId)) {
-          return 'This Plaza ID is already onboarded on the network';
+        if (store.plazas.some((p) => String(p.id).trim() === v && p.id !== editingPlazaOriginalId)) {
+          return 'Plaza ID already exists! Each plaza must have a unique Plaza ID.';
         }
         return '';
       }
@@ -517,6 +520,9 @@ export const Onboarding = () => {
         if (!v) return 'Org ID is required';
         if (!/^[A-Z]{4}$/.test(v)) {
           return 'Alphabetical only · exactly 4 letters';
+        }
+        if (store.plazas.some((p) => (p.orgId || '').trim().toUpperCase() === v && p.id !== editingPlazaOriginalId)) {
+          return 'Org ID already exists! Each plaza must have a unique Org ID.';
         }
         return '';
       }
@@ -547,6 +553,9 @@ export const Onboarding = () => {
         const v = (val !== undefined ? val : currentForm.geoCode).trim();
         if (v && !/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(v)) {
           return 'Format must be Latitude,Longitude (e.g. 19.9975,73.7898)';
+        }
+        if (v && store.plazas.some((p) => (p.geoCode || '').trim() === v && p.id !== editingPlazaOriginalId)) {
+          return 'Geo Code already exists! Each plaza must have a unique Geo Code.';
         }
         return '';
       }
@@ -595,7 +604,7 @@ export const Onboarding = () => {
     }));
   };
 
-  const handleSavePlaza = (e) => {
+  const handleSavePlaza = async (e) => {
     e.preventDefault();
     const fieldsToValidate = [
       'concessionaireId',
@@ -617,12 +626,6 @@ export const Onboarding = () => {
       if (err) errors[f] = err;
     });
 
-    if (Object.keys(errors).length > 0) {
-      setPlazaErrors(errors);
-      showToast('Please fix the highlighted plaza errors', 'error');
-      return;
-    }
-
     const name = (plazaForm.name || '').trim().toUpperCase();
     const id = (plazaForm.id || '').trim();
     const orgId = (plazaForm.orgId || '').trim().toUpperCase();
@@ -633,6 +636,28 @@ export const Onboarding = () => {
     const pubKey = (plazaForm.publicKey || '').trim();
     const contactNo = (plazaForm.contactNo || '').trim();
     const contactMail = (plazaForm.contactMail || '').trim();
+    const targetOriginalId = isEditingPlaza && editingPlazaOriginalId ? editingPlazaOriginalId : null;
+
+    // Explicit duplicate validation against store.plazas
+    if (!errors.id && store.plazas.some((p) => String(p.id).trim() === id && String(p.id).trim() !== targetOriginalId)) {
+      errors.id = 'Plaza ID already exists! Each plaza must have a unique Plaza ID.';
+    }
+    if (!errors.name && store.plazas.some((p) => (p.name || '').trim().toUpperCase() === name && String(p.id).trim() !== targetOriginalId)) {
+      errors.name = 'Plaza Name already exists! Each plaza must have a unique Plaza Name.';
+    }
+    if (!errors.orgId && store.plazas.some((p) => (p.orgId || '').trim().toUpperCase() === orgId && String(p.id).trim() !== targetOriginalId)) {
+      errors.orgId = 'Org ID already exists! Each plaza must have a unique Org ID.';
+    }
+    if (!errors.geoCode && geoCode && store.plazas.some((p) => (p.geoCode || '').trim() === geoCode && String(p.id).trim() !== targetOriginalId)) {
+      errors.geoCode = 'Geo Code already exists! Each plaza must have a unique Geo Code.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPlazaErrors(errors);
+      const firstMsg = Object.values(errors)[0];
+      showToast(firstMsg, 'error');
+      return;
+    }
 
     const savedPlaza = {
       ...plazaForm,
@@ -649,89 +674,90 @@ export const Onboarding = () => {
       contactMail,
     };
 
-    // Optimistic store update — replace in-place to avoid duplicate entry when ID changes
-    setStore((prev) => {
-      let updatedPlazas = [...prev.plazas];
-      const targetOriginalId = isEditingPlaza && editingPlazaOriginalId ? editingPlazaOriginalId : id;
-      const existingIdx = updatedPlazas.findIndex((p) => p.id === targetOriginalId || p.id === id);
+    try {
+      // Save directly to Railway MySQL with backend & client uniqueness checks
+      await OnboardingService.savePlaza(savedPlaza, {
+        isEdit: isEditingPlaza,
+        originalId: editingPlazaOriginalId,
+        actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
+      });
 
-      if (existingIdx >= 0) {
-        updatedPlazas[existingIdx] = savedPlaza;
-      } else {
-        updatedPlazas.push(savedPlaza);
-      }
+      // Update store state on success
+      setStore((prev) => {
+        let updatedPlazas = [...prev.plazas];
+        const targetLookupId = isEditingPlaza && editingPlazaOriginalId ? editingPlazaOriginalId : id;
+        const existingIdx = updatedPlazas.findIndex((p) => p.id === targetLookupId || p.id === id);
 
-      // If ID was modified during editing, ensure old ID entry is removed so no duplicates appear
-      if (isEditingPlaza && editingPlazaOriginalId && editingPlazaOriginalId !== id) {
-        updatedPlazas = updatedPlazas.filter((p, idx) => idx === existingIdx || p.id !== editingPlazaOriginalId);
-      }
-
-      // Migrate callbacks, fares, cch, lanes if ID was modified
-      const newCallbacks = { ...prev.callbacks };
-      const newFares = { ...prev.fares };
-      const newCch = { ...prev.cch };
-      const newLanes = (prev.lanes || []).map((l) =>
-        isEditingPlaza && editingPlazaOriginalId && l.plazaId === editingPlazaOriginalId
-          ? { ...l, plazaId: id }
-          : l
-      );
-
-      if (isEditingPlaza && editingPlazaOriginalId && editingPlazaOriginalId !== id) {
-        if (newCallbacks[editingPlazaOriginalId]) {
-          newCallbacks[id] = newCallbacks[editingPlazaOriginalId];
-          delete newCallbacks[editingPlazaOriginalId];
+        if (existingIdx >= 0) {
+          updatedPlazas[existingIdx] = savedPlaza;
+        } else {
+          updatedPlazas.push(savedPlaza);
         }
-        if (newFares[editingPlazaOriginalId]) {
-          newFares[id] = newFares[editingPlazaOriginalId];
-          delete newFares[editingPlazaOriginalId];
+
+        // If ID was modified during editing, ensure old ID entry is removed so no duplicates appear
+        if (isEditingPlaza && editingPlazaOriginalId && editingPlazaOriginalId !== id) {
+          updatedPlazas = updatedPlazas.filter((p, idx) => idx === existingIdx || p.id !== editingPlazaOriginalId);
         }
-        if (newCch[editingPlazaOriginalId]) {
-          newCch[id] = newCch[editingPlazaOriginalId];
-          delete newCch[editingPlazaOriginalId];
+
+        // Migrate callbacks, fares, cch, lanes if ID was modified
+        const newCallbacks = { ...prev.callbacks };
+        const newFares = { ...prev.fares };
+        const newCch = { ...prev.cch };
+        const newLanes = (prev.lanes || []).map((l) =>
+          isEditingPlaza && editingPlazaOriginalId && l.plazaId === editingPlazaOriginalId
+            ? { ...l, plazaId: id }
+            : l
+        );
+
+        if (isEditingPlaza && editingPlazaOriginalId && editingPlazaOriginalId !== id) {
+          if (newCallbacks[editingPlazaOriginalId]) {
+            newCallbacks[id] = newCallbacks[editingPlazaOriginalId];
+            delete newCallbacks[editingPlazaOriginalId];
+          }
+          if (newFares[editingPlazaOriginalId]) {
+            newFares[id] = newFares[editingPlazaOriginalId];
+            delete newFares[editingPlazaOriginalId];
+          }
+          if (newCch[editingPlazaOriginalId]) {
+            newCch[id] = newCch[editingPlazaOriginalId];
+            delete newCch[editingPlazaOriginalId];
+          }
         }
+
+        if (!newCallbacks[id]) newCallbacks[id] = {};
+        if (!newFares[id]) newFares[id] = {};
+        if (!newCch[id]) newCch[id] = {};
+
+        return {
+          ...prev,
+          plazas: updatedPlazas,
+          lanes: newLanes,
+          callbacks: newCallbacks,
+          fares: newFares,
+          cch: newCch,
+        };
+      });
+
+      if (selectedPlazaId === editingPlazaOriginalId) {
+        setSelectedPlazaId(id);
       }
 
-      // Initialize callbacks, fares, and cch as empty objects if not present
-      if (!newCallbacks[id]) {
-        newCallbacks[id] = {};
-      }
-
-      if (!newFares[id]) {
-        newFares[id] = {};
-      }
-
-      if (!newCch[id]) {
-        newCch[id] = {};
-      }
-
-      return {
-        ...prev,
-        plazas: updatedPlazas,
-        lanes: newLanes,
-        callbacks: newCallbacks,
-        fares: newFares,
-        cch: newCch,
-      };
-    });
-
-    if (selectedPlazaId === editingPlazaOriginalId) {
-      setSelectedPlazaId(id);
-    }
-
-    showToast(`Plaza ${savedPlaza.name} (${savedPlaza.id}) saved with status ${savedPlaza.status}`, 'success');
-    handleResetPlazaForm();
-    setTab('view');
-
-    // Direct Railway MySQL API write
-    OnboardingService.savePlaza(savedPlaza, {
-      isEdit: isEditingPlaza,
-      originalId: editingPlazaOriginalId,
-      actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then(() => {
       showToast(`✓ Plaza ${savedPlaza.name} (${savedPlaza.id}) saved successfully!`, 'success');
-    }).catch((err) => {
-      showToast(`⚠ Database Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
-    });
+      handleResetPlazaForm();
+      setTab('view');
+    } catch (err) {
+      const errorMsg = err?.response?.data?.error || err.message || 'Database Save Failed';
+      showToast(errorMsg, 'error');
+      if (errorMsg.includes('Plaza ID')) {
+        setPlazaErrors((prev) => ({ ...prev, id: errorMsg }));
+      } else if (errorMsg.includes('Plaza Name')) {
+        setPlazaErrors((prev) => ({ ...prev, name: errorMsg }));
+      } else if (errorMsg.includes('Org ID')) {
+        setPlazaErrors((prev) => ({ ...prev, orgId: errorMsg }));
+      } else if (errorMsg.includes('Geo Code')) {
+        setPlazaErrors((prev) => ({ ...prev, geoCode: errorMsg }));
+      }
+    }
   };
 
   // =========================================================================
