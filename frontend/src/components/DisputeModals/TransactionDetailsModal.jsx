@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TRANSACTION_MASTER, PLAZA_MAP } from '../../config/disputeConstants';
+import EvidencePreviewModal from './EvidencePreviewModal';
 import './DisputeModals.scss';
 
 export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
+  const [previewTarget, setPreviewTarget] = useState(null);
+
   if (!isOpen || !disputeRow) return null;
 
   const acqTxnId = disputeRow.acqTxnId;
@@ -34,45 +37,100 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     { label: 'CB Plaza Status', val: disputeRow.disputeStatus || 'NA' },
   ];
 
-  return (
-    <div className="dispute-modal-overlay" onClick={onClose}>
-      <div
-        className="dispute-modal size-sm"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="modal-header-banner">
-          <h2>Transaction Details</h2>
-          <button type="button" className="btn-close-modal" onClick={onClose}>
-            ✕
-          </button>
-        </div>
+  const adminEvidence = disputeRow.adminEvidence || [];
+  const plazaEvidence = disputeRow.plazaEvidence || [];
+  const hasEvidence = adminEvidence.length > 0 || plazaEvidence.length > 0;
 
-        <div className="modal-body">
-          <div className="kv-detail-list">
-            {rows.map((r, i) => (
-              <div key={i} className="kv-item">
-                <span className="kv-label">{r.label}</span>
-                <span
-                  className={`kv-val ${r.isCode ? 'code' : ''} ${
-                    r.isHighlight ? 'highlight' : ''
-                  }`}
-                >
-                  {r.val}
-                </span>
+  return (
+    <>
+      <div className="dispute-modal-overlay" onClick={onClose}>
+        <div
+          className="dispute-modal size-sm"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-header-banner">
+            <h2>Transaction Details</h2>
+            <button type="button" className="btn-close-modal" onClick={onClose}>
+              ✕
+            </button>
+          </div>
+
+          <div className="modal-body">
+            <div className="kv-detail-list">
+              {rows.map((r, i) => (
+                <div key={i} className="kv-item">
+                  <span className="kv-label">{r.label}</span>
+                  <span
+                    className={`kv-val ${r.isCode ? 'code' : ''} ${
+                      r.isHighlight ? 'highlight' : ''
+                    }`}
+                  >
+                    {r.val}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {hasEvidence && (
+              <div className="txn-modal-evidence-section">
+                <div className="evidence-section-title">
+                  <span>📎 Attached Evidence Files</span>
+                  <small>Visible to both Admin &amp; Plaza</small>
+                </div>
+                <div className="evidence-chips-list">
+                  {adminEvidence.map((f, i) => {
+                    const name = typeof f === 'string' ? f : f.name;
+                    return (
+                      <div
+                        key={`acq-${i}`}
+                        className="evidence-chip-mini"
+                        onClick={() => setPreviewTarget({ file: f, source: 'Acquirer Evidence' })}
+                        title="Click to view file"
+                      >
+                        <span className="badge-acq-mini">Acquirer</span>
+                        <span className="file-name-mini">📎 {name}</span>
+                        <span className="view-action-mini">👁️ View</span>
+                      </div>
+                    );
+                  })}
+                  {plazaEvidence.map((f, i) => {
+                    const name = typeof f === 'string' ? f : f.name;
+                    return (
+                      <div
+                        key={`plz-${i}`}
+                        className="evidence-chip-mini"
+                        onClick={() => setPreviewTarget({ file: f, source: 'Plaza Evidence' })}
+                        title="Click to view file"
+                      >
+                        <span className="badge-plz-mini">Plaza</span>
+                        <span className="file-name-mini">📎 {name}</span>
+                        <span className="view-action-mini">👁️ View</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            ))}
+            )}
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
+              Close
+            </button>
           </div>
         </div>
-
-        <div className="modal-footer">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
-            Close
-          </button>
-        </div>
       </div>
-    </div>
+
+      <EvidencePreviewModal
+        isOpen={Boolean(previewTarget)}
+        onClose={() => setPreviewTarget(null)}
+        file={previewTarget?.file}
+        source={previewTarget?.source || 'Evidence'}
+        disputeRow={disputeRow}
+      />
+    </>
   );
 };
 

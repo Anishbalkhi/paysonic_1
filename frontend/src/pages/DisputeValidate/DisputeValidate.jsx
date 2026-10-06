@@ -9,9 +9,10 @@ import './DisputeValidate.scss';
 
 export const DisputeValidate = () => {
   const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'Master Admin';
   const [plazas, setPlazas] = useState([]);
   const [selectedPlazaId, setSelectedPlazaId] = useState(
-    currentUser?.plazaId || '501101'
+    currentUser?.plazaId || 'ALL'
   );
 
   useEffect(() => {
@@ -19,9 +20,8 @@ export const DisputeValidate = () => {
     DisputeManagementService.getRealtimePlazas().then((live) => {
       if (isMounted && Array.isArray(live) && live.length > 0) {
         setPlazas(live);
-        if (!currentUser?.plazaId) {
-          const found = live.find((p) => String(p.id) === '501101');
-          setSelectedPlazaId(found ? '501101' : live[0].id);
+        if (currentUser?.plazaId) {
+          setSelectedPlazaId(currentUser.plazaId);
         }
       }
     });
@@ -30,11 +30,14 @@ export const DisputeValidate = () => {
     };
   }, [currentUser]);
 
-  const activePlazaId = currentUser?.plazaId || selectedPlazaId || '501101';
-  const activePlaza = plazas.find((p) => String(p.id) === String(activePlazaId)) || {
-    id: activePlazaId,
-    name: 'MUMBAI PLAZA NH-04',
-  };
+  const activePlazaId = currentUser?.plazaId || selectedPlazaId || 'ALL';
+  const activePlaza =
+    activePlazaId === 'ALL'
+      ? { id: 'ALL', name: 'All Plazas' }
+      : plazas.find((p) => String(p.id) === String(activePlazaId)) || {
+          id: activePlazaId,
+          name: 'MUMBAI PLAZA NH-04',
+        };
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +131,9 @@ export const DisputeValidate = () => {
               id="vdPlazaSelect"
               value={selectedPlazaId}
               onChange={(e) => setSelectedPlazaId(e.target.value)}
+              disabled={Boolean(currentUser?.plazaId)}
             >
+              {!currentUser?.plazaId && <option value="ALL">All Plazas (ALL)</option>}
               {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({p.id})
@@ -327,19 +332,20 @@ export const DisputeValidate = () => {
                 <th>Function Code</th>
                 <th>Plaza Action</th>
                 <th>Dispute Status</th>
+                <th style={{ textAlign: 'center' }}>Attachments</th>
                 <th>TAT</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="13" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="14" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     Loading plaza disputes...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan="13" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="14" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     No disputes assigned to your plaza match the filters.
                   </td>
                 </tr>
@@ -347,6 +353,10 @@ export const DisputeValidate = () => {
                 rows.map((r) => {
                   const tat = DisputeManagementService.getTatBadge(r);
                   const isDecided = r.disputeStatus !== 'NA';
+                  const adminEvCount = (r.adminEvidence || []).length;
+                  const plazaEvCount = (r.plazaEvidence || []).length;
+                  const hasAnyEvidence = adminEvCount > 0 || plazaEvCount > 0;
+
                   return (
                     <tr key={r.rowId}>
                       <td style={{ textAlign: 'center' }}>
@@ -397,6 +407,38 @@ export const DisputeValidate = () => {
                           <span className="badge badge-red">Rejected</span>
                         ) : (
                           <span className="badge badge-gray">NA</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        {hasAnyEvidence ? (
+                          <div
+                            style={{
+                              display: 'inline-flex',
+                              gap: '4px',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => setActionModalRow(r)}
+                            title="Click to view all attachments"
+                          >
+                            {adminEvCount > 0 && (
+                              <span
+                                className="badge"
+                                style={{ background: '#dbeafe', color: '#1e40af', fontSize: '0.7rem' }}
+                              >
+                                Acq 📎 {adminEvCount}
+                              </span>
+                            )}
+                            {plazaEvCount > 0 && (
+                              <span
+                                className="badge"
+                                style={{ background: '#dcfce7', color: '#166534', fontSize: '0.7rem' }}
+                              >
+                                Plaza 📎 {plazaEvCount}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>—</span>
                         )}
                       </td>
                       <td>
