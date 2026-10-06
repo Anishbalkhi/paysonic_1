@@ -38,12 +38,16 @@ public class CycleWiseReconService {
      * Search and aggregate transactions into Cycle Wise Recon DTOs
      */
     @SuppressWarnings("unchecked")
-    public List<CycleWiseReconDTO> searchCycleWiseRecon(LocalDateTime fromDate, LocalDateTime toDate, String plazaId, String cycle) {
+    public List<CycleWiseReconDTO> searchCycleWiseRecon(LocalDateTime fromDate, LocalDateTime toDate, String plazaId, String cycle, String dateType) {
         StringBuilder sql = new StringBuilder();
+        String dateCol = ("Txn Date".equalsIgnoreCase(dateType) || "TXN_DATE".equalsIgnoreCase(dateType))
+            ? "t.txn_date"
+            : "COALESCE(t.plaza_settle_date, t.npci_settled_date, t.txn_date)";
+
         sql.append("SELECT ")
            .append("  t.plaza_id, ")
            .append("  t.plaza_name, ")
-           .append("  CAST(COALESCE(t.plaza_settle_date, t.npci_settled_date, t.txn_date) AS DATE) AS settle_dt, ")
+           .append("  CAST(").append(dateCol).append(" AS DATE) AS settle_dt, ")
            .append("  COALESCE(t.clearing_cycle, '1') AS cycle_val, ")
            .append("  COUNT(CASE WHEN (t.is_dispute_add IS NULL OR t.is_dispute_add != 'Yes') AND (t.is_dispute_sub IS NULL OR t.is_dispute_sub != 'Yes') THEN 1 ELSE NULL END) AS txn_cnt, ")
            .append("  COALESCE(SUM(CASE WHEN (t.is_dispute_add IS NULL OR t.is_dispute_add != 'Yes') AND (t.is_dispute_sub IS NULL OR t.is_dispute_sub != 'Yes') THEN t.txn_amount ELSE 0 END), 0) AS txn_amt, ")
@@ -55,10 +59,10 @@ public class CycleWiseReconService {
            .append("WHERE t.status = 'Settled' ");
 
         if (fromDate != null) {
-            sql.append("  AND COALESCE(t.plaza_settle_date, t.npci_settled_date, t.txn_date) >= :fromDate ");
+            sql.append("  AND ").append(dateCol).append(" >= :fromDate ");
         }
         if (toDate != null) {
-            sql.append("  AND COALESCE(t.plaza_settle_date, t.npci_settled_date, t.txn_date) <= :toDate ");
+            sql.append("  AND ").append(dateCol).append(" <= :toDate ");
         }
         if (plazaId != null && !plazaId.trim().isEmpty() && !plazaId.equalsIgnoreCase("ALL")) {
             sql.append("  AND (t.plaza_id = :plazaId OR LOWER(t.plaza_name) LIKE LOWER(:plazaSearch)) ");
@@ -67,7 +71,7 @@ public class CycleWiseReconService {
             sql.append("  AND (t.clearing_cycle = :cycle OR t.clearing_cycle = :cPrefixCycle) ");
         }
 
-        sql.append("GROUP BY t.plaza_id, t.plaza_name, CAST(COALESCE(t.plaza_settle_date, t.npci_settled_date, t.txn_date) AS DATE), COALESCE(t.clearing_cycle, '1') ")
+        sql.append("GROUP BY t.plaza_id, t.plaza_name, CAST(").append(dateCol).append(" AS DATE), COALESCE(t.clearing_cycle, '1') ")
            .append("ORDER BY t.plaza_id ASC, settle_dt ASC, cycle_val ASC");
 
         Query query = entityManager.createNativeQuery(sql.toString());
@@ -144,8 +148,8 @@ public class CycleWiseReconService {
     /**
      * Stream Excel file matching exact spreadsheet format and column layout
      */
-    public void streamExcelExport(LocalDateTime fromDate, LocalDateTime toDate, String plazaId, String cycle, OutputStream outputStream) throws Exception {
-        List<CycleWiseReconDTO> records = searchCycleWiseRecon(fromDate, toDate, plazaId, cycle);
+    public void streamExcelExport(LocalDateTime fromDate, LocalDateTime toDate, String plazaId, String cycle, String dateType, OutputStream outputStream) throws Exception {
+        List<CycleWiseReconDTO> records = searchCycleWiseRecon(fromDate, toDate, plazaId, cycle, dateType);
 
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
             Sheet sheet = workbook.createSheet("Cycle Wise Report");

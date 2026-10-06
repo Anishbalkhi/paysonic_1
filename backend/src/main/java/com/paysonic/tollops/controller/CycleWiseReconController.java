@@ -32,7 +32,8 @@ public class CycleWiseReconController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
             @RequestParam(required = false) String plazaId,
-            @RequestParam(required = false) String cycle) {
+            @RequestParam(required = false) String cycle,
+            @RequestParam(required = false) String dateType) {
 
         try {
             LocalDateTime effectiveFrom = fromDate != null ? fromDate : LocalDateTime.now().minusDays(60).withHour(0).withMinute(0).withSecond(1);
@@ -40,7 +41,7 @@ public class CycleWiseReconController {
 
             validateDateRange(effectiveFrom, effectiveTo);
 
-            List<CycleWiseReconDTO> results = cycleWiseReconService.searchCycleWiseRecon(effectiveFrom, effectiveTo, plazaId, cycle);
+            List<CycleWiseReconDTO> results = cycleWiseReconService.searchCycleWiseRecon(effectiveFrom, effectiveTo, plazaId, cycle, dateType);
             return ResponseEntity.ok(results);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
@@ -57,6 +58,7 @@ public class CycleWiseReconController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
             @RequestParam(required = false) String plazaId,
             @RequestParam(required = false) String cycle,
+            @RequestParam(required = false) String dateType,
             HttpServletResponse response) {
 
         try {
@@ -69,7 +71,7 @@ public class CycleWiseReconController {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
 
-            cycleWiseReconService.streamExcelExport(effectiveFrom, effectiveTo, plazaId, cycle, response.getOutputStream());
+            cycleWiseReconService.streamExcelExport(effectiveFrom, effectiveTo, plazaId, cycle, dateType, response.getOutputStream());
             response.flushBuffer();
         } catch (IllegalArgumentException ex) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);

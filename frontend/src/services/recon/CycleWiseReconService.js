@@ -15,12 +15,13 @@ class CycleWiseReconService {
   /**
    * Search cycle-wise reconciliation data
    */
-  async searchCycleWiseRecon({ fromDate, toDate, plazaId = '', cycle = '' }) {
+  async searchCycleWiseRecon({ fromDate, toDate, plazaId = '', cycle = '', dateType = '' }) {
     const params = {};
     if (fromDate) params.fromDate = fromDate;
     if (toDate) params.toDate = toDate;
     if (plazaId) params.plazaId = plazaId;
     if (cycle) params.cycle = cycle;
+    if (dateType) params.dateType = dateType;
 
     try {
       const res = await httpClient.get('/api/reports/cycle-wise-recon/search', { params });
@@ -28,14 +29,14 @@ class CycleWiseReconService {
     } catch (err) {
       console.warn('[CycleWiseReconService] Backend request failed, checking mock fallback:', err);
       // Fallback matching reference image if backend is temporarily offline
-      return this.getFallbackData({ plazaId, cycle });
+      return this.getFallbackData({ plazaId, cycle, dateType });
     }
   }
 
   /**
    * Export Cycle Wise Recon directly from server streaming endpoint
    */
-  async exportExcel({ fromDate, toDate, plazaId = '', cycle = '' }) {
+  async exportExcel({ fromDate, toDate, plazaId = '', cycle = '', dateType = '' }) {
     try {
       const session = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
       UserActivityService.recordAuditEvent({
@@ -44,7 +45,7 @@ class CycleWiseReconService {
         actionLabel: 'Exported Cycle Wise Recon Report (Excel)',
         status: 'SUCCESS',
         target: 'Cycle Wise Recon',
-        details: `Exported Cycle Wise Recon report range: ${fromDate} to ${toDate}`,
+        details: `Exported Cycle Wise Recon report range: ${fromDate} to ${toDate}${dateType ? ` (Date Type: ${dateType})` : ''}`,
         actor: session.name ? { id: session.id, name: session.name, role: session.role } : undefined
       });
     } catch (e) {
@@ -56,6 +57,7 @@ class CycleWiseReconService {
     if (toDate) params.toDate = toDate;
     if (plazaId) params.plazaId = plazaId;
     if (cycle) params.cycle = cycle;
+    if (dateType) params.dateType = dateType;
 
     const response = await httpClient.get('/api/reports/cycle-wise-recon/export', {
       params,
@@ -78,7 +80,7 @@ class CycleWiseReconService {
   /**
    * Fallback mock data matching exact reference spreadsheet if backend connection is offline
    */
-  getFallbackData({ plazaId = '', cycle = '' }) {
+  getFallbackData({ plazaId = '', cycle = '', fromDate = '', toDate = '', dateType = '' } = {}) {
     const raw = [
       {
         rowId: '501101_2026-08-02_C2',
@@ -202,6 +204,16 @@ class CycleWiseReconService {
       }
       if (cycle && cycle !== 'ALL' && r.reconCycle !== cycle) {
         return false;
+      }
+      if (fromDate && r.plazaSettlementDate) {
+        const itemD = new Date(r.plazaSettlementDate + 'T23:59:59');
+        const fD = new Date(fromDate);
+        if (itemD < fD) return false;
+      }
+      if (toDate && r.plazaSettlementDate) {
+        const itemD = new Date(r.plazaSettlementDate + 'T00:00:00');
+        const tD = new Date(toDate);
+        if (itemD > tD) return false;
       }
       return true;
     });

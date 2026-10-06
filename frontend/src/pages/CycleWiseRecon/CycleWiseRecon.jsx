@@ -21,6 +21,7 @@ export const CycleWiseRecon = () => {
   const [toDate, setToDate] = useState(defaultRange.to);
   const [selectedPlazas, setSelectedPlazas] = useState([]);
   const [cycle, setCycle] = useState('');
+  const [dateType, setDateType] = useState(''); // '' ('Select Date Type') | 'Txn Date' | 'Settlement Date'
 
   // Data State
   const [records, setRecords] = useState([]);
@@ -47,11 +48,12 @@ export const CycleWiseRecon = () => {
   };
 
   // Search from real database
-  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlazas, overrideCycle) => {
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlazas, overrideCycle, overrideDateType) => {
     const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
     const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
     const pList = Array.isArray(overridePlazas) ? overridePlazas : selectedPlazas;
     const cyc = (typeof overrideCycle === 'string' && overrideCycle) ? overrideCycle : cycle;
+    const dType = (typeof overrideDateType === 'string') ? overrideDateType : dateType;
 
     if (!validateDates(fDate, tDate)) return;
 
@@ -63,7 +65,8 @@ export const CycleWiseRecon = () => {
         fromDate: fDate,
         toDate: tDate,
         plazaId: queryPlazaId,
-        cycle: cyc
+        cycle: cyc,
+        dateType: dType
       });
 
       let results = data || [];
@@ -80,7 +83,7 @@ export const CycleWiseRecon = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, selectedPlazas, cycle]);
+  }, [fromDate, toDate, selectedPlazas, cycle, dateType]);
 
   // Initial load
   useEffect(() => {
@@ -94,8 +97,9 @@ export const CycleWiseRecon = () => {
     setToDate(range.to);
     setSelectedPlazas([]);
     setCycle('');
+    setDateType('');
     setErrorMsg('');
-    handleSearch(range.from, range.to, [], '');
+    handleSearch(range.from, range.to, [], '', '');
   };
 
   // Export to Excel (Server XLSX)
@@ -109,7 +113,8 @@ export const CycleWiseRecon = () => {
         fromDate,
         toDate,
         plazaId: queryPlazaId,
-        cycle
+        cycle,
+        dateType
       });
     } catch (err) {
       console.error('[CycleWiseRecon] Export failed:', err);
@@ -294,10 +299,11 @@ export const CycleWiseRecon = () => {
       <div className="filter-box">
         <div className="filter-row">
           <div className="input-group">
-            <label>
-              From Settlement Date <span className="req">*</span>
+            <label htmlFor="cwrFromDate">
+              {dateType === 'Txn Date' ? 'From Txn Date' : dateType === 'Settlement Date' ? 'From Settlement Date' : 'From Date'} <span className="req">*</span>
             </label>
             <input
+              id="cwrFromDate"
               type="datetime-local"
               step="1"
               className="form-input"
@@ -307,10 +313,11 @@ export const CycleWiseRecon = () => {
           </div>
 
           <div className="input-group">
-            <label>
-              To Settlement Date <span className="req">*</span>
+            <label htmlFor="cwrToDate">
+              {dateType === 'Txn Date' ? 'To Txn Date' : dateType === 'Settlement Date' ? 'To Settlement Date' : 'To Date'} <span className="req">*</span>
             </label>
             <input
+              id="cwrToDate"
               type="datetime-local"
               step="1"
               className="form-input"
@@ -319,7 +326,7 @@ export const CycleWiseRecon = () => {
             />
           </div>
 
-          <div className="input-group" style={{ minWidth: '260px', flex: '1 1 240px' }}>
+          <div className="input-group" style={{ minWidth: '220px', flex: '1 1 200px' }}>
             <PlazaMultiSelect
               label="Plaza ID / Name"
               selectedPlazas={selectedPlazas}
@@ -329,9 +336,24 @@ export const CycleWiseRecon = () => {
             />
           </div>
 
-          <div className="input-group" style={{ maxWidth: '160px' }}>
-            <label>Recon Cycle</label>
+          <div className="input-group" style={{ minWidth: '170px' }}>
+            <label htmlFor="cwrDateType">Date Type</label>
             <select
+              id="cwrDateType"
+              className="form-select"
+              value={dateType}
+              onChange={(e) => setDateType(e.target.value)}
+            >
+              <option value="">Select Date Type</option>
+              <option value="Txn Date">Txn Date</option>
+              <option value="Settlement Date">Settlement Date</option>
+            </select>
+          </div>
+
+          <div className="input-group" style={{ maxWidth: '150px' }}>
+            <label htmlFor="cwrCycle">Recon Cycle</label>
+            <select
+              id="cwrCycle"
               className="form-select"
               value={cycle}
               onChange={(e) => setCycle(e.target.value)}
