@@ -160,67 +160,7 @@ export default function Dashboard() {
   // disp comes from tier2 — may be null while secondary data loads
   const disp = tier2Data?.disputes ?? null;
 
-  // Role banner configuration
-  const ROLE_BANNER_INFO = {
-    'Master Admin': {
-      title: 'Master Governance Clearance Active',
-      desc: 'Full administrative access across all 5 toll plazas, user provisioning, NPCI clearing, and system configuration.',
-      badge: 'Unrestricted Access',
-      badgeColor: '#16a34a',
-      bg: '#f0fdf4',
-      border: '#bbf7d0',
-    },
-    'Admin': {
-      title: 'Operations Manager Console',
-      desc: 'Central monitoring for transactions, dispute resolutions, and lane telemetry across all network plazas.',
-      badge: 'Ops Management',
-      badgeColor: '#2563eb',
-      bg: '#eff6ff',
-      border: '#bfdbfe',
-    },
-    'Bank': {
-      title: 'Bank Auditor Mode (HDFC Acquirer)',
-      desc: 'Settlement cycle reconciliation active. Focus on TRS reports, cycle-wise clearing, and chargeback disputes.',
-      badge: 'Financial Audit',
-      badgeColor: '#0d9488',
-      bg: '#f0fdfa',
-      border: '#99f6e4',
-    },
-    'Concessionaire': {
-      title: 'Highway Concessionaire Corridor Mode',
-      desc: `Cluster throughput monitoring for ${currentUser?.assignedPlaza || 'Mumbai-Pune Corridor'}. Real-time toll revenue & traffic analytics.`,
-      badge: 'Corridor Analytics',
-      badgeColor: '#d97706',
-      bg: '#fffbeb',
-      border: '#fde68a',
-    },
-    'Plaza Admin': {
-      title: `Plaza Supervisor Mode · ${currentUser?.assignedPlaza || 'Local Plaza'}`,
-      desc: 'Supervising local lane staff, pass issuances, lane hardware uptime, and daily shift variance.',
-      badge: 'Plaza Supervisor',
-      badgeColor: '#0284c7',
-      bg: '#f0f9ff',
-      border: '#bae6fd',
-    },
-    'Plaza POS': {
-      title: `Lane POS Cashier Terminal · ${currentUser?.assignedPlaza || 'Airoli Lane 04'}`,
-      desc: 'Active booth station for FASTag verification, vehicle pass issuance, and lane transaction lookup.',
-      badge: 'POS Terminal',
-      badgeColor: '#ea580c',
-      bg: '#fff7ed',
-      border: '#fed7aa',
-    },
-    'Request Tag Details': {
-      title: 'FASTag Inquiry & Clearance Agent',
-      desc: 'NPCI National Electronic Toll Collection (NETC) registry clearance. Query tag blacklist and account status.',
-      badge: 'Inquiry Agent',
-      badgeColor: '#7c3aed',
-      bg: '#faf5ff',
-      border: '#e9d5ff',
-    },
-  };
 
-  const currentBanner = ROLE_BANNER_INFO[userRole] || ROLE_BANNER_INFO['Admin'];
 
   return (
     <div className={appClass} id="app" data-role={roleSlug} onClick={handleAppClick}>
@@ -250,34 +190,6 @@ export default function Dashboard() {
         />
 
         <div className="dashboard-content">
-          {/* Dynamic Role Banner */}
-          <div className="clearance-banner">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div className="clearance-dot" />
-              <div>
-                <div className="clearance-title">
-                  {currentBanner.title}
-                </div>
-                <div className="clearance-desc">
-                  {currentBanner.desc}
-                </div>
-              </div>
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              <span className="clearance-pill">
-                {currentBanner.badge}
-              </span>
-              {currentUser?.assignedPlaza && (
-                <span className="clearance-assigned-badge">
-                  📍 {currentUser.assignedPlaza}
-                </span>
-              )}
-            </div>
-          </div>
 
         {userRole === 'Plaza POS' || userRole === 'Request Tag Details' ? (
           <WorkstationTerminal
@@ -534,11 +446,11 @@ function Topbar() {
             {roleName}
           </span>
         </h1>
-        <p>
-          {currentUser?.assignedPlaza
-            ? `Assigned Scope: ${currentUser.assignedPlaza} · Network health nominal`
-            : 'Network health nominal across all lanes'}
-        </p>
+        {currentUser?.assignedPlaza && (
+          <p>
+            Assigned Scope: {currentUser.assignedPlaza}
+          </p>
+        )}
       </div>
       <div className="spacer"></div>
       <div className="search">
