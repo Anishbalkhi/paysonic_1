@@ -351,27 +351,51 @@ class DisputeManagementService {
     }
   }
 
-  migrateLegacyDisputes(rows) {
+  migrateLegacyDisputes(rows, customPool = null) {
     if (!Array.isArray(rows)) return INITIAL_SEED_ROWS;
     let modified = false;
-    const realPlazaPool = DEFAULT_PLAZAS;
+
+    // Dynamically retrieve realtime onboarded plazas from OnboardingService
+    const onboardedList = (Array.isArray(customPool) && customPool.length > 0)
+      ? customPool
+      : (OnboardingService.getCachedPlazas()?.length > 0
+          ? OnboardingService.getCachedPlazas()
+          : DEFAULT_PLAZAS);
+
+    const validPlazas = onboardedList.filter((p) => {
+      const id = String(p.id || p.plazaId || '').trim();
+      const name = (p.name || p.plazaName || '').trim().toLowerCase();
+      return id && id !== '600601' && id !== '600602' && id !== '778999' && id !== '778899' && !name.includes('dummy') && name !== 'gluten';
+    });
+
+    const activePool = validPlazas.length > 0 ? validPlazas : DEFAULT_PLAZAS;
+    const validIdSet = new Set(activePool.map((p) => String(p.id || p.plazaId)));
+
     const updated = rows.map((r, idx) => {
+      const pId = String(r.plazaId || '').trim();
+      const pName = (r.plazaName || '').trim();
+      const pNameLower = pName.toLowerCase();
+
       const isLegacy =
-        !r.plazaName ||
-        r.plazaName === 'Dummytollplaza1' ||
-        r.plazaName === 'Dummytollplaza2' ||
-        r.plazaName === 'Gluten' ||
-        r.plazaId === '600601' ||
-        r.plazaId === '600602' ||
-        r.plazaId === '778899';
+        !pName ||
+        !pId ||
+        pNameLower.includes('dummy') ||
+        pNameLower === 'gluten' ||
+        pId === '600601' ||
+        pId === '600602' ||
+        pId === '778899' ||
+        pId === '778999' ||
+        !validIdSet.has(pId);
 
       if (isLegacy) {
         modified = true;
-        const targetPlaza = realPlazaPool[idx % realPlazaPool.length];
+        const target = activePool[idx % activePool.length];
+        const tid = String(target.id || target.plazaId);
+        const tname = target.name || target.plazaName || `Plaza ${tid}`;
         return {
           ...r,
-          plazaId: targetPlaza.id,
-          plazaName: targetPlaza.name,
+          plazaId: tid,
+          plazaName: tname,
         };
       }
       return r;
@@ -402,16 +426,20 @@ class DisputeManagementService {
     }
     const cached = OnboardingService.getCachedPlazas();
     if (Array.isArray(cached) && cached.length > 0) {
-      return cached;
+      return cached.map((p) => ({
+        id: String(p.id),
+        name: p.name || `Plaza ${p.id}`,
+        label: `${p.name || ('Plaza ' + p.id)} (${p.id})`,
+      }));
     }
     return DEFAULT_PLAZAS;
   }
 
-  getStoredDisputes() {
+  getStoredDisputes(overridePool = null) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
       const parsed = raw ? JSON.parse(raw) : INITIAL_SEED_ROWS;
-      return this.migrateLegacyDisputes(parsed);
+      return this.migrateLegacyDisputes(parsed, overridePool);
     } catch {
       return INITIAL_SEED_ROWS;
     }
@@ -484,7 +512,13 @@ class DisputeManagementService {
    * Search / filter disputes
    */
   async searchDisputes(filters = {}) {
-    let rows = this.getStoredDisputes();
+    let livePlazas = [];
+    try {
+      livePlazas = await OnboardingService.getPlazas();
+    } catch {
+      livePlazas = OnboardingService.getCachedPlazas();
+    }
+    let rows = this.getStoredDisputes(livePlazas);
 
     // Plaza scope filter if user is Plaza role
     if (filters.scopedPlazaId) {
@@ -537,7 +571,13 @@ class DisputeManagementService {
    * Mini Dashboard metrics for Admin Chargeback Assign (Section 6.1)
    */
   async getAdminMiniDashboardStats() {
-    const rows = this.getStoredDisputes();
+    let livePlazas = [];
+    try {
+      livePlazas = await OnboardingService.getPlazas();
+    } catch {
+      livePlazas = OnboardingService.getCachedPlazas();
+    }
+    const rows = this.getStoredDisputes(livePlazas);
     const unassigned = rows.filter((r) => !r.assigned).length;
     const assigned = rows.filter((r) => r.assigned).length;
 

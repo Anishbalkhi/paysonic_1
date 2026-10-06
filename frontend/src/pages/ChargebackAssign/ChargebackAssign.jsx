@@ -82,6 +82,161 @@ export const ChargebackAssign = () => {
     loadData();
   };
 
+  // Sync with realtime onboarded plaza updates (creation, deletion, edit)
+  useEffect(() => {
+    const handlePlazasChange = () => {
+      loadData();
+    };
+    window.addEventListener('paysonic:plazas_updated', handlePlazasChange);
+    window.addEventListener('storage', handlePlazasChange);
+    return () => {
+      window.removeEventListener('paysonic:plazas_updated', handlePlazasChange);
+      window.removeEventListener('storage', handlePlazasChange);
+    };
+  }, [loadData]);
+
+  // Export CSV directly matching current filtered records
+  const handleExportCsv = () => {
+    if (!rows || rows.length === 0) return;
+
+    const headers = [
+      'Assign Status',
+      'Acq Txn ID',
+      'Toll Txn ID',
+      'VRN',
+      'Tag ID',
+      'Toll Plaza Name',
+      'Toll Plaza ID',
+      'Txn Date',
+      'CB Raised Date',
+      'CB Reason',
+      'Function Code',
+      'Dispute Type',
+      'Plaza Action',
+      'Dispute Status',
+      'Plaza Reason',
+      'Txn Amount',
+      'Dispute Amount',
+      'TAT'
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const csvRows = rows.map((r) => {
+      const tat = DisputeManagementService.getTatBadge(r);
+      return [
+        r.assigned ? 'Assigned' : 'Unassigned',
+        r.acqTxnId,
+        r.tollTxnId,
+        r.vrn,
+        r.tagId,
+        r.plazaName,
+        r.plazaId,
+        r.txnDate,
+        r.cbRaisedDate,
+        r.cbReason,
+        r.functionCode,
+        r.disputeType,
+        r.plazaAction === 'Yes' ? 'Yes' : 'No',
+        r.disputeStatus,
+        r.plazaReason,
+        Number(r.txnAmount || 0).toFixed(2),
+        Number(r.disputeAmount || 0).toFixed(2),
+        tat.label
+      ].map(escapeCsv).join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...csvRows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Chargeback_Working_Queue_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Export Excel directly matching current filtered records with real onboarded plazas
+  const handleExportExcel = () => {
+    if (!rows || rows.length === 0) return;
+
+    const xmlEsc = (str) =>
+      String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
+    const headers = [
+      'Assign Status', 'Acq Txn ID', 'Toll Txn ID', 'VRN', 'Tag ID',
+      'Toll Plaza Name', 'Toll Plaza ID', 'Txn Date', 'CB Raised Date',
+      'CB Reason', 'Function Code', 'Dispute Type', 'Plaza Action',
+      'Dispute Status', 'Plaza Reason', 'Txn Amount', 'Dispute Amount', 'TAT'
+    ];
+
+    let dataXml = '';
+    rows.forEach((r) => {
+      const tat = DisputeManagementService.getTatBadge(r);
+      dataXml += `
+      <Row ss:Height="20">
+        <Cell><Data ss:Type="String">${xmlEsc(r.assigned ? 'Assigned' : 'Unassigned')}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.acqTxnId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.tollTxnId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.vrn)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.tagId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaName)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.cbRaisedDate)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
+        <Cell><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.disputeType)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaAction === 'Yes' ? 'Yes' : 'No')}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.disputeStatus)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaReason)}</Data></Cell>
+        <Cell><Data ss:Type="Number">${Number(r.txnAmount || 0)}</Data></Cell>
+        <Cell><Data ss:Type="Number">${Number(r.disputeAmount || 0)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(tat.label)}</Data></Cell>
+      </Row>`;
+    });
+
+    const headerXml = `
+      <Row ss:Height="24">
+        ${headers.map((h) => `<Cell><Data ss:Type="String">${xmlEsc(h)}</Data></Cell>`).join('')}
+      </Row>`;
+
+    const excelXml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="Chargeback Queue">
+  <Table>
+   ${headerXml}
+   ${dataXml}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([excelXml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Chargeback_Working_Queue_${Date.now()}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="chargeback-assign-page">
       <div className="page-header-block">
@@ -310,8 +465,30 @@ export const ChargebackAssign = () => {
       <div className="table-wrapper">
         <div className="table-top-bar">
           <div className="table-title">Chargeback Working Queue</div>
-          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-            Showing {rows.length} records
+          <div className="top-bar-right-actions">
+            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+              Showing {rows.length} records
+            </span>
+            <button
+              type="button"
+              className="btn btn-outline-success btn-sm"
+              onClick={handleExportExcel}
+              disabled={rows.length === 0}
+              id="cbaExportExcelBtn"
+              title="Export chargeback queue to Excel (.xls)"
+            >
+              Export Excel
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm"
+              onClick={handleExportCsv}
+              disabled={rows.length === 0}
+              id="cbaExportCsvBtn"
+              title="Export chargeback queue to CSV"
+            >
+              Export CSV
+            </button>
           </div>
         </div>
 

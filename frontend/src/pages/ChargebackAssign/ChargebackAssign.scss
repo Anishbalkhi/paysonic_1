@@ -222,6 +222,56 @@
         font-weight: 700;
         color: #0f172a;
       }
+
+      .top-bar-right-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .btn-outline-success {
+          background: #ecfdf5;
+          color: #059669;
+          border: 1px solid #10b981;
+          font-weight: 600;
+          font-size: 0.8rem;
+          padding: 5px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          &:hover:not(:disabled) {
+            background: #10b981;
+            color: #ffffff;
+          }
+
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        }
+
+        .btn-outline-primary {
+          background: #eff6ff;
+          color: #2563eb;
+          border: 1px solid #3b82f6;
+          font-weight: 600;
+          font-size: 0.8rem;
+          padding: 5px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          &:hover:not(:disabled) {
+            background: #2563eb;
+            color: #ffffff;
+          }
+
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        }
+      }
     }
 
     .table-responsive {

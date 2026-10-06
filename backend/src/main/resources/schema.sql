@@ -286,7 +286,7 @@ CREATE TABLE IF NOT EXISTS `violation_raw_files` (
     `txn_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `reason_code` VARCHAR(16) NOT NULL DEFAULT '1005',
     `full_partial_indicator` VARCHAR(8) NOT NULL DEFAULT 'P',
-    `toll_plaza_id` VARCHAR(32) NOT NULL DEFAULT '600601',
+    `toll_plaza_id` VARCHAR(32) NOT NULL DEFAULT '501101',
     `tid` VARCHAR(64) NOT NULL,
     `mmt` VARCHAR(64) NULL,
     `internal_tracking_number` VARCHAR(64) NULL DEFAULT 'NA',

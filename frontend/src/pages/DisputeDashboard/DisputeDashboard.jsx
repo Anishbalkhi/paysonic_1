@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import OnboardingService from '../../services/onboarding/OnboardingService';
 import './DisputeDashboard.scss';
 
 export const DisputeDashboard = () => {
@@ -19,8 +20,9 @@ export const DisputeDashboard = () => {
   const [isTatCollapsed, setIsTatCollapsed] = useState(false);
   const TAT_PAGE_SIZE = 4;
 
+  const defaultPlazaId = OnboardingService.getCachedPlazas()[0]?.plazaId || '501101';
   const plazaId = currentUser?.role === 'Plaza Admin' || currentUser?.role === 'Plaza POS'
-    ? currentUser?.plazaId || '600601'
+    ? currentUser?.plazaId || defaultPlazaId
     : null;
 
   const loadData = useCallback(async () => {

@@ -16,7 +16,7 @@ class TollFareReportService {
   /**
    * Search toll fares from live Railway database
    */
-  async searchTollFares({ plazaId = '600601', vehicleClass }) {
+  async searchTollFares({ plazaId = '501101', vehicleClass }) {
     const params = {};
     if (plazaId) params.plazaId = plazaId;
     if (vehicleClass && vehicleClass !== 'ALL') params.vehicleClass = vehicleClass;
@@ -28,7 +28,7 @@ class TollFareReportService {
   /**
    * Export Excel directly from server streaming endpoint
    */
-  async exportExcel({ plazaId = '600601', vehicleClass }) {
+  async exportExcel({ plazaId = '501101', vehicleClass }) {
     try {
       const session = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
       UserActivityService.recordAuditEvent({
@@ -71,7 +71,7 @@ class TollFareReportService {
   /**
    * Export CSV directly from server streaming endpoint
    */
-  async exportCsv({ plazaId = '600601', vehicleClass }) {
+  async exportCsv({ plazaId = '501101', vehicleClass }) {
     try {
       const session = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
       UserActivityService.recordAuditEvent({

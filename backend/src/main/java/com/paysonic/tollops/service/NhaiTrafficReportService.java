@@ -76,12 +76,12 @@ public class NhaiTrafficReportService {
         String resolvedPlazaName = "All Plazas Network";
         if (!rawRecords.isEmpty() && !"ALL".equalsIgnoreCase(plazaCode)) {
             resolvedPlazaName = rawRecords.get(0).getPlazaName();
-        } else if ("600601".equals(plazaCode)) {
-            resolvedPlazaName = "Dummytollplaza1";
-        } else if ("666666".equals(plazaCode)) {
-            resolvedPlazaName = "Autumn";
         } else if ("501101".equals(plazaCode)) {
             resolvedPlazaName = "MUMBAI PLAZA NH-04";
+        } else if ("502202".equals(plazaCode)) {
+            resolvedPlazaName = "PUNE BYPASS PLAZA";
+        } else if ("503303".equals(plazaCode)) {
+            resolvedPlazaName = "NASHIK TOLL PLAZA";
         }
 
         NhaiTrafficReportDTO report = new NhaiTrafficReportDTO();

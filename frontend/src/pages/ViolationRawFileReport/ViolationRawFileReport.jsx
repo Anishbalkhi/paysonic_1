@@ -450,7 +450,7 @@ export const ViolationRawFileReport = () => {
                       </td>
                       <td className="text-center">{row.reasonCode || '1005'}</td>
                       <td className="text-center font-semibold">{row.fullPartialIndicator || 'P'}</td>
-                      <td className="text-center">{row.tollPlazaId || '600601'}</td>
+                      <td className="text-center">{row.tollPlazaId || '-'}</td>
                       <td className="monospace-cell">{row.tid || row.tagId || '-'}</td>
                       <td className="text-center font-semibold">{row.mmt || '-'}</td>
                       <td className="text-center">{row.internalTrackingNumber || 'NA'}</td>

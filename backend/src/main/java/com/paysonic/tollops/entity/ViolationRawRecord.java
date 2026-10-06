@@ -45,7 +45,7 @@ public class ViolationRawRecord {
     private String fullPartialIndicator = "P";
 
     @Column(name = "toll_plaza_id", length = 32, nullable = false)
-    private String tollPlazaId = "600601";
+    private String tollPlazaId = "501101";
 
     @Column(name = "tid", length = 64, nullable = false)
     private String tid;
@@ -77,7 +77,7 @@ public class ViolationRawRecord {
         this.txnAmount = txnAmount != null ? txnAmount : BigDecimal.ZERO;
         this.reasonCode = reasonCode != null ? reasonCode : "1005";
         this.fullPartialIndicator = fullPartialIndicator != null ? fullPartialIndicator : "P";
-        this.tollPlazaId = tollPlazaId != null ? tollPlazaId : "600601";
+        this.tollPlazaId = tollPlazaId != null ? tollPlazaId : "501101";
         this.tid = tid != null ? tid : tagId;
         this.mmt = mmt;
         this.internalTrackingNumber = internalTrackingNumber != null ? internalTrackingNumber : "NA";

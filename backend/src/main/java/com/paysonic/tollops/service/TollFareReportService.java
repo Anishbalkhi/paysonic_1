@@ -63,10 +63,10 @@ public class TollFareReportService {
     public List<TollFareItemDto> getFares(String plazaId, String vehicleClass) {
         List<TollFareItemDto> results = new ArrayList<>();
 
-        // If plazaId is null or "ALL", select primary plaza "600601" or load all configured plazas
+        // If plazaId is null or "ALL", select primary plaza "501101" or load all configured plazas
         String effectivePlazaId = (plazaId != null && !plazaId.trim().isEmpty() && !"ALL".equalsIgnoreCase(plazaId.trim()))
                 ? plazaId.trim()
-                : "600601";
+                : "501101";
 
         List<String> targetPlazaIds = new ArrayList<>();
         if ("ALL".equalsIgnoreCase(plazaId)) {
@@ -76,7 +76,7 @@ public class TollFareReportService {
                     targetPlazaIds.add(pf.getPlazaId());
                 }
             } else {
-                targetPlazaIds.add("600601");
+                targetPlazaIds.add("501101");
             }
         } else {
             targetPlazaIds.add(effectivePlazaId);
@@ -88,7 +88,7 @@ public class TollFareReportService {
         }
 
         for (String pid : targetPlazaIds) {
-            String pName = plazaNames.getOrDefault(pid, "Dummytollplaza1");
+            String pName = plazaNames.getOrDefault(pid, "MUMBAI PLAZA NH-04");
             Optional<PlazaFare> fareOpt = plazaFareRepository.findById(pid);
             Map<String, Map<String, Object>> fareMap = Collections.emptyMap();
 
@@ -242,7 +242,7 @@ public class TollFareReportService {
             Row subRow = sheet.createRow(1);
             subRow.setHeightInPoints(18);
             Cell subCell = subRow.createCell(0);
-            String pStr = (plazaId != null && !plazaId.trim().isEmpty()) ? plazaId : "600601";
+            String pStr = (plazaId != null && !plazaId.trim().isEmpty()) ? plazaId : "501101";
             subCell.setCellValue("Plaza: " + pStr + " | Effective FASTag Toll Fare Matrix");
             subCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
@@ -329,7 +329,7 @@ public class TollFareReportService {
             subLine[i] = "";
         }
         titleLine[midIdx] = "TOLL FARE REPORT";
-        String pStr = (plazaId != null && !plazaId.trim().isEmpty()) ? plazaId : "600601";
+        String pStr = (plazaId != null && !plazaId.trim().isEmpty()) ? plazaId : "501101";
         subLine[midIdx] = "Plaza: " + pStr + " | Effective FASTag Toll Fare Matrix";
 
         writer.println(String.join(",", titleLine));

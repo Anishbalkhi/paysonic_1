@@ -26,7 +26,7 @@ public class TollFareReportController {
 
     @GetMapping("/search")
     public ResponseEntity<?> search(
-            @RequestParam(required = false, defaultValue = "600601") String plazaId,
+            @RequestParam(required = false, defaultValue = "501101") String plazaId,
             @RequestParam(required = false) String vehicleClass) {
         try {
             List<TollFareItemDto> fares = tollFareReportService.getFares(plazaId, vehicleClass);
@@ -40,7 +40,7 @@ public class TollFareReportController {
     @GetMapping({"/export", "/excel"})
     @Auditable(module = "Transactional Reports", action = "EXPORT_TOLL_FARE_REPORT_EXCEL", actionLabel = "Exported Toll Fare Report (Excel)", target = "Toll Fare Report")
     public void exportExcel(
-            @RequestParam(required = false, defaultValue = "600601") String plazaId,
+            @RequestParam(required = false, defaultValue = "501101") String plazaId,
             @RequestParam(required = false) String vehicleClass,
             HttpServletResponse response) {
         try {
@@ -59,7 +59,7 @@ public class TollFareReportController {
     @GetMapping({"/export/csv", "/csv"})
     @Auditable(module = "Transactional Reports", action = "EXPORT_TOLL_FARE_REPORT_CSV", actionLabel = "Exported Toll Fare Report (CSV)", target = "Toll Fare Report")
     public void exportCsv(
-            @RequestParam(required = false, defaultValue = "600601") String plazaId,
+            @RequestParam(required = false, defaultValue = "501101") String plazaId,
             @RequestParam(required = false) String vehicleClass,
             HttpServletResponse response) {
         try {

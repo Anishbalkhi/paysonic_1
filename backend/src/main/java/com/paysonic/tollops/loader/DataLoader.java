@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -42,6 +43,7 @@ public class DataLoader implements CommandLineRunner {
     private final TransactionSummaryRepository transactionSummaryRepository;
     private final PassSummaryRepository passSummaryRepository;
     private final ObjectMapper objectMapper;
+    private final JdbcTemplate jdbcTemplate;
 
     public DataLoader(UserRepository userRepository,
                       UserSessionRepository userSessionRepository,
@@ -62,7 +64,8 @@ public class DataLoader implements CommandLineRunner {
                       NhaiTrafficRepository nhaiTrafficRepository,
                       TransactionSummaryRepository transactionSummaryRepository,
                       PassSummaryRepository passSummaryRepository,
-                      ObjectMapper objectMapper) {
+                      ObjectMapper objectMapper,
+                      JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
         this.loginHistoryRepository = loginHistoryRepository;
@@ -83,11 +86,13 @@ public class DataLoader implements CommandLineRunner {
         this.transactionSummaryRepository = transactionSummaryRepository;
         this.passSummaryRepository = passSummaryRepository;
         this.objectMapper = objectMapper;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public void run(String... args) {
         try {
+            cleanupLegacyPlazaRecords();
             seedUsers();
             seedUserSessions();
             seedLoginHistory();
@@ -106,6 +111,25 @@ public class DataLoader implements CommandLineRunner {
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
+        }
+    }
+
+    private void cleanupLegacyPlazaRecords() {
+        if (jdbcTemplate == null) return;
+        try {
+            log.info("Checking and cleaning up any legacy prototype plaza codes (600601, 600602, Dummytollplaza1)...");
+            // Standardize any historical records to real onboarded plazas
+            jdbcTemplate.update("UPDATE toll_transactions SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
+            jdbcTemplate.update("UPDATE dispute_transactions SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%' OR toll_plaza_name LIKE '%Gluten%'");
+            jdbcTemplate.update("UPDATE violation_transactions SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
+            jdbcTemplate.update("UPDATE violation_raw_files SET toll_plaza_id = '501101' WHERE toll_plaza_id IN ('600601', '600602')");
+            jdbcTemplate.update("UPDATE violation_settlement_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
+            jdbcTemplate.update("UPDATE violation_validate_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
+            jdbcTemplate.update("UPDATE nhai_traffic_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
+            jdbcTemplate.update("UPDATE transaction_summary_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
+            log.info("Legacy prototype plaza cleanup completed successfully.");
+        } catch (Exception e) {
+            log.warn("Legacy plaza records cleanup note: {}", e.getMessage());
         }
     }
 
@@ -508,11 +532,11 @@ public class DataLoader implements CommandLineRunner {
         List<TollTransaction> txns = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
 
-        // 1. Reference Screenshot Row 1 (Dummytoll 600601, Rejected, MALTAG)
+        // 1. Reference Row 1 (MUMBAI PLAZA NH-04 501101, Rejected, MALTAG)
         TollTransaction t1 = new TollTransaction();
         t1.setTollFileName("ONLINE");
-        t1.setPlazaId("600601");
-        t1.setPlazaName("Dummytoll");
+        t1.setPlazaId("501101");
+        t1.setPlazaName("MUMBAI PLAZA NH-04");
         t1.setLaneId("L4");
         t1.setTagId("34161FA82032890123456781");
         t1.setVrn("MH12VL3456");
@@ -535,11 +559,11 @@ public class DataLoader implements CommandLineRunner {
         t1.setViolationSettledAmount(BigDecimal.ZERO);
         txns.add(t1);
 
-        // 2. Reference Screenshot Row 2 (Dummytoll 600601, Rejected, DUPLICATE)
+        // 2. Reference Row 2 (PUNE BYPASS PLAZA 502202, Rejected, DUPLICATE)
         TollTransaction t2 = new TollTransaction();
         t2.setTollFileName("ONLINE");
-        t2.setPlazaId("600601");
-        t2.setPlazaName("Dummytoll");
+        t2.setPlazaId("502202");
+        t2.setPlazaName("PUNE BYPASS PLAZA");
         t2.setLaneId("L4");
         t2.setTagId("34161FA82032890123456782");
         t2.setVrn("MH12VL3457");
@@ -690,7 +714,7 @@ public class DataLoader implements CommandLineRunner {
             txns.add(t);
         }
 
-        // 13-16. Reference Screenshot Rows for Date Wise Recon (Plaza 600601, Dummytollplaza1, Txn Date 07-08-2026)
+        // 13-16. Reference Rows for Date Wise Recon (Plaza 501101, MUMBAI PLAZA NH-04, Txn Date 07-08-2026)
         LocalDateTime august7 = LocalDateTime.of(2026, 8, 7, 10, 30, 0);
         LocalDateTime august4Settled = LocalDateTime.of(2026, 8, 4, 14, 0, 0);
         LocalDateTime august5Settled = LocalDateTime.of(2026, 8, 5, 14, 0, 0);
@@ -698,8 +722,8 @@ public class DataLoader implements CommandLineRunner {
         for (int k = 1; k <= 4; k++) {
             TollTransaction dk = new TollTransaction();
             dk.setTollFileName("ONLINE");
-            dk.setPlazaId("600601");
-            dk.setPlazaName("Dummytollplaza1");
+            dk.setPlazaId("501101");
+            dk.setPlazaName("MUMBAI PLAZA NH-04");
             dk.setLaneId("L0" + k);
             dk.setTagId("34161FA820328909988109" + k);
             dk.setVrn("MH12DT000" + k);
@@ -732,14 +756,14 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void seedCycleWiseTransactions() {
-        if (tollTransactionRepository.countByPlazaId("600602") > 0) {
+        if (tollTransactionRepository.countByPlazaId("502202") > 0) {
             log.info("Cycle wise transactions already present, skipping seed.");
             return;
         }
 
         List<TollTransaction> list = new ArrayList<>();
-        String[] plazas = {"600601", "600602"};
-        String[] plazaNames = {"Dummytollplaza1", "Dummytollplaza2"};
+        String[] plazas = {"501101", "502202"};
+        String[] plazaNames = {"MUMBAI PLAZA NH-04", "PUNE BYPASS PLAZA"};
 
         for (int p = 0; p < plazas.length; p++) {
             String pId = plazas[p];
@@ -887,7 +911,7 @@ public class DataLoader implements CommandLineRunner {
         }
 
         tollTransactionRepository.saveAll(list);
-        log.info("Seeded {} Cycle Wise Reconciliation transactions for Plazas 600601 & 600602.", list.size());
+        log.info("Seeded {} Cycle Wise Reconciliation transactions for Plazas 501101 & 502202.", list.size());
     }
 
     private void seedDisputeTransactions() {
@@ -900,7 +924,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 1
         list.add(new DisputeTransaction(
-                "Gluten", "778999", "102047735808525000", "2F020919",
+                "MUMBAI PLAZA NH-04", "501101", "102047735808525000", "2F020919",
                 LocalDateTime.of(2026, 9, 1, 10, 0, 0),
                 new BigDecimal("60.00"), new BigDecimal("2.00"),
                 "MP07ZA2173", "34161FA82032890002077020", "E2001105274580940CAAC0", "608032",
@@ -911,7 +935,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 2
         list.add(new DisputeTransaction(
-                "Gluten", "778999", "102047735808525000", "2F020919",
+                "PUNE BYPASS PLAZA", "502202", "102047735808525000", "2F020919",
                 LocalDateTime.of(2026, 9, 1, 11, 0, 0),
                 new BigDecimal("60.00"), new BigDecimal("2.00"),
                 "MP07ZA2173", "34161FA82032890002077020", "E2001105274580940CAAC0", "608032",
@@ -922,7 +946,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 3
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020920",
+                "NASHIK TOLL PLAZA", "503303", "102047735808525000", "2F020920",
                 LocalDateTime.of(2026, 9, 1, 5, 0, 0),
                 new BigDecimal("5.00"), new BigDecimal("2.00"),
                 "MP07ZA2173", "34161FA82032782402138480", "E2001105274580940CAAC0", "608032",
@@ -933,10 +957,10 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 4
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020919",
+                "KOLHAPUR PLAZA", "504404", "102047735808525000", "2F020919",
                 LocalDateTime.of(2026, 9, 1, 7, 0, 0),
                 new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "600601",
+                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "504404",
                 "NA", "753: Debit Adjustment", "--", "1005",
                 "MMT",
                 java.time.LocalDate.of(2026, 9, 3)
@@ -944,10 +968,10 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 5
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020918",
+                "SOLAPUR PLAZA NH-65", "505505", "102047735808525000", "2F020918",
                 LocalDateTime.of(2026, 9, 1, 8, 0, 0),
                 new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "600601",
+                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "505505",
                 "NA", "753: Debit Adjustment", "--", "1005",
                 "MMT",
                 java.time.LocalDate.of(2026, 9, 3)
@@ -955,10 +979,10 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 6
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020910",
+                "MUMBAI PLAZA NH-04", "501101", "102047735808525000", "2F020910",
                 LocalDateTime.of(2026, 9, 1, 10, 0, 0),
                 new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "600601",
+                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "501101",
                 "NA", "753: Debit Adjustment", "--", "1005",
                 "MMT",
                 java.time.LocalDate.of(2026, 9, 3)
@@ -966,10 +990,10 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 7
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020901",
+                "PUNE BYPASS PLAZA", "502202", "102047735808525000", "2F020901",
                 LocalDateTime.of(2026, 9, 2, 1, 0, 0),
                 new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "600601",
+                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "502202",
                 "NA", "753: Debit Adjustment", "--", "1005",
                 "MMT",
                 java.time.LocalDate.of(2026, 9, 4)
@@ -977,10 +1001,10 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 8
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020900",
+                "NASHIK TOLL PLAZA", "503303", "102047735808525000", "2F020900",
                 LocalDateTime.of(2026, 9, 2, 2, 0, 0),
                 new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "600601",
+                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "503303",
                 "NA", "753: Debit Adjustment", "--", "1005",
                 "MMT",
                 java.time.LocalDate.of(2026, 9, 4)
@@ -988,10 +1012,10 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 9
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020899",
+                "KOLHAPUR PLAZA", "504404", "102047735808525000", "2F020899",
                 LocalDateTime.of(2026, 9, 2, 3, 0, 0),
                 new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "600601",
+                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "504404",
                 "NA", "753: Debit Adjustment", "--", "1005",
                 "MMT",
                 java.time.LocalDate.of(2026, 9, 4)
@@ -999,10 +1023,10 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 10
         list.add(new DisputeTransaction(
-                "Dummytollplaza1", "600601", "102047735808525000", "2F020802",
+                "SOLAPUR PLAZA NH-65", "505505", "102047735808525000", "2F020802",
                 LocalDateTime.of(2026, 9, 3, 6, 0, 0),
                 new BigDecimal("25.00"), new BigDecimal("25.00"),
-                "MH04DJ5492", "34161FA82032890204678840", "34161FA820000084326078A0", "600601",
+                "MH04DJ5492", "34161FA82032890204678840", "34161FA820000084326078A0", "505505",
                 "NA", "753: Debit Adjustment", "--", "1005",
                 "MMT",
                 java.time.LocalDate.of(2026, 9, 4)
@@ -1010,7 +1034,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Additional realistic rows for broader coverage
         list.add(new DisputeTransaction(
-                "Gluten", "778999", "102047735808525001", "2F020921",
+                "MUMBAI PLAZA NH-04", "501101", "102047735808525001", "2F020921",
                 LocalDateTime.of(2026, 9, 4, 14, 30, 0),
                 new BigDecimal("80.00"), new BigDecimal("80.00"),
                 "DL01AB1234", "34161FA82032890002077055", "E2001105274580940CAAC9", "608032",
@@ -1020,10 +1044,10 @@ public class DataLoader implements CommandLineRunner {
         ));
 
         list.add(new DisputeTransaction(
-                "Dummytollplaza2", "600602", "102047735808525002", "2F020922",
+                "PUNE BYPASS PLAZA", "502202", "102047735808525002", "2F020922",
                 LocalDateTime.of(2026, 9, 5, 16, 15, 0),
                 new BigDecimal("40.00"), new BigDecimal("40.00"),
-                "KA05MN8899", "34161FA82032782402139999", "34161FA82000008260119B99", "600602",
+                "KA05MN8899", "34161FA82032782402139999", "34161FA82000008260119B99", "502202",
                 "NA", "762: Credit Adjustment", "Dr", "1005",
                 "Overcharge refund credited",
                 java.time.LocalDate.of(2026, 9, 6)
@@ -1042,7 +1066,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 1
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "501101", "MUMBAI PLAZA NH-04", "MH12VL3467", "34161FA820328EB002947820",
                 "102047735808525000", "ZP170907", new BigDecimal("5.00"),
                 LocalDateTime.of(2026, 9, 15, 7, 0, 0),
                 "VC4", "VC18", "NA", null, "8009", "YES", "DEBIT", "ACCEPTED"
@@ -1050,7 +1074,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 2
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "501101", "MUMBAI PLAZA NH-04", "MH12VL3467", "34161FA820328EB002947820",
                 "102047735808525000", "ZP170906", new BigDecimal("5.00"),
                 LocalDateTime.of(2026, 9, 15, 6, 0, 0),
                 "VC4", "VC18", "NA", null, "8004", "YES", "DEBIT", "ACCEPTED"
@@ -1058,7 +1082,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 3
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "501101", "MUMBAI PLAZA NH-04", "MH12VL3467", "34161FA820328EB002947820",
                 "102047735808525000", "ZP170904", new BigDecimal("5.00"),
                 LocalDateTime.of(2026, 9, 15, 4, 0, 0),
                 "VC4", "VC18", "VC20", null, "Tata Ace or Similar Mini Light Commercial Vehicle", "YES", "DEBIT", "ACCEPTED"
@@ -1066,7 +1090,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 4
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "501101", "MUMBAI PLAZA NH-04", "MH12VL3467", "34161FA820328EB002947820",
                 "102047735808525000", "ZP170902", new BigDecimal("5.00"),
                 LocalDateTime.of(2026, 9, 15, 2, 0, 0),
                 "VC4", "VC18", "NA", null, "8012 Tractor with trailer", "YES", "DEBIT", "ACCEPTED"
@@ -1074,7 +1098,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 5
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "MH12VL3467", "34161FA820328EB002947820",
+                "501101", "MUMBAI PLAZA NH-04", "MH12VL3467", "34161FA820328EB002947820",
                 "102047735808525000", "ZP170901", new BigDecimal("5.00"),
                 LocalDateTime.of(2026, 9, 15, 1, 0, 0),
                 "VC4", "VC18", "NA", null, "8006 Tata Ace or Similar Mini Light Commercial Vehicle", "YES", "DEBIT", "ACCEPTED"
@@ -1082,7 +1106,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 6
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "502202", "PUNE BYPASS PLAZA", "TN95GB6328", "34161FA82033E8260213A3A0",
                 "102047735808525000", "ZP160912", new BigDecimal("25.00"),
                 LocalDateTime.of(2026, 9, 14, 12, 0, 0),
                 "VC16", "VC18", "VC17", null, "8008 Heavy Construction machinery", "YES", "DEBIT", "ACCEPTED"
@@ -1090,7 +1114,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 7
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "502202", "PUNE BYPASS PLAZA", "TN95GB6328", "34161FA82033E8260213A3A0",
                 "102047735808525000", "ZP160911", new BigDecimal("25.00"),
                 LocalDateTime.of(2026, 9, 14, 11, 0, 0),
                 "VC16", "VC10", "NA", "NA", "Business Rule Violation", "YES", "DEBIT", "DECLINED"
@@ -1098,7 +1122,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 8
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "502202", "PUNE BYPASS PLAZA", "TN95GB6328", "34161FA82033E8260213A3A0",
                 "102047735808525000", "ZP160911", new BigDecimal("25.00"),
                 LocalDateTime.of(2026, 9, 14, 11, 0, 0),
                 "VC16", "VC18", "NA", null, "8008 Tractor", "YES", "DEBIT", "ACCEPTED"
@@ -1106,7 +1130,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 9
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "502202", "PUNE BYPASS PLAZA", "TN95GB6328", "34161FA82033E8260213A3A0",
                 "102047735808525000", "ZP160910", new BigDecimal("25.00"),
                 LocalDateTime.of(2026, 9, 14, 10, 0, 0),
                 "VC16", "VC18", "VC18", null, "Approved via Bulk Action", "YES", "DEBIT", "ACCEPTED"
@@ -1114,7 +1138,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 10
         list.add(new ViolationTransaction(
-                "600601", "Dummytollplaza1", "TN95GB6328", "34161FA82033E8260213A3A0",
+                "502202", "PUNE BYPASS PLAZA", "TN95GB6328", "34161FA82033E8260213A3A0",
                 "102047735808525000", "ZP160909", new BigDecimal("25.00"),
                 LocalDateTime.of(2026, 9, 14, 9, 0, 0),
                 "VC16", "VC18", "NA", "NA", "Business Rule Violation", "YES", "DEBIT", "DECLINED"
@@ -1134,70 +1158,70 @@ public class DataLoader implements CommandLineRunner {
         // Row 1
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260916162535", "102047735808525000",
-                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "501101",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 2
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260916162335", "102047735808525000",
-                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "501101",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 3
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260916160238", "102047735808525000",
-                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "501101",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 4
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260916121551", "102047735808525000",
-                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "501101",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 5
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260916121500", "102047735808525000",
-                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "501101",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 6
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260916121302", "102047735808525000",
-                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "502202",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 7
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260915123718", "102047735808525000",
-                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("22500.00"), "1005", "P", "502202",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 8
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260915123428", "102047735808525000",
-                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "502202",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 9
         list.add(new ViolationRawRecord(
                 "34161FA82033E8260213A3A0", "763", "260915123338", "102047735808525000",
-                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "652307", "720030", new BigDecimal("0.00"), "1005", "P", "502202",
                 "34161FA82033E8260213A3A0", "TN95GB6328", "NA"
         ));
 
         // Row 10
         list.add(new ViolationRawRecord(
                 "34161FA820328EB002947820", "763", "260917102244", "102047735808525000",
-                "608088", "720030", new BigDecimal("0.00"), "1005", "P", "600601",
+                "608088", "720030", new BigDecimal("0.00"), "1005", "P", "501101",
                 "34161FA820328EB002947820", "MH12VL3467", "NA"
         ));
 
@@ -1214,7 +1238,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 1
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA82032866C03B7D640", "34MH51FA820",
+                "501101", "MUMBAI PLAZA NH-04", "34161FA82032866C03B7D640", "34MH51FA820",
                 "101997240733664000", "1715889119753", LocalDateTime.of(2026, 8, 4, 10, 0, 0),
                 "VC12", "VC12", null, null, "ACCEPTED",
                 new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
@@ -1223,7 +1247,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 2
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA82032866C03B7D640", "34MH51FA820",
+                "501101", "MUMBAI PLAZA NH-04", "34161FA82032866C03B7D640", "34MH51FA820",
                 "101997240733664000", "1715889119753", LocalDateTime.of(2026, 8, 4, 11, 0, 0),
                 "VC12", "VC12", null, null, "ACCEPTED",
                 new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
@@ -1232,7 +1256,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 3
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA82032866C03B7D640", "34MH51FA820",
+                "501101", "MUMBAI PLAZA NH-04", "34161FA82032866C03B7D640", "34MH51FA820",
                 "101997240733664000", "1715889119753", LocalDateTime.of(2026, 8, 4, 11, 30, 0),
                 "VC12", "VC12", null, null, "ACCEPTED",
                 new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
@@ -1241,7 +1265,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 4
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA82033E8260213A3A0", "TN95GB6328",
+                "502202", "PUNE BYPASS PLAZA", "34161FA82033E8260213A3A0", "TN95GB6328",
                 "101997240733664000", "1792912348111", LocalDateTime.of(2026, 8, 11, 1, 15, 0),
                 "VC16", "VC16", null, null, "ACCEPTED",
                 new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
@@ -1250,7 +1274,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 5
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA82033E8260213A3A0", "TN95GB6328",
+                "502202", "PUNE BYPASS PLAZA", "34161FA82033E8260213A3A0", "TN95GB6328",
                 "101997240733664000", "1792912348111", LocalDateTime.of(2026, 8, 11, 3, 15, 0),
                 "VC16", "VC16", null, null, "ACCEPTED",
                 new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
@@ -1259,7 +1283,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 6
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA82033E8260213A3A0", "TN95GB6328",
+                "502202", "PUNE BYPASS PLAZA", "34161FA82033E8260213A3A0", "TN95GB6328",
                 "101997240733664000", "1792912348111", LocalDateTime.of(2026, 8, 11, 4, 15, 0),
                 "VC16", "VC16", null, null, "ACCEPTED",
                 new BigDecimal("25.00"), new BigDecimal("0.00"), new BigDecimal("25.00"),
@@ -1268,7 +1292,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 7
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA820328E00213B680", "TN06ED8759",
+                "503303", "NASHIK TOLL PLAZA", "34161FA820328E00213B680", "TN06ED8759",
                 "102047735808525000", "ZP020902", LocalDateTime.of(2026, 9, 2, 2, 0, 0),
                 "VC4", "VC1", "VC18", "ACCEPTED", "ACCEPTED",
                 new BigDecimal("5.00"), new BigDecimal("245.00"), new BigDecimal("5.00"),
@@ -1277,7 +1301,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 8
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA820328EB002947820", "MH12VL3467",
+                "503303", "NASHIK TOLL PLAZA", "34161FA820328EB002947820", "MH12VL3467",
                 "102047735808525000", "AM020904", LocalDateTime.of(2026, 9, 2, 4, 30, 0),
                 "VC4", "VC1", "VC5", "ACCEPTED", "ACCEPTED",
                 new BigDecimal("5.00"), new BigDecimal("5.00"), new BigDecimal("5.00"),
@@ -1286,7 +1310,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 9
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA820328EB002947820", "MH12VL3467",
+                "501101", "MUMBAI PLAZA NH-04", "34161FA820328EB002947820", "MH12VL3467",
                 "102047735808525000", "AM020907", LocalDateTime.of(2026, 9, 2, 7, 30, 0),
                 "VC4", "VC4", "VC18", "ACCEPTED", "ACCEPTED",
                 new BigDecimal("5.00"), new BigDecimal("245.00"), new BigDecimal("5.00"),
@@ -1295,7 +1319,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 10
         list.add(new ViolationSettlementRecord(
-                "600601", "Dummytollplaza1", "34161FA820328EB002947820", "MH12VL3467",
+                "501101", "MUMBAI PLAZA NH-04", "34161FA820328EB002947820", "MH12VL3467",
                 "102047735808525000", "SK09090601", LocalDateTime.of(2026, 9, 9, 8, 0, 0),
                 "VC4", "VC4", "VC13", "ACCEPTED", "ACCEPTED",
                 new BigDecimal("5.00"), new BigDecimal("20.00"), new BigDecimal("5.00"),
@@ -1343,7 +1367,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 4
         list.add(new ViolationValidateRecord(
-                4, "Actioned", "600601", "Dummytollplaza1", "MH12VL3467",
+                4, "Actioned", "501101", "MUMBAI PLAZA NH-04", "MH12VL3467",
                 "34161FA820328ED002947820", "102047735808525000", "ZP170907",
                 new BigDecimal("5.00"), LocalDateTime.of(2026, 9, 15, 7, 0, 0),
                 "VC4", "VC18", "NA", "DECLINED", "Wrong vehicle image",
@@ -1361,7 +1385,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 6
         list.add(new ViolationValidateRecord(
-                6, "Actioned", "600601", "Dummytollplaza1", "MH12VL3467",
+                6, "Actioned", "502202", "PUNE BYPASS PLAZA", "MH12VL3467",
                 "34161FA820328ED002947820", "102047735808525000", "ZP170905",
                 new BigDecimal("5.00"), LocalDateTime.of(2026, 9, 15, 6, 0, 0),
                 "VC4", "VC18", "NA", "DECLINED", "Image is not proper though timing is matching",
@@ -1437,9 +1461,10 @@ public class DataLoader implements CommandLineRunner {
 
         record PlazaMeta(String code, String name) {}
         List<PlazaMeta> plazas = List.of(
-                new PlazaMeta("600601", "Dummytollplaza1"),
-                new PlazaMeta("666666", "Autumn"),
-                new PlazaMeta("501101", "MUMBAI PLAZA NH-04")
+                new PlazaMeta("501101", "MUMBAI PLAZA NH-04"),
+                new PlazaMeta("502202", "PUNE BYPASS PLAZA"),
+                new PlazaMeta("503303", "NASHIK TOLL PLAZA"),
+                new PlazaMeta("666666", "Autumn")
         );
 
         // Seed across September 2026 dates (days 1, 5, 10, 15, 16, 20, 25, 30)
@@ -1504,12 +1529,10 @@ public class DataLoader implements CommandLineRunner {
 
         record PlazaMeta(String id, String name) {}
         List<PlazaMeta> plazas = List.of(
-                new PlazaMeta("Plaza 1", "Plaza Name"),
-                new PlazaMeta("Plaza 2", "Plaza Name"),
-                new PlazaMeta("600601", "Dummytollplaza1"),
-                new PlazaMeta("666666", "Autumn"),
                 new PlazaMeta("501101", "MUMBAI PLAZA NH-04"),
-                new PlazaMeta("502202", "PUNE BYPASS PLAZA")
+                new PlazaMeta("502202", "PUNE BYPASS PLAZA"),
+                new PlazaMeta("503303", "NASHIK TOLL PLAZA"),
+                new PlazaMeta("666666", "Autumn")
         );
 
         record RowMeta(String status, String code, long count, String amount, int order) {}
