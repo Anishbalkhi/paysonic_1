@@ -135,6 +135,7 @@ public class DataLoader implements CommandLineRunner {
                     for (JsonNode n : array) {
                         User u = new User();
                         u.setId(n.has("id") ? n.get("id").asText() : "PSN" + System.currentTimeMillis());
+                        u.setUsername(n.has("username") ? n.get("username").asText() : u.getId());
                         u.setName(n.has("name") ? n.get("name").asText() : "Unknown");
                         u.setEmail(n.has("email") ? n.get("email").asText() : u.getId() + "@paysonic.com");
                         u.setMobile(n.has("mobile") ? n.get("mobile").asText() : "+91 9876543210");

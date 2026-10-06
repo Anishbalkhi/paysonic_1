@@ -29,22 +29,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.paysonic.tollops.entity.Plaza;
+import com.paysonic.tollops.entity.UserSession;
 import com.paysonic.tollops.repository.PlazaRepository;
+import com.paysonic.tollops.repository.UserSessionRepository;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final PlazaRepository plazaRepository;
+    private final UserSessionRepository userSessionRepository;
     private final ObjectMapper objectMapper;
 
     public static final List<String> ALL_AVAILABLE_PLAZAS = List.of(
             "MUMBAI PLAZA NH-04", "PUNE BYPASS PLAZA", "NASHIK TOLL PLAZA", "KOLHAPUR PLAZA", "SOLAPUR PLAZA NH-65"
     );
 
-    public UserService(UserRepository userRepository, PlazaRepository plazaRepository, ObjectMapper objectMapper) {
+    public UserService(UserRepository userRepository, PlazaRepository plazaRepository,
+                       UserSessionRepository userSessionRepository, ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.plazaRepository = plazaRepository;
+        this.userSessionRepository = userSessionRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -92,16 +97,21 @@ public class UserService {
         }
         if (status != null && !status.isBlank() && !"All statuses".equalsIgnoreCase(status)) {
             if ("Pending".equalsIgnoreCase(status)) {
-                stream = stream.filter(u -> "Pending".equalsIgnoreCase(u.getApproval()) || "Pending".equalsIgnoreCase(u.getStatus()));
+                stream = stream.filter(u -> ("Pending".equalsIgnoreCase(u.getApproval()) || "Pending".equalsIgnoreCase(u.getStatus())) && !"Trash User".equalsIgnoreCase(u.getStatus()) && !"Trash".equalsIgnoreCase(u.getStatus()));
             } else if ("Locked".equalsIgnoreCase(status)) {
-                stream = stream.filter(User::isLocked);
+                stream = stream.filter(u -> u.isLocked() && !"Trash User".equalsIgnoreCase(u.getStatus()) && !"Trash".equalsIgnoreCase(u.getStatus()));
             } else if ("Active".equalsIgnoreCase(status)) {
                 stream = stream.filter(u -> "Active".equalsIgnoreCase(u.getStatus()) && "Approved".equalsIgnoreCase(u.getApproval()) && !u.isLocked());
             } else if ("Inactive".equalsIgnoreCase(status)) {
                 stream = stream.filter(u -> "Inactive".equalsIgnoreCase(u.getStatus()));
+            } else if ("Trash User".equalsIgnoreCase(status) || "Trash".equalsIgnoreCase(status)) {
+                stream = stream.filter(u -> "Trash User".equalsIgnoreCase(u.getStatus()) || "Trash".equalsIgnoreCase(u.getStatus()));
             } else {
                 stream = stream.filter(u -> u.getStatus() != null && u.getStatus().equalsIgnoreCase(status));
             }
+        } else {
+            // Default "All statuses" excludes Trash Users
+            stream = stream.filter(u -> !"Trash User".equalsIgnoreCase(u.getStatus()) && !"Trash".equalsIgnoreCase(u.getStatus()));
         }
         if (plaza != null && !plaza.isBlank() && !"All plazas".equalsIgnoreCase(plaza)) {
             String p = plaza.toLowerCase();
@@ -149,8 +159,14 @@ public class UserService {
                 ? request.getId()
                 : "PSN" + String.format("%04d", (int)(Math.random() * 9000 + 1000));
 
+        // Requirement #9: Username is auto-generated in PSN format for database display and management
+        String username = request.getUsername() != null && !request.getUsername().isBlank()
+                ? request.getUsername()
+                : userId;
+
         User user = new User();
         user.setId(userId);
+        user.setUsername(username);
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setMobile(request.getMobile());
@@ -200,6 +216,7 @@ public class UserService {
         }
 
         if (request.getName() != null) user.setName(request.getName());
+        if (request.getUsername() != null && !request.getUsername().isBlank()) user.setUsername(request.getUsername());
         if (request.getMobile() != null) user.setMobile(request.getMobile());
         if (request.getRole() != null) user.setRole(request.getRole());
         if (request.getUserType() != null) user.setUserType(request.getUserType());
@@ -209,6 +226,9 @@ public class UserService {
                 user.setStatus("Pending");
             } else {
                 user.setStatus(request.getStatus());
+                if ("Active".equalsIgnoreCase(request.getStatus()) && user.isLocked()) {
+                    user.setLocked(false);
+                }
             }
         }
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
@@ -283,7 +303,7 @@ public class UserService {
         return UserResponseDTO.fromEntity(updated, objectMapper);
     }
 
-    @Auditable(module = "User Management", action = "DELETE_USER", actionLabel = "Deleted User Profile")
+    @Auditable(module = "User Management", action = "DELETE_USER", actionLabel = "Moved User to Trash")
     @Transactional
     public void deleteUser(String id, String actorId) {
         User user = userRepository.findById(id)
@@ -292,7 +312,38 @@ public class UserService {
         // Hierarchy validation: check if actor has authority to delete this target user
         validateHierarchyAction(actorId, "MANAGE", null, null, user);
 
-        userRepository.deleteById(id);
+        // Requirement #8: Deleted user should store in trash user - status trash user (it should not get deleted from database)
+        user.setStatus("Trash User");
+        user.setLocked(true);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        // Terminate any active sessions for this user
+        try {
+            List<UserSession> sessions = userSessionRepository.findByUserId(id);
+            if (sessions != null && !sessions.isEmpty()) {
+                userSessionRepository.deleteAll(sessions);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    @Auditable(module = "User Management", action = "ACTIVATE_USER", actionLabel = "Activated User from Trash")
+    @Transactional
+    public UserResponseDTO activateUser(String id, String actorId) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + id));
+
+        // Hierarchy validation: check if actor has authority to manage this target user
+        validateHierarchyAction(actorId, "MANAGE", null, null, user);
+
+        // Requirement #8: If required we can active the user
+        user.setStatus("Active");
+        user.setLocked(false);
+        user.setApproval("Approved");
+        user.setLastActive(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        User updated = userRepository.save(user);
+        return UserResponseDTO.fromEntity(updated, objectMapper);
     }
 
     private User findActor(String actorId) {
@@ -608,7 +659,8 @@ public class UserService {
      * If so, automatically sets their status to locked (dormant).
      */
     public boolean checkAndApplyDormancy(User user) {
-        if (user == null || "Master Admin".equalsIgnoreCase(user.getRole())) {
+        if (user == null || "Master Admin".equalsIgnoreCase(user.getRole()) ||
+                "Trash User".equalsIgnoreCase(user.getStatus()) || "Trash".equalsIgnoreCase(user.getStatus())) {
             return false;
         }
         LocalDateTime refTime = user.getLastActive() != null ? user.getLastActive() : user.getCreatedAt();

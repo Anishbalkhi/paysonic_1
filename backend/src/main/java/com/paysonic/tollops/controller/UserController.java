@@ -64,7 +64,14 @@ public class UserController {
             @PathVariable String id,
             @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
         userService.deleteUser(id, actorId);
-        return ResponseEntity.ok(Map.of("success", true, "id", id));
+        return ResponseEntity.ok(Map.of("success", true, "id", id, "status", "Trash User"));
+    }
+
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<UserResponseDTO> activateUser(
+            @PathVariable String id,
+            @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN1000") String actorId) {
+        return ResponseEntity.ok(userService.activateUser(id, actorId));
     }
 
     @PatchMapping("/{id}/lock")

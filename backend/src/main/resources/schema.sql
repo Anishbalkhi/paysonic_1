@@ -6,6 +6,7 @@
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS `users` (
     `id` VARCHAR(32) NOT NULL,
+    `username` VARCHAR(50) NULL,
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(120) NOT NULL UNIQUE,
     `mobile` VARCHAR(20) NOT NULL,
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `assigned_plaza` VARCHAR(100) NULL,
     `plazas_json` TEXT NULL,
     `menu_access_json` TEXT NULL,
-    `status` VARCHAR(20) NOT NULL DEFAULT 'Pending',
+    `status` VARCHAR(30) NOT NULL DEFAULT 'Pending',
     `approval` VARCHAR(20) NOT NULL DEFAULT 'Pending',
     `locked` BOOLEAN NOT NULL DEFAULT FALSE,
     `password` VARCHAR(120) NOT NULL DEFAULT 'Paysonic@2026',

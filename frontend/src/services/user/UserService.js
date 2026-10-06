@@ -100,7 +100,7 @@ class UserService {
     if (!Array.isArray(rawList)) return [];
 
     const mapped = rawList.map((u) => {
-      const username = u.username || (u.email ? u.email.split('@')[0] : u.id);
+      const username = u.username || u.id || (u.email ? u.email.split('@')[0] : 'PSN0000');
       const email = u.email || '';
       const parsedUserType = parseUserTypeWithPermissions(u.userType);
       const cleanUserType = parsedUserType.cleanUserType || u.userType || '—';
@@ -111,16 +111,17 @@ class UserService {
         ? parsedUserType.menuAccess
         : getRoleMenuDefaults(u.role);
 
+      const isTrash = u.status === 'Trash User' || u.status === 'Trash' || String(u.status || '').toLowerCase() === 'trash user';
       const isApproved = u.approval === 'Approved';
-      const status = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
-      const approval = isApproved ? 'Approved' : 'Pending';
+      const status = isTrash ? 'Trash User' : (isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending');
+      const approval = isTrash ? 'Locked (Trash)' : (isApproved ? 'Approved' : 'Pending');
 
       // 72-Hour Dormancy Check (User becomes dormant/locked if not logged in for 72 hours)
       const lastActiveRef = u.lastActive || u.createdAt;
       const lastActiveTime = lastActiveRef ? new Date(lastActiveRef).getTime() : null;
       const is72HoursInactive = lastActiveTime ? (Date.now() - lastActiveTime > 72 * 60 * 60 * 1000) : false;
-      const isDormant = Boolean(u.dormant) || (is72HoursInactive && u.role !== 'Master Admin');
-      const isLocked = Boolean(u.locked) || isDormant;
+      const isDormant = !isTrash && (Boolean(u.dormant) || (is72HoursInactive && u.role !== 'Master Admin'));
+      const isLocked = isTrash || Boolean(u.locked) || isDormant;
 
       return {
         ...u,
@@ -327,7 +328,26 @@ class UserService {
     const res = await httpClient.delete(`/api/users/${id}`, {
       headers: { 'X-Actor-ID': actorId },
     });
+    try {
+      const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+      const updated = cached.map((u) => (u.id === id ? { ...u, status: 'Trash User', locked: true } : u));
+      localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
+    } catch {}
     return res.data;
+  }
+
+  async activateUser(id) {
+    const actorId = getActiveActorId();
+    const res = await httpClient.patch(`/api/users/${id}/activate`, null, {
+      headers: { 'X-Actor-ID': actorId },
+    });
+    const resultUser = this._mapUsers([res.data])[0];
+    try {
+      const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+      const updated = cached.map((u) => (u.id === id ? { ...u, status: 'Active', locked: false, approval: 'Approved' } : u));
+      localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
+    } catch {}
+    return resultUser;
   }
 
   async toggleLock(id) {

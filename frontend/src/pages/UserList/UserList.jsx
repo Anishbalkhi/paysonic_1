@@ -536,7 +536,16 @@ export const UserList = () => {
   };
 
   const nextUserId = () => {
-    return 'PSN' + String(users.length + 1007).padStart(4, '0');
+    let maxNum = 0;
+    users.forEach((u) => {
+      const match = String(u.id || '').match(/PSN(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    const nextNum = maxNum > 0 ? maxNum + 1 : users.length + 1000;
+    return 'PSN' + String(nextNum).padStart(4, '0');
   };
 
   // Actions
@@ -582,13 +591,34 @@ export const UserList = () => {
     setDeleteError('');
     try {
       await UserService.deleteUser(id);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
+      // Soft-delete: update status to 'Trash User' and locked to true instead of removing
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id ? { ...u, status: 'Trash User', locked: true, approval: 'Locked (Trash)' } : u
+        )
+      );
       setDeleteConfirm(null);
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to delete user. Please try again.';
       setDeleteError(msg);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleActivateUser = async (id) => {
+    try {
+      await UserService.activateUser(id);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id
+            ? { ...u, status: 'Active', locked: false, approval: 'Approved', dormant: false, isDormant: false }
+            : u
+        )
+      );
+    } catch (err) {
+      console.error('Activation failed:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to activate user.');
     }
   };
 
@@ -603,8 +633,10 @@ export const UserList = () => {
       ? (concessionairePlazas[0] || '')
       : '';
 
+    const autoPsnUsername = nextUserId();
+
     setFormValues({
-      username: '',
+      username: autoPsnUsername,
       email: '',
       contact: '',
       name: '',
@@ -683,15 +715,12 @@ export const UserList = () => {
     let error = '';
 
     if (name === 'username') {
-      if (!value || !value.trim()) {
-        error = 'Username is required';
-      } else {
-        const isDuplicate = users.some(
-          (u) => u.id !== editingId && u.username?.toLowerCase() === value.trim().toLowerCase()
-        );
-        if (isDuplicate) {
-          error = 'Username is already taken';
-        }
+      const val = (value && value.trim()) || (editingId || nextUserId());
+      const isDuplicate = users.some(
+        (u) => u.id !== editingId && u.username?.toLowerCase() === val.toLowerCase()
+      );
+      if (isDuplicate) {
+        error = 'Username is already taken';
       }
     }
 
@@ -952,12 +981,15 @@ export const UserList = () => {
         : (isConcessionaire ? selectedPlazas : [finalPlazaLabel]);
 
       if (editingId) {
-        const isCurrentlyPending = existingUser && existingUser.approval !== 'Approved';
+        const isCurrentlyPending = existingUser && existingUser.approval !== 'Approved' && existingUser.status !== 'Trash User';
         const finalStatus = isCurrentlyPending ? 'Pending' : (formValues.status || 'Active');
+        const reactivated = (existingUser?.status === 'Trash User' || existingUser?.status === 'Trash') && finalStatus === 'Active';
+
+        const finalUsername = formValues.username || existingUser?.username || existingUser?.id || editingId;
 
         const updatePayload = {
           name: formValues.name || 'Updated User',
-          username: formValues.username || 'user',
+          username: finalUsername,
           email: formValues.email,
           mobile: formValues.contact || '+91 9876543210',
           contact: formValues.contact,
@@ -974,14 +1006,24 @@ export const UserList = () => {
         }
 
         const updated = await UserService.updateUser(editingId, updatePayload);
-        setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...updated, status: finalStatus, menuAccess: finalMenuAccess } : u)));
+        setUsers((prev) => prev.map((u) => (u.id === editingId ? {
+          ...u,
+          ...updated,
+          username: finalUsername,
+          status: finalStatus,
+          locked: reactivated ? false : (updated.locked ?? u.locked),
+          approval: reactivated ? 'Approved' : (updated.approval ?? u.approval),
+          menuAccess: finalMenuAccess,
+        } : u)));
       } else {
         const initialStatus = isMasterAdmin && formValues.status === 'Active' ? 'Active' : 'Pending';
         const initialApproval = isMasterAdmin && formValues.status === 'Active' ? 'Approved' : 'Pending';
+        const generatedId = nextUserId();
+        const generatedUsername = formValues.username || generatedId;
         const created = await UserService.createUser({
-          id: nextUserId(),
+          id: generatedId,
           name: formValues.name || 'New user',
-          username: formValues.username || 'new.user',
+          username: generatedUsername,
           email: formValues.email,
           mobile: formValues.contact || '+91 9876543210',
           contact: formValues.contact,
@@ -1000,6 +1042,8 @@ export const UserList = () => {
         });
         const newlyCreated = {
           ...created,
+          id: generatedId,
+          username: generatedUsername,
           status: initialStatus,
           approval: initialApproval,
           menuAccess: finalMenuAccess,
@@ -1274,13 +1318,18 @@ export const UserList = () => {
       const matchesRole =
         roleFilter === 'All roles' || u.role.toLowerCase() === roleFilter.toLowerCase();
 
+      const isTrash = u.status === 'Trash User' || u.status === 'Trash';
+
       const matchesStatus =
-        statusFilter === 'All statuses' ||
-        (statusFilter === 'Pending' && (u.approval === 'Pending' || u.status === 'Pending')) ||
-        (statusFilter === 'Locked' && u.locked) ||
-        (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved' && !u.locked) ||
-        (statusFilter === 'Inactive' && u.status === 'Inactive') ||
-        u.status.toLowerCase() === statusFilter.toLowerCase();
+        statusFilter === 'All statuses'
+          ? !isTrash
+          : statusFilter === 'Trash User'
+          ? isTrash
+          : (statusFilter === 'Pending' && (u.approval === 'Pending' || u.status === 'Pending') && !isTrash) ||
+            (statusFilter === 'Locked' && u.locked && !isTrash) ||
+            (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved' && !u.locked && !isTrash) ||
+            (statusFilter === 'Inactive' && u.status === 'Inactive' && !isTrash) ||
+            u.status.toLowerCase() === statusFilter.toLowerCase();
 
       const matchesPlaza =
         plazaFilter === 'All plazas' ||
@@ -1425,10 +1474,10 @@ export const UserList = () => {
             setStatusFilter('All statuses');
             setRoleFilter('All roles');
           }}
-          title="Filter: All users"
+          title="Filter: All active & pending users"
         >
           <span>Total users</span>
-          <strong>{hierarchyScopedUsers.length}</strong>
+          <strong>{hierarchyScopedUsers.filter((u) => u.status !== 'Trash User' && u.status !== 'Trash').length}</strong>
         </div>
         <div
           className="stat"
@@ -1438,7 +1487,7 @@ export const UserList = () => {
         >
           <span>Pending approval</span>
           <strong style={{ color: 'var(--warning-text)' }}>
-            {hierarchyScopedUsers.filter((u) => u.approval === 'Pending').length}
+            {hierarchyScopedUsers.filter((u) => u.approval === 'Pending' && u.status !== 'Trash User' && u.status !== 'Trash').length}
           </strong>
         </div>
         <div
@@ -1449,7 +1498,18 @@ export const UserList = () => {
         >
           <span>Locked / Dormant</span>
           <strong style={{ color: 'var(--danger-text)' }}>
-            {hierarchyScopedUsers.filter((u) => u.locked).length}
+            {hierarchyScopedUsers.filter((u) => u.locked && u.status !== 'Trash User' && u.status !== 'Trash').length}
+          </strong>
+        </div>
+        <div
+          className={`stat ${statusFilter === 'Trash User' ? 'stat--active' : ''}`}
+          style={{ cursor: 'pointer', borderLeft: statusFilter === 'Trash User' ? '3px solid #E11D48' : undefined }}
+          onClick={() => setStatusFilter(statusFilter === 'Trash User' ? 'All statuses' : 'Trash User')}
+          title="Filter: Trash Users (Deleted accounts stored in database)"
+        >
+          <span>Trash Users</span>
+          <strong style={{ color: '#E11D48' }}>
+            {hierarchyScopedUsers.filter((u) => u.status === 'Trash User' || u.status === 'Trash').length}
           </strong>
         </div>
         <div className="stat">
@@ -1490,6 +1550,7 @@ export const UserList = () => {
           <option value="Inactive">Inactive</option>
           <option value="Pending">Pending Approval</option>
           <option value="Locked">Locked / Dormant Accounts</option>
+          <option value="Trash User">Trash Users</option>
         </select>
 
         <select value={plazaFilter} onChange={(e) => setPlazaFilter(e.target.value)}>
@@ -1514,12 +1575,15 @@ export const UserList = () => {
 
         <div className="table-body">
           {paginatedUsers.map((u) => {
+            const isTrash = u.status === 'Trash User' || u.status === 'Trash';
             const isApproved = u.approval === 'Approved';
-            const isDormant = Boolean(u.dormant || u.isDormant);
-            const isLocked = Boolean(u.locked) || isDormant;
-            const statusLabel = isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending';
-            const statusActive = !isLocked && statusLabel === 'Active';
-            const approved = isApproved;
+            const isDormant = !isTrash && Boolean(u.dormant || u.isDormant);
+            const isLocked = isTrash || Boolean(u.locked) || isDormant;
+            const statusLabel = isTrash
+              ? 'Trash User'
+              : (isApproved ? (u.status === 'Inactive' ? 'Inactive' : 'Active') : 'Pending');
+            const statusActive = !isLocked && !isTrash && statusLabel === 'Active';
+            const approved = isApproved && !isTrash;
             return (
               <div key={u.id} className="t-row">
                 <div className="who">
@@ -1546,22 +1610,30 @@ export const UserList = () => {
                 <div>
                   <span
                     className={`badge ${
-                      isLocked
+                      isTrash
+                        ? 'badge-trash'
+                        : isLocked
                         ? (isDormant ? 'badge-dormant' : 'badge-locked')
                         : (statusActive ? 'badge-active' : (statusLabel === 'Pending' ? 'badge-pending' : 'badge-inactive'))
                     }`}
                     title={
-                      isDormant
+                      isTrash
+                        ? 'Trash User: Account deleted and stored in database. Locked from login. Can be activated at any time.'
+                        : isDormant
                         ? 'Dormant: User inactive for >72 hrs without login. Account locked. Can be unlocked from Actions.'
                         : (isLocked ? 'Account locked by administrator' : `Status: ${statusLabel}`)
                     }
                   >
-                    {isLocked ? (isDormant ? 'Dormant (Locked)' : 'Locked') : statusLabel}
+                    {isTrash ? 'Trash User' : (isLocked ? (isDormant ? 'Dormant (Locked)' : 'Locked') : statusLabel)}
                   </span>
                 </div>
 
                 <div>
-                  {approved ? (
+                  {isTrash ? (
+                    <span className="badge badge-locked" style={{ opacity: 0.85 }}>
+                      Locked (Trash)
+                    </span>
+                  ) : approved ? (
                     <span className="badge badge-approved">
                       Approved
                     </span>
@@ -1585,99 +1657,132 @@ export const UserList = () => {
                 </div>
 
                 <div className="row-actions">
-                  {/* (i) Info icon: Shown for users on the SAME LEVEL or UPPER LEVEL in hierarchy */}
-                  {isSameOrUpperLevel(u) && (
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      title="View user details (Hierarchy protected: Same/Upper level - View only)"
-                      onClick={() => setViewingUser(u)}
-                      style={{
-                        color: '#2563eb',
-                        background: '#eff6ff',
-                        borderColor: '#bfdbfe',
-                      }}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 16v-4M12 8h.01" />
-                      </svg>
-                    </button>
-                  )}
-
-                  {canManageTargetUser(u) && (
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      title="Edit user"
-                      onClick={() => handleOpenEdit(u.id)}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                      </svg>
-                    </button>
-                  )}
-
-                  {canApproveTargetUser(u) && (
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      title="Approve user (hierarchy approval)"
-                      onClick={() => handleApproveUser(u.id)}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#067647" strokeWidth="2.2">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    </button>
-                  )}
-
-                  {canManageTargetUser(u) && hasLockUnlockPerm && (
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      title={
-                        isLocked
-                          ? (isDormant
-                              ? 'Dormant account (>72 hrs inactive): Click to unlock user and restore login access'
-                              : 'Locked account: Click to unlock user')
-                          : 'Active account: Click to lock user'
-                      }
-                      onClick={() => handleToggleLock(u.id)}
-                      style={
-                        isLocked
-                          ? {
-                              borderColor: isDormant ? 'rgba(196, 50, 10, 0.4)' : 'rgba(180, 35, 24, 0.4)',
-                              background: isDormant ? '#FFF6ED' : '#FEF3F2',
-                            }
-                          : {}
-                      }
-                    >
-                      {isLocked ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isDormant ? '#C4320A' : '#B42318'} strokeWidth="1.9">
-                          <rect x="4" y="10" width="16" height="10" rx="2" />
-                          <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                        </svg>
-                      ) : (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
-                          <rect x="4" y="10" width="16" height="10" rx="2" />
-                          <path d="M8 10V7a4 4 0 0 1 7.4-2" />
-                        </svg>
+                  {isTrash ? (
+                    <>
+                      {canManageTargetUser(u) && (
+                        <button
+                          type="button"
+                          className="btn-table-activate"
+                          onClick={() => handleActivateUser(u.id)}
+                          title="Activate user (Restore account from Trash to Active)"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Activate
+                        </button>
                       )}
-                    </button>
-                  )}
+                      {canManageTargetUser(u) && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Edit user"
+                          onClick={() => handleOpenEdit(u.id)}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* (i) Info icon: Shown for users on the SAME LEVEL or UPPER LEVEL in hierarchy */}
+                      {isSameOrUpperLevel(u) && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="View user details (Hierarchy protected: Same/Upper level - View only)"
+                          onClick={() => setViewingUser(u)}
+                          style={{
+                            color: '#2563eb',
+                            background: '#eff6ff',
+                            borderColor: '#bfdbfe',
+                          }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 16v-4M12 8h.01" />
+                          </svg>
+                        </button>
+                      )}
 
-                  {canDeleteTargetUser(u) && (
-                    <button
-                      type="button"
-                      className="icon-btn"
-                      title="Delete user"
-                      onClick={() => setDeleteConfirm({ id: u.id, name: u.name || u.username })}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
-                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
-                      </svg>
-                    </button>
+                      {canManageTargetUser(u) && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Edit user"
+                          onClick={() => handleOpenEdit(u.id)}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {canApproveTargetUser(u) && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Approve user (hierarchy approval)"
+                          onClick={() => handleApproveUser(u.id)}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#067647" strokeWidth="2.2">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {canManageTargetUser(u) && hasLockUnlockPerm && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title={
+                            isLocked
+                              ? (isDormant
+                                  ? 'Dormant account (>72 hrs inactive): Click to unlock user and restore login access'
+                                  : 'Locked account: Click to unlock user')
+                              : 'Active account: Click to lock user'
+                          }
+                          onClick={() => handleToggleLock(u.id)}
+                          style={
+                            isLocked
+                              ? {
+                                  borderColor: isDormant ? 'rgba(196, 50, 10, 0.4)' : 'rgba(180, 35, 24, 0.4)',
+                                  background: isDormant ? '#FFF6ED' : '#FEF3F2',
+                                }
+                              : {}
+                          }
+                        >
+                          {isLocked ? (
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isDormant ? '#C4320A' : '#B42318'} strokeWidth="1.9">
+                              <rect x="4" y="10" width="16" height="10" rx="2" />
+                              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                            </svg>
+                          ) : (
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475467" strokeWidth="1.9">
+                              <rect x="4" y="10" width="16" height="10" rx="2" />
+                              <path d="M8 10V7a4 4 0 0 1 7.4-2" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+
+                      {canDeleteTargetUser(u) && (
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Delete user (Move to Trash)"
+                          onClick={() => setDeleteConfirm({ id: u.id, name: u.name || u.username })}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B42318" strokeWidth="1.9">
+                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+                          </svg>
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1756,26 +1861,30 @@ export const UserList = () => {
                   <div className="form-grid" style={{ marginTop: '14px' }}>
                     <div className="field">
                       <label>
-                        Username <span className="req">*</span>
+                        Username <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 500 }}>(Auto-generated PSN format)</span>
                       </label>
                       <input
                         type="text"
-                        placeholder="Used for login"
-                        required
-                        value={formValues.username}
-                        onChange={(e) =>
-                          setFormValues({ ...formValues, username: e.target.value })
-                        }
-                        onBlur={() => handleBlur('username')}
+                        placeholder="PSN auto-generated"
+                        value={formValues.username || (editingId ? (users.find((u) => u.id === editingId)?.username || editingId) : nextUserId())}
+                        readOnly
+                        disabled
+                        style={{
+                          background: '#F9FAFB',
+                          color: '#374151',
+                          cursor: 'not-allowed',
+                          fontWeight: 600,
+                          letterSpacing: '0.5px',
+                        }}
                       />
-                      {formErrors.username && (
-                        <span className="field-error">{formErrors.username}</span>
-                      )}
+                      <span style={{ fontSize: '11px', color: '#6B7280', marginTop: '4px', display: 'block' }}>
+                        ⚡ Auto-generated in PSN format (for database display &amp; management only · login is via Email ID)
+                      </span>
                     </div>
 
                     <div className="field">
                       <label>
-                        Email ID <span className="req">*</span>
+                        Email ID <span className="req">*</span> <span style={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>(Required for login)</span>
                       </label>
                       <input
                         type="email"
@@ -2087,8 +2196,11 @@ export const UserList = () => {
                               setFormValues({ ...formValues, status: e.target.value })
                             }
                           >
-                            <option value="Active">Active</option>
+                            <option value="Active">Active (Activate account)</option>
                             <option value="Inactive">Inactive</option>
+                            {(formValues.status === 'Trash User' || formValues.status === 'Trash') && (
+                              <option value="Trash User">Trash User (In Trash)</option>
+                            )}
                           </select>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
@@ -2561,18 +2673,20 @@ export const UserList = () => {
                 </svg>
               </div>
               <div>
-                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#111827' }}>Delete User</h2>
-                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#6b7280' }}>This action cannot be undone</p>
+                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#111827' }}>Move User to Trash</h2>
+                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#6b7280' }}>Stored in database as Trash User · Can be activated later</p>
               </div>
             </div>
 
             {/* Body */}
             <div style={{ padding: '20px 24px' }}>
               <p style={{ margin: 0, fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>
-                Are you sure you want to delete{' '}
-                <strong style={{ color: '#111827' }}>{deleteConfirm.name}</strong>?
+                Are you sure you want to move{' '}
+                <strong style={{ color: '#111827' }}>{deleteConfirm.name}</strong> to Trash?
                 <br />
-                <span style={{ color: '#9ca3af', fontSize: '13px' }}>All data associated with this user will be permanently removed.</span>
+                <span style={{ color: '#6b7280', fontSize: '13px' }}>
+                  The user will not be removed from the database. Their status will be set to <strong>Trash User</strong> and locked from logging in. If required, you can activate this user at any time.
+                </span>
               </p>
             </div>
 
@@ -2605,7 +2719,7 @@ export const UserList = () => {
                 onClick={() => handleDeleteUser(deleteConfirm.id)}
                 disabled={isDeleting}
                 style={{
-                  minWidth: '110px',
+                  minWidth: '130px',
                   background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
                   color: '#fff',
                   border: 'none',
@@ -2617,13 +2731,13 @@ export const UserList = () => {
                 }}
               >
                 {isDeleting ? (
-                  <><span className="btn-spinner" style={{ borderTopColor: '#fff' }} /> Deleting...</>
+                  <><span className="btn-spinner" style={{ borderTopColor: '#fff' }} /> Moving to Trash...</>
                 ) : (
                   <>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
                       <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
                     </svg>
-                    Yes, Delete
+                    Move to Trash
                   </>
                 )}
               </button>

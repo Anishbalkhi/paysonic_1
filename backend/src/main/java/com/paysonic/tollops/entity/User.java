@@ -14,6 +14,9 @@ public class User {
     @Column(name = "id", length = 32, nullable = false)
     private String id;
 
+    @Column(name = "username", length = 50)
+    private String username;
+
     @Column(name = "name", length = 100, nullable = false)
     private String name;
 
@@ -38,7 +41,7 @@ public class User {
     @Column(name = "menu_access_json", columnDefinition = "TEXT")
     private String menuAccessJson;
 
-    @Column(name = "status", length = 20, nullable = false)
+    @Column(name = "status", length = 30, nullable = false)
     private String status = "Pending";
 
     @Column(name = "approval", length = 20, nullable = false)
@@ -100,6 +103,9 @@ public class User {
     // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getUsername() { return username != null && !username.isBlank() ? username : id; }
+    public void setUsername(String username) { this.username = username; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

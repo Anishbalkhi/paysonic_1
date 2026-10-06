@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 public class UserResponseDTO {
 
     private String id;
+    private String username;
     private String name;
     private String email;
     private String mobile;
@@ -41,6 +42,7 @@ public class UserResponseDTO {
     public static UserResponseDTO fromEntity(User user, ObjectMapper objectMapper) {
         UserResponseDTO dto = new UserResponseDTO();
         dto.setId(user.getId());
+        dto.setUsername(user.getUsername() != null && !user.getUsername().isBlank() ? user.getUsername() : user.getId());
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
         dto.setMobile(user.getMobile());
@@ -58,7 +60,8 @@ public class UserResponseDTO {
 
         // 72-Hour Dormancy Check: User becomes dormant (locked) if not logged in for 72 hours
         LocalDateTime refTime = user.getLastActive() != null ? user.getLastActive() : user.getCreatedAt();
-        boolean isDormant = !"Master Admin".equalsIgnoreCase(user.getRole()) &&
+        boolean isTrash = "Trash User".equalsIgnoreCase(user.getStatus()) || "Trash".equalsIgnoreCase(user.getStatus());
+        boolean isDormant = !isTrash && !"Master Admin".equalsIgnoreCase(user.getRole()) &&
                 refTime != null &&
                 refTime.isBefore(LocalDateTime.now().minusHours(72));
         dto.setDormant(isDormant);
@@ -96,6 +99,9 @@ public class UserResponseDTO {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

@@ -81,14 +81,20 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // If user was deactivated, locked, or is pending approval — revoke session immediately
+        const isLiveTrash =
+          liveRecord.status === 'Trash User' ||
+          liveRecord.status === 'Trash' ||
+          String(liveRecord.status || '').toLowerCase() === 'trash user';
+
+        // If user was deactivated, locked, in trash, or is pending approval — revoke session immediately
         if (
+          isLiveTrash ||
           liveRecord.locked ||
           liveRecord.status === 'Inactive' ||
           liveRecord.approval !== 'Approved' ||
           liveRecord.status === 'Pending'
         ) {
-          console.warn('[AuthContext] Active user is locked, deactivated, or pending approval. Revoking session.');
+          console.warn('[AuthContext] Active user is locked, deactivated, in trash, or pending approval. Revoking session.');
           logout();
           return;
         }
@@ -314,13 +320,30 @@ export const AuthProvider = ({ children }) => {
       } catch {}
     }
 
-    const match = allUsers.find(
+    // ── Requirement #9: Strictly require registered email ID for login ──
+    // The system generates a username in PSN format used ONLY for database display
+    // and management purposes. By using the username, users cannot log in.
+    const usernameAttempt = allUsers.find(
       (u) =>
-        u.email?.toLowerCase() === trimmed ||
-        u.username?.toLowerCase() === trimmed ||
-        u.id?.toLowerCase() === trimmed ||
-        (u.email && u.email.toLowerCase().split('@')[0] === trimmed)
+        (u.username && u.username.toLowerCase() === trimmed && u.email?.toLowerCase() !== trimmed) ||
+        (u.id && u.id.toLowerCase() === trimmed && u.email?.toLowerCase() !== trimmed) ||
+        (u.email && u.email.toLowerCase().split('@')[0] === trimmed && !trimmed.includes('@'))
     );
+
+    if (usernameAttempt) {
+      UserActivityService.recordLoginAttempt({
+        userId: usernameAttempt.id,
+        email: rawIdentifier,
+        name: usernameAttempt.name,
+        role: usernameAttempt.role,
+        status: 'Failed',
+        failureReason: 'Username login not allowed: registered email ID required',
+      });
+      throw new Error('Usernames cannot be used for login. Please enter your registered email address.');
+    }
+
+    // Strict email ID match only
+    const match = allUsers.find((u) => u.email?.toLowerCase() === trimmed);
 
     // If user is not found in Railway database (or cache)
     if (!match) {
@@ -332,7 +355,25 @@ export const AuthProvider = ({ children }) => {
         status: 'Failed',
         failureReason: 'User is not found in database',
       });
-      throw new Error('User is not found.');
+      throw new Error('User is not found. Please enter your registered email address.');
+    }
+
+    // ── Trash User Check (Requirement #8) ──
+    const isTrash =
+      match.status === 'Trash User' ||
+      match.status === 'Trash' ||
+      String(match.status || '').toLowerCase() === 'trash user';
+
+    if (isTrash) {
+      UserActivityService.recordLoginAttempt({
+        userId: match.id,
+        email: match.email,
+        name: match.name,
+        role: match.role,
+        status: 'Failed',
+        failureReason: 'your user is locked contact your admin',
+      });
+      throw new Error('your user is locked contact your admin');
     }
 
     // SECURITY: When using cache fallback, warn and apply extra strictness.
