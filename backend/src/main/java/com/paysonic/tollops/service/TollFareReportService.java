@@ -28,25 +28,25 @@ public class TollFareReportService {
     private final PlazaRepository plazaRepository;
     private final ObjectMapper objectMapper;
 
-    // Standard ordered vehicle classes matching the exact screenshot order
+    // Standard ordered vehicle classes ordered ascending from VC4 to VC19 / VC20
     private static final List<String[]> VEHICLE_CLASS_DEFINITIONS = List.of(
-            new String[]{"VC19", "tractor-with-trailer", "300.00", "150.00", "0.00", "0.00", "0.00", "0.00"},
-            new String[]{"VC18", "tractor", "250.00", "125.00", "0.00", "0.00", "0.00", "0.00"},
-            new String[]{"VC17", "Heavy Construction machinery", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
-            new String[]{"VC16", "Earth moving machinery", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
-            new String[]{"VC15", "Truck Multi Axle (7 and above)", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
-            new String[]{"VC14", "Truck 6 Axle", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
-            new String[]{"VC13", "Truck 5 Axle", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
-            new String[]{"VC12", "Truck 4 Axle", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
-            new String[]{"VC6", "Light Commercial Vehicle - 3 Axle", "20.00", "22.00", "0.00", "0.00", "3300.00", "0.00"},
-            new String[]{"VC11", "Truck 3 Axle", "20.00", "22.00", "0.00", "0.00", "3300.00", "0.00"},
-            new String[]{"VC8", "Bus 3 Axle", "20.00", "22.00", "0.00", "0.00", "3300.00", "0.00"},
-            new String[]{"VC10", "Truck 2 Axle", "15.00", "18.00", "0.00", "0.00", "2100.00", "0.00"},
-            new String[]{"VC7", "Bus 2 Axle", "15.00", "18.00", "0.00", "0.00", "2100.00", "0.00"},
-            new String[]{"VC9", "Mini Bus", "10.00", "12.00", "0.00", "0.00", "1000.00", "0.00"},
+            new String[]{"VC4", "Car / Jeep / Van", "5.00", "8.00", "0.00", "0.00", "500.00", "0.00"},
             new String[]{"VC5", "Light Commercial Vehicle - 2 Axle", "10.00", "12.00", "0.00", "0.00", "1000.00", "0.00"},
-            new String[]{"VC20", "Tata Ace or similar mini light commercial vehicle", "5.00", "8.00", "0.00", "0.00", "1000.00", "0.00"},
-            new String[]{"VC4", "Car / Jeep / Van", "5.00", "8.00", "0.00", "0.00", "500.00", "0.00"}
+            new String[]{"VC6", "Light Commercial Vehicle - 3 Axle", "20.00", "22.00", "0.00", "0.00", "3300.00", "0.00"},
+            new String[]{"VC7", "Bus 2 Axle", "15.00", "18.00", "0.00", "0.00", "2100.00", "0.00"},
+            new String[]{"VC8", "Bus 3 Axle", "20.00", "22.00", "0.00", "0.00", "3300.00", "0.00"},
+            new String[]{"VC9", "Mini Bus", "10.00", "12.00", "0.00", "0.00", "1000.00", "0.00"},
+            new String[]{"VC10", "Truck 2 Axle", "15.00", "18.00", "0.00", "0.00", "2100.00", "0.00"},
+            new String[]{"VC11", "Truck 3 Axle", "20.00", "22.00", "0.00", "0.00", "3300.00", "0.00"},
+            new String[]{"VC12", "Truck 4 Axle", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
+            new String[]{"VC13", "Truck 5 Axle", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
+            new String[]{"VC14", "Truck 6 Axle", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
+            new String[]{"VC15", "Truck Multi Axle (7 and above)", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
+            new String[]{"VC16", "Earth moving machinery", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
+            new String[]{"VC17", "Heavy Construction machinery", "25.00", "28.00", "0.00", "0.00", "5000.00", "0.00"},
+            new String[]{"VC18", "Tractor", "250.00", "125.00", "0.00", "0.00", "0.00", "0.00"},
+            new String[]{"VC19", "tractor-with-trailer", "300.00", "150.00", "0.00", "0.00", "0.00", "0.00"},
+            new String[]{"VC20", "Tata Ace or similar mini light commercial vehicle", "5.00", "8.00", "0.00", "0.00", "1000.00", "0.00"}
     );
 
     public TollFareReportService(PlazaFareRepository plazaFareRepository,

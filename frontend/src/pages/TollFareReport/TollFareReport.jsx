@@ -52,17 +52,36 @@ export const TollFareReport = () => {
     handleSearch('ALL', 'ALL');
   };
 
-  // Client-side quick search filtering
+  // Sort helper: order vehicle classes ascending from VC4 to VC19 / VC20
+  const getVcSortRank = (vc) => {
+    if (!vc) return 999;
+    const str = String(vc).toUpperCase().trim();
+    const match = str.match(/VC\s*(\d+)/i) || str.match(/\d+/);
+    if (match) {
+      return parseInt(match[1] || match[0], 10);
+    }
+    return 999;
+  };
+
+  // Client-side quick search filtering and ascending sort (VC4 to VC19)
   const filteredRecords = useMemo(() => {
-    if (!searchTerm.trim()) return records;
-    const q = searchTerm.toLowerCase().trim();
-    return records.filter((r) =>
-      (r.tollPlazaId && String(r.tollPlazaId).toLowerCase().includes(q)) ||
-      (r.vehicleClass && r.vehicleClass.toLowerCase().includes(q)) ||
-      (r.vehicleDesc && r.vehicleDesc.toLowerCase().includes(q)) ||
-      (r.singleJourney && String(r.singleJourney).includes(q)) ||
-      (r.returnJourney && String(r.returnJourney).includes(q))
-    );
+    let list = records;
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim();
+      list = records.filter((r) =>
+        (r.tollPlazaId && String(r.tollPlazaId).toLowerCase().includes(q)) ||
+        (r.vehicleClass && r.vehicleClass.toLowerCase().includes(q)) ||
+        (r.vehicleDesc && r.vehicleDesc.toLowerCase().includes(q)) ||
+        (r.singleJourney && String(r.singleJourney).includes(q)) ||
+        (r.returnJourney && String(r.returnJourney).includes(q))
+      );
+    }
+    return [...list].sort((a, b) => {
+      const rankA = getVcSortRank(a.vehicleClass);
+      const rankB = getVcSortRank(b.vehicleClass);
+      if (rankA !== rankB) return rankA - rankB;
+      return String(a.vehicleClass || '').localeCompare(String(b.vehicleClass || ''));
+    });
   }, [records, searchTerm]);
 
   // Bottom Summary KPI metrics
@@ -177,23 +196,23 @@ export const TollFareReport = () => {
               onChange={(e) => setVehicleClass(e.target.value)}
             >
               <option value="ALL">All Vehicle Classes</option>
-              <option value="VC19">VC19 - Tractor with trailer</option>
-              <option value="VC18">VC18 - Tractor</option>
-              <option value="VC17">VC17 - Heavy Construction machinery</option>
-              <option value="VC16">VC16 - Earth moving machinery</option>
-              <option value="VC15">VC15 - Truck Multi Axle (7 and above)</option>
-              <option value="VC14">VC14 - Truck 6 Axle</option>
-              <option value="VC13">VC13 - Truck 5 Axle</option>
-              <option value="VC12">VC12 - Truck 4 Axle</option>
-              <option value="VC6">VC6 - Light Commercial Vehicle - 3 Axle</option>
-              <option value="VC11">VC11 - Truck 3 Axle</option>
-              <option value="VC8">VC8 - Bus 3 Axle</option>
-              <option value="VC10">VC10 - Truck 2 Axle</option>
-              <option value="VC7">VC7 - Bus 2 Axle</option>
-              <option value="VC9">VC9 - Mini Bus</option>
-              <option value="VC5">VC5 - Light Commercial Vehicle - 2 Axle</option>
-              <option value="VC20">VC20 - Tata Ace or similar mini LCV</option>
               <option value="VC4">VC4 - Car / Jeep / Van</option>
+              <option value="VC5">VC5 - Light Commercial Vehicle - 2 Axle</option>
+              <option value="VC6">VC6 - Light Commercial Vehicle - 3 Axle</option>
+              <option value="VC7">VC7 - Bus 2 Axle</option>
+              <option value="VC8">VC8 - Bus 3 Axle</option>
+              <option value="VC9">VC9 - Mini Bus</option>
+              <option value="VC10">VC10 - Truck 2 Axle</option>
+              <option value="VC11">VC11 - Truck 3 Axle</option>
+              <option value="VC12">VC12 - Truck 4 Axle</option>
+              <option value="VC13">VC13 - Truck 5 Axle</option>
+              <option value="VC14">VC14 - Truck 6 Axle</option>
+              <option value="VC15">VC15 - Truck Multi Axle (7 and above)</option>
+              <option value="VC16">VC16 - Earth moving machinery</option>
+              <option value="VC17">VC17 - Heavy Construction machinery</option>
+              <option value="VC18">VC18 - Tractor</option>
+              <option value="VC19">VC19 - Tractor with trailer</option>
+              <option value="VC20">VC20 - Tata Ace or similar mini LCV</option>
             </select>
           </div>
 
@@ -297,7 +316,7 @@ export const TollFareReport = () => {
         <div className="table-top-banner">
           <div className="banner-title">TOLL FARE REPORT</div>
           <div className="banner-subtitle">
-            Plaza: {plazaId} | Effective FASTag Toll Fare Matrix
+            Plaza: {plazaId === 'ALL' ? 'All Plazas' : plazaId} | Effective FASTag Toll Fare Matrix
           </div>
           <div className="banner-green-bar" />
         </div>
