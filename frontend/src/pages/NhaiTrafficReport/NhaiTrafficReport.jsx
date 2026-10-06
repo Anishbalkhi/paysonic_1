@@ -178,12 +178,15 @@ export const NhaiTrafficReport = () => {
 
   return (
     <div className="nhai-traffic-page">
-      {/* 1. Header Banner */}
-      <div className="report-header-banner">
-        <h1 className="report-title">NHAI Traffic Report</h1>
-        <div className="report-subtitle">{dateSubtitle}</div>
-        <div className="report-green-accent-bar" />
-      </div>
+      {/* Top Header */}
+      <header className="page-header">
+        <div className="header-titles">
+          <h1 className="page-title">NHAI Traffic Report</h1>
+          <p className="subtitle">
+            FASTag Traffic Analysis &amp; Journey Revenue Collection
+          </p>
+        </div>
+      </header>
 
       {/* 2. Filter Controls Card */}
       <div className="filter-card">
@@ -284,6 +287,15 @@ export const NhaiTrafficReport = () => {
 
       {/* 3. Table Area */}
       <div className="table-wrapper">
+        {/* Centered Table Banner matching Image 2 and other reports */}
+        <div className="table-top-banner">
+          <div className="banner-title">NHAI TRAFFIC REPORT</div>
+          <div className="banner-subtitle">
+            {dateSubtitle}
+          </div>
+          <div className="banner-green-bar" />
+        </div>
+
         <div className="table-responsive">
           <table className="nhai-styled-table">
             <thead>
