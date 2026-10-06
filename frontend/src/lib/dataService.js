@@ -138,15 +138,24 @@ export const DataService = {
         const parsed = JSON.parse(raw);
         if (parsed?.plazas && Array.isArray(parsed.plazas) && parsed.plazas.length > 0) {
           return parsed.plazas.map((p) => ({
-            id: p.id,
-            name: p.name,
-            desc: `${p.authority || p.state || 'Toll'} · ${p.city || p.subtype || ''}`,
-            status: p.status === 'Active' ? 'ok' : p.status === 'Suspended' ? 'off' : 'warn',
+            id: p.id || '',
+            name: p.name || 'Plaza',
+            desc: p.desc || `${p.authority || p.state || 'Toll'} · ${p.city || p.subtype || ''}`,
+            status: p.status === 'Active' || p.status === 'ok' ? 'ok' : p.status === 'Suspended' || p.status === 'off' ? 'off' : 'warn',
           }));
         }
       }
     } catch {}
-    return getData('plazas', 'plazas.json');
+    const list = await getData('plazas', 'plazas.json');
+    if (Array.isArray(list)) {
+      return list.map((p) => ({
+        id: p.id || '',
+        name: p.name || p.plazaName || 'Plaza',
+        desc: p.desc || `${p.authority || p.state || 'Toll'} · ${p.city || p.subtype || 'National'}`,
+        status: p.status === 'Active' || p.status === 'ok' ? 'ok' : p.status === 'Suspended' || p.status === 'off' ? 'off' : 'warn',
+      }));
+    }
+    return [];
   },
 
   // TIER 1: critical above-the-fold data — paint shell immediately

@@ -6,6 +6,7 @@ import AppRoutes from './routes/AppRoutes';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { getRoleSlug } from './config/roleMenus';
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 
 const AppLayout = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -52,7 +53,9 @@ export const App = () => {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AppLayout />
+          <ErrorBoundary>
+            <AppLayout />
+          </ErrorBoundary>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

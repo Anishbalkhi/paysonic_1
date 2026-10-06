@@ -1623,25 +1623,32 @@ function PlazaStatusPanel({ plazas, plazaQuery, setPlazaQuery }) {
   const userRole = currentUser?.role || 'Admin';
 
   const isUserPlaza = (p) => {
+    if (!p) return false;
     if (!userPlazaText || userPlazaText.includes('all plazas') || userPlazaText.includes('bank level')) return false;
-    const nameLower = p.name.toLowerCase();
-    const descLower = p.desc.toLowerCase();
-    return userPlazaText.includes(nameLower) || nameLower.includes(userPlazaText.split('(')[0].trim()) || userPlazaText.includes(descLower);
+    const nameLower = (p.name || '').toLowerCase();
+    const descLower = (p.desc || p.state || p.city || '').toLowerCase();
+    const cleanUserPlaza = userPlazaText.split('(')[0].trim();
+    return (nameLower && userPlazaText.includes(nameLower)) ||
+           (nameLower && cleanUserPlaza && nameLower.includes(cleanUserPlaza)) ||
+           (descLower && userPlazaText.includes(descLower));
   };
 
   const isCorridorPlaza = (p) => {
-    if (userRole !== 'Concessionaire') return false;
-    const n = p.name.toLowerCase();
+    if (!p || userRole !== 'Concessionaire') return false;
+    const n = (p.name || '').toLowerCase();
     return n.includes('vashi') || n.includes('airoli') || n.includes('khed') || n.includes('mumbai') || n.includes('pune');
   };
 
   const [corridorOnly, setCorridorOnly] = useState(userRole === 'Concessionaire');
 
-  const filtered = plazas.filter((p) => {
+  const safePlazas = Array.isArray(plazas) ? plazas : [];
+  const filtered = safePlazas.filter((p) => {
+    if (!p) return false;
     if (userRole === 'Concessionaire' && corridorOnly && !isCorridorPlaza(p)) {
       return false;
     }
-    return !q || `${p.id} ${p.name} ${p.desc}`.toLowerCase().includes(q);
+    const searchable = `${p.id || ''} ${p.name || ''} ${p.desc || p.state || ''}`.toLowerCase();
+    return !q || searchable.includes(q);
   });
   const statusLabel = { ok: "Live", warn: "Degraded", off: "Offline" };
 
@@ -1708,10 +1715,10 @@ function PlazaStatusPanel({ plazas, plazaQuery, setPlazaQuery }) {
             const isAssigned = isUserPlaza(p);
             const isCorr = isCorridorPlaza(p);
             return (
-              <tr key={p.id} style={isAssigned ? { background: '#f0f9ff' } : isCorr ? { background: '#fffbeb' } : undefined}>
-                <td className="pid">{p.id}</td>
+              <tr key={p.id || Math.random()} style={isAssigned ? { background: '#f0f9ff' } : isCorr ? { background: '#fffbeb' } : undefined}>
+                <td className="pid">{p.id || 'PLZ'}</td>
                 <td className="pname">
-                  {p.name}
+                  {p.name || 'Local Plaza'}
                   {isAssigned && (
                     <span style={{
                       marginLeft: '6px',
@@ -1741,11 +1748,11 @@ function PlazaStatusPanel({ plazas, plazaQuery, setPlazaQuery }) {
                     </span>
                   )}
                 </td>
-                <td className="pdesc">{p.desc}</td>
+                <td className="pdesc">{p.desc || `${p.authority || p.state || 'Toll'} · ${p.city || p.subtype || 'National'}`}</td>
                 <td className="st-cell">
-                  <span className={`st ${p.status}`}>
+                  <span className={`st ${p.status || 'ok'}`}>
                     <i></i>
-                    {statusLabel[p.status]}
+                    {statusLabel[p.status] || (p.status === 'Active' ? 'Live' : p.status === 'Draft' ? 'Draft' : 'Live')}
                   </span>
                 </td>
               </tr>
