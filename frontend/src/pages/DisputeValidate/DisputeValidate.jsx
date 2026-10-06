@@ -244,12 +244,6 @@ export const DisputeValidate = () => {
             value: rows.filter(r => r.disputeStatus === 'NA').length,
             sub: `Decided / Closed: ${rows.filter(r => r.disputeStatus !== 'NA').length}`,
             highlight: rows.some(r => r.disputeStatus === 'NA') ? 'amber' : 'green'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'plaza_dispute_validation',
-            isBadge: true
           }
         ]}
       />

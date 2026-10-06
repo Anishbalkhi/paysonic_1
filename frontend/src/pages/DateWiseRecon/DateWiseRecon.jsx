@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import DateWiseReconService from '../../services/recon/DateWiseReconService';
 import UserActivityService from '../../services/userActivity/UserActivityService';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import PlazaMultiSelect from '../../components/PlazaMultiSelect/PlazaMultiSelect';
 import './DateWiseRecon.scss';
 
 export const DateWiseRecon = () => {
@@ -19,7 +20,8 @@ export const DateWiseRecon = () => {
   const defaultRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(defaultRange.from);
   const [toDate, setToDate] = useState(defaultRange.to);
-  const [plazaId, setPlazaId] = useState('');
+  const [selectedPlazas, setSelectedPlazas] = useState([]);
+  const [dateType, setDateType] = useState(''); // '' ('Select Date Type') | 'Txn Date' | 'Settlement Date'
   const [exportMode, setExportMode] = useState('detailed'); // 'detailed' | 'collapsed' | 'currentView'
 
   // Data State
@@ -48,27 +50,58 @@ export const DateWiseRecon = () => {
   };
 
   // Search from real database
-  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlazas, overrideDateType) => {
     const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
     const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
-    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
+    const pList = Array.isArray(overridePlazas) ? overridePlazas : selectedPlazas;
+    const dType = (typeof overrideDateType === 'string') ? overrideDateType : dateType;
 
     if (!validateDates(fDate, tDate)) return;
 
     setLoading(true);
     setErrorMsg('');
     try {
+      const queryPlazaId = pList.length === 1 ? pList[0] : '';
       const data = await DateWiseReconService.searchDateWiseRecon({
         fromDate: fDate,
         toDate: tDate,
-        plazaId: pId
+        plazaId: queryPlazaId
       });
 
-      setRecords(data || []);
+      let results = data || [];
+      // Multi-plaza selection filter
+      if (pList.length > 1) {
+        results = results.filter((r) => pList.includes(r.plazaId));
+      }
+
+      // Date Type filtering (Txn Date vs Settlement Date)
+      if (dType === 'Settlement Date') {
+        const fromD = new Date(fDate);
+        const toD = new Date(tDate);
+
+        results = results.map((r) => {
+          if (!r.breakdowns || r.breakdowns.length === 0) return r;
+          const filteredBreakdowns = r.breakdowns.filter((b) => {
+            if (!b.settlementDate) return true;
+            const bDate = new Date(b.settlementDate + 'T12:00:00');
+            return bDate >= fromD && bDate <= toD;
+          });
+          const newTxnCount = filteredBreakdowns.reduce((acc, curr) => acc + (Number(curr.txnCount) || 0), 0);
+          const newSettledAmount = filteredBreakdowns.reduce((acc, curr) => acc + (Number(curr.settledAmount) || 0), 0);
+          return {
+            ...r,
+            breakdowns: filteredBreakdowns,
+            txnCount: newTxnCount,
+            settledAmount: newSettledAmount,
+          };
+        }).filter((r) => r.txnCount > 0 || (r.breakdowns && r.breakdowns.length > 0));
+      }
+
+      setRecords(results);
       // Expand all by default if there are few records so user sees the drilldown immediately
-      if (Array.isArray(data) && data.length <= 10) {
+      if (Array.isArray(results) && results.length <= 10) {
         const initialExpanded = {};
-        data.forEach((r) => {
+        results.forEach((r) => {
           initialExpanded[r.rowId] = true;
         });
         setExpandedRows(initialExpanded);
@@ -81,15 +114,16 @@ export const DateWiseRecon = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaId]);
+  }, [fromDate, toDate, selectedPlazas, dateType]);
 
   const handleReset = () => {
     const def = getDefaultDateRange();
     setFromDate(def.from);
     setToDate(def.to);
-    setPlazaId('');
+    setSelectedPlazas([]);
+    setDateType('');
     setErrorMsg('');
-    handleSearch(def.from, def.to, '');
+    handleSearch(def.from, def.to, [], '');
   };
 
   // Initial load
@@ -640,16 +674,29 @@ export const DateWiseRecon = () => {
             />
           </div>
 
-          <div className="input-group">
-            <label htmlFor="dwrPlaza">Plaza (Optional)</label>
-            <input
+          <div className="input-group" style={{ minWidth: '240px', flex: '1 1 220px' }}>
+            <PlazaMultiSelect
+              label="Plaza Name"
+              selectedPlazas={selectedPlazas}
+              onChange={setSelectedPlazas}
+              placeholder="Select Plaza Name"
               id="dwrPlaza"
-              type="text"
-              placeholder="e.g. 600601, Dummytollplaza1"
-              className="form-input"
-              value={plazaId}
-              onChange={(e) => setPlazaId(e.target.value)}
             />
+          </div>
+
+          <div className="input-group" style={{ minWidth: '170px' }}>
+            <label htmlFor="dwrDateType">Date Type</label>
+            <select
+              id="dwrDateType"
+              className="form-select form-input"
+              value={dateType}
+              onChange={(e) => setDateType(e.target.value)}
+              title="Select date type to reconcile against"
+            >
+              <option value="">Select Date Type</option>
+              <option value="Txn Date">Txn Date</option>
+              <option value="Settlement Date">Settlement Date</option>
+            </select>
           </div>
 
           <div className="input-group">
@@ -736,12 +783,6 @@ export const DateWiseRecon = () => {
             value: formatCurrency(grandTotalAmount),
             sub: 'Gross Remitted Funds',
             highlight: 'purple'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'date_wise_recon',
-            isBadge: true
           }
         ]}
       />

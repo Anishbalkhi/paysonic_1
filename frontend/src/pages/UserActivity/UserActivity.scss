@@ -423,7 +423,7 @@
   min-width: 820px;
 
   th {
-    padding: 12px 20px;
+    padding: 12px 18px;
     background: #F9FAFB;
     border-bottom: 1px solid var(--border);
     font-size: 12px;
@@ -431,10 +431,11 @@
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    white-space: nowrap;
   }
 
   td {
-    padding: 14px 20px;
+    padding: 14px 18px;
     border-bottom: 1px solid #F2F4F7;
     font-size: 13px;
     color: var(--body-text);
@@ -451,6 +452,23 @@
 
   tr.clickable-row {
     cursor: pointer;
+  }
+
+  th:last-child,
+  td:last-child {
+    position: sticky;
+    right: 0;
+    background: #ffffff;
+    z-index: 2;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.03);
+  }
+
+  th:last-child {
+    background: #F9FAFB;
+  }
+
+  tr:hover td:last-child {
+    background: #F9FAFB;
   }
 }
 
@@ -492,6 +510,10 @@
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink);
+
+  &--danger {
+    color: #B42318;
+  }
 }
 
 .module-tag {

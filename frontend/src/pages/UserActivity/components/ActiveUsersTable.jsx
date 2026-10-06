@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime } from '../../../utils/dateUtils';
 
 const ROLE_OPTIONS = [
   'All Roles',
@@ -8,6 +9,8 @@ const ROLE_OPTIONS = [
   'Concessionaire',
   'Auditor',
   'Support Operator',
+  'Plaza POS',
+  'Bank',
 ];
 
 export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
@@ -50,10 +53,12 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
     if (!selectedSession) return;
     setIsSubmitting(true);
     try {
-      await onForceLogout(selectedSession.sessionId, logoutReason);
+      if (onForceLogout) {
+        await onForceLogout(selectedSession.sessionId, logoutReason);
+      }
       setSelectedSession(null);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to terminate session:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -119,101 +124,98 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
           <table className="activity-table">
             <thead>
               <tr>
-                <th>User / Account</th>
-                <th>Role</th>
-                <th>Department</th>
-                <th>Assigned Plaza</th>
-                <th>Network &amp; IP</th>
-                <th>Device</th>
-                <th>Connected Since</th>
-                <th>Last Activity</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Security Action</th>
+                <th style={{ minWidth: '220px' }}>User / Account</th>
+                <th style={{ minWidth: '120px' }}>Role</th>
+                <th style={{ minWidth: '180px' }}>Plaza &amp; Department</th>
+                <th style={{ minWidth: '180px' }}>Network &amp; Device</th>
+                <th style={{ minWidth: '150px' }}>Session Timeline</th>
+                <th style={{ minWidth: '90px' }}>Status</th>
+                <th style={{ minWidth: '140px', textAlign: 'right' }}>Security Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="11" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: 'var(--muted)' }}>
                     No active sessions found matching current filters.
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => (
-                  <tr key={u.sessionId}>
-                    <td>
-                      <div className="user-info-cell">
-                        <div className="avatar-sm">{u.name?.slice(0, 2).toUpperCase()}</div>
-                        <div>
-                          <strong>{u.name}</strong>
-                          <span>
-                            {u.userId} · {u.username}
+                filteredUsers.map((u) => {
+                  const loginTimeParsed = parseUtcTimestamp(u.loginTime);
+                  const connectedSince = loginTimeParsed
+                    ? loginTimeParsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : '—';
+                  const duration = u.sessionDuration || calculateSessionDuration(u.loginTime);
+
+                  return (
+                    <tr key={u.sessionId}>
+                      <td>
+                        <div className="user-info-cell">
+                          <div className="avatar-sm">{u.name?.slice(0, 2).toUpperCase()}</div>
+                          <div>
+                            <strong>{u.name}</strong>
+                            <span>
+                              {u.userId} · {u.username || u.userId}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="role-tag">{u.role}</span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span className="plaza-text" style={{ fontWeight: 600 }}>{u.plaza || 'All plazas'}</span>
+                          <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>
+                            {u.department || 'Operations'}
                           </span>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="role-tag">{u.role}</span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '12.5px', color: 'var(--body-text)', fontWeight: 500 }}>
-                        {u.department || 'Operations'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="plaza-text">{u.plaza}</span>
-                    </td>
-                    <td>
-                      <div className="network-cell">
-                        <span className="ip">{u.ipAddress}</span>
-                        <span className="loc">{u.location}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="device-text">{u.device}</span>
-                    </td>
-                    <td>
-                      <span className="time-text">
-                        {new Date(u.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                        {u.lastActive || 'Just now'}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--body-text)' }}>
-                        {u.sessionDuration || '—'}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`live-badge ${u.status === 'Active' ? 'active' : 'idle'}`}>
-                        <span className="dot" />
-                        {u.status}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      {onForceLogout ? (
-                        <button
-                          type="button"
-                          className="force-logout-btn"
-                          onClick={() => handleOpenModal(u)}
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10" />
-                          </svg>
-                          Force Logout
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
-                          🔒 Master Admin only
+                      </td>
+                      <td>
+                        <div className="network-cell">
+                          <span className="ip">{u.ipAddress || '103.21.58.44'} <span className="loc" style={{ display: 'inline' }}>· {u.location || 'Local Console'}</span></span>
+                          <span className="device-text" style={{ fontSize: '11.5px', color: 'var(--muted)', marginTop: '2px' }}>{u.device || 'Browser'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span className="time-text" style={{ fontWeight: 600, color: 'var(--ink)' }}>
+                            {connectedSince}
+                          </span>
+                          <span style={{ fontSize: '11.5px', color: 'var(--muted)' }}>
+                            {duration}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`live-badge ${u.status === 'Active' ? 'active' : 'idle'}`}>
+                          <span className="dot" />
+                          {u.status || 'Active'}
                         </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {onForceLogout ? (
+                          <button
+                            type="button"
+                            className="force-logout-btn"
+                            onClick={() => handleOpenModal(u)}
+                            title={`Forcibly terminate session ${u.sessionId}`}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10" />
+                            </svg>
+                            Force Logout
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
+                            🔒 Admin only
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

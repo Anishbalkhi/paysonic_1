@@ -1,18 +1,9 @@
 import React from 'react';
 import { referenceFor } from '../../../utils/auditReference';
+import { formatAuditTimestamp } from '../../../utils/dateUtils';
 
 export const RecentActivityTable = ({ events = [], onSelectEvent, onViewAll }) => {
-  const formatTime = (ts) => {
-    if (!ts) return '—';
-    const d = new Date(ts);
-    return d.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
+  const formatTime = (ts) => formatAuditTimestamp(ts);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -67,13 +58,33 @@ export const RecentActivityTable = ({ events = [], onSelectEvent, onViewAll }) =
                     </div>
                   </td>
                   <td>
-                    <span className="action-pill">{evt.actionLabel}</span>
+                    <span className={`action-pill ${ref.user?.isDelete ? 'action-pill--danger' : ''}`}>
+                      {evt.actionLabel}
+                    </span>
                   </td>
                   <td>
                     <span className="module-tag">{evt.module}</span>
                   </td>
                   <td>
-                    <span className="ref-tag">{ref.refId}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <span className="ref-tag">{ref.refId}</span>
+                      {ref.user?.name && ref.user.name !== 'User Profile' && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            color: ref.user.isDelete ? '#B42318' : '#344054',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '140px',
+                          }}
+                          title={`${ref.user.name} (${ref.user.role})`}
+                        >
+                          {ref.user.name}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td>{getStatusBadge(evt.status)}</td>
                   <td style={{ textAlign: 'right' }}>

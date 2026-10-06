@@ -167,41 +167,81 @@
     }
   }
 
-  /* Day-Wise 5 Cards Horizontal Scroll */
+  /* Day-Wise 5 Cards Horizontal Grid / Responsive View */
   .day-cards-scroll-container {
-    display: flex;
-    gap: 16px;
-    overflow-x: auto;
-    padding-bottom: 8px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+
+    @media (max-width: 1240px) {
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 8px;
+      -webkit-overflow-scrolling: touch;
+
+      &::-webkit-scrollbar {
+        height: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+
+      .daycard {
+        min-width: 240px;
+        scroll-snap-align: start;
+        flex-shrink: 0;
+      }
+    }
 
     .daycard {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
       overflow: hidden;
-      min-width: 230px;
-      flex: 1;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.07);
+      }
 
       .daycard-header {
         background: linear-gradient(135deg, #4f46e5, #6366f1);
         color: #ffffff;
-        padding: 10px 14px;
-        font-size: 0.85rem;
+        padding: 9px 12px;
+        font-size: 0.82rem;
         font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        letter-spacing: 0.01em;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
 
         th, td {
-          padding: 8px 12px;
-          font-size: 0.78rem;
+          padding: 7px 6px;
+          font-size: 0.76rem;
           border-bottom: 1px solid #f1f5f9;
+          line-height: 1.35;
         }
 
         th {
@@ -209,23 +249,59 @@
           color: #64748b;
           text-align: right;
           font-weight: 600;
+          font-size: 0.72rem;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
 
-          &:first-child {
+          &.col-metric {
             text-align: left;
+            width: 44%;
+            padding-left: 10px;
+          }
+
+          &.col-count {
+            text-align: right;
+            width: 22%;
+          }
+
+          &.col-amount {
+            text-align: right;
+            width: 34%;
+            padding-right: 10px;
           }
         }
 
         td {
           text-align: right;
 
-          &:first-child {
+          &.col-metric {
             text-align: left;
             font-weight: 600;
             color: #334155;
+            padding-left: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
-          &.val-count {
+          &.col-count {
             font-weight: 700;
+            white-space: nowrap;
+
+            &.text-success {
+              color: #16a34a;
+            }
+            &.text-danger {
+              color: #dc2626;
+            }
+          }
+
+          &.col-amount {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            padding-right: 10px;
+            color: #0f172a;
           }
         }
 
@@ -349,7 +425,8 @@
         td {
           border-bottom-color: var(--border, #262F3B);
           color: var(--text, #E7ECF3);
-          &:first-child { color: var(--text-soft, #9AA5B4); }
+          &.col-metric { color: var(--text-soft, #9AA5B4); }
+          &.col-amount { color: var(--text, #E7ECF3); }
         }
       }
     }

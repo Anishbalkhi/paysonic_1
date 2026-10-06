@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { referenceFor } from '../../../utils/auditReference';
+import { formatAuditTimestamp, parseUtcTimestamp } from '../../../utils/dateUtils';
 
 const MODULE_OPTIONS = [
   'All modules',
@@ -45,7 +46,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
       if (statusFilter !== 'All statuses' && item.status !== statusFilter) return false;
 
       if (dateFilter !== 'all') {
-        const itemTime = new Date(item.timestamp).getTime();
+        const itemTime = parseUtcTimestamp(item.timestamp)?.getTime() || 0;
         const now = Date.now();
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -274,13 +275,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
                         <span className="event-id-tag">{item.id}</span>
                       </td>
                       <td className="time-cell">
-                        {new Date(item.timestamp).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true,
-                        })}
+                        {formatAuditTimestamp(item.timestamp)}
                       </td>
                       <td>
                         <div className="actor-cell">
@@ -289,15 +284,35 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
                         </div>
                       </td>
                       <td>
-                        <span className="action-pill">{item.actionLabel}</span>
+                        <span className={`action-pill ${ref.user?.isDelete ? 'action-pill--danger' : ''}`}>
+                          {item.actionLabel}
+                        </span>
                       </td>
                       <td>
                         <span className="module-tag">{item.module}</span>
                       </td>
                       <td>
-                        <span className="ref-tag" title={item.target}>
-                          {ref.refId}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <span className="ref-tag" title={item.target}>
+                            {ref.refId}
+                          </span>
+                          {ref.user?.name && ref.user.name !== 'User Profile' && (
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                color: ref.user.isDelete ? '#B42318' : '#344054',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                maxWidth: '140px',
+                              }}
+                              title={`${ref.user.name} (${ref.user.role})`}
+                            >
+                              {ref.user.name}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <span

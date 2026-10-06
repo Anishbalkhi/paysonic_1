@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { parseUtcTimestamp, formatAuditTimestamp } from '../../../utils/dateUtils';
 
 const DATE_RANGE_OPTIONS = [
   { label: 'All Time', value: 'all' },
@@ -7,34 +8,8 @@ const DATE_RANGE_OPTIONS = [
   { label: 'Past 30 Days', value: '30d' },
 ];
 
-// Railway returns timestamps without a timezone designator, e.g. '2026-09-21T13:30:00'
-// Some browsers treat these as local time and others as invalid. Normalise by
-// appending 'Z' (UTC) when no offset is present so parsing is always consistent.
-const parseTs = (ts) => {
-  if (!ts) return null;
-  if (ts instanceof Date) return ts;
-  if (typeof ts === 'number') return new Date(ts);
-  const s = String(ts).trim();
-  const direct = new Date(s);
-  if (!isNaN(direct.getTime())) return direct;
-  if (!/[Z+]/.test(s.slice(10))) {
-    const withZ = new Date(s.replace(' ', 'T') + 'Z');
-    if (!isNaN(withZ.getTime())) return withZ;
-  }
-  return null;
-};
-
-const formatDate = (ts) => {
-  const d = parseTs(ts);
-  if (!d || isNaN(d.getTime())) return '—';
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-};
+const parseTs = parseUtcTimestamp;
+const formatDate = (ts) => formatAuditTimestamp(ts);
 
 export const LoginHistoryTable = ({ history = [] }) => {
   const [statusFilter, setStatusFilter] = useState('All');

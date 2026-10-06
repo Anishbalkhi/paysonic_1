@@ -392,7 +392,7 @@ export const OperationsModal = ({ operation, onClose }) => {
                   {isReconUploading && (
                     <div className="op-progress-box">
                       <div className="progress-labels">
-                        <span>Uploading &amp; reconciling against Railway DB...</span>
+                        <span>Uploading &amp; reconciling against database...</span>
                         <strong>{reconProgress}%</strong>
                       </div>
                       <div className="progress-bar">
@@ -613,7 +613,7 @@ export const OperationsModal = ({ operation, onClose }) => {
                   {isPlazaDocUploading && (
                     <div className="op-progress-box">
                       <div className="progress-labels">
-                        <span>Encrypting &amp; archiving to Railway DB...</span>
+                        <span>Encrypting &amp; archiving to database...</span>
                         <strong>{plazaDocProgress}%</strong>
                       </div>
                       <div className="progress-bar">

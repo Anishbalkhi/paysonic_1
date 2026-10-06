@@ -139,7 +139,7 @@ export const TollFareReport = () => {
         <div className="header-titles">
           <h1 className="page-title">Toll Fare Report</h1>
           <p className="subtitle">
-            Plaza Toll Fare Matrix &amp; Vehicle Class Rate Configurations (Live Railway DB)
+            Plaza Toll Fare Matrix &amp; Vehicle Class Rate Configurations
           </p>
         </div>
       </header>
@@ -260,12 +260,6 @@ export const TollFareReport = () => {
             value: `₹ ${fareKpis.avgReturn}`,
             sub: '24-Hour Return Pass',
             highlight: 'purple'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'toll_fare_matrix',
-            isBadge: true
           }
         ]}
       />
@@ -309,7 +303,7 @@ export const TollFareReport = () => {
           {loading ? (
             <div className="loading-state">
               <div className="spinner"></div>
-              <p>Querying real toll fare matrix from Railway MySQL database...</p>
+              <p>Querying toll fare matrix from database...</p>
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="empty-state">

@@ -203,7 +203,7 @@ export const TrsReport = () => {
         <div className="header-titles">
           <h1 className="page-title">Transaction Report</h1>
           <p className="subtitle">
-            Audited Toll Transactions &amp; Fastag Settlement Details (Live Railway DB)
+            Audited Toll Transactions &amp; Fastag Settlement Details
           </p>
         </div>
       </header>
@@ -337,12 +337,6 @@ export const TrsReport = () => {
             value: `${acceptedCount} / ${filteredRecords.length}`,
             sub: 'Successful Passes',
             highlight: 'green'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'toll_transactions',
-            isBadge: true
           }
         ]}
       />
@@ -386,7 +380,7 @@ export const TrsReport = () => {
           {loading ? (
             <div className="loading-state">
               <div className="spinner"></div>
-              <p>Querying real database transactions from Railway MySQL...</p>
+              <p>Querying transactions from database...</p>
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="empty-state">

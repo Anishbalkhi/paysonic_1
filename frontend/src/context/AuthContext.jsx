@@ -521,7 +521,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const active = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (active && active.sessionId) {
-        UserActivityService.terminateSession(active.sessionId, 'User signed out');
+        UserActivityService.forceLogout(active.sessionId, 'User signed out').catch(() => {});
       }
     } catch {}
     localStorage.removeItem(STORAGE_KEY);

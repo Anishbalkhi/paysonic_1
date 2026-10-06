@@ -188,7 +188,7 @@ export const DisputeDetailReport = () => {
         <div className="header-titles">
           <h1 className="page-title">Dispute Detail Report</h1>
           <p className="subtitle">
-            Audited Toll Dispute Adjustments &amp; Chargebacks (Live Railway DB)
+            Audited Toll Dispute Adjustments &amp; Chargebacks
           </p>
         </div>
       </header>
@@ -306,12 +306,6 @@ export const DisputeDetailReport = () => {
             value: `₹ ${Number(totalDisputeAmt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
             sub: 'Adjusted / Chargebacked',
             highlight: 'amber'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'dispute_transactions',
-            isBadge: true
           }
         ]}
       />

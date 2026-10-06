@@ -410,7 +410,7 @@ export const Onboarding = () => {
         );
       })
       .catch((err) => {
-        showToast(`⚠ Railway DB Error: ${err?.response?.data?.error || err.message}`, 'error');
+        showToast(`⚠ Database Error: ${err?.response?.data?.error || err.message}`, 'error');
       });
   };
 
@@ -728,9 +728,9 @@ export const Onboarding = () => {
       originalId: editingPlazaOriginalId,
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
     }).then(() => {
-      showToast(`✓ Plaza ${savedPlaza.name} (${savedPlaza.id}) saved directly in Railway MySQL!`, 'success');
+      showToast(`✓ Plaza ${savedPlaza.name} (${savedPlaza.id}) saved successfully!`, 'success');
     }).catch((err) => {
-      showToast(`⚠ Railway DB Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+      showToast(`⚠ Database Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
     });
   };
 
@@ -1268,7 +1268,7 @@ export const Onboarding = () => {
                 background: railwayLoading ? '#eab308' : '#22c55e',
                 boxShadow: railwayLoading ? 'none' : '0 0 8px #22c55e'
               }} />
-              {railwayLoading ? 'Connecting to Railway DB...' : 'Live Railway Database (MySQL)'}
+              {railwayLoading ? 'Connecting to Database...' : 'Operational Database (Active)'}
             </span>
           </div>
           <h1>Plaza Onboarding Module</h1>

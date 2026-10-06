@@ -199,12 +199,6 @@ export const TransactionSummaryReport = () => {
             value: `${summaryKpis.acceptedCount} / ${summaryKpis.declinedCount}`,
             sub: 'Transaction Status Ratio',
             highlight: 'green'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'transaction_summary',
-            isBadge: true
           }
         ]}
       />
@@ -228,7 +222,7 @@ export const TransactionSummaryReport = () => {
                 <tr>
                   <td colSpan="6" className="table-loading-cell">
                     <div className="spinner" />
-                    <span>Aggregating Transaction Summary Data from Live Railway Database...</span>
+                    <span>Aggregating Transaction Summary Data...</span>
                   </td>
                 </tr>
               ) : !hasData ? (
@@ -320,8 +314,7 @@ export const TransactionSummaryReport = () => {
 
       {/* Footer */}
       <div className="report-footer-meta">
-        <span className="live-db-badge">Live Railway DB: ONLINE</span>
-        <span className="disclaimer-note">* Aggregated transaction data from Paysonic live database.</span>
+        <span className="disclaimer-note">* Aggregated transaction data from Paysonic database.</span>
       </div>
     </div>
   );

@@ -214,7 +214,7 @@ export const TransactionSearchDispute = () => {
         <div className="header-titles">
           <h1 className="page-title">Transaction Search - Dispute Transaction</h1>
           <p className="subtitle">
-            Audited Dispute Transactions &amp; Adjustments (Live Railway DB)
+            Audited Dispute Transactions &amp; Adjustments
           </p>
         </div>
       </header>
@@ -349,12 +349,6 @@ export const TransactionSearchDispute = () => {
             value: `₹ ${Number(totalDisputeAmt).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             sub: 'Adjusted / Chargebacked',
             highlight: 'purple'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'dispute_transactions',
-            isBadge: true
           }
         ]}
       />
@@ -398,7 +392,7 @@ export const TransactionSearchDispute = () => {
           {loading ? (
             <div className="loading-state">
               <div className="spinner"></div>
-              <p>Querying dispute transactions from Railway MySQL database...</p>
+              <p>Querying dispute transactions from database...</p>
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="empty-state">
@@ -537,9 +531,6 @@ export const TransactionSearchDispute = () => {
             </div>
             <div className="summary-card card-green">
               Total Dispute Amount: ₹ {totalDisputeAmt}
-            </div>
-            <div className="summary-card card-blue">
-              Live Railway DB: ONLINE
             </div>
           </div>
         )}

@@ -393,12 +393,6 @@ export const TransactionSearchNormal = () => {
             value: `${summaryKpis.acceptedCount} / ${filteredRecords.length}`,
             sub: `Amount: ₹ ${Number(summaryKpis.acceptedAmount).toFixed(2)}`,
             highlight: 'green'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'toll_transactions',
-            isBadge: true
           }
         ]}
       />
@@ -442,7 +436,7 @@ export const TransactionSearchNormal = () => {
                 <tr>
                   <td colSpan="26" className="table-loading-cell">
                     <div className="spinner" />
-                    <span>Querying Live Railway Database...</span>
+                    <span>Querying database records...</span>
                   </td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
@@ -575,9 +569,8 @@ export const TransactionSearchNormal = () => {
 
       {/* Footer Info */}
       <div className="report-footer-meta">
-        <span className="live-db-badge">Live Railway DB: ONLINE</span>
         <span className="disclaimer-note">
-          * This report is generated from the Paysonic live database directly on demand.
+          * This report is generated from the Paysonic database directly on demand.
         </span>
       </div>
     </div>

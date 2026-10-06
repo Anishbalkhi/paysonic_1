@@ -1231,7 +1231,7 @@ export const UserList = () => {
     setUsers(freshUsers);
 
     setBulkSuccessMsg(
-      `✓ Successfully saved ${savedUsers.length} user accounts to live Railway database!`
+      `✓ Successfully saved ${savedUsers.length} user accounts to database!`
     );
     setParsedCsvRows([]);
     setTimeout(() => {
@@ -2572,7 +2572,7 @@ export const UserList = () => {
                 <div className="bulk-progress-panel">
                   <div className="progress-info">
                     <span>
-                      <span className="live-pulsar" /> Writing users to Railway Live Database...
+                      <span className="live-pulsar" /> Writing users to database...
                     </span>
                     <strong>{bulkUploadProgress}%</strong>
                   </div>
@@ -2605,7 +2605,7 @@ export const UserList = () => {
               {parsedCsvRows.length > 0 && !isBulkUploading && !bulkSuccessMsg && (
                 <div className="csv-preview-box">
                   <span className="preview-pill">✓ Verified</span>
-                  <span>{parsedCsvRows.length} user rows validated &amp; ready to commit to Railway database.</span>
+                  <span>{parsedCsvRows.length} user rows validated &amp; ready to commit to database.</span>
                 </div>
               )}
 
@@ -2641,7 +2641,7 @@ export const UserList = () => {
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    Commit {parsedCsvRows.length > 0 ? `(${parsedCsvRows.length})` : ''} to Railway DB
+                    Commit {parsedCsvRows.length > 0 ? `(${parsedCsvRows.length})` : ''} to Database
                   </>
                 )}
               </button>

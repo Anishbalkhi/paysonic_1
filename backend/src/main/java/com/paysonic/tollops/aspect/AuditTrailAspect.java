@@ -69,9 +69,42 @@ public class AuditTrailAspect {
             } catch (Exception ignored) {}
         }
 
+        String targetEntity = auditable.target().isBlank() ? auditable.module() : auditable.target();
+        String referenceEntityId = correlationId;
+        String details = "Operation executed successfully";
+
+        // Enrich User Management operations with exact target user identity
+        if ("User Management".equalsIgnoreCase(auditable.module()) || auditable.action().toUpperCase().contains("USER")) {
+            if (args != null && args.length > 0 && args[0] instanceof String targetId) {
+                if (userRepository != null) {
+                    var targetOpt = userRepository.findById(targetId);
+                    if (targetOpt.isPresent()) {
+                        var targetUser = targetOpt.get();
+                        targetEntity = targetUser.getName() + " (" + targetUser.getId() + ")";
+                        referenceEntityId = targetUser.getId();
+                        try {
+                            // Snapshot full user state into beforeJson so history preserves user details even after deletion
+                            beforeJson = SecretFilterUtil.sanitizeJson(objectMapper.writeValueAsString(targetUser), objectMapper);
+                        } catch (Exception ignored) {}
+                        if ("DELETE_USER".equalsIgnoreCase(auditable.action())) {
+                            details = "User account " + targetUser.getName() + " (ID: " + targetUser.getId() + ", " + targetUser.getRole() + ") was deleted and moved to trash by " + actorName;
+                        } else if ("TOGGLE_LOCK".equalsIgnoreCase(auditable.action())) {
+                            details = "User account security lock toggled for " + targetUser.getName() + " (ID: " + targetUser.getId() + ") by " + actorName;
+                        } else if ("APPROVE_USER".equalsIgnoreCase(auditable.action())) {
+                            details = "User onboarding request for " + targetUser.getName() + " (ID: " + targetUser.getId() + ") was approved by " + actorName;
+                        } else if ("ACTIVATE_USER".equalsIgnoreCase(auditable.action())) {
+                            details = "User account activated for " + targetUser.getName() + " (ID: " + targetUser.getId() + ") by " + actorName;
+                        }
+                    } else {
+                        referenceEntityId = targetId;
+                        targetEntity = "User " + targetId;
+                    }
+                }
+            }
+        }
+
         Object result;
         String status = "SUCCESS";
-        String details = "Operation executed successfully";
         String afterJson = null;
 
         try {
@@ -80,6 +113,17 @@ public class AuditTrailAspect {
                 try {
                     afterJson = SecretFilterUtil.sanitizeJson(objectMapper.writeValueAsString(result), objectMapper);
                 } catch (Exception ignored) {}
+
+                // If CREATE_USER or UPDATE_USER returned UserResponseDTO, enrich target details
+                if (result instanceof com.paysonic.tollops.dto.UserResponseDTO dto) {
+                    targetEntity = dto.getName() + " (" + dto.getId() + ")";
+                    referenceEntityId = dto.getId();
+                    if ("CREATE_USER".equalsIgnoreCase(auditable.action())) {
+                        details = "New user account provisioned for " + dto.getName() + " (ID: " + dto.getId() + ", Role: " + dto.getRole() + ") by " + actorName;
+                    } else if ("UPDATE_USER".equalsIgnoreCase(auditable.action())) {
+                        details = "User profile updated for " + dto.getName() + " (ID: " + dto.getId() + ") by " + actorName;
+                    }
+                }
             }
             return result;
         } catch (Throwable ex) {
@@ -101,8 +145,8 @@ public class AuditTrailAspect {
                         actorRole,
                         ipAddress,
                         "All plazas",
-                        auditable.target().isBlank() ? auditable.module() : auditable.target(),
-                        correlationId,
+                        targetEntity,
+                        referenceEntityId,
                         correlationId,
                         details,
                         beforeJson,

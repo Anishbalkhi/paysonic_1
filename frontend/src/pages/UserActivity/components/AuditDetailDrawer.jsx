@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { buildDiff } from '../../../utils/auditDiff';
 import { referenceFor } from '../../../utils/auditReference';
+import { formatFullTimestamp } from '../../../utils/dateUtils';
+import { resolveTargetUser, getEventNarrative } from '../../../utils/auditEntityResolver';
 
 // Helper to mask sensitive tokens and session references
 const maskSensitive = (val) => {
@@ -21,6 +23,7 @@ export const AuditDetailDrawer = ({ event, onClose }) => {
 
   const diffs = buildDiff(event.before, event.after);
   const ref = referenceFor(event);
+  const targetUser = resolveTargetUser(event);
 
   const displayOrNotCaptured = (val) => {
     if (val === undefined || val === null || val === '') return 'Not captured';
@@ -40,25 +43,95 @@ export const AuditDetailDrawer = ({ event, onClose }) => {
           </div>
           <h2>{event.actionLabel || displayOrNotCaptured(event.action)}</h2>
           <span className="timestamp">
-            Logged on{' '}
-            {new Date(event.timestamp).toLocaleString('en-US', {
-              dateStyle: 'full',
-              timeStyle: 'medium',
-            })}
+            Logged on {formatFullTimestamp(event.timestamp)}
           </span>
         </div>
 
         <div className="drawer-body">
-          {/* Prominent Reference Banner (UAM-FR-011, UAM-FR-015) */}
+          {/* Prominent Target Entity Reference Banner */}
           <div className="audit-ref-banner">
             <div className="audit-ref-label">
-              Target Entity Reference ({ref.label || 'Entity'})
+              Target Entity Reference ({targetUser ? 'User Profile' : (ref.label || 'Entity')})
             </div>
-            <div className="audit-ref-id">
-              {maskSensitive(ref.refId)}
+            <div className="audit-ref-id" style={{ color: '#155EEF', fontWeight: 800 }}>
+              {targetUser ? targetUser.id : maskSensitive(ref.refId)}
             </div>
-            <div className="audit-ref-target">
-              {displayOrNotCaptured(event.target)}
+            <div className="audit-ref-target" style={{ fontWeight: 600, marginTop: '2px' }}>
+              {targetUser
+                ? `${targetUser.name} · ${targetUser.role}${targetUser.email ? ` (${targetUser.email})` : ''}`
+                : displayOrNotCaptured(event.target)}
+            </div>
+          </div>
+
+          {/* Target User Details Card (Whenever user management action is selected) */}
+          {targetUser && (
+            <div className="drawer-section" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid #EDF2F7', paddingBottom: '8px' }}>
+                <h4 style={{ margin: 0, fontSize: '13.5px', color: '#1E293B', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#155EEF" strokeWidth="2.2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  Target User Details
+                </h4>
+                <span
+                  className={`status-pill ${
+                    targetUser.isDelete ? 'status-pill--danger' : 'status-pill--success'
+                  }`}
+                  style={{ fontSize: '11.5px', padding: '3px 8px' }}
+                >
+                  {targetUser.status}
+                </span>
+              </div>
+
+              <div className="meta-grid">
+                <div className="meta-item">
+                  <span className="label">User System ID</span>
+                  <span className="value font-mono font-semibold" style={{ color: '#155EEF' }}>
+                    {targetUser.id}
+                  </span>
+                </div>
+                <div className="meta-item">
+                  <span className="label">Full Name</span>
+                  <span className="value font-semibold" style={{ color: '#0F172A' }}>
+                    {targetUser.name}
+                  </span>
+                </div>
+                <div className="meta-item">
+                  <span className="label">Assigned Role</span>
+                  <span className="value font-medium">
+                    {targetUser.role}
+                  </span>
+                </div>
+                <div className="meta-item">
+                  <span className="label">Email Address</span>
+                  <span className="value font-mono" style={{ fontSize: '12.5px' }}>
+                    {targetUser.email || 'Not captured'}
+                  </span>
+                </div>
+                <div className="meta-item">
+                  <span className="label">Assigned Plaza</span>
+                  <span className="value font-medium">
+                    {targetUser.plaza || 'All plazas'}
+                  </span>
+                </div>
+                <div className="meta-item">
+                  <span className="label">Mobile Number</span>
+                  <span className="value">
+                    {targetUser.mobile || 'Not captured'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* System Notes & Audit Remarks (Human-Readable Narrative) */}
+          <div className="drawer-section">
+            <h4>System Notes &amp; Audit Remarks</h4>
+            <div className="details-box" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '14px', borderRadius: '8px', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: '13.5px', color: '#1E293B', fontWeight: 500 }}>
+                {getEventNarrative(event, targetUser)}
+              </p>
             </div>
           </div>
 
@@ -122,14 +195,6 @@ export const AuditDetailDrawer = ({ event, onClose }) => {
                 <span className="label">Plaza Jurisdiction</span>
                 <span className="value">{displayOrNotCaptured(event.plaza)}</span>
               </div>
-            </div>
-          </div>
-
-          {/* Description & Remarks */}
-          <div className="drawer-section">
-            <h4>System Notes &amp; Audit Remarks</h4>
-            <div className="details-box">
-              {event.details ? event.details : <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Not captured</span>}
             </div>
           </div>
 

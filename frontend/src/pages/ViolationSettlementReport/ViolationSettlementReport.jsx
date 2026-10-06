@@ -386,12 +386,6 @@ export const ViolationSettlementReport = () => {
             value: `₹ ${Number(summaryKpis.totalSettlementAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             sub: `Adjustment: ₹ ${Number(summaryKpis.totalAdjustmentAmount).toFixed(2)}`,
             highlight: 'purple'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'violation_settlement',
-            isBadge: true
           }
         ]}
       />
@@ -427,7 +421,7 @@ export const ViolationSettlementReport = () => {
                 <tr>
                   <td colSpan="18" className="table-loading-cell">
                     <div className="spinner" />
-                    <span>Querying Live Railway Database...</span>
+                    <span>Querying database records...</span>
                   </td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
@@ -544,9 +538,8 @@ export const ViolationSettlementReport = () => {
 
       {/* Footer Info */}
       <div className="report-footer-meta">
-        <span className="live-db-badge">Live Railway DB: ONLINE</span>
         <span className="disclaimer-note">
-          * This report is generated from the Paysonic live database directly on demand.
+          * This report is generated from the Paysonic database directly on demand.
         </span>
       </div>
     </div>

@@ -130,26 +130,26 @@ export const DisputeDashboard = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>Metric</th>
-                    <th>Count</th>
-                    <th>Amount</th>
+                    <th className="col-metric">Metric</th>
+                    <th className="col-count">Count</th>
+                    <th className="col-amount">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>Total Disputes</td>
-                    <td className="val-count">{card.totalCount}</td>
-                    <td>₹ {Number(card.totalAmount || 0).toFixed(2)}</td>
+                    <td className="col-metric">Total Disputes</td>
+                    <td className="val-count col-count">{card.totalCount}</td>
+                    <td className="val-amount col-amount">₹{Number(card.totalAmount || 0).toFixed(2)}</td>
                   </tr>
                   <tr>
-                    <td>Approved</td>
-                    <td className="val-count" style={{ color: '#16a34a' }}>{card.approvedCount}</td>
-                    <td>₹ {Number(card.approvedAmount || 0).toFixed(2)}</td>
+                    <td className="col-metric">Approved</td>
+                    <td className="val-count col-count text-success">{card.approvedCount}</td>
+                    <td className="val-amount col-amount">₹{Number(card.approvedAmount || 0).toFixed(2)}</td>
                   </tr>
                   <tr>
-                    <td>Rejected</td>
-                    <td className="val-count" style={{ color: '#dc2626' }}>{card.rejectedCount}</td>
-                    <td>₹ {Number(card.rejectedAmount || 0).toFixed(2)}</td>
+                    <td className="col-metric">Rejected</td>
+                    <td className="val-count col-count text-danger">{card.rejectedCount}</td>
+                    <td className="val-amount col-amount">₹{Number(card.rejectedAmount || 0).toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>

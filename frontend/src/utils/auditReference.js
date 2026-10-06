@@ -9,15 +9,14 @@
  * We extract from there when target is the generic module name.
  */
 
+import { resolveTargetUser } from './auditEntityResolver';
+
 // Attempt to extract a real entity ID from the before/after payloads
 const extractEntityId = (event) => {
   const before = event.before;
   const after  = event.after;
-  // String form: DELETE_USER, TOGGLE_LOCK, APPROVE_USER store userId as raw string in before
-  if (typeof before === 'string' && before.trim()) return before.trim();
-  // Object form: CREATE_USER / UPDATE_USER store the entity under before.id
+  if (typeof before === 'string' && before.trim() && !before.startsWith('{') && !before.startsWith('CORR-')) return before.trim();
   if (before && typeof before === 'object' && before.id) return before.id;
-  // Fallback: check after.id
   if (after && typeof after === 'object' && after.id) return after.id;
   return null;
 };
@@ -25,8 +24,30 @@ const extractEntityId = (event) => {
 export const referenceFor = (event) => {
   if (!event) return { refId: 'N/A', label: 'General', type: 'system' };
 
-  // If referenceId is already a meaningful value (not the generic module name), use it
-  if (event.referenceId && event.referenceId !== event.module) {
+  const mod = (event.module || '').toLowerCase();
+  const id = event.id ? String(event.id).replace(/\D/g, '') : '0000';
+
+  // 1. User Management entity resolution
+  if (mod.includes('user') || (event.action || '').toUpperCase().includes('USER')) {
+    const targetUser = resolveTargetUser(event);
+    if (targetUser) {
+      return {
+        refId: targetUser.id,
+        label: targetUser.name && targetUser.name !== 'User Profile'
+          ? `${targetUser.name} · ${targetUser.role}`
+          : (event.actionLabel || 'User Account'),
+        type: 'user',
+        user: targetUser,
+      };
+    }
+  }
+
+  // 2. If referenceId is a genuine business entity (not a CORR- tracing ID or module name)
+  if (
+    event.referenceId &&
+    event.referenceId !== event.module &&
+    !event.referenceId.startsWith('CORR-')
+  ) {
     return {
       refId: event.referenceId,
       label: event.target || event.referenceId,
@@ -34,11 +55,7 @@ export const referenceFor = (event) => {
     };
   }
 
-  const mod = (event.module || '').toLowerCase();
-  const id = event.id ? String(event.id).replace(/\D/g, '') : '0000';
-
   if (mod.includes('user')) {
-    // Try to get real entity ID: first from before/after payloads, then from target
     const entityId =
       extractEntityId(event) ||
       ((event.target || '').match(/PSN\w+/i) || [])[0] ||
@@ -49,6 +66,7 @@ export const referenceFor = (event) => {
   if (mod.includes('session') || (event.action || '').toLowerCase().includes('logout')) {
     const sesId =
       extractEntityId(event) ||
+      ((event.referenceId || '').startsWith('SES-') ? event.referenceId : null) ||
       ((event.target || '').match(/SES-[\w]+/i) || [])[0] ||
       `SES-${id.slice(-6)}`;
     return { refId: String(sesId).toUpperCase(), label: 'Session', type: 'session' };

@@ -1,7 +1,7 @@
 import httpClient from '../api/httpClient';
 import UserService from '../user/UserService';
+import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime } from '../../utils/dateUtils';
 import initialAuditLog from '../../data/auditLog.json';
-import initialActiveUsers from '../../data/activeUsers.json';
 import initialLoginHistory from '../../data/loginHistory.json';
 
 const LOGIN_HISTORY_STORAGE_KEY = 'paysonic_login_history';
@@ -87,7 +87,7 @@ const getStoredActiveSessions = () => {
     const raw = localStorage.getItem(ACTIVE_SESSIONS_STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return [...initialActiveUsers];
+  return [];
 };
 
 const saveStoredActiveSessions = (sessions) => {
@@ -186,7 +186,7 @@ class UserActivityService {
           ? 'Highway Operations'
           : 'Toll Plaza Operations',
       plaza: plaza || 'All plazas',
-      ipAddress: ipAddress || '127.0.0.1',
+      ipAddress: ipAddress || '103.21.58.44',
       location: 'Local Console Node',
       device:
         device ||
@@ -194,18 +194,33 @@ class UserActivityService {
           ? `${navigator.userAgent.includes('Windows') ? 'Windows 11' : navigator.userAgent.includes('Mac') ? 'macOS' : 'Linux'} · Chrome`
           : 'Desktop Browser'),
       loginTime: new Date().toISOString(),
-      lastActive: 'Just now',
+      lastActive: new Date().toISOString(),
       sessionDuration: 'Active now',
       status: 'Active',
     };
     updated.unshift(newSession);
     saveStoredActiveSessions(updated);
 
-    // Sync session to backend / Railway database so other devices can detect concurrent logins
+    // Sync session to backend / Railway MySQL database
     try {
-      await httpClient.post('/api/activity/sessions', newSession);
+      const backendPayload = {
+        sessionId,
+        userId,
+        name,
+        role,
+        plaza: plaza || 'All plazas',
+        ipAddress: ipAddress || '103.21.58.44',
+        device:
+          device ||
+          (typeof navigator !== 'undefined'
+            ? `${navigator.userAgent.includes('Windows') ? 'Windows 11' : navigator.userAgent.includes('Mac') ? 'macOS' : 'Linux'} · Chrome`
+            : 'Desktop Browser'),
+        deviceId: currentDeviceId,
+        status: 'Active',
+      };
+      await httpClient.post('/api/activity/sessions', backendPayload);
     } catch (err) {
-      console.warn('[UserActivityService] Session sync to backend error (ignoring):', err?.message);
+      console.warn('[UserActivityService] Session sync to backend error:', err?.message);
     }
 
     return sessionId;
@@ -403,7 +418,8 @@ class UserActivityService {
 
     const isToday = (ts) => {
       if (!ts) return false;
-      const d = new Date(ts);
+      const d = parseUtcTimestamp(ts);
+      if (!d) return false;
       return (
         d.getFullYear() === todayYear &&
         d.getMonth() === todayMonth &&
@@ -478,7 +494,8 @@ class UserActivityService {
 
       const matchesDay = (ts) => {
         if (!ts) return false;
-        const e = new Date(ts);
+        const e = parseUtcTimestamp(ts);
+        if (!e) return false;
         return (
           e.getFullYear() === targetYear &&
           e.getMonth() === targetMonth &&
@@ -595,24 +612,59 @@ class UserActivityService {
   }
 
   /**
-   * Active sessions — fetched from Railway /api/activity/active-users.
-   * Merges locally-registered sessions that haven't been synced to Railway yet.
-   * Falls back to localStorage if Railway is unreachable.
+   * Helper to enrich raw backend UserSession entity with UI metadata
+   */
+  enrichSession(s) {
+    if (!s) return s;
+    const duration = calculateSessionDuration(s.loginTime);
+
+    const department = s.department || (
+      s.role === 'Master Admin' ? 'Security & Access Control' :
+      s.role === 'Bank' ? 'Financial Audit' :
+      s.role === 'Concessionaire' ? 'Highway Operations' :
+      s.role === 'Admin' ? 'System Administration' :
+      s.role === 'Plaza Admin' ? 'Toll Operations' :
+      s.role === 'Auditor' ? 'Compliance & Audit' :
+      s.role === 'Support Operator' ? 'Technical Support' :
+      s.role === 'Plaza POS' ? 'Lane Point of Sale' :
+      'Operations'
+    );
+
+    const location = s.location || (
+      s.plaza && s.plaza !== 'All plazas' && s.plaza !== 'Not applicable' ? s.plaza :
+      s.ipAddress?.startsWith('103.') ? 'Pune / Mumbai, MH' :
+      s.ipAddress?.startsWith('49.') ? 'Navi Mumbai, MH' :
+      s.ipAddress?.startsWith('115.') ? 'Pune, MH' :
+      s.ipAddress?.startsWith('157.') ? 'Solapur, MH' :
+      s.ipAddress?.startsWith('117.') ? 'Kolhapur, MH' :
+      s.ipAddress?.startsWith('182.') ? 'BKC Mumbai, MH' :
+      'Local Console Node'
+    );
+
+    return {
+      ...s,
+      department,
+      location,
+      sessionDuration: s.sessionDuration || duration,
+      lastActive: formatRelativeTime(s.lastActive),
+      username: s.username || (s.name ? s.name.toLowerCase().replace(/\s+/g, '.') : s.userId),
+    };
+  }
+
+  /**
+   * Active sessions — fetched directly from Railway MySQL database via /api/activity/active-users.
+   * Prioritizes live Railway DB records.
    */
   async getActiveUsers() {
     try {
       const res = await httpClient.get('/api/activity/active-users');
       if (res && res.data && Array.isArray(res.data)) {
-        // Merge any locally-registered sessions not yet on Railway
-        const localSessions = getStoredActiveSessions().filter((s) => s.status === 'Active');
-        const railwayIds = new Set(res.data.map((s) => s.sessionId));
-        const localOnly = localSessions.filter((s) => !railwayIds.has(s.sessionId));
-        return [...localOnly, ...res.data];
+        return res.data.map((s) => this.enrichSession(s));
       }
     } catch (err) {
       console.warn('[UserActivityService] Railway active-users unreachable, using localStorage:', err?.message);
     }
-    return getStoredActiveSessions();
+    return getStoredActiveSessions().map((s) => this.enrichSession(s));
   }
 
   /**

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import CycleWiseReconService from '../../services/recon/CycleWiseReconService';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import PlazaMultiSelect from '../../components/PlazaMultiSelect/PlazaMultiSelect';
 import './CycleWiseRecon.scss';
 
 export const CycleWiseRecon = () => {
@@ -18,7 +19,7 @@ export const CycleWiseRecon = () => {
   const defaultRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(defaultRange.from);
   const [toDate, setToDate] = useState(defaultRange.to);
-  const [plazaId, setPlazaId] = useState('');
+  const [selectedPlazas, setSelectedPlazas] = useState([]);
   const [cycle, setCycle] = useState('');
 
   // Data State
@@ -46,10 +47,10 @@ export const CycleWiseRecon = () => {
   };
 
   // Search from real database
-  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza, overrideCycle) => {
+  const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlazas, overrideCycle) => {
     const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
     const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
-    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
+    const pList = Array.isArray(overridePlazas) ? overridePlazas : selectedPlazas;
     const cyc = (typeof overrideCycle === 'string' && overrideCycle) ? overrideCycle : cycle;
 
     if (!validateDates(fDate, tDate)) return;
@@ -57,14 +58,20 @@ export const CycleWiseRecon = () => {
     setLoading(true);
     setErrorMsg('');
     try {
+      const queryPlazaId = pList.length === 1 ? pList[0] : '';
       const data = await CycleWiseReconService.searchCycleWiseRecon({
         fromDate: fDate,
         toDate: tDate,
-        plazaId: pId,
+        plazaId: queryPlazaId,
         cycle: cyc
       });
 
-      setRecords(data || []);
+      let results = data || [];
+      if (pList.length > 1) {
+        results = results.filter((r) => pList.includes(r.plazaId));
+      }
+
+      setRecords(results);
     } catch (err) {
       console.error('[CycleWiseRecon] Search failed:', err);
       const msg = err?.response?.data?.error || err?.message || 'Failed to query cycle wise reconciliation';
@@ -73,7 +80,7 @@ export const CycleWiseRecon = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaId, cycle]);
+  }, [fromDate, toDate, selectedPlazas, cycle]);
 
   // Initial load
   useEffect(() => {
@@ -85,10 +92,10 @@ export const CycleWiseRecon = () => {
     const range = getDefaultDateRange();
     setFromDate(range.from);
     setToDate(range.to);
-    setPlazaId('');
+    setSelectedPlazas([]);
     setCycle('');
     setErrorMsg('');
-    handleSearch(range.from, range.to, '', '');
+    handleSearch(range.from, range.to, [], '');
   };
 
   // Export to Excel (Server XLSX)
@@ -97,10 +104,11 @@ export const CycleWiseRecon = () => {
 
     setExporting(true);
     try {
+      const queryPlazaId = selectedPlazas.length === 1 ? selectedPlazas[0] : '';
       await CycleWiseReconService.exportExcel({
         fromDate,
         toDate,
-        plazaId,
+        plazaId: queryPlazaId,
         cycle
       });
     } catch (err) {
@@ -311,14 +319,13 @@ export const CycleWiseRecon = () => {
             />
           </div>
 
-          <div className="input-group">
-            <label>Plaza ID / Name</label>
-            <input
-              type="text"
-              placeholder="e.g. 600601 or Dummytoll"
-              className="form-input"
-              value={plazaId}
-              onChange={(e) => setPlazaId(e.target.value)}
+          <div className="input-group" style={{ minWidth: '260px', flex: '1 1 240px' }}>
+            <PlazaMultiSelect
+              label="Plaza ID / Name"
+              selectedPlazas={selectedPlazas}
+              onChange={setSelectedPlazas}
+              placeholder="All Plazas (Select specific)"
+              id="cwrPlazaFilter"
             />
           </div>
 
@@ -408,12 +415,6 @@ export const CycleWiseRecon = () => {
             value: `₹ ${formatAmt(kpis.totalNetSettled)}`,
             sub: 'Final Bank Remittance',
             highlight: 'green'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'cycle_wise_recon',
-            isBadge: true
           }
         ]}
       />

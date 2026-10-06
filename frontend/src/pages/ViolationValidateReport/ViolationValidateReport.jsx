@@ -402,12 +402,6 @@ export const ViolationValidateReport = () => {
             value: `${summaryKpis.totalApproved} / ${summaryKpis.totalRejected}`,
             sub: 'Audit Decision Breakdown',
             highlight: 'green'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'violation_validation',
-            isBadge: true
           }
         ]}
       />
@@ -443,7 +437,7 @@ export const ViolationValidateReport = () => {
                 <tr>
                   <td colSpan="18" className="table-loading-cell">
                     <div className="spinner" />
-                    <span>Querying Live Railway Database...</span>
+                    <span>Querying database records...</span>
                   </td>
                 </tr>
               ) : records.length === 0 ? (
@@ -600,9 +594,8 @@ export const ViolationValidateReport = () => {
 
       {/* Footer Info */}
       <div className="report-footer-meta">
-        <span className="live-db-badge">Live Railway DB: ONLINE</span>
         <span className="disclaimer-note">
-          * This report is generated from the Paysonic live database directly on demand.
+          * This report is generated from the Paysonic database directly on demand.
         </span>
       </div>
 

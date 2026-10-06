@@ -11,6 +11,7 @@ import AuditLogTable from './components/AuditLogTable';
 import AuditDetailDrawer from './components/AuditDetailDrawer';
 import ExportConfirmModal from './components/ExportConfirmModal';
 import Loader from '../../components/Loader/Loader';
+import httpClient from '../../services/api/httpClient';
 import './UserActivity.scss';
 
 export const UserActivity = () => {
@@ -44,6 +45,23 @@ export const UserActivity = () => {
       setRecentEvents(r);
       setActiveUsers(u);
       setLoginHistory(l);
+
+      // Silently sync user catalog to enrich audit entities with full user identities
+      httpClient.get('/api/users').then((activeRes) => {
+        const activeList = Array.isArray(activeRes?.data) ? activeRes.data : (activeRes?.data?.content || []);
+        httpClient.get('/api/users', { params: { status: 'Trash User' } }).then((trashRes) => {
+          const trashList = Array.isArray(trashRes?.data) ? trashRes.data : (trashRes?.data?.content || []);
+          const all = [...activeList, ...trashList];
+          if (all.length > 0) {
+            try {
+              const current = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+              const map = new Map(current.map((user) => [user.id, user]));
+              all.forEach((user) => map.set(user.id, { ...(map.get(user.id) || {}), ...user }));
+              localStorage.setItem('paysonic_users_cache', JSON.stringify(Array.from(map.values())));
+            } catch {}
+          }
+        }).catch(() => {});
+      }).catch(() => {});
     } catch (err) {
       console.error('Failed to load activity telemetry:', err);
     } finally {
@@ -232,7 +250,7 @@ export const UserActivity = () => {
         {activeTab === 'sessions' && (
           <ActiveUsersTable
             activeUsers={activeUsers}
-            onForceLogout={currentUser?.role === 'Master Admin' ? handleForceLogout : null}
+            onForceLogout={handleForceLogout}
           />
         )}
 

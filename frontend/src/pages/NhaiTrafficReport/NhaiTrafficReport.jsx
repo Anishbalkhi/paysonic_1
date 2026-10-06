@@ -251,12 +251,6 @@ export const NhaiTrafficReport = () => {
             value: `${kpiMetrics.singleCount} / ${kpiMetrics.returnCount} / ${kpiMetrics.passCount}`,
             sub: 'Journey Type Distribution',
             highlight: 'green'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'nhai_traffic_report',
-            isBadge: true
           }
         ]}
       />
@@ -281,7 +275,7 @@ export const NhaiTrafficReport = () => {
                 <tr>
                   <td colSpan="7" className="table-loading-cell">
                     <div className="spinner" />
-                    <span>Aggregating NHAI Traffic Data from Live Railway Database...</span>
+                    <span>Aggregating NHAI Traffic Data from database...</span>
                   </td>
                 </tr>
               ) : !reportData || vehicleClasses.length === 0 ? (
@@ -416,9 +410,8 @@ export const NhaiTrafficReport = () => {
 
       {/* Footer Meta */}
       <div className="report-footer-meta">
-        <span className="live-db-badge">Live Railway DB: ONLINE</span>
         <span className="disclaimer-note">
-          * Official NHAI Format: Aggregated directly from Paysonic live database transactions.
+          * Official NHAI Format: Aggregated directly from Paysonic database transactions.
         </span>
       </div>
     </div>

@@ -484,12 +484,6 @@ export const ViolationBulkAction = () => {
             value: `${selectedIds.size} / ${filteredRecords.length}`,
             sub: 'Pending Batch Execution',
             highlight: selectedIds.size > 0 ? 'green' : 'amber'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'violation_bulk_action',
-            isBadge: true
           }
         ]}
       />
@@ -531,7 +525,7 @@ export const ViolationBulkAction = () => {
                 <tr>
                   <td colSpan="17" className="table-loading-cell">
                     <div className="spinner" />
-                    <span>Querying Live Railway Database...</span>
+                    <span>Querying database records...</span>
                   </td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
@@ -661,9 +655,8 @@ export const ViolationBulkAction = () => {
 
       {/* Footer Info */}
       <div className="report-footer-meta">
-        <span className="live-db-badge">Live Railway DB: ONLINE</span>
         <span className="disclaimer-note">
-          * This report is generated from the Paysonic live database directly on demand.
+          * This report is generated from the Paysonic database directly on demand.
         </span>
       </div>
     </div>

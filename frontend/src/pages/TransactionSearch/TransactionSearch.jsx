@@ -612,12 +612,6 @@ export const TransactionSearch = () => {
             value: searchKpis.breakdownValue,
             sub: txnType === 'NORMAL' ? 'Successful Passes' : 'Function Code Breakdown',
             highlight: txnType === 'NORMAL' ? 'green' : 'purple'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: searchKpis.endpoint,
-            isBadge: true
           }
         ]}
       />
@@ -669,7 +663,7 @@ export const TransactionSearch = () => {
                 {loading && (
                   <tr>
                     <td colSpan={13} className="table-loading-cell">
-                      <div className="spinner" /> Loading transactions from Railway MySQL DB...
+                      <div className="spinner" /> Loading transactions...
                     </td>
                   </tr>
                 )}
@@ -748,7 +742,7 @@ export const TransactionSearch = () => {
                 {loading && (
                   <tr>
                     <td colSpan={14} className="table-loading-cell">
-                      <div className="spinner" /> Loading dispute transactions from Railway DB...
+                      <div className="spinner" /> Loading dispute transactions...
                     </td>
                   </tr>
                 )}

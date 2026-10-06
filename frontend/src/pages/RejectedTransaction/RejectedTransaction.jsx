@@ -203,7 +203,7 @@ export const RejectedTransaction = () => {
         <div className="header-titles">
           <h1 className="page-title">Rejected Transaction</h1>
           <p className="subtitle">
-            Declined &amp; Rejected FASTag Toll Transactions (Live Railway DB)
+            Declined &amp; Rejected FASTag Toll Transactions
           </p>
         </div>
       </header>
@@ -337,12 +337,6 @@ export const RejectedTransaction = () => {
             value: `${duplicateCount} / ${otherCount}`,
             sub: 'Failure Breakdown',
             highlight: 'amber'
-          },
-          {
-            label: 'Live Railway DB',
-            value: 'ONLINE',
-            sub: 'rejected_transactions',
-            isBadge: true
           }
         ]}
       />
@@ -386,7 +380,7 @@ export const RejectedTransaction = () => {
           {loading ? (
             <div className="loading-state">
               <div className="spinner"></div>
-              <p>Querying rejected database transactions from Railway MySQL...</p>
+              <p>Querying rejected transactions from database...</p>
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="empty-state">
