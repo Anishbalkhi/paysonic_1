@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NhaiTrafficService from '../../services/summary/NhaiTrafficService';
+import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './NhaiTrafficReport.scss';
 
@@ -14,6 +16,19 @@ export const NhaiTrafficReport = () => {
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
   const [plazaCode, setPlazaCode] = useState('ALL');
+  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
+
+  useEffect(() => {
+    let isMounted = true;
+    DisputeManagementService.getRealtimePlazas().then((live) => {
+      if (isMounted && Array.isArray(live) && live.length > 0) {
+        setPlazas(live);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -190,10 +205,11 @@ export const NhaiTrafficReport = () => {
               onChange={(e) => setPlazaCode(e.target.value)}
             >
               <option value="ALL">All Plazas Network</option>
-              <option value="501101">501101 - MUMBAI PLAZA NH-04</option>
-              <option value="502202">502202 - PUNE BYPASS PLAZA</option>
-              <option value="600601">600601 - Dummytollplaza1</option>
-              <option value="666666">666666 - Autumn</option>
+              {plazas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.id} - {p.name}
+                </option>
+              ))}
             </select>
           </div>
 

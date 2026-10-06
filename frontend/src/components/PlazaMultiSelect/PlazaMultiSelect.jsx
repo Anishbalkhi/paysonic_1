@@ -4,8 +4,6 @@ import './PlazaMultiSelect.scss';
 
 // Fallback list of known plazas from database
 const DEFAULT_PLAZAS = [
-  { id: '600601', name: 'Dummytollplaza1' },
-  { id: '600602', name: 'Dummytollplaza2' },
   { id: '501101', name: 'MUMBAI PLAZA NH-04' },
   { id: '502202', name: 'PUNE BYPASS PLAZA' },
   { id: '503303', name: 'NASHIK TOLL PLAZA' },

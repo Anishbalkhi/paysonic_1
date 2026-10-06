@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
+import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearchDispute.scss';
 
@@ -18,6 +20,19 @@ export const TransactionSearchDispute = () => {
   const [plazaId, setPlazaId] = useState('ALL');
   const [functionCode, setFunctionCode] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
+
+  useEffect(() => {
+    let isMounted = true;
+    DisputeManagementService.getRealtimePlazas().then((live) => {
+      if (isMounted && Array.isArray(live) && live.length > 0) {
+        setPlazas(live);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Live Database Data State
   const [records, setRecords] = useState([]);
@@ -263,9 +278,11 @@ export const TransactionSearchDispute = () => {
               }}
             >
               <option value="ALL">All Plazas</option>
-              <option value="600601">Dummytollplaza1 (600601)</option>
-              <option value="600602">Dummytollplaza2 (600602)</option>
-              <option value="778999">Gluten (778999)</option>
+              {plazas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.id})
+                </option>
+              ))}
             </select>
           </div>
 

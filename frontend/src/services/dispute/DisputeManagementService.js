@@ -6,6 +6,7 @@ import {
   DEFAULT_TAT_DAYS,
 } from '../../config/disputeConstants';
 import httpClient from '../api/httpClient';
+import OnboardingService from '../onboarding/OnboardingService';
 
 const STORAGE_KEY_DISPUTES = 'paysonic_disputes_v1';
 const STORAGE_KEY_BATCHES = 'paysonic_dispute_batches_v1';
@@ -18,8 +19,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'AM020905',
     vrn: 'MH12VL3467',
     tagId: '34161FA820328EB002947820',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '501101',
+    plazaName: 'MUMBAI PLAZA NH-04',
     txnDate: '02-09-2026 05:30:00',
     txnAmount: 5.0,
     disputeAmount: 80.0,
@@ -43,8 +44,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'AM020906',
     vrn: 'MH12VL3467',
     tagId: '34161FA820328EB002947820',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '502202',
+    plazaName: 'PUNE BYPASS PLAZA',
     txnDate: '02-09-2026 06:30:00',
     txnAmount: 5.0,
     disputeAmount: 80.0,
@@ -68,8 +69,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'AM020903',
     vrn: 'MH12VL3467',
     tagId: '34161FA820328EB002947820',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '503303',
+    plazaName: 'NASHIK TOLL PLAZA',
     txnDate: '02-09-2026 03:30:00',
     txnAmount: 5.0,
     disputeAmount: 80.0,
@@ -93,8 +94,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'AM020904',
     vrn: 'MH12VL3467',
     tagId: '34161FA820328EB002947820',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '504404',
+    plazaName: 'KOLHAPUR PLAZA',
     txnDate: '02-09-2026 04:30:00',
     txnAmount: 5.0,
     disputeAmount: 80.0,
@@ -118,8 +119,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'AM020902',
     vrn: 'MH12VL3467',
     tagId: '34161FA820328EB002947820',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '505505',
+    plazaName: 'SOLAPUR PLAZA NH-65',
     txnDate: '02-09-2026 02:30:00',
     txnAmount: 5.0,
     disputeAmount: 80.0,
@@ -143,8 +144,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'AM020907',
     vrn: 'MH12VL3467',
     tagId: '34161FA820328EB002947820',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '908895',
+    plazaName: 'JAIPUR',
     txnDate: '02-09-2026 07:30:00',
     txnAmount: 5.0,
     disputeAmount: 80.0,
@@ -168,8 +169,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'SK030902',
     vrn: '34MH51FA820',
     tagId: '34161FA82032866C03B7B640',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '787887',
+    plazaName: 'JEET',
     txnDate: '03-09-2026 10:00:00',
     txnAmount: 25.0,
     disputeAmount: 25.0,
@@ -193,8 +194,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'ZP030902',
     vrn: 'GH92DD6152',
     tagId: '34161FA82033E8260213B680',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '787878',
+    plazaName: 'PLAZA 1',
     txnDate: '02-09-2026 02:00:00',
     txnAmount: 5.0,
     disputeAmount: 5.0,
@@ -214,13 +215,13 @@ const INITIAL_SEED_ROWS = [
   },
   {
     rowId: 'DISP-1009',
-    acqTxnId: '102047735808524702',
-    tollTxnId: 'ZP030902',
+    acqTxnId: '102047735808524700',
+    tollTxnId: 'ZP030901',
     vrn: 'GH92DD6152',
     tagId: '34161FA82033E8260213B680',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
-    txnDate: '02-09-2026 02:00:00',
+    plazaId: '121212',
+    plazaName: 'OCTOBER',
+    txnDate: '02-09-2026 01:00:00',
     txnAmount: 5.0,
     disputeAmount: 5.0,
     cbRaisedDate: '02-09-2026',
@@ -243,8 +244,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'ZP030902',
     vrn: 'GH92DD6152',
     tagId: '34161FA82033E8260213B680',
-    plazaId: '600601',
-    plazaName: 'Dummytollplaza1',
+    plazaId: '111111',
+    plazaName: 'PAY PAY 1',
     txnDate: '02-09-2026 02:00:00',
     txnAmount: 5.0,
     disputeAmount: 5.0,
@@ -268,8 +269,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'ZP020929',
     vrn: 'GH92DD6152',
     tagId: '34161FA82032866C020F7D20',
-    plazaId: '778899',
-    plazaName: 'Gluten',
+    plazaId: '161616',
+    plazaName: 'ARCON',
     txnDate: '02-09-2026 11:00:00',
     txnAmount: 80.0,
     disputeAmount: 80.0,
@@ -293,8 +294,8 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'ZP020928',
     vrn: 'GH92DD6152',
     tagId: '34161FA82032866C020F7D20',
-    plazaId: '778899',
-    plazaName: 'Gluten',
+    plazaId: '745643',
+    plazaName: 'ERHSHR',
     txnDate: '02-09-2026 10:00:00',
     txnAmount: 80.0,
     disputeAmount: 80.0,
@@ -325,6 +326,9 @@ class DisputeManagementService {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
       if (!raw) {
         localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(INITIAL_SEED_ROWS));
+      } else {
+        // Automatically migrate any legacy prototype records if found
+        this.migrateLegacyDisputes(JSON.parse(raw));
       }
       const rawBatches = localStorage.getItem(STORAGE_KEY_BATCHES);
       if (!rawBatches) {
@@ -347,10 +351,62 @@ class DisputeManagementService {
     }
   }
 
+  migrateLegacyDisputes(rows) {
+    if (!Array.isArray(rows)) return INITIAL_SEED_ROWS;
+    let modified = false;
+    const realPlazaPool = DEFAULT_PLAZAS;
+    const updated = rows.map((r, idx) => {
+      const isLegacy =
+        !r.plazaName ||
+        r.plazaName === 'Dummytollplaza1' ||
+        r.plazaName === 'Dummytollplaza2' ||
+        r.plazaName === 'Gluten' ||
+        r.plazaId === '600601' ||
+        r.plazaId === '600602' ||
+        r.plazaId === '778899';
+
+      if (isLegacy) {
+        modified = true;
+        const targetPlaza = realPlazaPool[idx % realPlazaPool.length];
+        return {
+          ...r,
+          plazaId: targetPlaza.id,
+          plazaName: targetPlaza.name,
+        };
+      }
+      return r;
+    });
+
+    if (modified) {
+      try {
+        localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('[DisputeManagementService] Migration save warning:', e);
+      }
+    }
+    return updated;
+  }
+
+  async getRealtimePlazas() {
+    try {
+      const live = await OnboardingService.getPlazas();
+      if (Array.isArray(live) && live.length > 0) {
+        return live.map((p) => ({
+          id: String(p.id),
+          name: p.name || `Plaza ${p.id}`,
+        }));
+      }
+    } catch (e) {
+      console.warn('[DisputeManagementService] Failed to load realtime plazas:', e);
+    }
+    return DEFAULT_PLAZAS;
+  }
+
   getStoredDisputes() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
-      return raw ? JSON.parse(raw) : INITIAL_SEED_ROWS;
+      const parsed = raw ? JSON.parse(raw) : INITIAL_SEED_ROWS;
+      return this.migrateLegacyDisputes(parsed);
     } catch {
       return INITIAL_SEED_ROWS;
     }
@@ -708,8 +764,8 @@ class DisputeManagementService {
           txnAmount: masterHit.txnAmount || Number(row['Transaction Amount'] || 0),
           disputeAmount: masterHit.txnAmount || Number(row['Transaction Amount'] || 0),
           memberMessageText: row['Member Message Text'] || row['CB Reason'] || 'Imported from bank file',
-          plazaId: masterHit.plazaId || row['Merchant ID'] || '600601',
-          plazaName: masterHit.plazaName || PLAZA_MAP[masterHit.plazaId] || 'Plaza',
+          plazaId: masterHit.plazaId || row['Merchant ID'] || '501101',
+          plazaName: masterHit.plazaName || PLAZA_MAP[masterHit.plazaId] || 'MUMBAI PLAZA NH-04',
           vrn: masterHit.vrn || row['Vehicle Registration Number'] || '—',
           tollTxnId: masterHit.tollTxnId || '—',
           txnDate: masterHit.txnDate || '—',

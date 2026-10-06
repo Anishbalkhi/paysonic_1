@@ -185,8 +185,9 @@ export const TransactionSearchNormal = () => {
     const map = new Map();
     map.set('501101', '501101 - MUMBAI PLAZA NH-04');
     map.set('502202', '502202 - PUNE BYPASS PLAZA');
-    map.set('600601', '600601 - Dummytollplaza1');
-    map.set('600602', '600602 - Dummytollplaza2');
+    map.set('503303', '503303 - NASHIK TOLL PLAZA');
+    map.set('504404', '504404 - KOLHAPUR PLAZA');
+    map.set('505505', '505505 - SOLAPUR PLAZA NH-65');
     records.forEach((r) => {
       if (r.plazaId) {
         map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'Plaza'}`);

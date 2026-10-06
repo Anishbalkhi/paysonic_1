@@ -227,11 +227,11 @@ export const ViolationValidateReport = () => {
   // Dynamic filter options derived from active database records
   const availablePlazas = useMemo(() => {
     const map = new Map();
-    map.set('600601', '600601 - Dummytollplaza1');
+    map.set('501101', '501101 - MUMBAI PLAZA NH-04');
     records.forEach((r) => {
       const pid = r.plazaId || r.tollPlazaId;
       if (pid) {
-        map.set(String(pid), `${pid} - ${r.plazaName || (String(pid) === '600601' ? 'Dummytollplaza1' : String(pid) === '666666' ? 'Autumn' : 'Toll Plaza ' + pid)}`);
+        map.set(String(pid), `${pid} - ${r.plazaName || 'MUMBAI PLAZA NH-04'}`);
       }
     });
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));

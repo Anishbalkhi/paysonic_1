@@ -9,9 +9,32 @@ import './DisputeValidate.scss';
 
 export const DisputeValidate = () => {
   const { currentUser } = useAuth();
-  const plazaId = currentUser?.role === 'Plaza Admin' || currentUser?.role === 'Plaza POS'
-    ? currentUser?.plazaId || '600601'
-    : '600601';
+  const [plazas, setPlazas] = useState([]);
+  const [selectedPlazaId, setSelectedPlazaId] = useState(
+    currentUser?.plazaId || '501101'
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    DisputeManagementService.getRealtimePlazas().then((live) => {
+      if (isMounted && Array.isArray(live) && live.length > 0) {
+        setPlazas(live);
+        if (!currentUser?.plazaId) {
+          const found = live.find((p) => String(p.id) === '501101');
+          setSelectedPlazaId(found ? '501101' : live[0].id);
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser]);
+
+  const activePlazaId = currentUser?.plazaId || selectedPlazaId || '501101';
+  const activePlaza = plazas.find((p) => String(p.id) === String(activePlazaId)) || {
+    id: activePlazaId,
+    name: 'MUMBAI PLAZA NH-04',
+  };
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +58,7 @@ export const DisputeValidate = () => {
     try {
       setLoading(true);
       const fetched = await DisputeManagementService.searchDisputes({
-        scopedPlazaId: plazaId,
+        scopedPlazaId: activePlazaId !== 'ALL' ? activePlazaId : undefined,
         functionCode,
         plazaAction,
         disputeStatus,
@@ -50,7 +73,7 @@ export const DisputeValidate = () => {
     } finally {
       setLoading(false);
     }
-  }, [plazaId, functionCode, plazaAction, disputeStatus, acqTxnId, tollTxnId, tagId]);
+  }, [activePlazaId, functionCode, plazaAction, disputeStatus, acqTxnId, tollTxnId, tagId]);
 
   useEffect(() => {
     loadData();
@@ -78,7 +101,7 @@ export const DisputeValidate = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Validate_Disputes_Plaza_${plazaId}.csv`);
+    link.setAttribute('download', `Validate_Disputes_Plaza_${activePlazaId}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -90,7 +113,7 @@ export const DisputeValidate = () => {
         <div>
           <h1>Validate Dispute</h1>
           <p className="subtitle">
-            Disputes assigned to your plaza ({plazaId}). Review the acquirer's evidence and reason, and submit your verified decision (Approve or Reject) with proof.
+            Disputes assigned to plaza {activePlaza.name} ({activePlazaId}). Review the acquirer's evidence and reason, and submit your verified decision (Approve or Reject) with proof.
           </p>
         </div>
       </div>
@@ -99,6 +122,21 @@ export const DisputeValidate = () => {
       <div className="search-criteria-card">
         <div className="card-title">Search Criteria</div>
         <div className="filters-grid">
+          <div className="field-box">
+            <label htmlFor="vdPlazaSelect">Toll Plaza</label>
+            <select
+              id="vdPlazaSelect"
+              value={selectedPlazaId}
+              onChange={(e) => setSelectedPlazaId(e.target.value)}
+            >
+              {plazas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.id})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="field-box">
             <label htmlFor="vdFromDate">From Date *</label>
             <input
@@ -231,7 +269,7 @@ export const DisputeValidate = () => {
           {
             label: 'Total Assigned Disputes',
             value: rows.length,
-            sub: `Plaza ID: ${plazaId}`
+            sub: `Plaza: ${activePlaza.name} (${activePlazaId})`
           },
           {
             label: 'Total Dispute Amount',
@@ -282,7 +320,7 @@ export const DisputeValidate = () => {
                 <th>Toll Txn ID</th>
                 <th>VRN</th>
                 <th>Tag ID</th>
-                <th>Toll Plaza ID</th>
+                <th>Toll Plaza</th>
                 <th>Txn Date</th>
                 <th>CB Raised Date</th>
                 <th>CB Reason</th>
@@ -342,7 +380,7 @@ export const DisputeValidate = () => {
                       <td className="code-cell">{r.tollTxnId}</td>
                       <td style={{ fontWeight: 600 }}>{r.vrn}</td>
                       <td className="code-cell">{r.tagId ? `${r.tagId.slice(0, 10)}…` : '—'}</td>
-                      <td>{r.plazaId}</td>
+                      <td>{r.plazaName ? `${r.plazaName} (${r.plazaId})` : `${activePlaza.name} (${r.plazaId})`}</td>
                       <td>{r.txnDate}</td>
                       <td>{r.cbRaisedDate}</td>
                       <td>{r.cbReason}</td>

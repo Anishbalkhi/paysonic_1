@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TrsReportService from '../../services/trs/TrsReportService';
+import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TrsReport.scss';
 
@@ -18,6 +20,19 @@ export const TrsReport = () => {
   const [plazaId, setPlazaId] = useState('ALL');
   const [status, setStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
+
+  useEffect(() => {
+    let isMounted = true;
+    DisputeManagementService.getRealtimePlazas().then((live) => {
+      if (isMounted && Array.isArray(live) && live.length > 0) {
+        setPlazas(live);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Live Database Data State
   const [records, setRecords] = useState([]);
@@ -248,10 +263,11 @@ export const TrsReport = () => {
               onChange={(e) => setPlazaId(e.target.value)}
             >
               <option value="ALL">All Plazas</option>
-              <option value="501101">MUMBAI PLAZA NH-04 (501101)</option>
-              <option value="502202">PUNE BYPASS PLAZA (502202)</option>
-              <option value="600601">Dummytollplaza1 (600601)</option>
-              <option value="600602">Dummytollplaza2 (600602)</option>
+              {plazas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.id})
+                </option>
+              ))}
             </select>
           </div>
 

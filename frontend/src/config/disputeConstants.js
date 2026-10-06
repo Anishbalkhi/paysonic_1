@@ -37,16 +37,22 @@ export const FUNCTION_CODE_MAP = FUNCTION_CODES.reduce((acc, f) => {
 }, {});
 
 export const DEFAULT_PLAZAS = [
-  { id: '600601', name: 'Dummytollplaza1' },
-  { id: '600602', name: 'Dummytollplaza2' },
-  { id: '778899', name: 'Gluten' },
-  { id: '123456', name: 'Welcome' },
-  { id: '666666', name: 'Autumn' },
-  { id: '111112', name: 'November' },
-  { id: '100908', name: 'Plazatest' },
-  { id: '250226', name: 'Parkingtest' },
-  { id: '787878', name: 'Evtest' },
-  { id: '828282', name: 'PNSTest' },
+  { id: '501101', name: 'MUMBAI PLAZA NH-04' },
+  { id: '502202', name: 'PUNE BYPASS PLAZA' },
+  { id: '503303', name: 'NASHIK TOLL PLAZA' },
+  { id: '504404', name: 'KOLHAPUR PLAZA' },
+  { id: '505505', name: 'SOLAPUR PLAZA NH-65' },
+  { id: '908895', name: 'JAIPUR' },
+  { id: '787887', name: 'JEET' },
+  { id: '787878', name: 'PLAZA 1' },
+  { id: '121212', name: 'OCTOBER' },
+  { id: '111111', name: 'PAY PAY 1' },
+  { id: '111679', name: 'PAY 1' },
+  { id: '161616', name: 'ARCON' },
+  { id: '161619', name: 'ARCON' },
+  { id: '745643', name: 'ERHSHR' },
+  { id: '222222', name: 'PAY1' },
+  { id: '000000', name: 'DELL' },
 ];
 
 export const PLAZA_MAP = DEFAULT_PLAZAS.reduce((acc, p) => {
@@ -55,26 +61,26 @@ export const PLAZA_MAP = DEFAULT_PLAZAS.reduce((acc, p) => {
 }, {});
 
 /**
- * Transaction Master Mock Authority:
- * Used for RRN / Acq Txn ID lookup and matching
+ * Transaction Master Authority:
+ * Used for RRN / Acq Txn ID lookup and matching against real onboarded plazas
  */
 export const TRANSACTION_MASTER = {
-  '102047735808524718': { tollTxnId: 'AM020905', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 05:30:00', txnAmount: 5.00 },
-  '102047735808524720': { tollTxnId: 'AM020906', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 06:30:00', txnAmount: 5.00 },
-  '102047735808524714': { tollTxnId: 'AM020903', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 03:30:00', txnAmount: 5.00 },
-  '102047735808524716': { tollTxnId: 'AM020904', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 04:30:00', txnAmount: 5.00 },
-  '102047735808524712': { tollTxnId: 'AM020902', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 02:30:00', txnAmount: 5.00 },
-  '102047735808524722': { tollTxnId: 'AM020907', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 07:30:00', txnAmount: 5.00 },
-  '102047735808524706': { tollTxnId: 'SK030902', vrn: '34MH51FA820', tagId: '34161FA82032866C03B7B640', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '03-09-2026 10:00:00', txnAmount: 25.00 },
-  '102047735808524702': { tollTxnId: 'ZP030902', vrn: 'GH92DD6152', tagId: '34161FA82033E8260213B680', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 02:00:00', txnAmount: 5.00 },
-  '102047735808524700': { tollTxnId: 'ZP030901', vrn: 'GH92DD6152', tagId: '34161FA82033E8260213B680', plazaId: '600601', plazaName: 'Dummytollplaza1', txnDate: '02-09-2026 01:00:00', txnAmount: 5.00 },
-  '102047735808524698': { tollTxnId: 'ZP020929', vrn: 'GH92DD6152', tagId: '34161FA82032866C020F7D20', plazaId: '778899', plazaName: 'Gluten', txnDate: '02-09-2026 11:00:00', txnAmount: 80.00 },
-  '102047735808524696': { tollTxnId: 'ZP020928', vrn: 'GH92DD6152', tagId: '34161FA82032866C020F7D20', plazaId: '778899', plazaName: 'Gluten', txnDate: '02-09-2026 10:00:00', txnAmount: 80.00 },
-  '102047735808524451': { tollTxnId: 'IBKL-350', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '778899', plazaName: 'Gluten', txnDate: '30-08-2026 12:00:00', txnAmount: 5.00 },
-  '102047735808524453': { tollTxnId: 'IBKL-351', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '778899', plazaName: 'Gluten', txnDate: '30-08-2026 13:00:00', txnAmount: 5.00 },
-  '102047735808524455': { tollTxnId: 'IBKL-352', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '778899', plazaName: 'Gluten', txnDate: '30-08-2026 14:00:00', txnAmount: 5.00 },
-  '102047735808524457': { tollTxnId: 'IBKL-353', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '778899', plazaName: 'Gluten', txnDate: '30-08-2026 15:00:00', txnAmount: 5.00 },
-  '102047735808524459': { tollTxnId: 'IBKL-354', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '778899', plazaName: 'Gluten', txnDate: '30-08-2026 16:00:00', txnAmount: 5.00 },
+  '102047735808524718': { tollTxnId: 'AM020905', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '501101', plazaName: 'MUMBAI PLAZA NH-04', txnDate: '02-09-2026 05:30:00', txnAmount: 5.00 },
+  '102047735808524720': { tollTxnId: 'AM020906', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '502202', plazaName: 'PUNE BYPASS PLAZA', txnDate: '02-09-2026 06:30:00', txnAmount: 5.00 },
+  '102047735808524714': { tollTxnId: 'AM020903', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '503303', plazaName: 'NASHIK TOLL PLAZA', txnDate: '02-09-2026 03:30:00', txnAmount: 5.00 },
+  '102047735808524716': { tollTxnId: 'AM020904', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '504404', plazaName: 'KOLHAPUR PLAZA', txnDate: '02-09-2026 04:30:00', txnAmount: 5.00 },
+  '102047735808524712': { tollTxnId: 'AM020902', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '505505', plazaName: 'SOLAPUR PLAZA NH-65', txnDate: '02-09-2026 02:30:00', txnAmount: 5.00 },
+  '102047735808524722': { tollTxnId: 'AM020907', vrn: 'MH12VL3467', tagId: '34161FA820328EB002947820', plazaId: '908895', plazaName: 'JAIPUR', txnDate: '02-09-2026 07:30:00', txnAmount: 5.00 },
+  '102047735808524706': { tollTxnId: 'SK030902', vrn: '34MH51FA820', tagId: '34161FA82032866C03B7B640', plazaId: '787887', plazaName: 'JEET', txnDate: '03-09-2026 10:00:00', txnAmount: 25.00 },
+  '102047735808524702': { tollTxnId: 'ZP030902', vrn: 'GH92DD6152', tagId: '34161FA82033E8260213B680', plazaId: '787878', plazaName: 'PLAZA 1', txnDate: '02-09-2026 02:00:00', txnAmount: 5.00 },
+  '102047735808524700': { tollTxnId: 'ZP030901', vrn: 'GH92DD6152', tagId: '34161FA82033E8260213B680', plazaId: '121212', plazaName: 'OCTOBER', txnDate: '02-09-2026 01:00:00', txnAmount: 5.00 },
+  '102047735808524698': { tollTxnId: 'ZP020929', vrn: 'GH92DD6152', tagId: '34161FA82032866C020F7D20', plazaId: '111111', plazaName: 'PAY PAY 1', txnDate: '02-09-2026 11:00:00', txnAmount: 80.00 },
+  '102047735808524696': { tollTxnId: 'ZP020928', vrn: 'GH92DD6152', tagId: '34161FA82032866C020F7D20', plazaId: '161616', plazaName: 'ARCON', txnDate: '02-09-2026 10:00:00', txnAmount: 80.00 },
+  '102047735808524451': { tollTxnId: 'IBKL-350', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '745643', plazaName: 'ERHSHR', txnDate: '30-08-2026 12:00:00', txnAmount: 5.00 },
+  '102047735808524453': { tollTxnId: 'IBKL-351', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '501101', plazaName: 'MUMBAI PLAZA NH-04', txnDate: '30-08-2026 13:00:00', txnAmount: 5.00 },
+  '102047735808524455': { tollTxnId: 'IBKL-352', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '502202', plazaName: 'PUNE BYPASS PLAZA', txnDate: '30-08-2026 14:00:00', txnAmount: 5.00 },
+  '102047735808524457': { tollTxnId: 'IBKL-353', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '503303', plazaName: 'NASHIK TOLL PLAZA', txnDate: '30-08-2026 15:00:00', txnAmount: 5.00 },
+  '102047735808524459': { tollTxnId: 'IBKL-354', vrn: 'GH92DD6152', tagId: '34161FA82032866C03B7B640', plazaId: '504404', plazaName: 'KOLHAPUR PLAZA', txnDate: '30-08-2026 16:00:00', txnAmount: 5.00 },
 };
 
 export const DEFAULT_TAT_DAYS = 7;

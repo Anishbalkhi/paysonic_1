@@ -7,8 +7,22 @@ import './ChargebackAssign.scss';
 
 export const ChargebackAssign = () => {
   const [rows, setRows] = useState([]);
+  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
   const [miniStats, setMiniStats] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Load realtime onboarded plazas
+  useEffect(() => {
+    let isMounted = true;
+    DisputeManagementService.getRealtimePlazas().then((live) => {
+      if (isMounted && Array.isArray(live) && live.length > 0) {
+        setPlazas(live);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Filters
   const [fromDate, setFromDate] = useState('');
@@ -226,7 +240,7 @@ export const ChargebackAssign = () => {
               onChange={(e) => setTollPlazaId(e.target.value)}
             >
               <option value="">--Select Toll Plaza Id--</option>
-              {DEFAULT_PLAZAS.map((p) => (
+              {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} - {p.id}
                 </option>
@@ -270,7 +284,7 @@ export const ChargebackAssign = () => {
         </p>
 
         <div className="plaza-chips-row">
-          {DEFAULT_PLAZAS.map((p) => {
+          {plazas.map((p) => {
             const isPicked = selectedPlazaChips.includes(p.id);
             return (
               <button

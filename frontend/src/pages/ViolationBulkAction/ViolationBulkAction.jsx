@@ -247,10 +247,10 @@ export const ViolationBulkAction = () => {
   // Dynamic options derived from actual database records so selecting any option shows table data
   const availablePlazas = useMemo(() => {
     const map = new Map();
-    map.set('600601', '600601 - Dummytollplaza1');
+    map.set('501101', '501101 - MUMBAI PLAZA NH-04');
     records.forEach((r) => {
       if (r.plazaId) {
-        map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'Dummytollplaza1'}`);
+        map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'MUMBAI PLAZA NH-04'}`);
       }
     });
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
