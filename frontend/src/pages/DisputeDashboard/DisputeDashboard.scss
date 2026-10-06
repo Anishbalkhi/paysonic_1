@@ -65,19 +65,218 @@
       background: #fff1f2;
       border: 1px solid #fecdd3;
 
-      .tat-banner-title {
+      .tat-banner-top-bar {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        .tat-banner-title {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.95rem;
+          color: #be123c;
+
+          .tat-alert-icon {
+            font-size: 1.15rem;
+            line-height: 1;
+          }
+
+          .tat-title-text {
+            strong {
+              color: #9f1239;
+            }
+          }
+        }
+
+        .tat-banner-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .tat-action-btn {
+            background: #e11d48;
+            color: #ffffff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(225, 29, 72, 0.25);
+
+            &:hover {
+              background: #be123c;
+              transform: translateY(-1px);
+            }
+          }
+
+          .tat-collapse-btn {
+            background: transparent;
+            color: #be123c;
+            border: 1px solid #fda4af;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+
+            &:hover {
+              background: #ffe4e6;
+            }
+          }
+        }
+      }
+
+      /* Toolbar: Severity Chips & Quick Search */
+      .tat-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
         gap: 10px;
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #be123c;
+        padding-top: 4px;
+        border-top: 1px dashed #fecdd3;
+
+        .tat-chips {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 6px;
+
+          .tat-chip {
+            background: #ffffff;
+            border: 1px solid #fda4af;
+            color: #475467;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+
+            &:hover {
+              background: #ffe4e6;
+              color: #be123c;
+            }
+
+            &.active {
+              background: #be123c;
+              border-color: #be123c;
+              color: #ffffff;
+            }
+
+            &--danger {
+              color: #be123c;
+              &.active {
+                background: #9f1239;
+                border-color: #9f1239;
+              }
+            }
+
+            &--orange {
+              color: #c2410c;
+              border-color: #fdba74;
+              &:hover {
+                background: #ffedd5;
+              }
+              &.active {
+                background: #ea580c;
+                border-color: #ea580c;
+              }
+            }
+
+            &--amber {
+              color: #b45309;
+              border-color: #fde68a;
+              &:hover {
+                background: #fef3c7;
+              }
+              &.active {
+                background: #d97706;
+                border-color: #d97706;
+              }
+            }
+          }
+
+          .tat-value-chip {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #9f1239;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #fecdd3;
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-left: 4px;
+          }
+        }
+
+        .tat-search-wrap {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: #ffffff;
+          border: 1px solid #fda4af;
+          border-radius: 6px;
+          padding: 4px 10px;
+          min-width: 220px;
+          color: #94a3b8;
+
+          input {
+            border: none;
+            outline: none;
+            font-size: 0.8rem;
+            color: #1e293b;
+            width: 100%;
+            background: transparent;
+
+            &::placeholder {
+              color: #94a3b8;
+            }
+          }
+
+          .tat-clear-search {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            line-height: 1;
+
+            &:hover {
+              color: #be123c;
+            }
+          }
+        }
       }
 
       .tat-dispute-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
+        max-height: 260px;
+        overflow-y: auto;
+        padding-right: 4px;
+
+        &::-webkit-scrollbar {
+          width: 5px;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: #fda4af;
+          border-radius: 4px;
+        }
+
+        .tat-empty-filtered {
+          padding: 16px;
+          text-align: center;
+          font-size: 0.82rem;
+          color: #9f1239;
+          font-style: italic;
+        }
 
         .tat-item-row {
           display: flex;
@@ -88,6 +287,12 @@
           border: 1px solid #ffe4e6;
           border-radius: 8px;
           font-size: 0.84rem;
+          transition: background 0.15s ease;
+
+          &:hover {
+            background: #fff5f5;
+            border-color: #fecdd3;
+          }
 
           .tat-item-info {
             color: #334155;
@@ -95,6 +300,86 @@
               color: #0f172a;
               font-family: ui-monospace, monospace;
             }
+            .tat-amount {
+              font-weight: 700;
+              color: #be123c;
+            }
+          }
+
+          .tat-item-tail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            .tat-row-action-btn {
+              background: #fff1f2;
+              border: 1px solid #fecdd3;
+              color: #be123c;
+              font-size: 0.75rem;
+              font-weight: 700;
+              padding: 3px 8px;
+              border-radius: 4px;
+              cursor: pointer;
+              transition: all 0.15s ease;
+
+              &:hover {
+                background: #e11d48;
+                color: #ffffff;
+                border-color: #e11d48;
+              }
+            }
+          }
+        }
+      }
+
+      /* In-Banner Pagination Bar */
+      .tat-pagination-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding-top: 6px;
+        border-top: 1px solid #fecdd3;
+        font-size: 0.78rem;
+        color: #9f1239;
+
+        .tat-page-info {
+          strong {
+            color: #881337;
+          }
+        }
+
+        .tat-page-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .tat-page-btn {
+            background: #ffffff;
+            border: 1px solid #fda4af;
+            color: #be123c;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+
+            &:disabled {
+              opacity: 0.4;
+              cursor: not-allowed;
+            }
+
+            &:not(:disabled):hover {
+              background: #be123c;
+              color: #ffffff;
+            }
+          }
+
+          .tat-page-indicator {
+            font-size: 0.78rem;
+            color: #881337;
           }
         }
       }
