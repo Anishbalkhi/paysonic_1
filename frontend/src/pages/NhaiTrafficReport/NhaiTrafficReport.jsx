@@ -114,7 +114,17 @@ export const NhaiTrafficReport = () => {
   };
 
   const dateSubtitle = useMemo(() => {
-    return `From Date: ${fromDate}    To Date: ${toDate}`;
+    if (!fromDate || !toDate) return '';
+    const f = (d) => {
+      try {
+        const dt = new Date(d);
+        if (isNaN(dt.getTime())) return d;
+        return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      } catch {
+        return d;
+      }
+    };
+    return `Report Period: ${f(fromDate)} — ${f(toDate)}`;
   }, [fromDate, toDate]);
 
   // Overall KPI metrics from Grand & Journey Totals
@@ -142,6 +152,20 @@ export const NhaiTrafficReport = () => {
       singleCount: single,
       returnCount: ret,
       passCount: pass
+    };
+  }, [reportData]);
+
+  const journeyTotals = useMemo(() => {
+    const list = reportData?.journeyTotals || [];
+    const findItem = (pattern, fallbackType) => {
+      const found = list.find((j) => (j.journeyType || '').toLowerCase().includes(pattern.toLowerCase()));
+      return found || { journeyType: fallbackType, transactionCount: 0, transactionAmount: 0 };
+    };
+    return {
+      single: findItem('single', 'Total Single Journey'),
+      ret: findItem('return', 'Total Return Journey'),
+      discount: findItem('discount', 'Total DiscountDC'),
+      exempt: findItem('exempt', 'Total Exempted/ Pass vehicles'),
     };
   }, [reportData]);
 
@@ -264,13 +288,13 @@ export const NhaiTrafficReport = () => {
           <table className="nhai-styled-table">
             <thead>
               <tr>
-                <th>Plaza Code</th>
-                <th>Plaza Name</th>
-                <th>Vehicle Class</th>
-                <th>Journey Type</th>
-                <th className="text-right">Toll Fare</th>
-                <th className="text-right">Transaction Count</th>
-                <th className="text-right">Transaction Amount</th>
+                <th className="text-center">PLAZA CODE</th>
+                <th>PLAZA NAME</th>
+                <th>VEHICLE CLASS</th>
+                <th>JOURNEY TYPE</th>
+                <th className="text-right">TOLL FARE</th>
+                <th className="text-right">TRANSACTION COUNT</th>
+                <th className="text-right">TRANSACTION AMOUNT</th>
               </tr>
             </thead>
             <tbody>
@@ -301,7 +325,7 @@ export const NhaiTrafficReport = () => {
                           {isFirstGlobalRow && (
                             <td
                               rowSpan={totalRowsInClasses}
-                              className="text-center font-semibold border-merged-cell"
+                              className="text-center font-bold border-merged-cell plaza-code-cell"
                             >
                               {reportData.plazaCode}
                             </td>
@@ -311,7 +335,7 @@ export const NhaiTrafficReport = () => {
                           {isFirstGlobalRow && (
                             <td
                               rowSpan={totalRowsInClasses}
-                              className="font-semibold border-merged-cell"
+                              className="font-semibold border-merged-cell plaza-name-cell"
                             >
                               {reportData.plazaName}
                             </td>
@@ -321,7 +345,7 @@ export const NhaiTrafficReport = () => {
                           {isFirstInClass && (
                             <td
                               rowSpan={journeys.length}
-                              className="vc-title-cell font-semibold border-merged-cell"
+                              className="vc-title-cell font-bold border-merged-cell"
                             >
                               {vcGroup.className}
                             </td>
@@ -333,19 +357,19 @@ export const NhaiTrafficReport = () => {
                           </td>
 
                           {/* Col 4: Toll Fare */}
-                          <td className="text-right">
+                          <td className="text-right num-cell">
                             {Number(journey.tollFare || 0) > 0
                               ? Number(journey.tollFare).toFixed(2)
                               : '-'}
                           </td>
 
                           {/* Col 5: Transaction Count */}
-                          <td className="text-right font-medium">
+                          <td className="text-right num-cell font-medium">
                             {Number(journey.transactionCount || 0).toLocaleString()}
                           </td>
 
                           {/* Col 6: Transaction Amount */}
-                          <td className="text-right font-semibold">
+                          <td className="text-right num-cell font-semibold">
                             {Number(journey.transactionAmount || 0).toLocaleString(
                               undefined,
                               { minimumFractionDigits: 2, maximumFractionDigits: 2 }
@@ -356,48 +380,91 @@ export const NhaiTrafficReport = () => {
                     });
                   })}
 
-                  {/* ── Journey Total Block (Highlighted as in screenshot) ── */}
-                  {(reportData.journeyTotals || []).map((jt, idx) => (
-                    <tr key={jt.journeyType} className="row-journey-total">
-                      {idx === 0 && (
-                        <>
-                          <td className="empty-cell" />
-                          <td className="empty-cell" />
-                          <td
-                            rowSpan={reportData.journeyTotals.length}
-                            className="journey-total-label-cell"
-                          >
-                            Journey Total
-                          </td>
-                        </>
-                      )}
-                      <td className="journey-total-type-cell font-bold">
-                        {jt.journeyType}
-                      </td>
-                      <td className="highlight-cell text-center">-</td>
-                      <td className="highlight-cell text-right font-bold">
-                        {Number(jt.transactionCount || 0).toLocaleString()}
-                      </td>
-                      <td className="highlight-cell text-right font-bold">
-                        {Number(jt.transactionAmount || 0).toLocaleString(
-                          undefined,
-                          { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {/* ── Grand Total Row ── */}
-                  <tr className="row-grand-total">
-                    <td className="empty-cell" />
-                    <td className="empty-cell" />
-                    <td colSpan="3" className="grand-total-label-cell">
-                      Grand Total
+                  {/* ── Journey Total & Summary Block (Matching Image 2) ── */}
+                  {/* Row 1: Total Single Journey */}
+                  <tr className="row-single-total">
+                    <td className="summary-empty-cell" />
+                    <td className="summary-empty-cell" />
+                    <td className="summary-empty-cell" />
+                    <td className="summary-yellow-cell font-bold">
+                      {journeyTotals.single.journeyType}
                     </td>
-                    <td className="grand-total-val-cell text-right">
+                    <td className="summary-yellow-cell text-center font-bold">-</td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.single.transactionCount || 0).toLocaleString()}
+                    </td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.single.transactionAmount || 0).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  {/* Row 2: Total Return Journey */}
+                  <tr className="row-journey-return">
+                    <td className="summary-yellow-cell font-bold">
+                      {journeyTotals.ret.journeyType}
+                    </td>
+                    <td className="summary-yellow-cell text-center font-bold">-</td>
+                    <td rowSpan={3} className="summary-journey-center-cell font-bold text-center">
+                      Journey Total
+                    </td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.ret.transactionCount || 0).toLocaleString()}
+                    </td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.ret.transactionAmount || 0).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td rowSpan={3} colSpan={2} className="summary-empty-white-cell" />
+                  </tr>
+
+                  {/* Row 3: Total DiscountDC */}
+                  <tr className="row-journey-discount">
+                    <td className="summary-yellow-cell font-bold">
+                      {journeyTotals.discount.journeyType}
+                    </td>
+                    <td className="summary-yellow-cell text-center font-bold">-</td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.discount.transactionCount || 0).toLocaleString()}
+                    </td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.discount.transactionAmount || 0).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  {/* Row 4: Total Exempted/ Pass vehicles */}
+                  <tr className="row-journey-exempt">
+                    <td className="summary-yellow-cell font-bold">
+                      {journeyTotals.exempt.journeyType}
+                    </td>
+                    <td className="summary-yellow-cell text-center font-bold">-</td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.exempt.transactionCount || 0).toLocaleString()}
+                    </td>
+                    <td className="summary-yellow-cell text-right font-bold">
+                      {Number(journeyTotals.exempt.transactionAmount || 0).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                  </tr>
+
+                  {/* Row 5: GRAND TOTAL (Golden Yellow banner matching Image 2) */}
+                  <tr className="row-grand-total">
+                    <td colSpan={5} className="grand-total-label-cell">
+                      GRAND TOTAL
+                    </td>
+                    <td className="grand-total-val-cell text-center">
                       Total Count = {Number(reportData.grandTotal?.totalCount || 0).toLocaleString()}
                     </td>
-                    <td className="grand-total-val-cell text-right">
+                    <td className="grand-total-val-cell text-center">
                       Total Amount = ₹{Number(reportData.grandTotal?.totalAmount || 0).toLocaleString(
                         undefined,
                         { minimumFractionDigits: 2, maximumFractionDigits: 2 }

@@ -15,7 +15,7 @@
     .report-title {
       font-size: 1.8rem;
       font-weight: 800;
-      color: #0d47a1;
+      color: #0b4ea2;
       letter-spacing: 1.2px;
       margin: 0;
       text-transform: uppercase;
@@ -117,12 +117,12 @@
     }
 
     .btn-royal-blue {
-      background-color: #0d47a1;
+      background-color: #0b4ea2;
       color: #ffffff;
 
       &:hover:not(:disabled) {
         background-color: #1565c0;
-        box-shadow: 0 2px 6px rgba(13, 71, 161, 0.35);
+        box-shadow: 0 2px 6px rgba(11, 78, 162, 0.35);
       }
     }
 
@@ -169,30 +169,34 @@
       white-space: nowrap;
 
       thead {
-        background-color: #0d47a1;
+        background-color: #0b4ea2;
         color: #ffffff;
         position: sticky;
         top: 0;
         z-index: 2;
 
         th {
-          background-color: #0d47a1;
+          background-color: #0b4ea2;
           color: #ffffff;
           padding: 11px 14px;
           font-weight: 700;
           text-align: left;
-          letter-spacing: 0.3px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          letter-spacing: 0.4px;
+          text-transform: uppercase;
+          border: 1px solid rgba(255, 255, 255, 0.25);
 
           &.text-right {
             text-align: right;
+          }
+          &.text-center {
+            text-align: center;
           }
         }
       }
 
       tbody {
         tr {
-          border-bottom: 1px solid #e2e8f0;
+          border-bottom: 1px solid #cbd5e1;
           transition: background-color 0.12s ease;
 
           &:hover {
@@ -204,14 +208,26 @@
           padding: 8px 12px;
           color: #1e293b;
           border: 1px solid #cbd5e1;
+          vertical-align: middle;
 
           &.border-merged-cell {
             vertical-align: middle;
             background-color: #ffffff;
           }
 
+          &.plaza-code-cell {
+            color: #0b4ea2;
+            font-weight: 700;
+            font-size: 0.85rem;
+          }
+
+          &.plaza-name-cell {
+            color: #1e293b;
+            font-weight: 600;
+          }
+
           &.vc-title-cell {
-            color: #0d47a1;
+            color: #0b4ea2;
             font-weight: 700;
             background-color: #ffffff;
           }
@@ -221,67 +237,74 @@
             font-weight: 500;
           }
 
-          &.empty-cell {
-            background-color: #f8fafc;
-            border: 1px solid #cbd5e1;
+          &.num-cell {
+            font-variant-numeric: tabular-nums;
           }
         }
 
-        /* Journey Total Highlighting */
-        .row-journey-total {
-          background-color: #fef9c3;
+        /* ── Summary & Journey Totals (Matching Image 2 and Pass Summary) ── */
+        .summary-yellow-cell {
+          background-color: #fef08a !important;
+          color: #000000 !important;
+          border: 1px solid #ca8a04 !important;
+          padding: 8px 12px;
+          font-size: 0.82rem;
 
-          &:hover {
-            background-color: #fef08a;
-          }
-
-          td {
-            border: 1px solid #ca8a04;
-          }
-
-          .journey-total-label-cell {
-            background-color: #fef08a;
-            color: #854d0e;
-            font-weight: 800;
-            text-align: center;
-            vertical-align: middle;
-            font-size: 0.88rem;
-          }
-
-          .journey-total-type-cell {
-            color: #713f12;
-          }
-
-          .highlight-cell {
-            background-color: #fef08a;
-            color: #713f12;
+          &.font-bold {
             font-weight: 700;
           }
+          &.font-semibold {
+            font-weight: 600;
+          }
         }
 
-        /* Grand Total Highlighting */
+        .summary-journey-center-cell {
+          background-color: #fef08a !important;
+          color: #000000 !important;
+          font-weight: 800;
+          text-align: center;
+          vertical-align: middle !important;
+          font-size: 0.88rem;
+          border: 1px solid #ca8a04 !important;
+          letter-spacing: 0.3px;
+        }
+
+        .summary-empty-cell {
+          background-color: #ffffff !important;
+          border: 1px solid #cbd5e1 !important;
+        }
+
+        .summary-empty-white-cell {
+          background-color: #ffffff !important;
+          border: 1px solid #cbd5e1 !important;
+        }
+
+        /* ── Grand Total Highlighting (Golden Yellow Matching Image 1 & 2) ── */
         .row-grand-total {
           background-color: #fde047;
           font-size: 0.88rem;
 
           td {
-            border: 1.5px solid #a16207;
-            padding: 10px 14px;
+            border: 1.5px solid #a16207 !important;
+            padding: 11px 14px;
           }
 
           .grand-total-label-cell {
-            background-color: #facc15;
-            color: #713f12;
+            background-color: #facc15 !important;
+            color: #000000 !important;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
+            letter-spacing: 0.8px;
             text-align: center;
+            font-size: 0.9rem;
           }
 
           .grand-total-val-cell {
-            color: #713f12;
+            color: #000000 !important;
             font-weight: 800;
-            background-color: #fef08a;
+            background-color: #fef08a !important;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
           }
         }
       }
