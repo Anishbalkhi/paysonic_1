@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DisputeReportService from '../../services/dispute/DisputeReportService';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
-import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
+import { useOnboardedPlazas } from '../../hooks/useOnboardedPlazas';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './DisputeDetailReport.scss';
 
@@ -18,19 +17,7 @@ export const DisputeDetailReport = () => {
   const [toDate, setToDate] = useState(defaultRange.to);
   const [plazaId, setPlazaId] = useState('ALL');
   const [functionCode, setFunctionCode] = useState('ALL');
-  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
-
-  useEffect(() => {
-    let isMounted = true;
-    DisputeManagementService.getRealtimePlazas().then((live) => {
-      if (isMounted && Array.isArray(live) && live.length > 0) {
-        setPlazas(live);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { plazas } = useOnboardedPlazas();
 
   // State
   const [records, setRecords] = useState([]);

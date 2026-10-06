@@ -2,26 +2,13 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
-import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearch.scss';
 
 export const TransactionSearch = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
-
-  useEffect(() => {
-    let isMounted = true;
-    DisputeManagementService.getRealtimePlazas().then((live) => {
-      if (isMounted && Array.isArray(live) && live.length > 0) {
-        setPlazas(live);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { plazas } = useOnboardedPlazas();
 
   // Mode: 'NORMAL' vs 'DISPUTE' (synced with ?type= URL search param)
   const initialType = (searchParams.get('type') || '').toLowerCase() === 'dispute' ? 'DISPUTE' : 'NORMAL';

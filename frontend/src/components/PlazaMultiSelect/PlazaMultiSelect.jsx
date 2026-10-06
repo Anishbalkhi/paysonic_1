@@ -1,20 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import httpClient from '../../services/api/httpClient';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import './PlazaMultiSelect.scss';
-
-// Fallback list of known plazas from database
-const DEFAULT_PLAZAS = [
-  { id: '501101', name: 'MUMBAI PLAZA NH-04' },
-  { id: '502202', name: 'PUNE BYPASS PLAZA' },
-  { id: '503303', name: 'NASHIK TOLL PLAZA' },
-  { id: '504404', name: 'KOLHAPUR PLAZA' },
-  { id: '505505', name: 'SOLAPUR PLAZA NH-65' },
-  { id: '000000', name: 'DELL' },
-  { id: '111111', name: 'PAY PAY 1' },
-  { id: '161616', name: 'ARCON' },
-  { id: '787878', name: 'PLAZA 1' },
-  { id: '908895', name: 'JAIPUR' }
-];
 
 export const PlazaMultiSelect = ({
   selectedPlazas = [],
@@ -25,42 +11,8 @@ export const PlazaMultiSelect = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
+  const { plazas } = useOnboardedPlazas();
   const containerRef = useRef(null);
-
-  // Fetch live plazas from Railway /api/plazas on mount
-  useEffect(() => {
-    let isMounted = true;
-    const fetchPlazas = async () => {
-      try {
-        const res = await httpClient.get('/api/plazas');
-        if (res && Array.isArray(res.data) && res.data.length > 0) {
-          const fetched = res.data.map((p) => ({
-            id: String(p.id || p.plazaId),
-            name: p.name || p.plazaName || `Plaza ${p.id || p.plazaId}`,
-          }));
-
-          // Merge with DEFAULT_PLAZAS ensuring no duplicates
-          const map = new Map();
-          [...DEFAULT_PLAZAS, ...fetched].forEach((item) => {
-            if (item.id && !map.has(item.id)) {
-              map.set(item.id, item);
-            }
-          });
-
-          if (isMounted) {
-            setPlazas(Array.from(map.values()));
-          }
-        }
-      } catch (err) {
-        // Fallback to DEFAULT_PLAZAS is already in place
-      }
-    };
-    fetchPlazas();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {

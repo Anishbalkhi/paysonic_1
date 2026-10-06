@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FUNCTION_CODES, DEFAULT_PLAZAS } from '../../config/disputeConstants';
+import { FUNCTION_CODES } from '../../config/disputeConstants';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import MoreInformationModal from '../../components/DisputeModals/MoreInformationModal';
@@ -7,22 +8,9 @@ import './ChargebackAssign.scss';
 
 export const ChargebackAssign = () => {
   const [rows, setRows] = useState([]);
-  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
+  const { plazas } = useOnboardedPlazas();
   const [miniStats, setMiniStats] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Load realtime onboarded plazas
-  useEffect(() => {
-    let isMounted = true;
-    DisputeManagementService.getRealtimePlazas().then((live) => {
-      if (isMounted && Array.isArray(live) && live.length > 0) {
-        setPlazas(live);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Filters
   const [fromDate, setFromDate] = useState('');

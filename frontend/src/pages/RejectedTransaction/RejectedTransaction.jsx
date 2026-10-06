@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RejectedTransactionService from '../../services/rejectedTxn/RejectedTransactionService';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
-import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './RejectedTransaction.scss';
 
@@ -20,19 +19,7 @@ export const RejectedTransaction = () => {
   const [plazaId, setPlazaId] = useState('ALL');
   const [reason, setReason] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
-
-  useEffect(() => {
-    let isMounted = true;
-    DisputeManagementService.getRealtimePlazas().then((live) => {
-      if (isMounted && Array.isArray(live) && live.length > 0) {
-        setPlazas(live);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { plazas } = useOnboardedPlazas();
 
   // Live Database Data State
   const [records, setRecords] = useState([]);

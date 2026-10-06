@@ -760,6 +760,43 @@ export const Onboarding = () => {
     }
   };
 
+  const handleDeletePlaza = async (plazaId, plazaName) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete Plaza ${plazaName} (${plazaId})?\n\nThis will permanently remove it from the system and all plaza filters across the application.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await OnboardingService.deletePlaza(plazaId, {
+        actor: currentUser
+          ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
+          : undefined,
+      });
+
+      setStore((prev) => {
+        const updatedPlazas = (prev.plazas || []).filter((p) => String(p.id) !== String(plazaId));
+        return {
+          ...prev,
+          plazas: updatedPlazas,
+          lanes: (prev.lanes || []).filter((l) => String(l.plazaId) !== String(plazaId)),
+        };
+      });
+
+      if (selectedPlazaId === plazaId) {
+        const remaining = (store.plazas || []).filter((p) => String(p.id) !== String(plazaId));
+        setSelectedPlazaId(remaining.length > 0 ? remaining[0].id : '');
+      }
+
+      showToast(`✓ Plaza ${plazaName} (${plazaId}) deleted successfully.`, 'success');
+    } catch (err) {
+      const msg = err?.response?.data?.error || err.message || 'Failed to delete plaza';
+      showToast(msg, 'error');
+    }
+  };
+
   // =========================================================================
   // SUBMODULE 4: LANE DETAILS
   // =========================================================================
@@ -1577,6 +1614,15 @@ export const Onboarding = () => {
                                 }}
                               >
                                 Config
+                              </button>
+                              <button
+                                type="button"
+                                className="action-btn delete"
+                                title="Delete Plaza"
+                                onClick={() => handleDeletePlaza(p.id, p.name)}
+                                style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+                              >
+                                Delete
                               </button>
                             </div>
                           </td>

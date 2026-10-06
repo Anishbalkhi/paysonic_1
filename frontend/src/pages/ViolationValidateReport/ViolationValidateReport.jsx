@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationValidateService from '../../services/violation/ViolationValidateService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationValidateReport.scss';
 
@@ -14,6 +15,7 @@ export const ViolationValidateReport = () => {
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
   const [plazaId, setPlazaId] = useState('ALL');
+  const { plazas: onboardedPlazas } = useOnboardedPlazas();
   const [auditRemark, setAuditRemark] = useState('ALL');
   const [apiStatus, setApiStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
@@ -224,19 +226,6 @@ export const ViolationValidateReport = () => {
     };
   }, [serverSummary, records]);
 
-  // Dynamic filter options derived from active database records
-  const availablePlazas = useMemo(() => {
-    const map = new Map();
-    map.set('501101', '501101 - MUMBAI PLAZA NH-04');
-    records.forEach((r) => {
-      const pid = r.plazaId || r.tollPlazaId;
-      if (pid) {
-        map.set(String(pid), `${pid} - ${r.plazaName || 'MUMBAI PLAZA NH-04'}`);
-      }
-    });
-    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-  }, [records]);
-
   const availableRemarks = useMemo(() => {
     const set = new Set();
     records.forEach((r) => {
@@ -302,8 +291,10 @@ export const ViolationValidateReport = () => {
               onChange={(e) => setPlazaId(e.target.value)}
             >
               <option value="ALL">All Plazas</option>
-              {availablePlazas.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
+              {onboardedPlazas.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.codeLabel || `${p.id} - ${p.name}`}
+                </option>
               ))}
             </select>
           </div>

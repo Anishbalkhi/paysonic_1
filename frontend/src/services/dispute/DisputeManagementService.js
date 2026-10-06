@@ -394,10 +394,15 @@ class DisputeManagementService {
         return live.map((p) => ({
           id: String(p.id),
           name: p.name || `Plaza ${p.id}`,
+          label: `${p.name || ('Plaza ' + p.id)} (${p.id})`,
         }));
       }
     } catch (e) {
       console.warn('[DisputeManagementService] Failed to load realtime plazas:', e);
+    }
+    const cached = OnboardingService.getCachedPlazas();
+    if (Array.isArray(cached) && cached.length > 0) {
+      return cached;
     }
     return DEFAULT_PLAZAS;
   }

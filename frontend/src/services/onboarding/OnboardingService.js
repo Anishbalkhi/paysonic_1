@@ -37,8 +37,7 @@ const getActor = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SERVICE CLASS
-// ─────────────────────────────────────────────────────────────────────────────
+const CACHE_KEY_PLAZAS = 'paysonic_onboarded_plazas_cache';
 
 class OnboardingService {
   // ============================================================
@@ -46,8 +45,26 @@ class OnboardingService {
   // ============================================================
 
   /**
+   * Get cached plazas synchronously
+   */
+  getCachedPlazas() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY_PLAZAS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const localStore = getLocalStore();
+      if (localStore?.plazas && Array.isArray(localStore.plazas) && localStore.plazas.length > 0) {
+        return localStore.plazas;
+      }
+    } catch {}
+    return [];
+  }
+
+  /**
    * Load all plazas.
-   * Tries Railway GET /api/plazas → merges with localStorage seed data as fallback.
+   * Tries Railway GET /api/plazas → merges with localStorage cache as fallback.
    */
   async getPlazas() {
     try {
@@ -83,12 +100,15 @@ class OnboardingService {
           },
           _fromRailway: true,
         }));
+        try {
+          localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(normalised));
+        } catch {}
         return normalised;
       }
     } catch (err) {
       console.warn('[OnboardingService] Railway GET /api/plazas error:', err?.message);
     }
-    return [];
+    return this.getCachedPlazas();
   }
 
   // ============================================================
@@ -257,6 +277,17 @@ class OnboardingService {
       updatedPlazas = [...existingPlazas, plaza];
     }
     saveLocalStore({ ...local, plazas: updatedPlazas });
+    try {
+      localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(updatedPlazas));
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('paysonic:plazas_updated', {
+          detail: { action: isUpdate ? 'update' : 'create', plaza, plazas: updatedPlazas },
+        })
+      );
+    }
 
     // Audit trail
     UserActivityService.recordAuditEvent({
@@ -273,6 +304,58 @@ class OnboardingService {
     });
 
     return { ...plaza, _savedOnRailway: true };
+  }
+
+  /**
+   * Delete a plaza.
+   * DELETE /api/plazas/:id
+   * Updates local cache and dispatches live update event across the entire UI.
+   */
+  async deletePlaza(plazaId, { actor: actorOverride } = {}) {
+    const actor = actorOverride || getActor();
+    const local = getLocalStore() || {};
+    let savedOnRailway = false;
+
+    try {
+      await httpClient.delete(`/api/plazas/${plazaId}`, {
+        headers: { 'X-Actor-ID': actor.id },
+      });
+      savedOnRailway = true;
+    } catch (err) {
+      console.warn('[OnboardingService] Remote DELETE /api/plazas/' + plazaId + ' note:', err?.message);
+    }
+
+    // Update memory & cache
+    const existingPlazas = local.plazas || [];
+    const targetPlaza = existingPlazas.find((p) => String(p.id) === String(plazaId));
+    const updatedPlazas = existingPlazas.filter((p) => String(p.id) !== String(plazaId));
+    saveLocalStore({ ...local, plazas: updatedPlazas });
+
+    try {
+      localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(updatedPlazas));
+    } catch {}
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('paysonic:plazas_updated', {
+          detail: { action: 'delete', plazaId, plazas: updatedPlazas },
+        })
+      );
+    }
+
+    // Audit trail
+    UserActivityService.recordAuditEvent({
+      module: 'On Boarding',
+      action: 'DELETE_PLAZA',
+      actionLabel: 'Deleted Plaza Record',
+      status: 'SUCCESS',
+      target: targetPlaza ? `${targetPlaza.name} (${targetPlaza.id})` : `Plaza ID: ${plazaId}`,
+      details: `Plaza ${plazaId} deleted ${savedOnRailway ? 'from Railway MySQL.' : 'from system.'}`,
+      actor,
+      before: plazaId,
+    });
+
+    return { success: true, _savedOnRailway: savedOnRailway };
   }
 
   // ============================================================

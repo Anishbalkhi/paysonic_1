@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NhaiTrafficService from '../../services/summary/NhaiTrafficService';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
-import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './NhaiTrafficReport.scss';
 
@@ -16,19 +15,7 @@ export const NhaiTrafficReport = () => {
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
   const [plazaCode, setPlazaCode] = useState('ALL');
-  const [plazas, setPlazas] = useState(DEFAULT_PLAZAS);
-
-  useEffect(() => {
-    let isMounted = true;
-    DisputeManagementService.getRealtimePlazas().then((live) => {
-      if (isMounted && Array.isArray(live) && live.length > 0) {
-        setPlazas(live);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { plazas } = useOnboardedPlazas();
 
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
