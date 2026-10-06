@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS `user_sessions` (
     `plaza` VARCHAR(100) NOT NULL DEFAULT 'All plazas',
     `ip_address` VARCHAR(45) NOT NULL,
     `device` VARCHAR(100) NOT NULL,
+    `device_id` VARCHAR(64) NULL,
+    `reason` VARCHAR(150) NULL,
     `login_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `last_active` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `status` VARCHAR(20) NOT NULL DEFAULT 'Active',

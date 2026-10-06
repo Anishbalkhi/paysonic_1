@@ -29,6 +29,12 @@ public class UserSession {
     @Column(name = "device", length = 100, nullable = false)
     private String device;
 
+    @Column(name = "device_id", length = 64)
+    private String deviceId;
+
+    @Column(name = "reason", length = 150)
+    private String reason;
+
     @Column(name = "login_time", nullable = false)
     private LocalDateTime loginTime = LocalDateTime.now();
 
@@ -82,4 +88,10 @@ public class UserSession {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDeviceId() { return deviceId; }
+    public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
+
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
 }

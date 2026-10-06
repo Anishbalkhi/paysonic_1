@@ -39,6 +39,23 @@ const getCachedIpLocation = (ip) => {
   } catch { return null; }
 };
 
+// ─── Device ID Helper ────────────────────────────────────────────────────────
+// Generates or retrieves a persistent client device identifier for this browser/PC
+export const getOrCreateDeviceId = () => {
+  if (typeof window === 'undefined') return 'DEV-SERVER';
+  try {
+    let deviceId = localStorage.getItem('paysonic_device_id');
+    if (!deviceId) {
+      deviceId = 'DEV-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+      localStorage.setItem('paysonic_device_id', deviceId);
+    }
+    return deviceId;
+  } catch {
+    return 'DEV-DEFAULT';
+  }
+};
+
+
 const saveIpLocationCache = (ip, location) => {
   try {
     const cache = JSON.parse(localStorage.getItem(IP_LOCATION_CACHE_KEY) || '{}');
@@ -126,23 +143,37 @@ class UserActivityService {
    * Register a live active session on login.
    * Single device login rule (FR #7):
    * - Only Master Admin can be logged in on multiple devices concurrently.
-   * - For all other roles, any previous active sessions are terminated upon new login.
+   * - For all other roles, logging in on a DIFFERENT device terminates any prior device's session.
+   * - Multiple tabs/windows on the SAME device remain connected and share active status.
    */
-  async registerActiveSession({ userId, username, name, role, plaza, ipAddress, device }) {
+  async registerActiveSession({ userId, username, name, role, plaza, ipAddress, device, deviceId }) {
     const isMasterAdmin = role === 'Master Admin';
+    const currentDeviceId = deviceId || getOrCreateDeviceId();
     const sessions = getStoredActiveSessions();
 
     // Mark prior active sessions for this user as Terminated ONLY if not Master Admin
-    const updated = sessions.map((s) =>
-      !isMasterAdmin && s.userId === userId && s.status === 'Active'
-        ? { ...s, status: 'Terminated', lastActive: 'Closed (Another device login)' }
-        : s
-    );
+    // and ONLY if originating from a DIFFERENT device
+    const updated = sessions.map((s) => {
+      if (!isMasterAdmin && s.userId === userId && s.status === 'Active') {
+        const isDifferentDevice = s.deviceId && s.deviceId !== currentDeviceId;
+        if (isDifferentDevice) {
+          return {
+            ...s,
+            status: 'Terminated',
+            reason: 'Account was logged in on another device',
+            terminatedByDifferentDevice: true,
+            lastActive: 'Closed (Another device login)'
+          };
+        }
+      }
+      return s;
+    });
 
     const sessionId = `SES-${Date.now().toString().slice(-6)}`;
     const newSession = {
       sessionId,
       userId,
+      deviceId: currentDeviceId,
       username: username || (userId || '').toLowerCase(),
       name,
       role,
@@ -181,10 +212,10 @@ class UserActivityService {
   }
 
   /**
-   * Verify if a session is still active or has been superseded/terminated.
+   * Verify if a session is still active or has been superseded/terminated by another device.
    */
   async checkSessionStatus(sessionId) {
-    if (!sessionId) return { active: false, status: 'Terminated' };
+    if (!sessionId) return { active: false, status: 'Terminated', terminatedByDifferentDevice: false };
     try {
       const res = await httpClient.get(`/api/activity/sessions/${sessionId}/status`);
       if (res && res.data) {
@@ -194,10 +225,15 @@ class UserActivityService {
       // Fallback to local active sessions cache if network is temporarily unreachable
       const local = getStoredActiveSessions().find((s) => s.sessionId === sessionId);
       if (local) {
-        return { active: local.status === 'Active', status: local.status };
+        return {
+          active: local.status === 'Active',
+          status: local.status,
+          terminatedByDifferentDevice: !!local.terminatedByDifferentDevice,
+          reason: local.reason || ''
+        };
       }
     }
-    return { active: true, status: 'Active' };
+    return { active: true, status: 'Active', terminatedByDifferentDevice: false };
   }
 
   /**

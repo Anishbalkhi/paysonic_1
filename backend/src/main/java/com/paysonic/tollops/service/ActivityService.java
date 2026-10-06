@@ -207,10 +207,20 @@ public class ActivityService {
         // Only Master Admin can be logged in on multiple devices.
         if (!"Master Admin".equalsIgnoreCase(session.getRole())) {
             List<UserSession> existingSessions = userSessionRepository.findByUserId(session.getUserId());
+            String newDeviceId = session.getDeviceId() != null ? session.getDeviceId().trim() : "";
             for (UserSession s : existingSessions) {
                 if ("Active".equalsIgnoreCase(s.getStatus()) && !s.getSessionId().equals(session.getSessionId())) {
+                    String existingDeviceId = s.getDeviceId() != null ? s.getDeviceId().trim() : "";
+                    boolean isDifferentDevice = !newDeviceId.isEmpty() && !existingDeviceId.isEmpty()
+                            && !newDeviceId.equalsIgnoreCase(existingDeviceId);
+
                     s.setStatus("Terminated");
                     s.setLastActive(LocalDateTime.now());
+                    if (isDifferentDevice) {
+                        s.setReason("Account was logged in on another device");
+                    } else {
+                        s.setReason("Session refreshed on same device");
+                    }
                     userSessionRepository.save(s);
                 }
             }
@@ -225,7 +235,7 @@ public class ActivityService {
     public Map<String, Object> getSessionStatus(String sessionId) {
         Optional<UserSession> sessionOpt = userSessionRepository.findById(sessionId);
         if (sessionOpt.isEmpty()) {
-            return Map.of("active", false, "status", "Terminated", "reason", "Session terminated or superseded by another device");
+            return Map.of("active", false, "status", "Terminated", "reason", "Session terminated", "terminatedByDifferentDevice", false);
         }
         UserSession session = sessionOpt.get();
         boolean active = "Active".equalsIgnoreCase(session.getStatus());
@@ -234,9 +244,10 @@ public class ActivityService {
         res.put("status", session.getStatus());
         res.put("sessionId", sessionId);
         res.put("userId", session.getUserId());
-        if (!active) {
-            res.put("reason", "Account was logged in on another device");
-        }
+        res.put("deviceId", session.getDeviceId());
+        res.put("reason", session.getReason() != null ? session.getReason() : "");
+        boolean terminatedByDifferentDevice = !active && "Account was logged in on another device".equalsIgnoreCase(session.getReason());
+        res.put("terminatedByDifferentDevice", terminatedByDifferentDevice);
         return res;
     }
 
