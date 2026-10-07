@@ -22,7 +22,6 @@ export const DisputeDashboard = () => {
   const [tatPage, setTatPage] = useState(1);
   const [tatPageSize, setTatPageSize] = useState(4);
   const [isTatCollapsed, setIsTatCollapsed] = useState(false);
-  const [simulateHighVolume, setSimulateHighVolume] = useState(false);
 
   const defaultPlazaId = OnboardingService.getCachedPlazas()[0]?.plazaId || '501101';
   const plazaId = currentUser?.role === 'Plaza Admin' || currentUser?.role === 'Plaza POS'
@@ -47,46 +46,10 @@ export const DisputeDashboard = () => {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  // High-volume simulated pool (120 disputes) for scalability testing & demonstration
-  const simulatedDisputes = useMemo(() => {
-    const reasons = [
-      'Testing 04',
-      'Testing 05',
-      'Pre Arb',
-      'FASTag Double Debit',
-      'Incorrect Toll Class',
-      'Blacklist Bypass',
-      'Technical Timeout',
-      'Overcharge Dispute',
-      'Vehicle Tag Mismatch',
-      'Split Second Double Deduction',
-    ];
-    const plazas = ['501101', '502202', '503303', '504404', '505505'];
-    const list = [];
-    for (let i = 1; i <= 120; i++) {
-      const mod = i % 3;
-      const daysLeft = mod === 0 ? -1 : mod === 1 ? 1 : 2;
-      const label = daysLeft < 0 ? 'Overdue' : `${daysLeft}d Left`;
-      const colorClass = daysLeft < 0 ? 'badge-danger' : daysLeft === 1 ? 'badge-orange' : 'badge-amber';
-      const disputeAmount = Number((40 + ((i * 37) % 350)).toFixed(2));
-      list.push({
-        rowId: `SIM-DISP-${1000 + i}`,
-        acqTxnId: `10204773580852${(4700 + i).toString().padStart(4, '0')}`,
-        cbReason: reasons[i % reasons.length],
-        disputeAmount,
-        plazaId: plazas[i % plazas.length],
-        daysLeft,
-        tatBadge: { label, colorClass },
-        vrn: `MH${12 + (i % 10)}VL${1000 + i}`,
-      });
-    }
-    return list;
-  }, []);
-
+  // Real at-risk disputes approaching NPCI 7-day TAT SLA
   const atRisk = useMemo(() => {
-    if (simulateHighVolume) return simulatedDisputes;
     return stats?.atRiskDisputes || [];
-  }, [stats, simulateHighVolume, simulatedDisputes]);
+  }, [stats]);
 
   // Compute severity breakdown counts
   const severityStats = useMemo(() => {
@@ -146,10 +109,10 @@ export const DisputeDashboard = () => {
     return filteredAtRisk.slice(from, from + tatPageSize);
   }, [filteredAtRisk, tatPage, tatPageSize]);
 
-  // Reset page when filter, search, page size or simulation changes
+  // Reset page when filter, search, or page size changes
   useEffect(() => {
     setTatPage(1);
-  }, [tatSearch, tatSeverity, tatPageSize, simulateHighVolume]);
+  }, [tatSearch, tatSeverity, tatPageSize]);
 
   if (loading || !stats) {
     return (
@@ -194,14 +157,6 @@ export const DisputeDashboard = () => {
                 </span>
               </div>
               <div className="tat-banner-actions">
-                <button
-                  type="button"
-                  className={`tat-simulate-btn ${simulateHighVolume ? 'active' : ''}`}
-                  onClick={() => setSimulateHighVolume(!simulateHighVolume)}
-                  title="Toggle 120 simulated disputes to verify high-volume performance"
-                >
-                  {simulateHighVolume ? '⚡ 120 Simulated (Reset)' : '⚡ Test 100+ Disputes'}
-                </button>
                 <button
                   type="button"
                   className="tat-action-btn"

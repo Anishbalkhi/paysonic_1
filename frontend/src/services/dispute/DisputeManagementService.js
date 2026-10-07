@@ -26,7 +26,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '27-09-2026',
     cbRaisedDaysAgo: 6,
-    cbReason: 'Testing 04',
+    cbReason: 'FASTag Double Debit',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'No',
@@ -51,7 +51,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '28-09-2026',
     cbRaisedDaysAgo: 5,
-    cbReason: 'Testing 05',
+    cbReason: 'Incorrect Toll Fare Deduction',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'No',
@@ -76,7 +76,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 1,
-    cbReason: 'Testing 02',
+    cbReason: 'FASTag Duplicate Deduction',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'Yes',
@@ -101,7 +101,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 1,
-    cbReason: 'Testing 03',
+    cbReason: 'Tag In Blacklist Exception',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'Yes',
@@ -126,7 +126,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 1,
-    cbReason: 'Testing 01',
+    cbReason: 'Overcharged Toll Fare',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'Yes',
@@ -151,7 +151,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 1,
-    cbReason: 'Testing 06',
+    cbReason: 'Toll Deducted Without Passage',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'Yes',
@@ -169,19 +169,19 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'SK030902',
     vrn: '34MH51FA820',
     tagId: '34161FA82032866C03B7B640',
-    plazaId: '787887',
-    plazaName: 'JEET',
+    plazaId: '501101',
+    plazaName: 'MUMBAI PLAZA NH-04',
     txnDate: '03-09-2026 10:00:00',
     txnAmount: 25.0,
     disputeAmount: 25.0,
     cbRaisedDate: '03-09-2026',
     cbRaisedDaysAgo: 1,
-    cbReason: 'Chargeback raised for extra debited amount',
+    cbReason: 'FASTag Double Debit',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'Yes',
     disputeStatus: 'Rejected',
-    plazaReason: 'Dummy Testing',
+    plazaReason: 'AVC optical sensor verified vehicle passage.',
     assigned: true,
     adminReason: 'Verify if multiple debits occurred.',
     adminEvidence: ['customer_complaint.pdf'],
@@ -194,14 +194,14 @@ const INITIAL_SEED_ROWS = [
     tollTxnId: 'ZP030902',
     vrn: 'GH92DD6152',
     tagId: '34161FA82033E8260213B680',
-    plazaId: '787878',
-    plazaName: 'PLAZA 1',
+    plazaId: '503303',
+    plazaName: 'NASHIK TOLL PLAZA',
     txnDate: '02-09-2026 02:00:00',
     txnAmount: 5.0,
     disputeAmount: 5.0,
     cbRaisedDate: '26-09-2026',
     cbRaisedDaysAgo: 7,
-    cbReason: 'Pre Arb',
+    cbReason: 'Pre-Arbitration: Unrecognized Journey',
     functionCode: 471,
     disputeType: 'Pre-Arbitration Raised',
     plazaAction: 'No',
@@ -226,7 +226,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 5.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 1,
-    cbReason: 'Goodfaith',
+    cbReason: 'Goodfaith Adjustment: Toll Gate Boom Failure Reversal',
     functionCode: 680,
     disputeType: 'Goodfaith Raised',
     plazaAction: 'No',
@@ -251,7 +251,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 5.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 1,
-    cbReason: 'Arbitration',
+    cbReason: 'Arbitration: Vehicle Class Discrepancy',
     functionCode: 479,
     disputeType: 'Arbitration Raised',
     plazaAction: 'No',
@@ -276,7 +276,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 2,
-    cbReason: 'Arbitration',
+    cbReason: 'Arbitration: Optical Sensor Discrepancy',
     functionCode: 479,
     disputeType: 'Arbitration Raised',
     plazaAction: 'No',
@@ -301,7 +301,7 @@ const INITIAL_SEED_ROWS = [
     disputeAmount: 80.0,
     cbRaisedDate: '02-09-2026',
     cbRaisedDaysAgo: 2,
-    cbReason: 'Testing CB',
+    cbReason: 'Delayed Settlement Dispute',
     functionCode: 450,
     disputeType: 'Debit Chargeback Raised',
     plazaAction: 'No',
@@ -324,7 +324,7 @@ class DisputeManagementService {
     if (typeof window === 'undefined') return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
-      if (!raw) {
+      if (!raw || raw.includes('Testing 04') || raw.includes('Testing 05') || raw.includes('PLAZA 1')) {
         localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(INITIAL_SEED_ROWS));
       } else {
         // Automatically migrate any legacy prototype records if found
@@ -355,6 +355,18 @@ class DisputeManagementService {
     if (!Array.isArray(rows)) return INITIAL_SEED_ROWS;
     let modified = false;
 
+    const REASON_MAPPING = {
+      'Testing 04': 'FASTag Double Debit',
+      'Testing 05': 'Incorrect Toll Fare Deduction',
+      'Testing 01': 'Overcharged Toll Fare',
+      'Testing 02': 'FASTag Duplicate Deduction',
+      'Testing 03': 'Tag In Blacklist Exception',
+      'Testing 06': 'Toll Deducted Without Passage',
+      'Testing CB': 'Delayed Settlement Dispute',
+      'Pre Arb': 'Pre-Arbitration: Unrecognized Journey',
+      'Dummy Testing': 'AVC optical sensor verified vehicle passage',
+    };
+
     // Dynamically retrieve realtime onboarded plazas from OnboardingService
     const onboardedList = (Array.isArray(customPool) && customPool.length > 0)
       ? customPool
@@ -365,13 +377,24 @@ class DisputeManagementService {
     const validPlazas = onboardedList.filter((p) => {
       const id = String(p.id || p.plazaId || '').trim();
       const name = (p.name || p.plazaName || '').trim().toLowerCase();
-      return id && id !== '600601' && id !== '600602' && id !== '778999' && id !== '778899' && !name.includes('dummy') && name !== 'gluten';
+      return (
+        id &&
+        id !== '600601' &&
+        id !== '600602' &&
+        id !== '778999' &&
+        id !== '778899' &&
+        id !== '787878' &&
+        !name.includes('dummy') &&
+        name !== 'gluten' &&
+        name !== 'plaza 1'
+      );
     });
 
     const activePool = validPlazas.length > 0 ? validPlazas : DEFAULT_PLAZAS;
     const validIdSet = new Set(activePool.map((p) => String(p.id || p.plazaId)));
 
     const updated = rows.map((r, idx) => {
+      let rowUpdated = { ...r };
       const pId = String(r.plazaId || '').trim();
       const pName = (r.plazaName || '').trim();
       const pNameLower = pName.toLowerCase();
@@ -381,10 +404,12 @@ class DisputeManagementService {
         !pId ||
         pNameLower.includes('dummy') ||
         pNameLower === 'gluten' ||
+        pNameLower === 'plaza 1' ||
         pId === '600601' ||
         pId === '600602' ||
         pId === '778899' ||
         pId === '778999' ||
+        pId === '787878' ||
         !validIdSet.has(pId);
 
       if (isLegacy) {
@@ -392,13 +417,23 @@ class DisputeManagementService {
         const target = activePool[idx % activePool.length];
         const tid = String(target.id || target.plazaId);
         const tname = target.name || target.plazaName || `Plaza ${tid}`;
-        return {
-          ...r,
-          plazaId: tid,
-          plazaName: tname,
-        };
+        rowUpdated.plazaId = tid;
+        rowUpdated.plazaName = tname;
       }
-      return r;
+
+      // Sanitize dummy testing reasons
+      if (REASON_MAPPING[r.cbReason] || (r.cbReason && r.cbReason.toLowerCase().startsWith('testing'))) {
+        modified = true;
+        rowUpdated.cbReason = REASON_MAPPING[r.cbReason] || 'FASTag Double Debit';
+      }
+
+      // Sanitize dummy testing plaza decisions
+      if (r.plazaReason === 'Dummy Testing') {
+        modified = true;
+        rowUpdated.plazaReason = 'AVC optical sensor verified vehicle passage';
+      }
+
+      return rowUpdated;
     });
 
     if (modified) {
