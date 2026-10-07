@@ -17,22 +17,23 @@ export const Login = () => {
   const [timeoutNotice, setTimeoutNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check for inactivity timeout message from session or query param
+  // Clean up any inactivity notice and only show relevant device notices
   React.useEffect(() => {
+    sessionStorage.removeItem('paysonic_timeout_notice');
     const params = new URLSearchParams(location.search);
     const reason = params.get('reason');
+    if (reason === 'inactivity') {
+      navigate('/login', { replace: true });
+      return;
+    }
     const notice =
-      sessionStorage.getItem('paysonic_timeout_notice') ||
-      (reason === 'inactivity'
-        ? 'You have been automatically logged out due to 5 minutes of inactivity.'
-        : reason === 'concurrent_device'
+      reason === 'concurrent_device'
         ? 'You have been logged out because your account was logged in on another device.'
-        : '');
+        : '';
     if (notice) {
       setTimeoutNotice(notice);
-      sessionStorage.removeItem('paysonic_timeout_notice');
     }
-  }, [location.search]);
+  }, [location.search, navigate]);
 
   // Time-based theme & video detection
   const getIsDayTime = () => {

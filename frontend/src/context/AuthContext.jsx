@@ -203,7 +203,7 @@ export const AuthProvider = ({ children }) => {
         validateLiveSession();
       } else if (e.key === 'paysonic_session_expired') {
         logout();
-        window.location.href = '/login?reason=inactivity';
+        window.location.href = '/login';
       }
     };
 
@@ -275,9 +275,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('actorId');
         localStorage.removeItem(LAST_ACTIVITY_KEY);
         localStorage.setItem('paysonic_session_expired', Date.now().toString());
-        sessionStorage.setItem(TIMEOUT_NOTICE_KEY, 'You have been automatically logged out due to 5 minutes of inactivity.');
+        sessionStorage.removeItem(TIMEOUT_NOTICE_KEY);
         setCurrentUser(null);
-        window.location.href = '/login?reason=inactivity';
+        window.location.href = '/login';
       }
     }, 4000);
 
