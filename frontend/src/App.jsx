@@ -12,9 +12,7 @@ const AppLayout = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const location = useLocation();
   const { currentUser } = useAuth();
-  const isDashboard = location.pathname === '/';
   const isLoginPage = location.pathname === '/login';
-
   const roleSlug = getRoleSlug(currentUser?.role || 'Master Admin');
 
   useEffect(() => {
@@ -23,10 +21,6 @@ const AppLayout = () => {
 
   // Login page renders without sidebar/topbar
   if (isLoginPage) {
-    return <AppRoutes />;
-  }
-
-  if (isDashboard) {
     return <AppRoutes />;
   }
 

@@ -8,10 +8,8 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import Counter from "./Counter";
 import Sparkline from "./Sparkline";
-import Sidebar from "./Sidebar/Sidebar";
 import WorkstationTerminal from "./WorkstationTerminal/WorkstationTerminal";
 import OperationsModal from "./OperationsModal/OperationsModal";
-import ChangePasswordModal from "./ChangePasswordModal/ChangePasswordModal";
 import { getRoleSlug } from "../config/roleMenus";
 
 function inr(n) {
@@ -113,34 +111,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  function toggleSidebar() {
-    if (typeof window !== "undefined" && window.innerWidth <= 860) {
-      setMobileOpen((v) => !v);
-    } else {
-      setCollapsed((v) => !v);
-    }
-  }
-
-  // Close sidebar when tapping the dark overlay on mobile
-  function handleAppClick(e) {
-    if (mobileOpen && e.target === e.currentTarget) {
-      setMobileOpen(false);
-    }
-  }
-
-  const isDesktop = typeof window === 'undefined' || window.innerWidth > 860;
-  const isDesktopCollapsed = collapsed && isDesktop;
-
-  const appClass = [
-    "app",
-    "paysonic-app",
-    "app-dashboard",
-    isDesktopCollapsed ? "collapsed" : "",
-    mobileOpen ? "mobile-open" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   if (loadError) {
     return (
       <div className="status-msg">
@@ -160,10 +130,8 @@ export default function Dashboard() {
   // disp comes from tier2 — may be null while secondary data loads
   const disp = tier2Data?.disputes ?? null;
 
-
-
   return (
-    <div className={appClass} id="app" data-role={roleSlug} onClick={handleAppClick}>
+    <div className="dashboard-page" data-role={roleSlug}>
       <Script
         src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
         strategy="afterInteractive"
@@ -175,22 +143,7 @@ export default function Dashboard() {
         onLoad={() => setScriptsReady((s) => ({ ...s, chart: true }))}
       />
 
-      <Sidebar
-        isOpen={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        isCollapsed={isDesktopCollapsed}
-        onToggleCollapse={toggleSidebar}
-      />
-
-      <main className="main">
-        <Topbar
-          onToggleMobileNav={() => setMobileOpen((v) => !v)}
-          title="Toll Operations Console"
-          crumb="NETC FASTag / Central Telemetry"
-        />
-
-        <div className="dashboard-content">
-
+      <div className="dashboard-content">
         {userRole === 'Plaza POS' || userRole === 'Request Tag Details' ? (
           <WorkstationTerminal
             userRole={userRole}
@@ -298,7 +251,6 @@ export default function Dashboard() {
           Paysonic · UAT Operations Console · Mode: {IS_DEV_DATA_MODE ? "DEV" : "PROD"}
         </div>
       </div>
-    </main>
 
       <OperationsModal operation={activeOp} onClose={() => setActiveOp(null)} />
     </div>
@@ -310,24 +262,22 @@ export default function Dashboard() {
 /** Full-page skeleton shown only while tier1 (dashboard stats) is in flight */
 function DashboardSkeleton() {
   return (
-    <div className="app paysonic-app app-dashboard">
-      <div className="main">
-        <div className="dashboard-content">
-          {/* Banner skeleton */}
-          <div className="sk-banner sk-pulse" />
-          {/* Hero skeleton */}
-          <div className="sk-hero sk-pulse" />
-          {/* KPI cards skeleton */}
-          <div className="kpis">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="card sk-card sk-pulse" />
-            ))}
-          </div>
-          {/* Chart row skeleton */}
-          <div className="grid-2" style={{ marginTop: 22 }}>
-            <div className="panel sk-panel sk-pulse" style={{ height: 300 }} />
-            <div className="panel sk-panel sk-pulse" style={{ height: 300 }} />
-          </div>
+    <div className="dashboard-page">
+      <div className="dashboard-content">
+        {/* Banner skeleton */}
+        <div className="sk-banner sk-pulse" />
+        {/* Hero skeleton */}
+        <div className="sk-hero sk-pulse" />
+        {/* KPI cards skeleton */}
+        <div className="kpis">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="card sk-card sk-pulse" />
+          ))}
+        </div>
+        {/* Chart row skeleton */}
+        <div className="grid-2" style={{ marginTop: 22 }}>
+          <div className="panel sk-panel sk-pulse" style={{ height: 300 }} />
+          <div className="panel sk-panel sk-pulse" style={{ height: 300 }} />
         </div>
       </div>
     </div>
@@ -379,267 +329,6 @@ function PanelNotConnected({ label, style }) {
         <span style={{ fontSize: 13, fontWeight: 600 }}>API endpoint not connected</span>
         <span style={{ fontSize: 11 }}>This panel requires a backend endpoint that is not yet implemented.</span>
       </div>
-    </div>
-  );
-}
-
-function Topbar() {
-  const [query, setQuery] = useState("");
-  const [showMenu, setShowMenu] = useState(false);
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const menuRef = useRef(null);
-  const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
-  const { toggleTheme, isDark } = useTheme();
-
-  // Close dropdown when clicking outside or pressing Escape
-  useEffect(() => {
-    if (!showMenu) return;
-
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setShowMenu(false);
-      }
-    };
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setShowMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showMenu]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
-
-  const initials = currentUser?.avatar || currentUser?.name?.slice(0, 2).toUpperCase() || 'OP';
-  const roleName = currentUser?.role || 'Admin';
-
-  return (
-    <div className="topbar">
-      <div className="title">
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          Welcome, {currentUser?.name?.split(' ')[0] || 'Admin'}
-          <span className="live"><span className="dot"></span>LIVE</span>
-          <span style={{
-            fontSize: '11px',
-            fontWeight: '600',
-            padding: '2px 8px',
-            borderRadius: '6px',
-            background: 'var(--role-surface, #f0fdf4)',
-            color: 'var(--role-primary, #15803d)',
-            border: '1px solid var(--role-border, #bbf7d0)',
-            letterSpacing: '0.02em',
-          }}>
-            {roleName}
-          </span>
-        </h1>
-        {currentUser?.assignedPlaza && (
-          <p>
-            Assigned Scope: {currentUser.assignedPlaza}
-          </p>
-        )}
-      </div>
-      <div className="spacer"></div>
-      <div className="search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
-        <input
-          type="text"
-          placeholder="Search plaza, tag, txn…"
-          aria-label="Search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-      <button className="icon-btn notif-btn" aria-label="Notifications">
-        <span className="badge notif-badge"></span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-        </svg>
-      </button>
-
-      {/* Dark / Light Mode Toggle */}
-      <button
-        type="button"
-        className="icon-btn theme-toggle-btn"
-        onClick={toggleTheme}
-        title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
-        aria-label="Toggle theme mode"
-      >
-        {isDark ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5" />
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-          </svg>
-        )}
-      </button>
-
-      {/* User profile with logout menu */}
-      <div ref={menuRef} style={{ position: 'relative' }}>
-        <button
-          type="button"
-          onClick={() => setShowMenu(v => !v)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'var(--card, #ffffff)',
-            border: '1.5px solid var(--border, #e2e8f0)',
-            borderRadius: '9999px',
-            padding: '3px 10px 3px 3px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-          title="User profile & Sign Out"
-        >
-          <div style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2563eb, #16a34a)',
-            color: '#fff',
-            display: 'grid',
-            placeItems: 'center',
-            fontSize: '11px',
-            fontWeight: '700',
-          }}>
-            {initials}
-          </div>
-          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text, #1e293b)' }}>
-            {currentUser?.name ? currentUser.name.split(' ')[0] : 'Admin'}
-          </span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-soft, #64748b)' }}>
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-
-        {showMenu && (
-          <div style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            background: 'var(--card, #ffffff)',
-            border: '1px solid var(--border, #e2e8f0)',
-            borderRadius: '12px',
-            boxShadow: 'var(--shadow-lg, 0 10px 25px -5px rgba(0,0,0,0.25))',
-            minWidth: '220px',
-            padding: '12px',
-            zIndex: 100,
-          }}>
-            <div style={{ paddingBottom: '10px', borderBottom: '1px solid var(--border, #f1f5f9)' }}>
-              <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text, #0f172a)' }}>{currentUser?.name || 'Administrator'}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-soft, #64748b)', marginTop: '2px' }}>{currentUser?.email || ''}</div>
-              <div style={{
-                display: 'inline-block',
-                marginTop: '6px',
-                padding: '2px 8px',
-                background: 'var(--green-bg, #f0fdf4)',
-                color: 'var(--mint-accent, #16a34a)',
-                borderRadius: '6px',
-                fontSize: '11px',
-                fontWeight: '600'
-              }}>
-                {currentUser?.role || 'Admin'}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMenu(false);
-                setIsChangePasswordOpen(true);
-              }}
-              style={{
-                width: '100%',
-                marginTop: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 10px',
-                background: 'var(--surface-raised, #f8fafc)',
-                color: 'var(--text, #1e293b)',
-                border: '1px solid var(--border, #e2e8f0)',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--blue-soft, #eff6ff)';
-                e.currentTarget.style.color = 'var(--blue, #2563eb)';
-                e.currentTarget.style.borderColor = 'var(--blue-soft, #bfdbfe)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--surface-raised, #f8fafc)';
-                e.currentTarget.style.color = 'var(--text, #1e293b)';
-                e.currentTarget.style.borderColor = 'var(--border, #e2e8f0)';
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              Change Password
-            </button>
-            <button
-              onClick={handleLogout}
-              style={{
-                width: '100%',
-                marginTop: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 10px',
-                background: 'var(--red-bg, #fef2f2)',
-                color: '#ef4444',
-                border: '1px solid var(--red-bg, #fecaca)',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Sign Out
-            </button>
-          </div>
-        )}
-      </div>
-      <ChangePasswordModal
-        isOpen={isChangePasswordOpen}
-        onClose={() => setIsChangePasswordOpen(false)}
-      />
     </div>
   );
 }
