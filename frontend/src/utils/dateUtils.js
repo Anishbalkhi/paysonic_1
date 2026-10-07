@@ -68,7 +68,10 @@ export const calculateSessionDuration = (ts) => {
   if (!d) return 'Active now';
   const diffMs = Math.max(0, Date.now() - d.getTime());
   const totalMins = Math.floor(diffMs / (1000 * 60));
-  if (totalMins < 1) return 'Active now';
+  if (totalMins < 1) {
+    const totalSecs = Math.floor(diffMs / 1000);
+    return totalSecs <= 3 ? 'Active now' : `${totalSecs}s`;
+  }
   const hours = Math.floor(totalMins / 60);
   const mins = totalMins % 60;
   if (hours > 0) {

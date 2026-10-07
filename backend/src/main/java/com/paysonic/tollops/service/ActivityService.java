@@ -412,4 +412,53 @@ public class ActivityService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "JSON serialization failed", e);
         }
     }
+
+    @Transactional
+    public LoginHistory recordLoginAttempt(LoginHistory record) {
+        if (record.getTimestamp() == null) {
+            record.setTimestamp(LocalDateTime.now());
+        }
+        return loginHistoryRepository.save(record);
+    }
+
+    @Transactional
+    public AuditLogResponseDTO recordAuditEvent(AuditLogRequestDTO req) {
+        String eventId = req.getId() != null && !req.getId().isBlank()
+                ? req.getId()
+                : "AUD-" + String.valueOf(System.currentTimeMillis()).substring(7);
+        LocalDateTime ts = req.getTimestamp() != null ? req.getTimestamp() : LocalDateTime.now();
+        String beforeStr = null;
+        String afterStr = null;
+        try {
+            if (req.getBefore() != null) {
+                beforeStr = req.getBefore() instanceof String ? (String) req.getBefore() : objectMapper.writeValueAsString(req.getBefore());
+            }
+            if (req.getAfter() != null) {
+                afterStr = req.getAfter() instanceof String ? (String) req.getAfter() : objectMapper.writeValueAsString(req.getAfter());
+            }
+        } catch (Exception ignored) {}
+
+        AuditLog log = new AuditLog(
+                eventId,
+                ts,
+                req.getModule() != null ? req.getModule() : "System",
+                req.getAction() != null ? req.getAction() : "AUDIT_ACTION",
+                req.getActionLabel() != null ? req.getActionLabel() : "Action Executed",
+                req.getStatus() != null ? req.getStatus() : "SUCCESS",
+                req.getActorId() != null ? req.getActorId() : "PSN0005",
+                req.getActorName() != null ? req.getActorName() : "Sanjay Kulkarni",
+                req.getActorRole() != null ? req.getActorRole() : "Master Admin",
+                req.getActorIp() != null ? req.getActorIp() : "127.0.0.1",
+                req.getPlaza() != null ? req.getPlaza() : "All plazas",
+                req.getTarget() != null ? req.getTarget() : "General",
+                req.getReferenceId() != null ? req.getReferenceId() : "REF-" + System.currentTimeMillis(),
+                req.getCorrelationId() != null ? req.getCorrelationId() : "CORR-" + System.currentTimeMillis(),
+                req.getDetails() != null ? req.getDetails() : "",
+                beforeStr,
+                afterStr
+        );
+        AuditLog saved = auditLogRepository.save(log);
+        return AuditLogResponseDTO.fromEntity(saved, objectMapper);
+    }
 }
+

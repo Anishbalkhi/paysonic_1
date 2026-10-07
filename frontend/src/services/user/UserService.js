@@ -8,6 +8,19 @@ import {
 const PERMISSIONS_STORAGE_KEY = 'paysonic_user_permissions';
 const OVERRIDES_STORAGE_KEY = 'paysonic_user_profile_overrides';
 
+const recordAuditSafely = (eventData) => {
+  try {
+    import('../userActivity/UserActivityService')
+      .then((m) => {
+        const s = m.default || m;
+        if (s && typeof s.recordAuditEvent === 'function') {
+          s.recordAuditEvent(eventData);
+        }
+      })
+      .catch(() => {});
+  } catch {}
+};
+
 // Helper to get stored custom profile overrides (kept for backward compatibility, returns empty)
 export function getStoredProfileOverrides() {
   return {};
@@ -237,8 +250,23 @@ class UserService {
 
     const createdUser = this._mapUsers([res.data])[0];
 
-    if (createdUser && createdUser.menuAccess) {
-      saveUserPermissions(createdUser.id, createdUser.menuAccess, createdUser.email, createdUser.username);
+    if (createdUser) {
+      if (createdUser.menuAccess) {
+        saveUserPermissions(createdUser.id, createdUser.menuAccess, createdUser.email, createdUser.username);
+      }
+      recordAuditSafely({
+        module: 'Administration',
+        action: 'User Created',
+        actionLabel: 'Created Personnel Account',
+        target: `${createdUser.name} (${createdUser.username || createdUser.id})`,
+        status: 'Success',
+        details: `Created new user ${createdUser.name} (${createdUser.id}) assigned to ${createdUser.plaza || 'All plazas'} with role ${createdUser.role}.`,
+        actor: {
+          id: actorId,
+          name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
+          role: 'Master Admin',
+        },
+      });
     }
 
     return createdUser;
@@ -304,8 +332,23 @@ class UserService {
 
     const resultUser = this._mapUsers([res.data])[0];
 
-    if (resultUser && resultUser.menuAccess) {
-      saveUserPermissions(resultUser.id, resultUser.menuAccess, resultUser.email, resultUser.username);
+    if (resultUser) {
+      if (resultUser.menuAccess) {
+        saveUserPermissions(resultUser.id, resultUser.menuAccess, resultUser.email, resultUser.username);
+      }
+      recordAuditSafely({
+        module: 'Administration',
+        action: 'User Updated',
+        actionLabel: 'Updated Account Configuration',
+        target: `${resultUser.name} (${resultUser.username || resultUser.id})`,
+        status: 'Success',
+        details: `Updated profile & access settings for user ${resultUser.name} (${resultUser.id}).`,
+        actor: {
+          id: actorId,
+          name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
+          role: 'Master Admin',
+        },
+      });
     }
 
     return resultUser;
@@ -333,6 +376,21 @@ class UserService {
       const updated = cached.map((u) => (u.id === id ? { ...u, status: 'Trash User', locked: true } : u));
       localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
     } catch {}
+
+    recordAuditSafely({
+      module: 'Administration',
+      action: 'User Deleted',
+      actionLabel: 'Moved Account to Trash',
+      target: id,
+      status: 'Success',
+      details: `Moved user account ${id} to Trash status.`,
+      actor: {
+        id: actorId,
+        name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
+        role: 'Master Admin',
+      },
+    });
+
     return res.data;
   }
 
@@ -347,6 +405,21 @@ class UserService {
       const updated = cached.map((u) => (u.id === id ? { ...u, status: 'Active', locked: false, approval: 'Approved' } : u));
       localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
     } catch {}
+
+    recordAuditSafely({
+      module: 'Administration',
+      action: 'User Activated',
+      actionLabel: 'Reactivated Account',
+      target: id,
+      status: 'Success',
+      details: `Reactivated and approved user account ${id}.`,
+      actor: {
+        id: actorId,
+        name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
+        role: 'Master Admin',
+      },
+    });
+
     return resultUser;
   }
 
@@ -393,6 +466,21 @@ class UserService {
         localStorage.setItem('paysonic_users_cache', JSON.stringify(cached));
       }
     } catch {}
+
+    const isNowLocked = Boolean(result?.locked);
+    recordAuditSafely({
+      module: 'Security',
+      action: isNowLocked ? 'Account Locked' : 'Account Unlocked',
+      actionLabel: isNowLocked ? 'Locked Personnel Account' : 'Unlocked Personnel Account',
+      target: id,
+      status: 'Success',
+      details: `${isNowLocked ? 'Locked' : 'Unlocked'} security status for user ${id}.`,
+      actor: {
+        id: actorId,
+        name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
+        role: 'Master Admin',
+      },
+    });
 
     if (result && result.locked) {
       try {

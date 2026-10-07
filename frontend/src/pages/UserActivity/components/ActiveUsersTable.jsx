@@ -43,6 +43,15 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [, setTick] = useState(0);
+
+  // Live 1-second ticker to update real-time session duration counters down to the second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -159,7 +168,7 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
                   const connectedSince = loginTimeParsed
                     ? loginTimeParsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     : '—';
-                  const duration = u.sessionDuration || calculateSessionDuration(u.loginTime);
+                  const duration = calculateSessionDuration(u.loginTime);
 
                   return (
                     <tr key={u.sessionId}>

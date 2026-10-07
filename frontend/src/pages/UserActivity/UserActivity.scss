@@ -43,6 +43,60 @@
     display: flex;
     align-items: center;
     gap: 10px;
+
+    .live-telemetry-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #ECFDF3;
+      border: 1px solid #A6F4C5;
+      padding: 7px 13px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #027A48;
+      letter-spacing: 0.05em;
+      user-select: none;
+
+      .live-pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #12B76A;
+        box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.7);
+        animation: telemetry-pulse 1.8s infinite;
+
+        &.syncing {
+          background: #027A48;
+          animation: telemetry-pulse 0.7s infinite;
+        }
+      }
+
+      .live-label {
+        line-height: 1;
+      }
+    }
+  }
+
+  @keyframes telemetry-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 6px rgba(18, 183, 106, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(18, 183, 106, 0);
+    }
+  }
+
+  .spin-icon {
+    animation: telemetry-spin 1s linear infinite;
+  }
+
+  @keyframes telemetry-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   @media (max-width: 640px) {

@@ -27,9 +27,14 @@ export const UserActivity = () => {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [exportContext, setExportContext] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    } else {
+      setIsSyncing(true);
+    }
     try {
       const [s, b, a, r, u, l] = await Promise.all([
         UserActivityService.getDashboardStats(),
@@ -65,24 +70,51 @@ export const UserActivity = () => {
     } catch (err) {
       console.error('Failed to load activity telemetry:', err);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
+      setIsSyncing(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(false);
 
     // Automatically re-sync live data when switching back to tab
-    const handleFocus = () => loadData();
+    const handleFocus = () => loadData(true);
     window.addEventListener('focus', handleFocus);
 
-    // Heartbeat poll every 15s to keep live session and audit telemetry synchronized
+    // Real-time event listeners for 0ms broadcast across application
+    const handleAuditUpdate = () => loadData(true);
+    const handleSessionUpdate = () => loadData(true);
+    const handleLoginUpdate = () => loadData(true);
+    const handleStorage = (e) => {
+      if (
+        e.key === 'paysonic_activity_broadcast' ||
+        e.key === 'paysonic_audit_event_broadcast' ||
+        e.key === 'paysonic_sessions_broadcast' ||
+        e.key === 'paysonic_login_event_broadcast'
+      ) {
+        loadData(true);
+      }
+    };
+
+    window.addEventListener('paysonic_audit_updated', handleAuditUpdate);
+    window.addEventListener('paysonic_sessions_updated', handleSessionUpdate);
+    window.addEventListener('paysonic_login_updated', handleLoginUpdate);
+    window.addEventListener('storage', handleStorage);
+
+    // Heartbeat poll every 4s to keep live active session expiry and audit telemetry synchronized
     const timer = setInterval(() => {
-      loadData();
-    }, 15000);
+      loadData(true);
+    }, 4000);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('paysonic_audit_updated', handleAuditUpdate);
+      window.removeEventListener('paysonic_sessions_updated', handleSessionUpdate);
+      window.removeEventListener('paysonic_login_updated', handleLoginUpdate);
+      window.removeEventListener('storage', handleStorage);
       clearInterval(timer);
     };
   }, []);
@@ -134,6 +166,11 @@ export const UserActivity = () => {
         </div>
 
         <div className="head-right">
+          <div className="live-telemetry-badge" title="Real-time Webhook, Sessions & DB Synchronization Active">
+            <span className={`live-pulse-dot ${isSyncing ? 'syncing' : ''}`} />
+            <span className="live-label">LIVE SYNC ACTIVE</span>
+          </div>
+
           <button
             type="button"
             className="btn btn-secondary"
@@ -146,7 +183,7 @@ export const UserActivity = () => {
             </svg>
             Export Audit
           </button>
-          <button type="button" className="btn btn-primary" onClick={loadData}>
+          <button type="button" className="btn btn-primary" onClick={() => loadData(false)}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
               <path d="M23 4v6h-6" />
               <path d="M1 20v-6h6" />

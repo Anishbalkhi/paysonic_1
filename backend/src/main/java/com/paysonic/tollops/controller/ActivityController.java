@@ -122,4 +122,25 @@ public class ActivityController {
         ExportResponseDTO export = activityService.exportAudit(filters, actorId, ip);
         return ResponseEntity.ok(export);
     }
+
+    @PostMapping("/audit-log")
+    public ResponseEntity<AuditLogResponseDTO> recordAuditLog(
+            @RequestBody AuditLogRequestDTO request,
+            HttpServletRequest httpRequest) {
+        if (request.getActorIp() == null || request.getActorIp().isBlank()) {
+            request.setActorIp(httpRequest != null ? httpRequest.getRemoteAddr() : "127.0.0.1");
+        }
+        return ResponseEntity.ok(activityService.recordAuditEvent(request));
+    }
+
+    @PostMapping("/login-history")
+    public ResponseEntity<LoginHistory> recordLoginHistory(
+            @RequestBody LoginHistory record,
+            HttpServletRequest httpRequest) {
+        if (record.getIpAddress() == null || record.getIpAddress().isBlank()) {
+            record.setIpAddress(httpRequest != null ? httpRequest.getRemoteAddr() : "127.0.0.1");
+        }
+        return ResponseEntity.ok(activityService.recordLoginAttempt(record));
+    }
 }
+

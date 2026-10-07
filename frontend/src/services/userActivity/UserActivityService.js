@@ -136,6 +136,29 @@ class UserActivityService {
     };
     history.unshift(newEntry);
     saveStoredLoginHistory(history);
+
+    // Broadcast live event for 0ms reactivity
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('paysonic_login_updated', { detail: newEntry }));
+      try {
+        localStorage.setItem('paysonic_login_event_broadcast', JSON.stringify({ id: newEntry.id, timestamp: Date.now() }));
+      } catch {}
+    }
+
+    // Persist to Railway database in real-time
+    try {
+      httpClient.post('/api/activity/login-history', {
+        userId: newEntry.userId,
+        name: newEntry.name,
+        role: newEntry.role,
+        ipAddress: newEntry.ipAddress,
+        device: newEntry.device,
+        status: newEntry.status,
+        failureReason: newEntry.failureReason,
+        timestamp: newEntry.timestamp,
+      }).catch(() => {});
+    } catch {}
+
     return newEntry;
   }
 
@@ -201,6 +224,14 @@ class UserActivityService {
     updated.unshift(newSession);
     saveStoredActiveSessions(updated);
 
+    // Broadcast live event for 0ms reactivity
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('paysonic_sessions_updated', { detail: newSession }));
+      try {
+        localStorage.setItem('paysonic_sessions_broadcast', JSON.stringify({ id: newSession.sessionId, timestamp: Date.now() }));
+      } catch {}
+    }
+
     // Sync session to backend / Railway MySQL database
     try {
       const backendPayload = {
@@ -263,6 +294,13 @@ class UserActivityService {
         : s
     );
     saveStoredActiveSessions(updated);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('paysonic_sessions_updated'));
+      try {
+        localStorage.setItem('paysonic_sessions_broadcast', JSON.stringify({ id: sessionId, timestamp: Date.now() }));
+      } catch {}
+    }
 
     // Save logout timestamp for this user so Login History can display it
     if (targetSession && targetSession.userId) {
@@ -331,6 +369,40 @@ class UserActivityService {
     };
     logs.unshift(newAudit);
     saveStoredAuditLog(logs);
+
+    // Broadcast live event for 0ms reactivity across components and tabs
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('paysonic_audit_updated', { detail: newAudit }));
+      try {
+        localStorage.setItem('paysonic_audit_event_broadcast', JSON.stringify({ id: newAudit.id, timestamp: Date.now() }));
+      } catch {}
+    }
+
+    // Persist to Railway database in real-time
+    try {
+      httpClient.post('/api/activity/audit-log', {
+        id: newAudit.id,
+        timestamp: newAudit.timestamp,
+        module: newAudit.module,
+        action: newAudit.action,
+        actionLabel: newAudit.actionLabel,
+        status: newAudit.status,
+        plaza: newAudit.plaza,
+        target: newAudit.target,
+        referenceId: newAudit.referenceId,
+        correlationId: newAudit.correlationId,
+        details: newAudit.details,
+        actorId: newAudit.actor?.id || 'PSN0005',
+        actorName: newAudit.actor?.name || 'Administrator',
+        actorRole: newAudit.actor?.role || 'Admin',
+        actorIp: newAudit.actor?.ipAddress || '127.0.0.1',
+        before: newAudit.before,
+        after: newAudit.after,
+      }).catch((err) => {
+        console.warn('[UserActivityService] Async audit sync error:', err?.message);
+      });
+    } catch {}
+
     return newAudit;
   }
 
@@ -688,7 +760,21 @@ class UserActivityService {
     try {
       const res = await httpClient.get('/api/activity/active-users');
       if (res && res.data && Array.isArray(res.data)) {
-        return res.data
+        const localSessions = getStoredActiveSessions();
+        const localTerminatedIds = new Set(
+          localSessions.filter((s) => s.status !== 'Active').map((s) => s.sessionId)
+        );
+        const railwayIds = new Set(res.data.map((s) => s.sessionId));
+        const localActiveOnly = localSessions.filter(
+          (s) => s.status === 'Active' && !railwayIds.has(s.sessionId)
+        );
+
+        const combined = [
+          ...localActiveOnly,
+          ...res.data.filter((s) => !localTerminatedIds.has(s.sessionId)),
+        ];
+
+        return combined
           .filter(isSessionActive)
           .map((s) => this.enrichSession(s));
       }
