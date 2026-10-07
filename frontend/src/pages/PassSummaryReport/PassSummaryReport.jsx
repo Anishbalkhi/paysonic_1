@@ -193,6 +193,14 @@ export const PassSummaryReport = () => {
 
       {/* Table */}
       <div className="table-wrapper">
+        <div className="table-top-banner">
+          <div className="banner-title">PASS SUMMARY REPORT</div>
+          <div className="banner-subtitle">
+            Report Period: {formatDisplayDate(fromDate)} — {formatDisplayDate(toDate)}
+          </div>
+          <div className="banner-green-bar" />
+        </div>
+
         <div className="table-responsive">
           <table className="pass-summary-table">
             <thead>

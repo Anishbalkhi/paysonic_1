@@ -148,6 +148,36 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     overflow: hidden;
 
+    /* Top Centered Banner matching other reports */
+    .table-top-banner {
+      padding: 16px 20px 10px 20px;
+      text-align: center;
+      background: #ffffff;
+
+      .banner-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0d47a1; // Royal Blue
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+
+      .banner-subtitle {
+        font-size: 12px;
+        font-weight: 500;
+        color: #64748b;
+        margin-bottom: 8px;
+      }
+
+      .banner-green-bar {
+        height: 3px;
+        background: #10b981; // Green accent bar
+        width: 100%;
+        border-radius: 2px;
+      }
+    }
+
     .table-responsive {
       overflow-x: auto;
       min-height: 280px;

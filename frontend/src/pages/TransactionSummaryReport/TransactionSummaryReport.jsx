@@ -220,6 +220,14 @@ export const TransactionSummaryReport = () => {
 
       {/* Table */}
       <div className="table-wrapper">
+        <div className="table-top-banner">
+          <div className="banner-title">TRANSACTION SUMMARY REPORT</div>
+          <div className="banner-subtitle">
+            From Date: {fromDate} &nbsp; | &nbsp; To Date: {toDate}
+          </div>
+          <div className="banner-green-bar" />
+        </div>
+
         <div className="table-responsive">
           <table className="txn-summary-table">
             <thead>
