@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { hasMenuAccess } from '../../config/roleMenus';
+import TablePagination from '../../components/common/TablePagination';
 import './PassIssuance.scss';
 
 export const PassIssuance = () => {
@@ -21,6 +22,10 @@ export const PassIssuance = () => {
   const tabParam = searchParams.get('tab') || fallbackTab;
   const currentTabAllowed = allowedTabs.some((t) => t.key === tabParam);
   const activeTab = currentTabAllowed ? tabParam : fallbackTab;
+
+  // Pagination State for pass lists
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     if (!currentTabAllowed && allowedTabs.length > 0) {
@@ -43,6 +48,11 @@ export const PassIssuance = () => {
     { id: 'PSN-PASS-2026-002', vrn: 'MH 04 AZ 1024', name: 'Kunal Patil', type: 'Local Commercial', plaza: 'Airoli Bridge', expires: '2026-10-15', status: 'Active' },
     { id: 'PSN-PASS-2026-003', vrn: 'MH 14 CC 8412', name: 'Nilesh Shinde', type: 'Multiple Journey 50 Trips', plaza: 'Khed Shivapur', expires: '2026-11-01', status: 'Active' },
   ];
+
+  const paginatedPasses = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return MOCK_ACTIVE_PASSES.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, pageSize]);
 
   const handleIssueSubmit = (e) => {
     e.preventDefault();
@@ -169,7 +179,7 @@ export const PassIssuance = () => {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_ACTIVE_PASSES.map((p) => (
+                {paginatedPasses.map((p) => (
                   <tr key={p.id}>
                     <td className="font-mono font-bold">{p.id}</td>
                     <td><strong>{p.vrn}</strong></td>
@@ -182,6 +192,18 @@ export const PassIssuance = () => {
                 ))}
               </tbody>
             </table>
+
+            <TablePagination
+              totalItems={MOCK_ACTIVE_PASSES.length}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 25, 50, 100]}
+            />
           </div>
         )}
       </div>

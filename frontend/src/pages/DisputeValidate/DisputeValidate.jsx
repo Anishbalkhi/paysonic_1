@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { FUNCTION_CODES } from '../../config/disputeConstants';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import TakeActionModal from '../../components/DisputeModals/TakeActionModal';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import TablePagination from '../../components/common/TablePagination';
 import './DisputeValidate.scss';
 
 export const DisputeValidate = () => {
@@ -14,6 +15,10 @@ export const DisputeValidate = () => {
   const [selectedPlazaId, setSelectedPlazaId] = useState(
     currentUser?.plazaId || 'ALL'
   );
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     let isMounted = true;
@@ -71,6 +76,7 @@ export const DisputeValidate = () => {
       });
       // Show assigned disputes for this plaza
       setRows(fetched.filter((r) => r.assigned === true));
+      setCurrentPage(1);
     } catch (e) {
       console.error('[DisputeValidate] Load error:', e);
     } finally {
@@ -89,7 +95,13 @@ export const DisputeValidate = () => {
     setAcqTxnId('');
     setTollTxnId('');
     setTagId('');
+    setCurrentPage(1);
   };
+
+  const paginatedRows = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return rows.slice(from, from + pageSize);
+  }, [rows, currentPage, pageSize]);
 
   const handleExportCsv = () => {
     const csvContent =
@@ -350,7 +362,7 @@ export const DisputeValidate = () => {
                   </td>
                 </tr>
               ) : (
-                rows.map((r) => {
+                paginatedRows.map((r) => {
                   const tat = DisputeManagementService.getTatBadge(r);
                   const isDecided = r.disputeStatus !== 'NA';
                   const adminEvCount = (r.adminEvidence || []).length;
@@ -451,6 +463,19 @@ export const DisputeValidate = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={rows.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
 
         <div className="table-footer-bar">
           Total records: <strong>{rows.length}</strong>

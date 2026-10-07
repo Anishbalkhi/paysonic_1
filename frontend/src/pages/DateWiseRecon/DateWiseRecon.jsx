@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DateWiseReconService from '../../services/recon/DateWiseReconService';
 import UserActivityService from '../../services/userActivity/UserActivityService';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import PlazaMultiSelect from '../../components/PlazaMultiSelect/PlazaMultiSelect';
+import TablePagination from '../../components/common/TablePagination';
 import './DateWiseRecon.scss';
 
 export const DateWiseRecon = () => {
@@ -30,6 +31,10 @@ export const DateWiseRecon = () => {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Validate date range
   const validateDates = (start, end) => {
@@ -98,6 +103,7 @@ export const DateWiseRecon = () => {
       }
 
       setRecords(results);
+      setCurrentPage(1);
       // Expand all by default if there are few records so user sees the drilldown immediately
       if (Array.isArray(results) && results.length <= 10) {
         const initialExpanded = {};
@@ -111,6 +117,7 @@ export const DateWiseRecon = () => {
       const msg = err?.response?.data?.error || err?.message || 'Failed to query date wise reconciliation';
       setErrorMsg(msg);
       setRecords([]);
+      setCurrentPage(1);
     } finally {
       setLoading(false);
     }
@@ -123,6 +130,7 @@ export const DateWiseRecon = () => {
     setSelectedPlazas([]);
     setDateType('');
     setErrorMsg('');
+    setCurrentPage(1);
     handleSearch(def.from, def.to, [], '');
   };
 
@@ -639,6 +647,12 @@ export const DateWiseRecon = () => {
   const grandTotalCount = records.reduce((acc, curr) => acc + (Number(curr.txnCount) || 0), 0);
   const grandTotalAmount = records.reduce((acc, curr) => acc + (Number(curr.settledAmount) || 0), 0);
 
+  // Paginated records for table view
+  const paginatedRecords = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return records.slice(from, from + pageSize);
+  }, [records, currentPage, pageSize]);
+
   return (
     <div className="date-recon-page">
       <h2 className="page-title">Date Wise Reconciliation Report</h2>
@@ -813,7 +827,8 @@ export const DateWiseRecon = () => {
               <p>No settled transactions found for the selected date range.</p>
             </div>
           ) : (
-            <table>
+            <>
+              <table>
               <thead>
                 <tr>
                   <th className="col-toggle"></th>
@@ -825,7 +840,7 @@ export const DateWiseRecon = () => {
                 </tr>
               </thead>
               <tbody>
-                {records.map((summary) => {
+                {paginatedRecords.map((summary) => {
                   const isExpanded = Boolean(expandedRows[summary.rowId]);
 
                   return (
@@ -911,7 +926,21 @@ export const DateWiseRecon = () => {
                 </tr>
               </tfoot>
             </table>
-          )}
+
+            {/* Table Pagination Bar */}
+            <TablePagination
+              totalItems={records.length}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 25, 50, 100]}
+            />
+          </>
+        )}
         </div>
       </div>
     </div>

@@ -1,15 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import TablePagination from '../../components/common/TablePagination';
 import './DisputeFileStatus.scss';
 
 export const DisputeFileStatus = () => {
   const navigate = useNavigate();
   const [batches, setBatches] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     setBatches(DisputeManagementService.getBatches());
   }, []);
+
+  const paginatedBatches = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return batches.slice(from, from + pageSize);
+  }, [batches, currentPage, pageSize]);
 
   return (
     <div className="dispute-file-status-page">
@@ -53,7 +61,7 @@ export const DisputeFileStatus = () => {
                   </td>
                 </tr>
               ) : (
-                batches.map((b) => (
+                paginatedBatches.map((b) => (
                   <tr key={b.batchId}>
                     <td className="code">{b.batchId}</td>
                     <td style={{ fontWeight: 600 }}>📄 {b.fileName}</td>
@@ -84,6 +92,19 @@ export const DisputeFileStatus = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={batches.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
     </div>
   );

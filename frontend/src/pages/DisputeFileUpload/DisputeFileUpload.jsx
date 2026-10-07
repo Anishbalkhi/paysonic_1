@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import TablePagination from '../../components/common/TablePagination';
 import './DisputeFileUpload.scss';
 
 
@@ -57,6 +58,7 @@ export const DisputeFileUpload = () => {
     }
 
     setIsMatching(true);
+    setCurrentPage(1);
     setTimeout(() => {
       const res = DisputeManagementService.matchCsvRows(parsedRows);
       setMatchResult(res);
@@ -64,11 +66,21 @@ export const DisputeFileUpload = () => {
     }, 400);
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const paginatedResults = useMemo(() => {
+    if (!matchResult?.results) return [];
+    const start = (currentPage - 1) * pageSize;
+    return matchResult.results.slice(start, start + pageSize);
+  }, [matchResult, currentPage, pageSize]);
+
   const handleReset = () => {
     setSelectedFileName('');
     setParsedRows([]);
     setMatchResult(null);
     setAlertMsg('');
+    setCurrentPage(1);
   };
 
   const handleCommit = async () => {
@@ -174,7 +186,7 @@ export const DisputeFileUpload = () => {
                 </tr>
               </thead>
               <tbody>
-                {matchResult.results.map((r, i) => (
+                {paginatedResults.map((r, i) => (
                   <tr key={i}>
                     <td>
                       {r.isMatched ? (
@@ -198,6 +210,18 @@ export const DisputeFileUpload = () => {
                 ))}
               </tbody>
             </table>
+
+            <TablePagination
+              totalItems={matchResult.results.length}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 25, 50, 100]}
+            />
           </div>
 
           <div className="actions-footer-bar">

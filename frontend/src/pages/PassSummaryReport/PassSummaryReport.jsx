@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PassSummaryService from '../../services/summary/PassSummaryService';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import TablePagination from '../../components/common/TablePagination';
 import './PassSummaryReport.scss';
 
 export const PassSummaryReport = () => {
@@ -16,6 +17,10 @@ export const PassSummaryReport = () => {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const validateDates = (start, end) => {
     if (!start || !end) { setErrorMsg('Both From Date and To Date are required.'); return false; }
@@ -33,10 +38,12 @@ export const PassSummaryReport = () => {
     try {
       const data = await PassSummaryService.getReport({ fromDate: fDate, toDate: tDate, plazaId: pId });
       setReportData(data);
+      setCurrentPage(1);
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Database error occurred';
       setErrorMsg(`Error: ${msg}`);
       setReportData(null);
+      setCurrentPage(1);
     } finally { setLoading(false); }
   }, [fromDate, toDate, plazaId]);
 
@@ -45,6 +52,7 @@ export const PassSummaryReport = () => {
   const handleReset = () => {
     const def = getDefaultDateRange();
     setFromDate(def.from); setToDate(def.to); setPlazaId('ALL'); setErrorMsg('');
+    setCurrentPage(1);
     handleSearch(def.from, def.to, 'ALL');
   };
 
@@ -107,6 +115,12 @@ export const PassSummaryReport = () => {
       });
     }
   }, [reportData]);
+
+  const paginatedPlazas = useMemo(() => {
+    if (!Array.isArray(reportData)) return [];
+    const from = (currentPage - 1) * pageSize;
+    return reportData.slice(from, from + pageSize);
+  }, [reportData, currentPage, pageSize]);
 
   return (
     <div className="pass-summary-page">
@@ -204,7 +218,7 @@ export const PassSummaryReport = () => {
                 </tr>
               ) : (
                 <>
-                  {reportData.map((plaza) => {
+                  {paginatedPlazas.map((plaza) => {
                     // Count total rows per plaza: for each mode, rows.length + 1 (subtotal)
                     const totalPlazaRows = (plaza.paymentModes || []).reduce(
                       (sum, mode) => sum + (mode.rows || []).length + 1, 0
@@ -282,6 +296,19 @@ export const PassSummaryReport = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={Array.isArray(reportData) ? reportData.length : 0}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
 
       {/* Footer */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import CycleWiseReconService from '../../services/recon/CycleWiseReconService';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import PlazaMultiSelect from '../../components/PlazaMultiSelect/PlazaMultiSelect';
+import TablePagination from '../../components/common/TablePagination';
 import './CycleWiseRecon.scss';
 
 export const CycleWiseRecon = () => {
@@ -28,6 +29,10 @@ export const CycleWiseRecon = () => {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Validate date range
   const validateDates = (start, end) => {
@@ -75,11 +80,13 @@ export const CycleWiseRecon = () => {
       }
 
       setRecords(results);
+      setCurrentPage(1);
     } catch (err) {
       console.error('[CycleWiseRecon] Search failed:', err);
       const msg = err?.response?.data?.error || err?.message || 'Failed to query cycle wise reconciliation';
       setErrorMsg(msg);
       setRecords([]);
+      setCurrentPage(1);
     } finally {
       setLoading(false);
     }
@@ -99,6 +106,7 @@ export const CycleWiseRecon = () => {
     setCycle('');
     setDateType('');
     setErrorMsg('');
+    setCurrentPage(1);
     handleSearch(range.from, range.to, [], '', '');
   };
 
@@ -263,21 +271,27 @@ export const CycleWiseRecon = () => {
     };
   }, [records]);
 
-  // Compute rowSpan mapping for consecutive rows with the same plazaId
+  // Slice records for current page
+  const paginatedRecords = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return records.slice(from, from + pageSize);
+  }, [records, currentPage, pageSize]);
+
+  // Compute rowSpan mapping for consecutive rows with the same plazaId on current page
   const rowSpanMap = useMemo(() => {
     const map = {};
     let i = 0;
-    while (i < records.length) {
-      const pId = records[i].plazaId;
+    while (i < paginatedRecords.length) {
+      const pId = paginatedRecords[i].plazaId;
       let span = 1;
-      while (i + span < records.length && records[i + span].plazaId === pId) {
+      while (i + span < paginatedRecords.length && paginatedRecords[i + span].plazaId === pId) {
         span++;
       }
       map[i] = span;
       i += span;
     }
     return map;
-  }, [records]);
+  }, [paginatedRecords]);
 
   return (
     <div className="cycle-recon-page">
@@ -486,7 +500,7 @@ export const CycleWiseRecon = () => {
                 </tr>
               </thead>
               <tbody>
-                {records.map((r, idx) => {
+                {paginatedRecords.map((r, idx) => {
                   const isFirstOfGroup = rowSpanMap[idx] !== undefined;
                   const span = rowSpanMap[idx] || 1;
 
@@ -558,6 +572,19 @@ export const CycleWiseRecon = () => {
             </table>
           </div>
         )}
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={records.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
     </div>
   );

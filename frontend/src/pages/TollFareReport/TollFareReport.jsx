@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TollFareReportService from '../../services/tollFare/TollFareReportService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import TablePagination from '../../components/common/TablePagination';
 import './TollFareReport.scss';
 
 export const TollFareReport = () => {
@@ -17,6 +18,10 @@ export const TollFareReport = () => {
   const [exportingCsv, setExportingCsv] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   // Search fares from Railway DB
   const handleSearch = useCallback(async (overridePlaza, overrideClass) => {
     const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
@@ -31,11 +36,13 @@ export const TollFareReport = () => {
       });
       const content = Array.isArray(data) ? data : [];
       setRecords(content);
+      setCurrentPage(1);
     } catch (err) {
       console.error('[TollFareReport] Search failed:', err);
       const msg = err?.response?.data?.error || err?.message || 'Database error loading toll fares';
       setErrorMsg(msg);
       setRecords([]);
+      setCurrentPage(1);
     } finally {
       setLoading(false);
     }
@@ -49,6 +56,7 @@ export const TollFareReport = () => {
     setPlazaId('ALL');
     setVehicleClass('ALL');
     setSearchTerm('');
+    setCurrentPage(1);
     handleSearch('ALL', 'ALL');
   };
 
@@ -83,6 +91,12 @@ export const TollFareReport = () => {
       return String(a.vehicleClass || '').localeCompare(String(b.vehicleClass || ''));
     });
   }, [records, searchTerm]);
+
+  // Paginated records for table view
+  const paginatedRecords = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredRecords.slice(from, from + pageSize);
+  }, [filteredRecords, currentPage, pageSize]);
 
   // Bottom Summary KPI metrics
   const { minSingle, maxSingle, minReturn, maxReturn, maxMonthly } = useMemo(() => {
@@ -348,7 +362,7 @@ export const TollFareReport = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredRecords.map((r, index) => {
+                {paginatedRecords.map((r, index) => {
                   return (
                     <tr key={r.tollPlazaId + '_' + r.vehicleClass + '_' + index}>
                       {/* 1. TollPlazaID */}
@@ -402,6 +416,19 @@ export const TollFareReport = () => {
             </table>
           )}
         </div>
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={filteredRecords.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
 
         {/* 4 Bottom Summary KPI Cards matching design theme */}
         {filteredRecords.length > 0 && (

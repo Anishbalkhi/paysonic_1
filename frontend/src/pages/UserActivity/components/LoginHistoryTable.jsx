@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import TablePagination from '../../../components/common/TablePagination';
 import { parseUtcTimestamp, formatAuditTimestamp } from '../../../utils/dateUtils';
 
 const DATE_RANGE_OPTIONS = [
@@ -48,6 +49,18 @@ export const LoginHistoryTable = ({ history = [] }) => {
       return true;
     });
   }, [history, statusFilter, dateFilter, search]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, dateFilter, search]);
+
+  const paginatedHistory = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
 
   const handleResetFilters = () => {
     setStatusFilter('All');
@@ -154,7 +167,7 @@ export const LoginHistoryTable = ({ history = [] }) => {
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => (
+                paginatedHistory.map((item) => (
                   <tr key={item.id}>
                     <td className="time-cell">
                       {formatDate(item.lastLogin || item.timestamp)}
@@ -212,6 +225,18 @@ export const LoginHistoryTable = ({ history = [] }) => {
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          totalItems={filtered.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import TablePagination from '../../../components/common/TablePagination';
 import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime } from '../../../utils/dateUtils';
 
 const ROLE_OPTIONS = [
@@ -39,6 +40,18 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
       return true;
     });
   }, [activeUsers, search, roleFilter]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, roleFilter]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, currentPage, pageSize]);
 
   const handleOpenModal = (user) => {
     setSelectedSession(user);
@@ -141,7 +154,7 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => {
+                paginatedUsers.map((u) => {
                   const loginTimeParsed = parseUtcTimestamp(u.loginTime);
                   const connectedSince = loginTimeParsed
                     ? loginTimeParsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -220,6 +233,18 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
             </tbody>
           </table>
         </div>
+
+        <TablePagination
+          totalItems={filteredUsers.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
 
       {/* Force Logout Modal */}

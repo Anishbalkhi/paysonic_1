@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { formatCurrency, formatDate, getStatusBadgeClass } from '../../../utils/formatters';
+import TablePagination from '../../../components/common/TablePagination';
 
 export const TransactionTable = ({ transactions = [], onViewDetail }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const paginatedTransactions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return transactions.slice(start, start + pageSize);
+  }, [transactions, currentPage, pageSize]);
+
   return (
     <div className="card transaction-section">
       <div className="flex-between mb-4">
@@ -25,7 +34,7 @@ export const TransactionTable = ({ transactions = [], onViewDetail }) => {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((tx) => (
+            {paginatedTransactions.map((tx) => (
               <tr key={tx.id}>
                 <td>
                   <span className="font-semibold text-primary">{tx.id}</span>
@@ -63,6 +72,18 @@ export const TransactionTable = ({ transactions = [], onViewDetail }) => {
             ))}
           </tbody>
         </table>
+
+        <TablePagination
+          totalItems={transactions.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[5, 10, 25, 50]}
+        />
       </div>
     </div>
   );

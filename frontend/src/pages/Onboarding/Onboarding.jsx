@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import OnboardingService from '../../services/onboarding/OnboardingService';
 import StateCitySelect from '../../components/StateCitySelect/StateCitySelect';
 import { hasMenuAccess } from '../../config/roleMenus';
+import TablePagination from '../../components/common/TablePagination';
 import './Onboarding.scss';
 
 // Vehicle classes VC4 through VC20 (NETC / NPCI Standard FASTag Specifications)
@@ -190,6 +191,28 @@ export const Onboarding = () => {
       return matchesSearch && matchesConcess && matchesStatus && matchesCategory;
     });
   }, [store.plazas, plazaSearch, plazaConcessFilter, plazaStatusFilter, plazaCategoryFilter, store.concessionaires]);
+
+  // Tab A: View Plaza Pagination
+  const [plazaPage, setPlazaPage] = useState(1);
+  const [plazaPageSize, setPlazaPageSize] = useState(10);
+
+  useEffect(() => {
+    setPlazaPage(1);
+  }, [plazaSearch, plazaConcessFilter, plazaStatusFilter, plazaCategoryFilter]);
+
+  const paginatedPlazas = useMemo(() => {
+    const start = (plazaPage - 1) * plazaPageSize;
+    return filteredPlazas.slice(start, start + plazaPageSize);
+  }, [filteredPlazas, plazaPage, plazaPageSize]);
+
+  // Tab B: Concessionaires Pagination
+  const [concessPage, setConcessPage] = useState(1);
+  const [concessPageSize, setConcessPageSize] = useState(10);
+
+  const paginatedConcessionaires = useMemo(() => {
+    const start = (concessPage - 1) * concessPageSize;
+    return (store.concessionaires || []).slice(start, start + concessPageSize);
+  }, [store.concessionaires, concessPage, concessPageSize]);
 
   const kpis = useMemo(() => {
     const total = store.plazas.length;
@@ -1014,6 +1037,19 @@ export const Onboarding = () => {
   const plazaLanes = useMemo(() => {
     return store.lanes.filter((l) => l.plazaId === selectedPlazaId);
   }, [store.lanes, selectedPlazaId]);
+
+  // Tab D: Lanes Pagination
+  const [lanePage, setLanePage] = useState(1);
+  const [lanePageSize, setLanePageSize] = useState(10);
+
+  useEffect(() => {
+    setLanePage(1);
+  }, [selectedPlazaId]);
+
+  const paginatedLanes = useMemo(() => {
+    const start = (lanePage - 1) * lanePageSize;
+    return plazaLanes.slice(start, start + lanePageSize);
+  }, [plazaLanes, lanePage, lanePageSize]);
 
   const handleOpenAddLane = () => {
     if (!selectedPlazaId) {
@@ -1947,7 +1983,7 @@ export const Onboarding = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredPlazas.map((p) => {
+                    paginatedPlazas.map((p) => {
                       const statusClass =
                         p.status === 'Active'
                           ? 'badge-active'
@@ -2030,6 +2066,18 @@ export const Onboarding = () => {
                   )}
                 </tbody>
               </table>
+
+              <TablePagination
+                totalItems={filteredPlazas.length}
+                currentPage={plazaPage}
+                pageSize={plazaPageSize}
+                onPageChange={setPlazaPage}
+                onPageSizeChange={(newSize) => {
+                  setPlazaPageSize(newSize);
+                  setPlazaPage(1);
+                }}
+                pageSizeOptions={[10, 25, 50, 100]}
+              />
             </div>
           </div>
         </div>
@@ -2196,7 +2244,7 @@ export const Onboarding = () => {
                         </td>
                       </tr>
                     ) : (
-                      store.concessionaires.map((c) => (
+                      paginatedConcessionaires.map((c) => (
                         <tr key={c.id}>
                           <td>
                             <code className="id-code">{c.id}</code>
@@ -2232,6 +2280,18 @@ export const Onboarding = () => {
                     )}
                   </tbody>
                 </table>
+
+                <TablePagination
+                  totalItems={store.concessionaires.length}
+                  currentPage={concessPage}
+                  pageSize={concessPageSize}
+                  onPageChange={setConcessPage}
+                  onPageSizeChange={(newSize) => {
+                    setConcessPageSize(newSize);
+                    setConcessPage(1);
+                  }}
+                  pageSizeOptions={[5, 10, 25, 50]}
+                />
               </div>
             </div>
           </div>
@@ -2734,7 +2794,7 @@ export const Onboarding = () => {
                       </td>
                     </tr>
                   ) : (
-                    plazaLanes.map((l, idx) => (
+                    paginatedLanes.map((l, idx) => (
                       <tr key={l.id || `${l.plazaId}_${l.laneId}_${idx}`}>
                         <td>
                           <code className="id-code">{l.laneId}</code>
@@ -2788,6 +2848,18 @@ export const Onboarding = () => {
                   )}
                 </tbody>
               </table>
+
+              <TablePagination
+                totalItems={plazaLanes.length}
+                currentPage={lanePage}
+                pageSize={lanePageSize}
+                onPageChange={setLanePage}
+                onPageSizeChange={(newSize) => {
+                  setLanePageSize(newSize);
+                  setLanePage(1);
+                }}
+                pageSizeOptions={[5, 10, 25, 50]}
+              />
             </div>
           </div>
         </div>

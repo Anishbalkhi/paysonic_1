@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { hasMenuAccess } from '../../config/roleMenus';
+import TablePagination from '../../components/common/TablePagination';
 import './TagDetails.scss';
 
 export const TagDetails = () => {
@@ -158,6 +159,18 @@ export const TagDetails = () => {
       rec.plaza.toLowerCase().includes(q)
     );
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [historyFilter, historySearch]);
+
+  const paginatedHistory = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredHistory.slice(start, start + pageSize);
+  }, [filteredHistory, currentPage, pageSize]);
 
   return (
     <div className="tag-details-page">
@@ -423,7 +436,7 @@ export const TagDetails = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHistory.map((rec) => (
+                  {paginatedHistory.map((rec) => (
                     <tr key={rec.id}>
                       <td className="font-mono text-muted">{rec.id}</td>
                       <td className="font-mono font-bold">{rec.tagId}</td>
@@ -460,6 +473,18 @@ export const TagDetails = () => {
                   )}
                 </tbody>
               </table>
+
+              <TablePagination
+                totalItems={filteredHistory.length}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[10, 25, 50, 100]}
+              />
             </div>
           </div>
         </div>

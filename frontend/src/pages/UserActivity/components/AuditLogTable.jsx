@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import TablePagination from '../../../components/common/TablePagination';
 import { referenceFor } from '../../../utils/auditReference';
 import { formatAuditTimestamp, parseUtcTimestamp } from '../../../utils/dateUtils';
 
@@ -28,7 +29,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
   const [statusFilter, setStatusFilter] = useState('All statuses');
   const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 12;
+  const [pageSize, setPageSize] = useState(10);
 
   // Extract unique action labels for filter dropdown
   const actionOptions = useMemo(() => {
@@ -78,11 +79,10 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
     });
   }, [auditEvents, search, moduleFilter, actionFilter, statusFilter, dateFilter]);
 
-  const totalPages = Math.ceil(filteredEvents.length / pageSize) || 1;
   const paginatedEvents = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredEvents.slice(start, start + pageSize);
-  }, [filteredEvents, currentPage]);
+  }, [filteredEvents, currentPage, pageSize]);
 
   const handleResetFilters = () => {
     setSearch('');
@@ -356,31 +356,17 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
         </div>
 
         {/* Table Footer / Pagination */}
-        <div className="table-foot">
-          <span className="foot-count">
-            Showing {paginatedEvents.length ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
-            {Math.min(currentPage * pageSize, filteredEvents.length)} of {filteredEvents.length} entries
-          </span>
-          <div className="pager">
-            <button
-              type="button"
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            >
-              ‹
-            </button>
-            <span className="current-page-indicator">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={currentPage >= totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            >
-              ›
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          totalItems={filteredEvents.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
     </div>
   );

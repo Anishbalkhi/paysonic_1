@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DisputeReportService from '../../services/dispute/DisputeReportService';
 import { useOnboardedPlazas } from '../../hooks/useOnboardedPlazas';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import TablePagination from '../../components/common/TablePagination';
 import './DisputeDetailReport.scss';
 
 export const DisputeDetailReport = () => {
@@ -26,6 +27,10 @@ export const DisputeDetailReport = () => {
   const [exportingCsv, setExportingCsv] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Validate dates
   const validateDates = (start, end) => {
@@ -63,16 +68,18 @@ export const DisputeDetailReport = () => {
         plazaId: pId,
         functionCode: fCode,
         page: 0,
-        size: 100
+        size: 1000
       });
 
       const content = data?.content ? data.content : Array.isArray(data) ? data : [];
       setRecords(content);
+      setCurrentPage(1);
     } catch (err) {
       console.error('[DisputeDetailReport] Search error:', err);
       const msg = err?.response?.data?.error || err?.message || 'Failed to load dispute records from database.';
       setErrorMsg(msg);
       setRecords([]);
+      setCurrentPage(1);
     } finally {
       setLoading(false);
     }
@@ -89,6 +96,7 @@ export const DisputeDetailReport = () => {
     setPlazaId('ALL');
     setFunctionCode('ALL');
     setSearchTerm('');
+    setCurrentPage(1);
     handleSearch(def.from, def.to, 'ALL', 'ALL');
   };
 
@@ -107,6 +115,12 @@ export const DisputeDetailReport = () => {
       (r.functionCode && r.functionCode.toLowerCase().includes(q))
     );
   }, [records, searchTerm]);
+
+  // Paginated records for table view
+  const paginatedRecords = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return filteredRecords.slice(from, from + pageSize);
+  }, [filteredRecords, currentPage, pageSize]);
 
   // Totals
   const { totalTxnAmt, totalDisputeAmt } = useMemo(() => {
@@ -388,14 +402,15 @@ export const DisputeDetailReport = () => {
                   </td>
                 </tr>
               ) : (
-                filteredRecords.map((item, index) => {
+                paginatedRecords.map((item, index) => {
                   const ind = (item.settlementIndicator || '').trim();
                   const isDr = ind.toLowerCase() === 'dr';
                   const isCr = ind.toLowerCase() === 'cr';
+                  const srNo = (currentPage - 1) * pageSize + index + 1;
 
                   return (
                     <tr key={item.id || index}>
-                      <td className="text-center">{index + 1}</td>
+                      <td className="text-center">{srNo}</td>
                       <td className="font-semibold">{item.plazaName}</td>
                       <td className="text-center code-font">{item.plazaId}</td>
                       <td className="code-font">{item.acqTxnId}</td>
@@ -448,6 +463,19 @@ export const DisputeDetailReport = () => {
             )}
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={filteredRecords.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
     </div>
   );

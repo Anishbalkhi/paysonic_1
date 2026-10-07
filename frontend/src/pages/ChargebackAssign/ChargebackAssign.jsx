@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { FUNCTION_CODES } from '../../config/disputeConstants';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import MoreInformationModal from '../../components/DisputeModals/MoreInformationModal';
+import TablePagination from '../../components/common/TablePagination';
 import './ChargebackAssign.scss';
 
 export const ChargebackAssign = () => {
@@ -11,6 +12,10 @@ export const ChargebackAssign = () => {
   const { plazas } = useOnboardedPlazas();
   const [miniStats, setMiniStats] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Filters
   const [fromDate, setFromDate] = useState('');
@@ -45,6 +50,7 @@ export const ChargebackAssign = () => {
       ]);
       setRows(fetchedRows);
       setMiniStats(stats);
+      setCurrentPage(1);
     } catch (e) {
       console.error('[ChargebackAssign] Load error:', e);
     } finally {
@@ -236,6 +242,11 @@ export const ChargebackAssign = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  const paginatedRows = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return rows.slice(from, from + pageSize);
+  }, [rows, currentPage, pageSize]);
 
   return (
     <div className="chargeback-assign-page">
@@ -530,7 +541,7 @@ export const ChargebackAssign = () => {
                   </td>
                 </tr>
               ) : (
-                rows.map((r) => {
+                paginatedRows.map((r) => {
                   const tat = DisputeManagementService.getTatBadge(r);
                   return (
                     <tr key={r.rowId}>
@@ -607,6 +618,19 @@ export const ChargebackAssign = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={rows.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
 
         <div className="table-footer-bar">
           Total disputes in working queue: <strong>{rows.length}</strong>

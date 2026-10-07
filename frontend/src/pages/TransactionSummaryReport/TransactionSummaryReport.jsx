@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSummaryService from '../../services/summary/TransactionSummaryService';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import TablePagination from '../../components/common/TablePagination';
 import './TransactionSummaryReport.scss';
 
 export const TransactionSummaryReport = () => {
@@ -17,6 +18,10 @@ export const TransactionSummaryReport = () => {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const validateDates = (start, end) => {
     if (!start || !end) { setErrorMsg('Both From Date and To Date are required.'); return false; }
@@ -35,6 +40,7 @@ export const TransactionSummaryReport = () => {
       const data = await TransactionSummaryService.getReport({ fromDate: fDate, toDate: tDate, plazaId: pId });
       const plazas = data?.plazas || (Array.isArray(data) ? data : []);
       setReportData(plazas);
+      setCurrentPage(1);
       if (data?.grandTotal) {
         setGrandTotal(data.grandTotal);
       }
@@ -42,6 +48,7 @@ export const TransactionSummaryReport = () => {
       const msg = err?.response?.data?.error || err?.message || 'Database error occurred';
       setErrorMsg(`Error: ${msg}`);
       setReportData([]);
+      setCurrentPage(1);
     } finally { setLoading(false); }
   }, [fromDate, toDate, plazaId]);
 
@@ -50,6 +57,7 @@ export const TransactionSummaryReport = () => {
   const handleReset = () => {
     const def = getDefaultDateRange();
     setFromDate(def.from); setToDate(def.to); setPlazaId('ALL'); setErrorMsg('');
+    setCurrentPage(1);
     handleSearch(def.from, def.to, 'ALL');
   };
 
@@ -126,6 +134,12 @@ export const TransactionSummaryReport = () => {
   const kpiMetrics = summaryKpis;
 
   const hasData = reportData && Array.isArray(reportData) && reportData.length > 0;
+
+  // Paginated plazas for table view
+  const paginatedPlazas = useMemo(() => {
+    const from = (currentPage - 1) * pageSize;
+    return reportData.slice(from, from + pageSize);
+  }, [reportData, currentPage, pageSize]);
 
   return (
     <div className="txn-summary-page">
@@ -231,7 +245,7 @@ export const TransactionSummaryReport = () => {
                 </tr>
               ) : (
                 <>
-                  {reportData.map((plaza, pIdx) => {
+                  {paginatedPlazas.map((plaza, pIdx) => {
                     const plazaTotalRows = (plaza.statusGroups || []).reduce((sum, sg) => sum + (sg.rows || []).length, 0);
                     let plazaFirstRendered = false;
 
@@ -286,6 +300,19 @@ export const TransactionSummaryReport = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Table Pagination Bar */}
+        <TablePagination
+          totalItems={reportData.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
       </div>
 
       {/* KPI Cards */}
