@@ -1676,3 +1676,150 @@ html[data-theme="dark"],
   }
 }
 
+/* ═════════════════════════════════════════════════════════════
+   RESPONSIVE MEDIA QUERIES (TABLETS & MOBILE DEVICES)
+   Desktop UI remains 100% untouched
+   ═════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .user-management-content {
+    padding: 20px 20px 40px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+
+    .search-box {
+      width: 100%;
+      max-width: 100%;
+      min-width: 100%;
+      flex: 1 1 100%;
+    }
+
+    select {
+      width: 100%;
+      min-width: 100%;
+    }
+
+    .btn-ghost {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .user-management-content {
+    padding: 16px 12px 32px;
+    gap: 16px;
+  }
+
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+
+    h1 {
+      font-size: 22px;
+    }
+
+    p {
+      font-size: 12.5px;
+    }
+
+    .actions {
+      flex-direction: column;
+      width: 100%;
+      gap: 8px;
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 9px 14px;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+
+    .stat {
+      padding: 12px 14px;
+
+      strong {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .overlay {
+    padding: 12px 8px;
+    align-items: center;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px;
+
+    &-head {
+      padding: 14px 16px;
+
+      h2 {
+        font-size: 16px;
+      }
+    }
+
+    &-body {
+      padding: 14px 16px;
+      max-height: 75vh;
+      gap: 16px;
+    }
+
+    &-foot {
+      padding: 12px 16px;
+      flex-direction: column;
+      gap: 8px;
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .access-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+
+    .access-quick-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .table-foot {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+}
+
+

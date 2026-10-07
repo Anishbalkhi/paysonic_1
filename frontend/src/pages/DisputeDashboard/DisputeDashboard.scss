@@ -813,8 +813,128 @@
   }
 }
 
+/* ═════════════════════════════════════════════════════════════
+   RESPONSIVE MEDIA QUERIES (TABLETS & MOBILE DEVICES)
+   Desktop UI remains 100% untouched
+   ═════════════════════════════════════════════════════════════ */
+@media (max-width: 860px) {
+  .dispute-dashboard-page {
+    padding: 20px 16px 36px;
+    gap: 18px;
+
+    .dashboard-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .tat-banner-box.tat-alert {
+      .tat-banner-top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+
+        .tat-banner-actions {
+          width: 100%;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+
+          .tat-action-btn {
+            flex: 1 1 auto;
+          }
+        }
+      }
+
+      .tat-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+
+        .tat-toolbar-right {
+          width: 100%;
+          justify-content: space-between;
+
+          .tat-search-wrap {
+            flex: 1;
+            min-width: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 540px) {
+  .dispute-dashboard-page {
+    padding: 16px 12px 28px;
+    gap: 14px;
+
+    .dashboard-header {
+      .header-left {
+        h1 {
+          font-size: 1.35rem;
+        }
+        .subtitle {
+          font-size: 0.82rem;
+        }
+      }
+    }
+
+    .tat-banner-box.tat-alert {
+      padding: 12px 14px;
+
+      .tat-dispute-list .tat-item-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+
+        .tat-item-tail {
+          width: 100%;
+          justify-content: space-between;
+
+          .tat-row-action-btn {
+            padding: 4px 10px;
+          }
+        }
+      }
+
+      .tat-pagination-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+
+    .summary-metrics-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .search-dashboard-card {
+      padding: 16px 14px;
+
+      .filter-fields-row {
+        flex-direction: column;
+        gap: 10px;
+
+        .field-box {
+          width: 100%;
+        }
+
+        .filter-btn-group {
+          width: 100%;
+          button {
+            flex: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
 @keyframes pulse {
   0% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.35; transform: scale(1.15); }
   100% { opacity: 1; transform: scale(1); }
 }
+
