@@ -564,6 +564,45 @@ class DisputeManagementService {
       rows = rows.filter((r) => (r.tagId || '').toLowerCase().includes(q));
     }
 
+    if (filters.fromDate || filters.toDate) {
+      const parseDate = (dStr) => {
+        if (!dStr) return null;
+        if (/^\d{4}-\d{2}-\d{2}/.test(dStr)) {
+          const d = new Date(dStr);
+          return isNaN(d.getTime()) ? null : d;
+        }
+        const parts = String(dStr).split(/[\s-:]+/);
+        if (parts.length >= 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          const hour = parts[3] ? parseInt(parts[3], 10) : 0;
+          const min = parts[4] ? parseInt(parts[4], 10) : 0;
+          const sec = parts[5] ? parseInt(parts[5], 10) : 0;
+          const d = new Date(year, month, day, hour, min, sec);
+          return isNaN(d.getTime()) ? null : d;
+        }
+        const d = new Date(dStr);
+        return isNaN(d.getTime()) ? null : d;
+      };
+
+      const fromTime = filters.fromDate ? parseDate(filters.fromDate)?.getTime() : null;
+      const toTime = filters.toDate ? parseDate(filters.toDate)?.getTime() : null;
+
+      if (fromTime !== null || toTime !== null) {
+        const isTxn = filters.dateType === 'Transaction DateTime';
+        rows = rows.filter((r) => {
+          const targetStr = isTxn ? r.txnDate : (r.cbRaisedDate || r.txnDate);
+          const itemDate = parseDate(targetStr);
+          if (!itemDate) return true;
+          const itemTime = itemDate.getTime();
+          if (fromTime !== null && itemTime < fromTime) return false;
+          if (toTime !== null && itemTime > toTime + 86400000) return false;
+          return true;
+        });
+      }
+    }
+
     return rows;
   }
 

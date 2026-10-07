@@ -1309,14 +1309,18 @@ export const UserList = () => {
   // Filtered Users (Strictly sorted newest first)
   const filteredUsers = useMemo(() => {
     const list = hierarchyScopedUsers.filter((u) => {
+      const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        !searchQuery ||
-        u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.id.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.username && u.username.toLowerCase().includes(q)) ||
+        (u.id && u.id.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.contact && u.contact.includes(q)) ||
+        (u.mobile && u.mobile.includes(q));
 
       const matchesRole =
-        roleFilter === 'All roles' || u.role.toLowerCase() === roleFilter.toLowerCase();
+        roleFilter === 'All roles' || (u.role && u.role.toLowerCase() === roleFilter.toLowerCase());
 
       const isTrash = u.status === 'Trash User' || u.status === 'Trash';
 
@@ -1329,11 +1333,12 @@ export const UserList = () => {
             (statusFilter === 'Locked' && u.locked && !isTrash) ||
             (statusFilter === 'Active' && u.status === 'Active' && u.approval === 'Approved' && !u.locked && !isTrash) ||
             (statusFilter === 'Inactive' && u.status === 'Inactive' && !isTrash) ||
-            u.status.toLowerCase() === statusFilter.toLowerCase();
+            (u.status && u.status.toLowerCase() === statusFilter.toLowerCase());
 
+      const userPlazaStr = String(u.plaza || u.assignedPlaza || '');
       const matchesPlaza =
         plazaFilter === 'All plazas' ||
-        u.plaza.toLowerCase().includes(plazaFilter.toLowerCase());
+        userPlazaStr.toLowerCase().includes(plazaFilter.toLowerCase());
 
       return matchesSearch && matchesRole && matchesStatus && matchesPlaza;
     });

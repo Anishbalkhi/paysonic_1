@@ -76,7 +76,8 @@ export const DateWiseRecon = () => {
       let results = data || [];
       // Multi-plaza selection filter
       if (pList.length > 1) {
-        results = results.filter((r) => pList.includes(r.plazaId));
+        const idSet = new Set(pList.map((id) => String(id).trim()));
+        results = results.filter((r) => idSet.has(String(r.plazaId).trim()));
       }
 
       // Date Type filtering (Txn Date vs Settlement Date)

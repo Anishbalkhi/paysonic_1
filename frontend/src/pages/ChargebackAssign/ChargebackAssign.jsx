@@ -35,16 +35,28 @@ export const ChargebackAssign = () => {
   const [txnModalRow, setTxnModalRow] = useState(null);
   const [cbModalRow, setCbModalRow] = useState(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (overrides = {}) => {
     try {
       setLoading(true);
+      const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
+      const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
+      const dType = overrides.dateType !== undefined ? overrides.dateType : dateType;
+      const fCode = overrides.functionCode !== undefined ? overrides.functionCode : functionCode;
+      const pAct = overrides.plazaAction !== undefined ? overrides.plazaAction : plazaAction;
+      const aStat = overrides.assignStatus !== undefined ? overrides.assignStatus : assignStatus;
+      const dStat = overrides.disputeStatus !== undefined ? overrides.disputeStatus : disputeStatus;
+      const pId = overrides.tollPlazaId !== undefined ? overrides.tollPlazaId : tollPlazaId;
+
       const [fetchedRows, stats] = await Promise.all([
         DisputeManagementService.searchDisputes({
-          functionCode,
-          plazaAction,
-          assignStatus,
-          disputeStatus,
-          plazaId: tollPlazaId,
+          fromDate: fDate,
+          toDate: tDate,
+          dateType: dType,
+          functionCode: fCode,
+          plazaAction: pAct,
+          assignStatus: aStat,
+          disputeStatus: dStat,
+          plazaId: pId,
         }),
         DisputeManagementService.getAdminMiniDashboardStats(),
       ]);
@@ -56,7 +68,7 @@ export const ChargebackAssign = () => {
     } finally {
       setLoading(false);
     }
-  }, [functionCode, plazaAction, assignStatus, disputeStatus, tollPlazaId]);
+  }, [fromDate, toDate, dateType, functionCode, plazaAction, assignStatus, disputeStatus, tollPlazaId]);
 
   useEffect(() => {
     loadData();
@@ -416,6 +428,16 @@ export const ChargebackAssign = () => {
               setAssignStatus('');
               setDisputeStatus('');
               setTollPlazaId('');
+              loadData({
+                fromDate: '',
+                toDate: '',
+                dateType: '',
+                functionCode: '',
+                plazaAction: '',
+                assignStatus: '',
+                disputeStatus: '',
+                tollPlazaId: '',
+              });
             }}
           >
             Clear Filters
@@ -423,7 +445,7 @@ export const ChargebackAssign = () => {
           <button
             type="button"
             className="btn btn-primary btn-sm"
-            onClick={loadData}
+            onClick={() => loadData()}
           >
             Search
           </button>

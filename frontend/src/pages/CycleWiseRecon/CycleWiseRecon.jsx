@@ -76,7 +76,8 @@ export const CycleWiseRecon = () => {
 
       let results = data || [];
       if (pList.length > 1) {
-        results = results.filter((r) => pList.includes(r.plazaId));
+        const idSet = new Set(pList.map((id) => String(id).trim()));
+        results = results.filter((r) => idSet.has(String(r.plazaId).trim()));
       }
 
       setRecords(results);

@@ -62,17 +62,30 @@ export const DisputeValidate = () => {
   const [txnModalRow, setTxnModalRow] = useState(null);
   const [actionModalRow, setActionModalRow] = useState(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (overrides = {}) => {
     try {
       setLoading(true);
+      const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
+      const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
+      const dType = overrides.dateType !== undefined ? overrides.dateType : dateType;
+      const fCode = overrides.functionCode !== undefined ? overrides.functionCode : functionCode;
+      const pAct = overrides.plazaAction !== undefined ? overrides.plazaAction : plazaAction;
+      const dStat = overrides.disputeStatus !== undefined ? overrides.disputeStatus : disputeStatus;
+      const aTxn = overrides.acqTxnId !== undefined ? overrides.acqTxnId : acqTxnId;
+      const tTxn = overrides.tollTxnId !== undefined ? overrides.tollTxnId : tollTxnId;
+      const tId = overrides.tagId !== undefined ? overrides.tagId : tagId;
+
       const fetched = await DisputeManagementService.searchDisputes({
         scopedPlazaId: activePlazaId !== 'ALL' ? activePlazaId : undefined,
-        functionCode,
-        plazaAction,
-        disputeStatus,
-        acqTxnId,
-        tollTxnId,
-        tagId,
+        fromDate: fDate,
+        toDate: tDate,
+        dateType: dType,
+        functionCode: fCode,
+        plazaAction: pAct,
+        disputeStatus: dStat,
+        acqTxnId: aTxn,
+        tollTxnId: tTxn,
+        tagId: tId,
       });
       // Show assigned disputes for this plaza
       setRows(fetched.filter((r) => r.assigned === true));
@@ -82,13 +95,16 @@ export const DisputeValidate = () => {
     } finally {
       setLoading(false);
     }
-  }, [activePlazaId, functionCode, plazaAction, disputeStatus, acqTxnId, tollTxnId, tagId]);
+  }, [activePlazaId, fromDate, toDate, dateType, functionCode, plazaAction, disputeStatus, acqTxnId, tollTxnId, tagId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const handleReset = () => {
+    setFromDate('2026-09-01');
+    setToDate('2026-10-05');
+    setDateType('Transaction DateTime');
     setFunctionCode('');
     setPlazaAction('');
     setDisputeStatus('');
@@ -96,6 +112,17 @@ export const DisputeValidate = () => {
     setTollTxnId('');
     setTagId('');
     setCurrentPage(1);
+    loadData({
+      fromDate: '2026-09-01',
+      toDate: '2026-10-05',
+      dateType: 'Transaction DateTime',
+      functionCode: '',
+      plazaAction: '',
+      disputeStatus: '',
+      acqTxnId: '',
+      tollTxnId: '',
+      tagId: '',
+    });
   };
 
   const paginatedRows = useMemo(() => {
