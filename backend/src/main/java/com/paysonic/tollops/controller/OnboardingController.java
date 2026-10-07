@@ -325,4 +325,94 @@ public class OnboardingController {
         }
         return p;
     }
+
+    // ─── Webhook URL Verification ───────────────────────────────────────────────
+
+    @PostMapping("/webhooks/test")
+    public ResponseEntity<Map<String, Object>> testWebhook(@RequestBody Map<String, String> body) {
+        String urlStr = body != null ? body.get("url") : null;
+        if (urlStr == null || urlStr.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "URL is required"));
+        }
+        if (urlStr.contains(" ")) {
+            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "URL cannot contain spaces"));
+        }
+
+        try {
+            java.net.URI uri = java.net.URI.create(urlStr.trim());
+            java.net.URL url = uri.toURL();
+            String protocol = url.getProtocol();
+            if (!"http".equalsIgnoreCase(protocol) && !"https".equalsIgnoreCase(protocol)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "error",
+                        "message", "Protocol must be HTTP or HTTPS"
+                ));
+            }
+            if (url.getHost() == null || url.getHost().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "error",
+                        "message", "Missing or invalid hostname"
+                ));
+            }
+
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("HEAD");
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            conn.setRequestProperty("User-Agent", "Paysonic-Webhook-Verifier/1.0");
+            conn.setInstanceFollowRedirects(true);
+
+            int responseCode;
+            try {
+                responseCode = conn.getResponseCode();
+            } catch (java.net.ProtocolException pe) {
+                conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(4000);
+                conn.setReadTimeout(4000);
+                conn.setRequestProperty("User-Agent", "Paysonic-Webhook-Verifier/1.0");
+                responseCode = conn.getResponseCode();
+            }
+
+            String respMsg = conn.getResponseMessage() != null ? conn.getResponseMessage() : "";
+            if (responseCode >= 200 && responseCode < 400) {
+                return ResponseEntity.ok(Map.of(
+                        "status", "success",
+                        "statusCode", responseCode,
+                        "message", responseCode + " " + (respMsg.isEmpty() ? "OK" : respMsg) + " · Handshake Verified"
+                ));
+            } else {
+                return ResponseEntity.ok(Map.of(
+                        "status", "error",
+                        "statusCode", responseCode,
+                        "message", "Server responded with HTTP " + responseCode + (respMsg.isEmpty() ? "" : " (" + respMsg + ")")
+                ));
+            }
+        } catch (java.net.UnknownHostException uhe) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", "Host Unreachable · DNS Lookup Failed (" + uhe.getMessage() + ")"
+            ));
+        } catch (java.net.ConnectException ce) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", "Connection Refused · Server Not Listening"
+            ));
+        } catch (java.net.SocketTimeoutException ste) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", "Connection Timeout (4000ms exceeded)"
+            ));
+        } catch (IllegalArgumentException | java.net.MalformedURLException me) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", "Invalid URL format: " + me.getMessage()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "error",
+                    "message", "Verification Failed: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())
+            ));
+        }
+    }
 }

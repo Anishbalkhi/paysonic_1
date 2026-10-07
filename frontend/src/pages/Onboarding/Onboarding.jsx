@@ -1170,6 +1170,7 @@ export const Onboarding = () => {
   const [callbackUrls, setCallbackUrls] = useState({});
   const [testResults, setTestResults] = useState({});
   const [isAutoFilledCallbacks, setIsAutoFilledCallbacks] = useState(false);
+  const [urlSpacePopup, setUrlSpacePopup] = useState({ show: false, api: '', rawVal: '' });
 
   useEffect(() => {
     if (selectedPlazaId && store.callbacks[selectedPlazaId]) {
@@ -1184,30 +1185,140 @@ export const Onboarding = () => {
   }, [selectedPlazaId, store.callbacks]);
 
   const handleCallbackChange = (api, val) => {
+    if (/\s/.test(val)) {
+      // Reject spaces at start, end, or inside URL and alert user via popup
+      const cleaned = val.replace(/\s+/g, '');
+      setCallbackUrls((prev) => ({ ...prev, [api]: cleaned }));
+      setUrlSpacePopup({
+        show: true,
+        api,
+        rawVal: val,
+      });
+      showToast(`${api}: Spaces are not permitted in Callback URLs`, 'error');
+      return;
+    }
     setCallbackUrls((prev) => ({ ...prev, [api]: val }));
   };
 
-  const handleTestCallback = (api) => {
-    const url = (callbackUrls[api] || '').trim();
-    if (!url) {
-      setTestResults((prev) => ({ ...prev, [api]: { status: 'error', msg: 'Empty URL' } }));
+  const handleCallbackBlur = (api) => {
+    const current = callbackUrls[api] || '';
+    if (/\s/.test(current)) {
+      const cleaned = current.replace(/\s+/g, '');
+      setCallbackUrls((prev) => ({ ...prev, [api]: cleaned }));
+      setUrlSpacePopup({
+        show: true,
+        api,
+        rawVal: current,
+      });
+      showToast(`${api}: Spaces are not permitted in Callback URLs`, 'error');
+    }
+  };
+
+  const handleTestCallback = async (api) => {
+    const raw = callbackUrls[api] || '';
+    if (!raw || !raw.trim()) {
+      setTestResults((prev) => ({ ...prev, [api]: { status: 'error', msg: 'Empty URL · Enter a URL to test' } }));
       showToast(`${api}: No URL provided to test`, 'error');
       return;
     }
-    if (!/^https?:\/\/\S{3,250}$/.test(url)) {
-      setTestResults((prev) => ({ ...prev, [api]: { status: 'error', msg: 'Invalid URL format' } }));
-      showToast(`${api}: Must start with http:// or https:// and contain no spaces`, 'error');
+
+    if (/\s/.test(raw)) {
+      setUrlSpacePopup({ show: true, api, rawVal: raw });
+      setTestResults((prev) => ({ ...prev, [api]: { status: 'error', msg: 'Whitespace detected in URL' } }));
+      showToast(`${api}: Cannot test URL containing whitespace`, 'error');
       return;
     }
 
-    setTestResults((prev) => ({ ...prev, [api]: { status: 'testing', msg: 'Pinging...' } }));
-    setTimeout(() => {
+    const url = raw.trim();
+
+    // 1. Strict URL syntax validation
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      setTestResults((prev) => ({
+        ...prev,
+        [api]: { status: 'error', msg: 'Invalid URL format · Malformed syntax' },
+      }));
+      showToast(`${api}: Invalid URL syntax`, 'error');
+      return;
+    }
+
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      setTestResults((prev) => ({
+        ...prev,
+        [api]: { status: 'error', msg: 'Protocol must be http:// or https://' },
+      }));
+      showToast(`${api}: Protocol must be http:// or https://`, 'error');
+      return;
+    }
+
+    if (!parsedUrl.hostname || (!parsedUrl.hostname.includes('.') && parsedUrl.hostname !== 'localhost')) {
+      setTestResults((prev) => ({
+        ...prev,
+        [api]: { status: 'error', msg: 'Invalid hostname/domain' },
+      }));
+      showToast(`${api}: Invalid hostname or domain`, 'error');
+      return;
+    }
+
+    setTestResults((prev) => ({ ...prev, [api]: { status: 'testing', msg: 'Verifying webhook endpoint...' } }));
+
+    // 2. Real verification: Try backend endpoint /api/webhooks/test
+    try {
+      const res = await httpClient.post('/api/webhooks/test', { url }, { timeout: 6000 });
+      if (res?.data) {
+        const isSuccess = res.data.status === 'success';
+        const msg = res.data.message || (isSuccess ? '200 OK · Handshake Verified' : 'Handshake Failed');
+        setTestResults((prev) => ({
+          ...prev,
+          [api]: { status: isSuccess ? 'success' : 'error', msg },
+        }));
+        showToast(`${api}: ${msg}`, isSuccess ? 'success' : 'error');
+        return;
+      }
+    } catch (err) {
+      if (err?.response?.data?.message) {
+        const msg = err.response.data.message;
+        setTestResults((prev) => ({
+          ...prev,
+          [api]: { status: 'error', msg },
+        }));
+        showToast(`${api}: ${msg}`, 'error');
+        return;
+      }
+    }
+
+    // 3. Fallback client-side network verification
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+    try {
+      await fetch(url, {
+        method: 'HEAD',
+        mode: 'no-cors',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
       setTestResults((prev) => ({
         ...prev,
         [api]: { status: 'success', msg: '200 OK · Handshake Verified' },
       }));
       showToast(`${api}: Connection handshake verified (200 OK)`, 'success');
-    }, 450);
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      let errMsg = 'Host Unreachable / DNS Resolution Failed';
+      if (fetchErr.name === 'AbortError') {
+        errMsg = 'Connection Timed Out (4500ms exceeded)';
+      } else if (fetchErr.message && !fetchErr.message.includes('Failed to fetch')) {
+        errMsg = fetchErr.message;
+      }
+      setTestResults((prev) => ({
+        ...prev,
+        [api]: { status: 'error', msg: `Failed · ${errMsg}` },
+      }));
+      showToast(`${api}: Webhook verification failed — ${errMsg}`, 'error');
+    }
   };
 
   const handleClearCallbacks = () => {
@@ -1251,13 +1362,31 @@ export const Onboarding = () => {
       return;
     }
 
+    // Check for any spaces first and show popup
+    for (const [api, url] of Object.entries(callbackUrls)) {
+      if (url && /\s/.test(url)) {
+        setUrlSpacePopup({
+          show: true,
+          api,
+          rawVal: url,
+        });
+        showToast(`Cannot save: ${api} contains spaces`, 'error');
+        return;
+      }
+    }
+
     let invalidCount = 0;
     let filledCount = 0;
     Object.entries(callbackUrls).forEach(([api, url]) => {
       const u = (url || '').trim();
       if (u) {
         filledCount++;
-        if (!/^https?:\/\/\S{3,250}$/.test(u)) {
+        try {
+          const parsed = new URL(u);
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            invalidCount++;
+          }
+        } catch {
           invalidCount++;
         }
       }
@@ -2766,6 +2895,7 @@ export const Onboarding = () => {
                             placeholder={`https://api.paysonic.in/${selectedPlazaId.toLowerCase()}/${api.toLowerCase()}`}
                             value={currentVal}
                             onChange={(e) => handleCallbackChange(api, e.target.value)}
+                            onBlur={() => handleCallbackBlur(api)}
                             className="cb-input"
                           />
                           {currentVal && (
@@ -2781,7 +2911,7 @@ export const Onboarding = () => {
                         </div>
                         {test && (
                           <div className={`test-feedback ${test.status}`}>
-                            {test.status === 'success' ? '✓ ' : '✕ '}
+                            {test.status === 'testing' ? '⏳ ' : test.status === 'success' ? '✓ ' : '✕ '}
                             {test.msg}
                           </div>
                         )}
@@ -2790,9 +2920,10 @@ export const Onboarding = () => {
                         <button
                           type="button"
                           className="btn-ghost sm"
+                          disabled={test?.status === 'testing'}
                           onClick={() => handleTestCallback(api)}
                         >
-                          Test Webhook
+                          {test?.status === 'testing' ? 'Verifying...' : 'Test Webhook'}
                         </button>
                       </div>
                     </div>
@@ -3326,6 +3457,103 @@ export const Onboarding = () => {
               >
                 Edit Full Plaza Record
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* MODAL: WHITESPACE DETECTED IN CALLBACK URL POPUP                   */}
+      {/* ================================================================= */}
+      {urlSpacePopup.show && (
+        <div
+          className="onboarding-modal-backdrop"
+          onClick={() => setUrlSpacePopup({ show: false, api: '', rawVal: '' })}
+          style={{ zIndex: 99999 }}
+        >
+          <div
+            className="onboarding-modal alert-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '500px' }}
+          >
+            <div
+              className="modal-header"
+              style={{
+                borderBottom: '1px solid #fee2e2',
+                background: '#fff5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '24px' }}>⚠️</span>
+                <div>
+                  <h3 style={{ margin: 0, color: '#b91c1c', fontSize: '16px', fontWeight: '700' }}>
+                    Invalid URL — Whitespace Detected
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
+                    Spaces are not accepted in webhook endpoints
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setUrlSpacePopup({ show: false, api: '', rawVal: '' })}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '22px' }}>
+              <p style={{ margin: '0 0 14px 0', fontSize: '14px', color: '#334155', lineHeight: 1.5 }}>
+                Callback URLs <strong>cannot contain spaces</strong> at the start, end, or inside the address.
+              </p>
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  fontSize: '13px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ marginBottom: '8px' }}>
+                  <strong style={{ color: '#475569' }}>API Endpoint:</strong>{' '}
+                  <code style={{ color: '#2563eb', fontWeight: '600' }}>{urlSpacePopup.api}</code>
+                </div>
+                <div style={{ wordBreak: 'break-all' }}>
+                  <strong style={{ color: '#475569' }}>Detected Value:</strong>{' '}
+                  <span
+                    style={{
+                      background: '#fee2e2',
+                      color: '#991b1b',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontFamily: 'monospace',
+                      fontWeight: '600',
+                    }}
+                  >
+                    "{urlSpacePopup.rawVal}"
+                  </span>
+                </div>
+              </div>
+              <p style={{ margin: '0', fontSize: '12.5px', color: '#64748b' }}>
+                The detected whitespace has been rejected. Please provide a clean URL (e.g.{' '}
+                <code>https://api.domain.com/webhook</code>).
+              </p>
+              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setUrlSpacePopup({ show: false, api: '', rawVal: '' })}
+                  style={{ minWidth: '110px' }}
+                >
+                  OK, Got it
+                </button>
+              </div>
             </div>
           </div>
         </div>
