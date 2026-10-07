@@ -5,10 +5,11 @@ import './StateCitySelect.css';
 /**
  * StateCitySelect — Reusable searchable State + searchable dependent City dropdowns
  * Full Keyboard Navigation Support:
- * - Up/Down Arrow keys to traverse dropdown options
- * - Enter key to select active highlighted option
- * - Escape key to dismiss dropdown
- * - Auto-scrolls dropdown list as user traverses with keyboard
+ * - Up/Down Arrow keys to traverse dropdown options with live input preview & auto-scroll
+ * - Enter key to select active highlighted option & automatically focus City input
+ * - Tab key selects highlighted option and advances to next field
+ * - Escape key dismisses dropdown and reverts to saved selection
+ * - Custom cities supported with seamless keyboard selection
  *
  * Props:
  *   stateValue   {string}   — current state value (UPPERCASE)
@@ -32,57 +33,69 @@ export const StateCitySelect = ({
   onCityBlur,
   required = true,
 }) => {
-  const [stateSearch, setStateSearch] = useState('');
+  const [stateSearch, setStateSearch] = useState(stateValue || '');
   const [stateOpen, setStateOpen] = useState(false);
+  const [isStateSearching, setIsStateSearching] = useState(false);
   const [stateHighlightedIndex, setStateHighlightedIndex] = useState(-1);
 
-  const [citySearch, setCitySearch] = useState('');
+  const [citySearch, setCitySearch] = useState(cityValue || '');
   const [cityOpen, setCityOpen] = useState(false);
+  const [isCitySearching, setIsCitySearching] = useState(false);
   const [cityHighlightedIndex, setCityHighlightedIndex] = useState(-1);
 
   const stateRef = useRef(null);
   const cityRef = useRef(null);
+  const stateInputRef = useRef(null);
+  const cityInputRef = useRef(null);
   const stateListRef = useRef(null);
   const cityListRef = useRef(null);
 
+  // Synchronize internal search text when external props change
+  useEffect(() => {
+    setStateSearch(stateValue || '');
+  }, [stateValue]);
+
+  useEffect(() => {
+    setCitySearch(cityValue || '');
+  }, [cityValue]);
+
   const cities = useMemo(() => getCitiesForState(stateValue), [stateValue]);
 
-  // Filter states based on user typing
+  // Filter states: show ALL states when just browsing; filter when user is typing
   const filteredStates = useMemo(() => {
-    return stateSearch.trim()
-      ? INDIA_STATES.filter((s) =>
-          s.toLowerCase().includes(stateSearch.toLowerCase().trim())
-        )
-      : INDIA_STATES;
-  }, [stateSearch]);
+    if (!isStateSearching || !stateSearch.trim()) {
+      return INDIA_STATES;
+    }
+    const q = stateSearch.toLowerCase().trim();
+    return INDIA_STATES.filter((s) => s.toLowerCase().includes(q));
+  }, [isStateSearching, stateSearch]);
 
-  // Filter cities for selected state based on user typing
+  // Filter cities: show all cities of selected state when browsing; filter when typing
   const filteredCities = useMemo(() => {
-    return citySearch.trim()
-      ? cities.filter((c) =>
-          c.toLowerCase().includes(citySearch.toLowerCase().trim())
-        )
-      : cities;
-  }, [cities, citySearch]);
+    if (!isCitySearching || !citySearch.trim()) {
+      return cities;
+    }
+    const q = citySearch.toLowerCase().trim();
+    return cities.filter((c) => c.toLowerCase().includes(q));
+  }, [cities, isCitySearching, citySearch]);
 
-  const isExactCityMatch = useMemo(() => {
-    return cities.some(
-      (c) => c.toLowerCase() === (citySearch || '').trim().toLowerCase()
-    );
-  }, [cities, citySearch]);
-
-  // Complete list of navigable city options (standard + custom if user typed a non-listed city)
+  // Navigable city options (standard + custom if typed text is not in standard list)
   const cityOptions = useMemo(() => {
     const list = filteredCities.map((c) => ({ type: 'standard', value: c }));
-    if (citySearch.trim() && !isExactCityMatch) {
-      list.push({
-        type: 'custom',
-        value: citySearch.trim().toUpperCase(),
-        label: `Use "${citySearch.trim().toUpperCase()}" (Custom City)`,
-      });
+    if (isCitySearching && citySearch.trim()) {
+      const exactMatch = cities.some(
+        (c) => c.toLowerCase() === citySearch.trim().toLowerCase()
+      );
+      if (!exactMatch) {
+        list.push({
+          type: 'custom',
+          value: citySearch.trim().toUpperCase(),
+          label: `Use "${citySearch.trim().toUpperCase()}" (Custom City)`,
+        });
+      }
     }
     return list;
-  }, [filteredCities, citySearch, isExactCityMatch]);
+  }, [filteredCities, cities, isCitySearching, citySearch]);
 
   // Auto-scroll highlighted state into view
   useEffect(() => {
@@ -104,38 +117,48 @@ export const StateCitySelect = ({
     }
   }, [cityHighlightedIndex, cityOpen]);
 
-  // Reset or initialize state highlight when filtered list or open state changes
+  // Set initial highlight when State dropdown opens
   useEffect(() => {
     if (stateOpen) {
-      const initialIdx = filteredStates.findIndex(
-        (s) => s.toUpperCase() === (stateValue || '').toUpperCase()
-      );
-      setStateHighlightedIndex(initialIdx >= 0 ? initialIdx : (filteredStates.length > 0 ? 0 : -1));
+      if (!isStateSearching && stateValue) {
+        const idx = filteredStates.findIndex(
+          (s) => s.toUpperCase() === stateValue.toUpperCase()
+        );
+        setStateHighlightedIndex(idx >= 0 ? idx : 0);
+      } else if (stateHighlightedIndex < 0 && filteredStates.length > 0) {
+        setStateHighlightedIndex(0);
+      }
     } else {
       setStateHighlightedIndex(-1);
     }
-  }, [stateOpen, filteredStates, stateValue]);
+  }, [stateOpen, isStateSearching, filteredStates, stateValue]);
 
-  // Reset or initialize city highlight when city options or open state changes
+  // Set initial highlight when City dropdown opens
   useEffect(() => {
     if (cityOpen) {
-      const initialIdx = cityOptions.findIndex(
-        (c) => c.value.toUpperCase() === (cityValue || '').toUpperCase()
-      );
-      setCityHighlightedIndex(initialIdx >= 0 ? initialIdx : (cityOptions.length > 0 ? 0 : -1));
+      if (!isCitySearching && cityValue) {
+        const idx = cityOptions.findIndex(
+          (c) => c.value.toUpperCase() === cityValue.toUpperCase()
+        );
+        setCityHighlightedIndex(idx >= 0 ? idx : 0);
+      } else if (cityHighlightedIndex < 0 && cityOptions.length > 0) {
+        setCityHighlightedIndex(0);
+      }
     } else {
       setCityHighlightedIndex(-1);
     }
-  }, [cityOpen, cityOptions, cityValue]);
+  }, [cityOpen, isCitySearching, cityOptions, cityValue]);
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (stateRef.current && !stateRef.current.contains(e.target)) {
         setStateOpen(false);
+        setIsStateSearching(false);
       }
       if (cityRef.current && !cityRef.current.contains(e.target)) {
         setCityOpen(false);
+        setIsCitySearching(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -143,19 +166,37 @@ export const StateCitySelect = ({
   }, []);
 
   const handleStateSelect = (state) => {
+    if (!state) return;
     onStateChange(state);
-    onCityChange(''); // reset city when state changes
+    if (state !== stateValue) {
+      onCityChange('');
+      setCitySearch('');
+    }
     setStateSearch(state);
-    setCitySearch('');
+    setIsStateSearching(false);
     setStateOpen(false);
     setStateHighlightedIndex(-1);
-    if (onStateBlur) onStateBlur();
+    // Smoothly focus city input for mouse-free keyboard workflow
+    setTimeout(() => {
+      cityInputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleCitySelect = (city) => {
+    if (!city) return;
+    onCityChange(city);
+    setCitySearch(city);
+    setIsCitySearching(false);
+    setCityOpen(false);
+    setCityHighlightedIndex(-1);
   };
 
   const handleStateInputChange = (e) => {
     const val = e.target.value.toUpperCase();
     setStateSearch(val);
+    setIsStateSearching(true);
     setStateOpen(true);
+    setStateHighlightedIndex(0);
     if (!val) {
       onStateChange('');
       onCityChange('');
@@ -163,94 +204,191 @@ export const StateCitySelect = ({
     }
   };
 
-  const handleStateKeyDown = (e) => {
-    if (!stateOpen) {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
-        e.preventDefault();
-        setStateOpen(true);
-        setStateHighlightedIndex(0);
-        return;
-      }
-    }
+  const handleCityInputChange = (e) => {
+    const val = e.target.value.toUpperCase();
+    setCitySearch(val);
+    setIsCitySearching(true);
+    onCityChange(val);
+    setCityOpen(true);
+    setStateHighlightedIndex(0);
+  };
 
+  const handleStateKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      if (!stateOpen) {
+        setStateOpen(true);
+        setIsStateSearching(false);
+        const idx = filteredStates.findIndex(
+          (s) => s.toUpperCase() === (stateValue || '').toUpperCase()
+        );
+        setStateHighlightedIndex(idx >= 0 ? idx : 0);
+        return;
+      }
       if (filteredStates.length === 0) return;
       setStateHighlightedIndex((prev) => (prev < filteredStates.length - 1 ? prev + 1 : 0));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      if (!stateOpen) {
+        setStateOpen(true);
+        setIsStateSearching(false);
+        const idx = filteredStates.findIndex(
+          (s) => s.toUpperCase() === (stateValue || '').toUpperCase()
+        );
+        setStateHighlightedIndex(idx >= 0 ? idx : filteredStates.length - 1);
+        return;
+      }
       if (filteredStates.length === 0) return;
       setStateHighlightedIndex((prev) => (prev > 0 ? prev - 1 : filteredStates.length - 1));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (stateOpen && stateHighlightedIndex >= 0 && stateHighlightedIndex < filteredStates.length) {
-        handleStateSelect(filteredStates[stateHighlightedIndex]);
+      e.stopPropagation();
+      if (stateOpen) {
+        if (stateHighlightedIndex >= 0 && stateHighlightedIndex < filteredStates.length) {
+          handleStateSelect(filteredStates[stateHighlightedIndex]);
+        } else if (filteredStates.length > 0) {
+          handleStateSelect(filteredStates[0]);
+        }
+      } else {
+        setStateOpen(true);
+        setIsStateSearching(false);
       }
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      setStateOpen(false);
     } else if (e.key === 'Tab') {
       if (stateOpen && stateHighlightedIndex >= 0 && stateHighlightedIndex < filteredStates.length) {
         handleStateSelect(filteredStates[stateHighlightedIndex]);
       } else {
         setStateOpen(false);
+        setIsStateSearching(false);
       }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setStateOpen(false);
+      setIsStateSearching(false);
+      setStateSearch(stateValue || '');
     }
-  };
-
-  const handleCitySelect = (city) => {
-    onCityChange(city);
-    setCitySearch(city);
-    setCityOpen(false);
-    setCityHighlightedIndex(-1);
-    if (onCityBlur) onCityBlur();
-  };
-
-  const handleCityInputChange = (e) => {
-    const val = e.target.value.toUpperCase();
-    setCitySearch(val);
-    onCityChange(val);
-    setCityOpen(true);
   };
 
   const handleCityKeyDown = (e) => {
     if (!stateValue) return;
 
-    if (!cityOpen) {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
-        e.preventDefault();
-        setCityOpen(true);
-        setCityHighlightedIndex(0);
-        return;
-      }
-    }
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      if (!cityOpen) {
+        setCityOpen(true);
+        setIsCitySearching(false);
+        const idx = cityOptions.findIndex(
+          (c) => c.value.toUpperCase() === (cityValue || '').toUpperCase()
+        );
+        setCityHighlightedIndex(idx >= 0 ? idx : 0);
+        return;
+      }
       if (cityOptions.length === 0) return;
       setCityHighlightedIndex((prev) => (prev < cityOptions.length - 1 ? prev + 1 : 0));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      if (!cityOpen) {
+        setCityOpen(true);
+        setIsCitySearching(false);
+        const idx = cityOptions.findIndex(
+          (c) => c.value.toUpperCase() === (cityValue || '').toUpperCase()
+        );
+        setCityHighlightedIndex(idx >= 0 ? idx : cityOptions.length - 1);
+        return;
+      }
       if (cityOptions.length === 0) return;
       setCityHighlightedIndex((prev) => (prev > 0 ? prev - 1 : cityOptions.length - 1));
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      e.stopPropagation();
+      if (cityOpen) {
+        if (cityHighlightedIndex >= 0 && cityHighlightedIndex < cityOptions.length) {
+          handleCitySelect(cityOptions[cityHighlightedIndex].value);
+        } else if (cityOptions.length > 0) {
+          handleCitySelect(cityOptions[0].value);
+        } else if (citySearch.trim()) {
+          handleCitySelect(citySearch.trim().toUpperCase());
+        }
+      } else {
+        setCityOpen(true);
+        setIsCitySearching(false);
+      }
+    } else if (e.key === 'Tab') {
       if (cityOpen && cityHighlightedIndex >= 0 && cityHighlightedIndex < cityOptions.length) {
-        const item = cityOptions[cityHighlightedIndex];
-        handleCitySelect(item.value);
+        handleCitySelect(cityOptions[cityHighlightedIndex].value);
+      } else if (cityOpen && isCitySearching && citySearch.trim()) {
+        const match = cities.find((c) => c.toLowerCase() === citySearch.trim().toLowerCase());
+        handleCitySelect(match || citySearch.trim().toUpperCase());
+      } else {
+        setCityOpen(false);
+        setIsCitySearching(false);
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       setCityOpen(false);
-    } else if (e.key === 'Tab') {
-      if (cityOpen && cityHighlightedIndex >= 0 && cityHighlightedIndex < cityOptions.length) {
-        const item = cityOptions[cityHighlightedIndex];
-        handleCitySelect(item.value);
-      } else {
-        setCityOpen(false);
-      }
+      setIsCitySearching(false);
+      setCitySearch(cityValue || '');
     }
   };
+
+  const handleStateBlur = () => {
+    setTimeout(() => {
+      if (stateRef.current && stateRef.current.contains(document.activeElement)) {
+        return;
+      }
+      setStateOpen(false);
+      setIsStateSearching(false);
+      if (stateSearch.trim()) {
+        const match = INDIA_STATES.find(
+          (s) => s.toLowerCase() === stateSearch.trim().toLowerCase()
+        );
+        if (match && match !== stateValue) {
+          handleStateSelect(match);
+        } else if (!match && !stateValue) {
+          setStateSearch('');
+        } else {
+          setStateSearch(stateValue || '');
+        }
+      } else {
+        setStateSearch(stateValue || '');
+      }
+      if (onStateBlur) onStateBlur();
+    }, 150);
+  };
+
+  const handleCityBlur = () => {
+    setTimeout(() => {
+      if (cityRef.current && cityRef.current.contains(document.activeElement)) {
+        return;
+      }
+      setCityOpen(false);
+      setIsCitySearching(false);
+      if (citySearch.trim()) {
+        const match = cities.find(
+          (c) => c.toLowerCase() === citySearch.trim().toLowerCase()
+        );
+        const finalCity = match || citySearch.trim().toUpperCase();
+        if (finalCity !== cityValue) {
+          handleCitySelect(finalCity);
+        }
+      } else {
+        setCitySearch(cityValue || '');
+      }
+      if (onCityBlur) onCityBlur();
+    }, 150);
+  };
+
+  // Compute live value displayed inside inputs
+  const displayStateValue = isStateSearching
+    ? stateSearch
+    : stateOpen && stateHighlightedIndex >= 0 && filteredStates[stateHighlightedIndex]
+    ? filteredStates[stateHighlightedIndex]
+    : (stateValue || '');
+
+  const displayCityValue = isCitySearching
+    ? citySearch
+    : cityOpen && cityHighlightedIndex >= 0 && cityOptions[cityHighlightedIndex]?.value
+    ? cityOptions[cityHighlightedIndex].value
+    : (cityValue || '');
 
   return (
     <>
@@ -261,22 +399,18 @@ export const StateCitySelect = ({
         </label>
         <div className={`scs-wrapper ${stateError ? 'invalid' : ''}`}>
           <input
+            ref={stateInputRef}
             type="text"
             className="scs-input"
-            placeholder="Type to search state…"
-            value={stateOpen ? stateSearch : (stateValue || '')}
+            placeholder="Type or press ↓ to select state…"
+            value={displayStateValue}
             onFocus={() => {
-              setStateSearch(stateValue || '');
+              setIsStateSearching(false);
               setStateOpen(true);
             }}
             onChange={handleStateInputChange}
             onKeyDown={handleStateKeyDown}
-            onBlur={() => {
-              setTimeout(() => {
-                setStateOpen(false);
-                if (onStateBlur) onStateBlur();
-              }, 200);
-            }}
+            onBlur={handleStateBlur}
             autoComplete="off"
             role="combobox"
             aria-expanded={stateOpen}
@@ -288,7 +422,13 @@ export const StateCitySelect = ({
             className="scs-chevron"
             onClick={(e) => {
               e.stopPropagation();
-              setStateOpen((p) => !p);
+              if (!stateOpen) {
+                setIsStateSearching(false);
+                setStateOpen(true);
+                stateInputRef.current?.focus();
+              } else {
+                setStateOpen(false);
+              }
             }}
           >
             {stateOpen ? '▲' : '▼'}
@@ -335,25 +475,21 @@ export const StateCitySelect = ({
         </label>
         <div className={`scs-wrapper ${cityError ? 'invalid' : ''} ${!stateValue ? 'scs-disabled' : ''}`}>
           <input
+            ref={cityInputRef}
             type="text"
             className="scs-input"
-            placeholder={stateValue ? 'Type or select city…' : 'Select state first'}
-            value={cityOpen ? citySearch : (cityValue || '')}
+            placeholder={stateValue ? 'Type or press ↓ to select city…' : 'Select state first'}
+            value={displayCityValue}
             disabled={!stateValue}
             onFocus={() => {
               if (stateValue) {
-                setCitySearch(cityValue || '');
+                setIsCitySearching(false);
                 setCityOpen(true);
               }
             }}
             onChange={handleCityInputChange}
             onKeyDown={handleCityKeyDown}
-            onBlur={() => {
-              setTimeout(() => {
-                setCityOpen(false);
-                if (onCityBlur) onCityBlur();
-              }, 200);
-            }}
+            onBlur={handleCityBlur}
             autoComplete="off"
             role="combobox"
             aria-expanded={cityOpen}
@@ -365,7 +501,15 @@ export const StateCitySelect = ({
             className="scs-chevron"
             onClick={(e) => {
               e.stopPropagation();
-              if (stateValue) setCityOpen((p) => !p);
+              if (stateValue) {
+                if (!cityOpen) {
+                  setIsCitySearching(false);
+                  setCityOpen(true);
+                  cityInputRef.current?.focus();
+                } else {
+                  setCityOpen(false);
+                }
+              }
             }}
           >
             {cityOpen ? '▲' : '▼'}

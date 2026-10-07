@@ -591,16 +591,18 @@ export const Onboarding = () => {
     }
   };
 
-  const handlePlazaBlur = (field) => {
-    const err = validatePlazaField(field, plazaForm[field]);
+  const handlePlazaBlur = (field, val) => {
+    const v = val !== undefined ? val : plazaForm[field];
+    const err = validatePlazaField(field, v);
     setPlazaErrors((prev) => ({ ...prev, [field]: err }));
   };
 
   const handlePlazaChange = (field, val) => {
     setPlazaForm((prev) => ({ ...prev, [field]: val }));
-    if (plazaErrors[field]) {
-      setPlazaErrors((prev) => ({ ...prev, [field]: '' }));
-    }
+    setPlazaErrors((prev) => {
+      if (!prev[field]) return prev;
+      return { ...prev, [field]: '' };
+    });
   };
 
   const handlePlazaMdrChange = (field, val) => {
@@ -2112,12 +2114,22 @@ export const Onboarding = () => {
                 <StateCitySelect
                   stateValue={plazaForm.state}
                   cityValue={plazaForm.city}
-                  onStateChange={(val) => handlePlazaChange('state', val)}
-                  onCityChange={(val) => handlePlazaChange('city', val)}
+                  onStateChange={(val) => {
+                    handlePlazaChange('state', val);
+                    if (val) {
+                      setPlazaErrors((prev) => ({ ...prev, state: '' }));
+                    }
+                  }}
+                  onCityChange={(val) => {
+                    handlePlazaChange('city', val);
+                    if (val) {
+                      setPlazaErrors((prev) => ({ ...prev, city: '' }));
+                    }
+                  }}
                   stateError={plazaErrors.state}
                   cityError={plazaErrors.city}
-                  onStateBlur={() => handlePlazaBlur('state')}
-                  onCityBlur={() => handlePlazaBlur('city')}
+                  onStateBlur={(val) => handlePlazaBlur('state', val !== undefined ? val : plazaForm.state)}
+                  onCityBlur={(val) => handlePlazaBlur('city', val !== undefined ? val : plazaForm.city)}
                 />
 
                 <div className="form-group">
