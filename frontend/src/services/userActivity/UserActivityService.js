@@ -1,8 +1,6 @@
 import httpClient from '../api/httpClient';
 import UserService from '../user/UserService';
 import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime } from '../../utils/dateUtils';
-import initialAuditLog from '../../data/auditLog.json';
-import initialLoginHistory from '../../data/loginHistory.json';
 
 const LOGIN_HISTORY_STORAGE_KEY = 'paysonic_login_history';
 const ACTIVE_SESSIONS_STORAGE_KEY = 'paysonic_active_sessions';
@@ -71,9 +69,14 @@ const saveIpLocationCache = (ip, location) => {
 const getStoredLoginHistory = () => {
   try {
     const raw = localStorage.getItem(LOGIN_HISTORY_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((e) => e && e.isLocalSessionEvent);
+      }
+    }
   } catch {}
-  return [...initialLoginHistory];
+  return [];
 };
 
 const saveStoredLoginHistory = (history) => {
@@ -99,9 +102,14 @@ const saveStoredActiveSessions = (sessions) => {
 const getStoredAuditLog = () => {
   try {
     const raw = localStorage.getItem(AUDIT_LOG_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((e) => e && e.isLocalSessionEvent);
+      }
+    }
   } catch {}
-  return [...initialAuditLog];
+  return [];
 };
 
 const saveStoredAuditLog = (log) => {
@@ -133,6 +141,7 @@ class UserActivityService {
       status,
       failureReason: failureReason || null,
       timestamp: new Date().toISOString(),
+      isLocalSessionEvent: true,
     };
     history.unshift(newEntry);
     saveStoredLoginHistory(history);
@@ -366,6 +375,7 @@ class UserActivityService {
       },
       before: before || null,
       after: after || null,
+      isLocalSessionEvent: true,
     };
     logs.unshift(newAudit);
     saveStoredAuditLog(logs);
