@@ -1241,3 +1241,181 @@ html[data-theme="dark"],
     margin-top: 2px;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════
+   RESPONSIVE MEDIA QUERIES (TABLETS & MOBILE DEVICES)
+   Desktop UI remains 100% untouched
+   ═════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .user-activity-page {
+    padding: 20px 20px 48px;
+    gap: 18px;
+  }
+
+  .activity-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .overview-middle-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+
+    .search-box {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .filter-select {
+      width: 100%;
+    }
+
+    .btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .activity-table-card {
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+
+      .activity-table {
+        min-width: 760px;
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .user-activity-page {
+    padding: 16px 12px 36px;
+    gap: 14px;
+  }
+
+  .activity-page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+
+    .head-left h1 {
+      font-size: 22px;
+    }
+
+    .head-right {
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+
+      .live-telemetry-badge {
+        justify-content: center;
+        width: 100%;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+
+  .activity-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+
+    .kpi-card {
+      padding: 14px 16px;
+
+      &__value {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .chart-card {
+    padding: 16px 14px;
+
+    &__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+
+      .range-toggles {
+        width: 100%;
+        justify-content: space-between;
+
+        .range-btn {
+          flex: 1;
+          text-align: center;
+        }
+      }
+    }
+
+    &__canvas-wrap {
+      height: 200px;
+    }
+  }
+
+  .module-breakdown-card {
+    padding: 16px 14px;
+  }
+
+  .recent-activity-card {
+    &__header {
+      padding: 14px 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+
+  .audit-drawer {
+    width: 100vw;
+    max-width: 100vw;
+
+    .drawer-header {
+      padding: 16px 14px;
+      h2 {
+        font-size: 17px;
+      }
+    }
+
+    .drawer-body {
+      padding: 16px 14px;
+      gap: 16px;
+
+      .drawer-section .meta-grid {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        gap: 10px;
+      }
+    }
+
+    .drawer-foot {
+      padding: 14px 16px;
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+
+  .export-modal-card {
+    width: calc(100vw - 20px);
+    max-width: 100%;
+    border-radius: 12px;
+    padding: 16px 14px;
+  }
+}
+
