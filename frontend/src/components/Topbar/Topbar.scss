@@ -152,17 +152,42 @@
 
 @media (max-width: 640px) {
   .topbar {
-    height: 56px;
+    height: 58px;
     padding: 0 12px;
 
     .topbar-left {
       gap: 8px;
-      .topbar-crumb-block .crumb {
-        display: none;
-      }
-      .topbar-crumb-block .crumb-title {
-        font-size: 13px;
-        max-width: 130px;
+      min-width: 0;
+
+      .topbar-crumb-block {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+
+        .crumb {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          color: var(--muted, #64748b);
+          line-height: 1.1;
+          display: block;
+          max-width: 140px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .crumb-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--ink, #0f172a);
+          line-height: 1.2;
+          max-width: 140px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
       }
     }
 
@@ -171,20 +196,30 @@
     }
 
     .topbar-right {
-      gap: 6px;
+      gap: 8px;
 
       .clearance-pill {
         padding: 3px 8px !important;
         font-size: 10.5px !important;
-        max-width: 130px;
+        max-width: 110px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .mode-badge {
-        padding: 3px 6px;
-        font-size: 9.5px;
+      .theme-toggle-btn {
+        width: 32px;
+        height: 32px;
+      }
+
+      .notification-btn {
+        padding: 4px;
+      }
+
+      .topbar-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 11px;
       }
     }
   }
@@ -194,17 +229,25 @@
   .topbar {
     padding: 0 8px;
 
-    .topbar-left .topbar-crumb-block .crumb-title {
-      max-width: 95px;
-      font-size: 12px;
+    .topbar-left {
+      gap: 6px;
+
+      .topbar-crumb-block {
+        .crumb {
+          display: none;
+        }
+        .crumb-title {
+          max-width: 105px;
+          font-size: 12.5px;
+        }
+      }
     }
 
     .topbar-right {
-      .mode-badge {
-        display: none;
-      }
+      gap: 5px;
+
       .clearance-pill {
-        max-width: 105px;
+        display: none;
       }
     }
   }

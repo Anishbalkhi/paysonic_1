@@ -1,9 +1,39 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ChangePasswordModal from '../ChangePasswordModal/ChangePasswordModal';
 import './Topbar.scss';
+
+const ROUTE_META = {
+  '/': { title: 'Dashboard', crumb: 'Overview' },
+  '/users': { title: 'User Management', crumb: 'Access Control' },
+  '/user-activity': { title: 'User Activity & Audit Trail', crumb: 'Security & Governance' },
+  '/onboarding': { title: 'Plaza Onboarding', crumb: 'Network Operations' },
+  '/tag-details': { title: 'Tag Details', crumb: 'Tag Management' },
+  '/pass-issuance': { title: 'Pass Issuance', crumb: 'Pass Management' },
+  '/dispute-handling/dashboard': { title: 'Dispute Dashboard', crumb: 'Dispute Handling' },
+  '/dispute-handling/file-upload': { title: 'Upload Dispute File', crumb: 'Dispute Handling' },
+  '/dispute-handling/file-status': { title: 'Dispute File Status', crumb: 'Dispute Handling' },
+  '/dispute-handling/chargeback-assign': { title: 'Chargeback Assign', crumb: 'Dispute Handling' },
+  '/dispute-handling/validate': { title: 'Dispute Validate', crumb: 'Dispute Handling' },
+  '/reports/dispute-details': { title: 'Dispute Detail Report', crumb: 'Reports' },
+  '/reports/trs': { title: 'TRS Report', crumb: 'Reports' },
+  '/reports/datewise-recon': { title: 'Date-Wise Recon', crumb: 'Reports' },
+  '/reports/cyclewise-recon': { title: 'Cycle-Wise Recon', crumb: 'Reports' },
+  '/reports/toll-fare': { title: 'Toll Fare Report', crumb: 'Reports' },
+  '/reports/rejected-transactions': { title: 'Rejected Transactions', crumb: 'Reports' },
+  '/reports/pass-summary': { title: 'Pass Summary Report', crumb: 'Reports' },
+  '/reports/transaction-summary': { title: 'Transaction Summary Report', crumb: 'Reports' },
+  '/reports/nhai-traffic': { title: 'NHAI Traffic Report', crumb: 'Reports' },
+  '/reports/transaction-search': { title: 'Transaction Search', crumb: 'Reports' },
+  '/reports/transaction-search/dispute': { title: 'Dispute Search', crumb: 'Reports' },
+  '/reports/transaction-search/normal': { title: 'Normal Search', crumb: 'Reports' },
+  '/violations/bulk-action': { title: 'Violation Bulk Action', crumb: 'Violation Module' },
+  '/violations/raw-file': { title: 'Raw File Report', crumb: 'Violation Module' },
+  '/violations/validate': { title: 'Violation Validation', crumb: 'Violation Module' },
+  '/violations/settlement': { title: 'Violation Settlement', crumb: 'Violation Module' },
+};
 
 export const Topbar = ({
   title = '',
@@ -11,11 +41,19 @@ export const Topbar = ({
   onToggleMobileNav = () => {},
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const menuRef = useRef(null);
+
+  const routeMeta = useMemo(() => {
+    return ROUTE_META[location.pathname] || {};
+  }, [location.pathname]);
+
+  const displayTitle = title || routeMeta.title || '';
+  const displayCrumb = crumb || routeMeta.crumb || '';
 
   // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
@@ -66,10 +104,10 @@ export const Topbar = ({
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        {(title || crumb) && (
+        {(displayTitle || displayCrumb) && (
           <div className="topbar-crumb-block">
-            {crumb && <span className="crumb">{crumb}</span>}
-            {title && <span className="crumb-title">{title}</span>}
+            {displayCrumb && <span className="crumb">{displayCrumb}</span>}
+            {displayTitle && <span className="crumb-title">{displayTitle}</span>}
           </div>
         )}
       </div>
