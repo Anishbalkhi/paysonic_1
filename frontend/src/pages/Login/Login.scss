@@ -487,18 +487,122 @@
   }
 }
 
-/* ── Responsive ── */
+/* ── Responsive Rules (Mobile & Tablet) ── */
 @media (max-width: 860px) {
-  .login-right { padding: 48px 32px; }
-  .login-form-wrap { padding: 0; }
-  .login-theme-switch { top: 12px; right: 16px; }
-}
-@media (max-width: 480px) {
-  .login-right { padding: 36px 20px; }
+  .login-page {
+    flex-direction: column;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .login-left {
+    display: none !important;
+  }
+
+  .login-right {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 56px 24px 28px;
+    position: relative;
+  }
+
+  .login-form-wrap {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
   .login-theme-switch {
-    position: static;
-    margin-bottom: 20px;
-    align-self: flex-end;
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    z-index: 30;
   }
 }
+
+@media (max-width: 480px) {
+  .login-right {
+    padding: 52px 18px 24px;
+  }
+
+  .login-form-wrap {
+    max-width: 100%;
+  }
+
+  .lf-logo {
+    margin-bottom: 24px;
+  }
+
+  .lf-title {
+    font-size: 24px;
+    letter-spacing: -0.3px;
+  }
+
+  .lf-sub {
+    font-size: 13.5px;
+    margin-bottom: 24px;
+  }
+
+  .lf-field {
+    margin-bottom: 16px;
+  }
+
+  .lf-input {
+    height: 44px;
+    font-size: 13.5px;
+    padding: 0 14px;
+  }
+
+  .lf-btn {
+    height: 46px;
+    font-size: 14.5px;
+    margin-bottom: 22px;
+  }
+
+  .lf-trust {
+    margin-bottom: 24px;
+    gap: 8px;
+  }
+
+  .login-theme-switch {
+    top: 12px;
+    right: 12px;
+    padding: 2px;
+
+    .theme-pill-btn {
+      padding: 4px 8px;
+      font-size: 10.5px;
+      gap: 3px;
+
+      .pill-icon {
+        font-size: 10.5px;
+      }
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .login-right {
+    padding: 48px 14px 20px;
+  }
+
+  .lf-title {
+    font-size: 22px;
+  }
+
+  .login-theme-switch {
+    .theme-pill-btn {
+      padding: 3px 6px;
+      font-size: 10px;
+    }
+  }
+}
+
 
