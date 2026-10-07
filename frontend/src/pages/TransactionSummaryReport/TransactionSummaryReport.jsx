@@ -144,10 +144,11 @@ export const TransactionSummaryReport = () => {
   return (
     <div className="txn-summary-page">
       {/* Header */}
-      <div className="report-header-banner">
-        <h1 className="report-title">Transaction Summary Report</h1>
-        <div className="report-subtitle">{dateSubtitle}</div>
-        <div className="report-green-accent-bar" />
+      <div className="page-header">
+        <div className="header-titles">
+          <h1 className="page-title">Transaction Summary Report</h1>
+          <p className="subtitle">Report Period: {dateSubtitle}</p>
+        </div>
       </div>
 
       {/* Filters */}

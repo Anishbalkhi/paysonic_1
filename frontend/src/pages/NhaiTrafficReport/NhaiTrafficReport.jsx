@@ -287,13 +287,10 @@ export const NhaiTrafficReport = () => {
 
       {/* 3. Table Area */}
       <div className="table-wrapper">
-        {/* Centered Table Banner matching Image 2 and other reports */}
-        <div className="table-top-banner">
-          <div className="banner-title">NHAI TRAFFIC REPORT</div>
-          <div className="banner-subtitle">
-            {dateSubtitle}
+        <div className="table-top-bar">
+          <div>
+            Showing traffic breakdown for <strong>{dateSubtitle}</strong> (Plaza: <strong>{reportData?.plazaName || 'All Plazas'}</strong>)
           </div>
-          <div className="banner-green-bar" />
         </div>
 
         <div className="table-responsive">

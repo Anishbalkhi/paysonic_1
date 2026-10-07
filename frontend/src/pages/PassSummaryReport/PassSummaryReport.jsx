@@ -125,10 +125,11 @@ export const PassSummaryReport = () => {
   return (
     <div className="pass-summary-page">
       {/* Header */}
-      <div className="report-header-banner">
-        <h1 className="report-title">Pass Summary Report</h1>
-        <div className="report-subtitle">{dateSubtitle}</div>
-        <div className="report-green-accent-bar" />
+      <div className="page-header">
+        <div className="header-titles">
+          <h1 className="page-title">Pass Summary Report</h1>
+          <p className="subtitle">{dateSubtitle}</p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -251,8 +252,10 @@ export const PassSummaryReport = () => {
                                       </td>
                                     )}
                                     {isModeFirst && (
-                                      <td rowSpan={modeSpan} className={`merged-cell payment-mode-cell mode-${mode.paymentMode.toLowerCase()}`}>
-                                        {mode.paymentMode}
+                                      <td rowSpan={modeSpan} className="merged-cell payment-mode-cell text-center">
+                                        <span className={`mode-badge mode-${mode.paymentMode.toLowerCase()}`}>
+                                          {mode.paymentMode}
+                                        </span>
                                       </td>
                                     )}
                                     <td className="pass-type-cell">{pt.passType}</td>

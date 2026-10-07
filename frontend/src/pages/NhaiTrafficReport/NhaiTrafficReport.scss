@@ -146,35 +146,19 @@
     display: flex;
     flex-direction: column;
 
-    // Centered Table Banner matching other reports
-    .table-top-banner {
-      background: #f8fafc;
-      padding: 1.1rem 1.5rem 0.85rem 1.5rem;
-      text-align: center;
+    // Top summary bar inside table card
+    .table-top-bar {
+      padding: 14px 20px;
       border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+      font-size: 13px;
+      color: #4b5563;
 
-      .banner-title {
-        font-size: 1.35rem;
-        font-weight: 800;
-        color: #0b4ea2;
-        letter-spacing: 0.06em;
-        margin-bottom: 0.25rem;
-        text-transform: uppercase;
-      }
-
-      .banner-subtitle {
-        font-size: 0.84rem;
-        color: #64748b;
-        font-weight: 600;
-        margin-bottom: 0.6rem;
-      }
-
-      .banner-green-bar {
-        height: 3.5px;
-        width: 140px;
-        margin: 0 auto;
-        background: linear-gradient(90deg, #10b981, #059669);
-        border-radius: 2px;
+      strong {
+        color: #0d47a1;
       }
     }
 
@@ -186,25 +170,32 @@
     .nhai-styled-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       white-space: nowrap;
 
       thead {
-        background-color: #0b4ea2;
+        background-color: #0d47a1;
         color: #ffffff;
         position: sticky;
         top: 0;
         z-index: 2;
+        border-top: 4px solid #10b981; // Standard green accent line
 
         th {
-          background-color: #0b4ea2;
+          background-color: #0d47a1;
           color: #ffffff;
-          padding: 11px 14px;
+          padding: 12px 14px;
           font-weight: 700;
+          font-size: 12px;
           text-align: left;
-          letter-spacing: 0.4px;
+          letter-spacing: 0.02em;
           text-transform: uppercase;
-          border: 1px solid rgba(255, 255, 255, 0.25);
+          border-bottom: 2px solid #0a3880;
+          border-right: 1px solid rgba(255, 255, 255, 0.2);
+
+          &:last-child {
+            border-right: none;
+          }
 
           &.text-right {
             text-align: right;
@@ -217,29 +208,35 @@
 
       tbody {
         tr {
-          border-bottom: 1px solid #cbd5e1;
+          border-bottom: 1px solid #f1f5f9;
           transition: background-color 0.12s ease;
 
           &:hover {
-            background-color: #f1f5f9;
+            background-color: #eff6ff; // Soft blue hover matching DateWise/CycleWise
           }
         }
 
         td {
-          padding: 8px 12px;
-          color: #1e293b;
-          border: 1px solid #cbd5e1;
+          padding: 9px 12px;
+          color: #334155;
+          border-right: 1px solid #f1f5f9;
+          border-bottom: 1px solid #f1f5f9;
           vertical-align: middle;
+
+          &:last-child {
+            border-right: none;
+          }
 
           &.border-merged-cell {
             vertical-align: middle;
             background-color: #ffffff;
+            border-right: 1px solid #e2e8f0;
           }
 
           &.plaza-code-cell {
-            color: #0b4ea2;
+            color: #0d47a1;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 13px;
           }
 
           &.plaza-name-cell {
@@ -248,7 +245,7 @@
           }
 
           &.vc-title-cell {
-            color: #0b4ea2;
+            color: #0d47a1;
             font-weight: 700;
             background-color: #ffffff;
           }
@@ -263,13 +260,13 @@
           }
         }
 
-        /* ── Summary & Journey Totals (Matching Image 2 and Pass Summary) ── */
+        /* ── Summary & Journey Totals (Clean Slate theme matching DateWise/CycleWise) ── */
         .summary-yellow-cell {
-          background-color: #fef08a !important;
-          color: #000000 !important;
-          border: 1px solid #ca8a04 !important;
-          padding: 8px 12px;
-          font-size: 0.82rem;
+          background-color: #f8fafc !important;
+          color: #0f172a !important;
+          border: 1px solid #e2e8f0 !important;
+          padding: 9px 12px;
+          font-size: 0.84rem;
 
           &.font-bold {
             font-weight: 700;
@@ -280,52 +277,54 @@
         }
 
         .summary-journey-center-cell {
-          background-color: #fef08a !important;
-          color: #000000 !important;
+          background-color: #f1f5f9 !important;
+          color: #0d47a1 !important;
           font-weight: 800;
           text-align: center;
           vertical-align: middle !important;
           font-size: 0.88rem;
-          border: 1px solid #ca8a04 !important;
-          letter-spacing: 0.3px;
+          border: 1px solid #cbd5e1 !important;
+          letter-spacing: 0.03em;
         }
 
         .summary-empty-cell {
           background-color: #ffffff !important;
-          border: 1px solid #cbd5e1 !important;
+          border: 1px solid #e2e8f0 !important;
         }
 
         .summary-empty-white-cell {
           background-color: #ffffff !important;
-          border: 1px solid #cbd5e1 !important;
+          border: 1px solid #e2e8f0 !important;
         }
 
-        /* ── Grand Total Highlighting (Golden Yellow Matching Image 1 & 2) ── */
+        /* ── Grand Total Highlighting (Clean Slate & Royal Blue theme) ── */
         .row-grand-total {
-          background-color: #fde047;
+          background-color: #f1f5f9;
           font-size: 0.88rem;
+          border-top: 2px solid #cbd5e1;
 
           td {
-            border: 1.5px solid #a16207 !important;
-            padding: 11px 14px;
+            border: 1px solid #cbd5e1 !important;
+            padding: 12px 14px;
           }
 
           .grand-total-label-cell {
-            background-color: #facc15 !important;
-            color: #000000 !important;
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.04em;
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
           }
 
           .grand-total-val-cell {
-            color: #000000 !important;
+            color: #0d47a1 !important;
             font-weight: 800;
-            background-color: #fef08a !important;
+            background-color: #f1f5f9 !important;
             white-space: nowrap;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.02em;
+            font-size: 0.88rem;
           }
         }
       }

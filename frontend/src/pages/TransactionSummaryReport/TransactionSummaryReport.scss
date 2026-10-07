@@ -7,34 +7,24 @@
   gap: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
-  /* 1. Header Banner */
-  .report-header-banner {
-    text-align: center;
-    padding: 16px 0 10px;
+  /* 1. Page Header */
+  .page-header {
+    margin-bottom: 2px;
 
-    .report-title {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #0d47a1;
-      letter-spacing: 1.2px;
-      margin: 0;
-      text-transform: uppercase;
-    }
+    .header-titles {
+      .page-title {
+        font-size: 19px;
+        font-weight: 700;
+        color: #0d47a1;
+        margin: 0 0 4px 0;
+        letter-spacing: -0.01em;
+      }
 
-    .report-subtitle {
-      font-size: 0.88rem;
-      color: #64748b;
-      margin-top: 6px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-
-    .report-green-accent-bar {
-      width: 72px;
-      height: 3.5px;
-      background: #10b981;
-      margin: 10px auto 0;
-      border-radius: 2px;
+      .subtitle {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0;
+      }
     }
   }
 
@@ -172,15 +162,23 @@
         position: sticky;
         top: 0;
         z-index: 2;
+        border-top: 4px solid #10b981;
 
         th {
           background-color: #0d47a1;
           color: #ffffff;
-          padding: 11px 14px;
+          padding: 12px 14px;
           font-weight: 700;
+          font-size: 12px;
           text-align: left;
-          letter-spacing: 0.3px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          letter-spacing: 0.02em;
+          text-transform: uppercase;
+          border-bottom: 2px solid #0a3880;
+          border-right: 1px solid rgba(255, 255, 255, 0.2);
+
+          &:last-child {
+            border-right: none;
+          }
 
           &.text-right {
             text-align: right;
@@ -241,28 +239,34 @@
           font-size: 0.8rem;
         }
 
-        /* Grand Total */
+        /* Grand Total - Clean Slate & Royal Blue theme */
         .row-grand-total {
-          background-color: #fde047;
+          background-color: #f1f5f9;
+          font-size: 0.88rem;
+          border-top: 2px solid #cbd5e1;
 
           td {
-            border: 1.5px solid #a16207;
-            padding: 10px 14px;
+            border: 1px solid #cbd5e1 !important;
+            padding: 12px 14px;
           }
 
           .grand-total-label-cell {
-            background-color: #facc15;
-            color: #713f12;
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
+            letter-spacing: 0.04em;
             text-align: center;
+            font-size: 0.88rem;
           }
 
           .grand-total-val-cell {
-            color: #713f12;
+            color: #0d47a1 !important;
             font-weight: 800;
-            background-color: #fef08a;
+            background-color: #f1f5f9 !important;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            font-size: 0.88rem;
           }
         }
 
