@@ -200,6 +200,188 @@ export const Onboarding = () => {
     return { total, active, pending, draft, suspended };
   }, [store.plazas]);
 
+  const handleDownloadCsv = (plazasToExport = filteredPlazas) => {
+    if (!plazasToExport || plazasToExport.length === 0) {
+      showToast('No plaza records available to download', 'warning');
+      return;
+    }
+
+    const headers = [
+      'Plaza ID',
+      'Plaza Name',
+      'Org ID',
+      'Agency Code',
+      'Authority',
+      'Concessionaire',
+      'Concessionaire ID',
+      'Category',
+      'Subtype',
+      'Base Pricing',
+      'Interface',
+      'Scheme Rule',
+      'Scheme Duration',
+      'Status',
+      'State',
+      'City',
+      'Activation Date',
+      'Geo Code',
+      'Contact Address',
+      'Contact Phone',
+      'Contact Email',
+      'Bank Fee (%)',
+      'NPCI Fee (%)',
+      'Bank GST (%)',
+      'NPCI GST (%)',
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === undefined || val === null) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = plazasToExport.map((p) => [
+      escapeCsv(p.id),
+      escapeCsv(p.name),
+      escapeCsv(p.orgId),
+      escapeCsv(p.agencyId),
+      escapeCsv(p.authority),
+      escapeCsv(getConcessionaireName(p.concessionaireId)),
+      escapeCsv(p.concessionaireId),
+      escapeCsv(p.category),
+      escapeCsv(p.subtype),
+      escapeCsv(p.basePricing),
+      escapeCsv(p.plazaInterface),
+      escapeCsv(p.schemeRule || ''),
+      escapeCsv(p.schemeDuration || ''),
+      escapeCsv(p.status),
+      escapeCsv(p.state),
+      escapeCsv(p.city),
+      escapeCsv(p.activationDate),
+      escapeCsv(p.geoCode || ''),
+      escapeCsv(p.contactAddress || ''),
+      escapeCsv(p.contactNo || ''),
+      escapeCsv(p.contactMail || ''),
+      escapeCsv(p.mdr?.bankFee ?? '0'),
+      escapeCsv(p.mdr?.npciFee ?? '0'),
+      escapeCsv(p.mdr?.bankGst ?? '0'),
+      escapeCsv(p.mdr?.npciGst ?? '0'),
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const statusSuffix = plazaStatusFilter ? `_${plazaStatusFilter.replace(/\s+/g, '_')}` : '';
+    link.setAttribute('download', `Plazas_Report${statusSuffix}_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Downloaded ${plazasToExport.length} plaza records as CSV`, 'success');
+  };
+
+  const handleDownloadExcel = (plazasToExport = filteredPlazas) => {
+    if (!plazasToExport || plazasToExport.length === 0) {
+      showToast('No plaza records available to download', 'warning');
+      return;
+    }
+
+    const escapeXml = (val) => {
+      if (val === undefined || val === null) return '';
+      return String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const headers = [
+      'Plaza ID', 'Plaza Name', 'Org ID', 'Agency Code', 'Authority',
+      'Concessionaire', 'Concessionaire ID', 'Category', 'Subtype',
+      'Base Pricing', 'Interface', 'Scheme Rule', 'Scheme Duration',
+      'Status', 'State', 'City', 'Activation Date', 'Geo Code',
+      'Contact Address', 'Contact Phone', 'Contact Email',
+      'Bank Fee (%)', 'NPCI Fee (%)', 'Bank GST (%)', 'NPCI GST (%)',
+    ];
+
+    let xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+  <Style ss:ID="Default">
+   <Alignment ss:Vertical="Center"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Plazas">
+  <Table>
+   <Row ss:StyleID="Header">`;
+
+    headers.forEach((h) => {
+      xml += `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`;
+    });
+    xml += `</Row>`;
+
+    plazasToExport.forEach((p) => {
+      xml += `<Row ss:StyleID="Default">
+       <Cell><Data ss:Type="String">${escapeXml(p.id)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.name)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.orgId)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.agencyId)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.authority)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(getConcessionaireName(p.concessionaireId))}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.concessionaireId)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.category)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.subtype)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.basePricing)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.plazaInterface)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.schemeRule || '')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.schemeDuration || '')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.status)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.state)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.city)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.activationDate)}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.geoCode || '')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.contactAddress || '')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.contactNo || '')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.contactMail || '')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.mdr?.bankFee ?? '0')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.mdr?.npciFee ?? '0')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.mdr?.bankGst ?? '0')}</Data></Cell>
+       <Cell><Data ss:Type="String">${escapeXml(p.mdr?.npciGst ?? '0')}</Data></Cell>
+      </Row>`;
+    });
+
+    xml += `</Table></Worksheet></Workbook>`;
+
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const statusSuffix = plazaStatusFilter ? `_${plazaStatusFilter.replace(/\s+/g, '_')}` : '';
+    link.setAttribute('download', `Plazas_Report${statusSuffix}_${timestamp}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Downloaded ${plazasToExport.length} plaza records as Excel`, 'success');
+  };
+
   // =========================================================================
   // =========================================================================
   // SUBMODULE 2: ADD / EDIT CONCESSIONAIRE
@@ -1453,27 +1635,75 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {!railwayLoading && activeTab === 'view' && (
         <div className="tab-content view-plaza-section">
-          {/* KPI Summary Cards */}
+          {/* KPI Summary Cards — Clickable to filter table by status */}
           <div className="kpi-grid">
-            <div className="kpi-card">
+            <div
+              className={`kpi-card clickable ${!plazaStatusFilter ? 'active-card' : ''}`}
+              onClick={() => setPlazaStatusFilter('')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setPlazaStatusFilter('');
+                }
+              }}
+              title="Click to view all plazas"
+            >
               <span className="kpi-label">Total Plazas</span>
               <span className="kpi-value">{kpis.total}</span>
-              <span className="kpi-sub">Across National Highway Network</span>
+              <span className="kpi-sub">Across National Highway Network · Click to show all</span>
             </div>
-            <div className="kpi-card green">
+            <div
+              className={`kpi-card green clickable ${plazaStatusFilter === 'Active' ? 'active-card' : ''}`}
+              onClick={() => setPlazaStatusFilter((prev) => (prev === 'Active' ? '' : 'Active'))}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setPlazaStatusFilter((prev) => (prev === 'Active' ? '' : 'Active'));
+                }
+              }}
+              title="Click to view Active plazas"
+            >
               <span className="kpi-label">Active Plazas</span>
               <span className="kpi-value">{kpis.active}</span>
-              <span className="kpi-sub">Processing Live FASTag Txns</span>
+              <span className="kpi-sub">Processing Live FASTag Txns · Click to filter</span>
             </div>
-            <div className="kpi-card amber">
+            <div
+              className={`kpi-card amber clickable ${plazaStatusFilter === 'Pending Approval' ? 'active-card' : ''}`}
+              onClick={() => setPlazaStatusFilter((prev) => (prev === 'Pending Approval' ? '' : 'Pending Approval'))}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setPlazaStatusFilter((prev) => (prev === 'Pending Approval' ? '' : 'Pending Approval'));
+                }
+              }}
+              title="Click to view Pending Approval plazas"
+            >
               <span className="kpi-label">Pending Approval</span>
               <span className="kpi-value">{kpis.pending}</span>
-              <span className="kpi-sub">Maker-Checker Review Needed</span>
+              <span className="kpi-sub">Maker-Checker Review Needed · Click to filter</span>
             </div>
-            <div className="kpi-card grey">
+            <div
+              className={`kpi-card grey clickable ${plazaStatusFilter === 'Draft' ? 'active-card' : ''}`}
+              onClick={() => setPlazaStatusFilter((prev) => (prev === 'Draft' ? '' : 'Draft'))}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setPlazaStatusFilter((prev) => (prev === 'Draft' ? '' : 'Draft'));
+                }
+              }}
+              title="Click to view Draft plazas"
+            >
               <span className="kpi-label">Draft Plazas</span>
               <span className="kpi-value">{kpis.draft}</span>
-              <span className="kpi-sub">Incomplete Configuration</span>
+              <span className="kpi-sub">Incomplete Configuration · Click to filter</span>
             </div>
           </div>
 
@@ -1539,6 +1769,58 @@ export const Onboarding = () => {
                   Clear Filters
                 </button>
               )}
+
+              <div className="download-btn-group">
+                <button
+                  type="button"
+                  className="btn-download"
+                  onClick={() => handleDownloadCsv()}
+                  title={`Download ${filteredPlazas.length} displayed plaza records as CSV`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  <span>Download CSV</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-download btn-download-excel"
+                  onClick={() => handleDownloadExcel()}
+                  title={`Download ${filteredPlazas.length} displayed plaza records as Excel`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  <span>Download Excel</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="table-header-info">
+              <div className="table-count-label">
+                Showing <strong>{filteredPlazas.length}</strong> of <strong>{store.plazas.length}</strong> plazas
+                {plazaStatusFilter && (
+                  <span className={`status-filter-pill ${
+                    plazaStatusFilter === 'Active' ? 'pill-green' :
+                    plazaStatusFilter === 'Pending Approval' ? 'pill-amber' :
+                    plazaStatusFilter === 'Draft' ? 'pill-grey' : ''
+                  }`}>
+                    Filtered by: <strong>{plazaStatusFilter}</strong>
+                    <button
+                      type="button"
+                      className="pill-remove-btn"
+                      onClick={() => setPlazaStatusFilter('')}
+                      title="Clear status filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="table-responsive">
