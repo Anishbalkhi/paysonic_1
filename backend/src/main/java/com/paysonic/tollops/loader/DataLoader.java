@@ -325,7 +325,7 @@ public class DataLoader implements CommandLineRunner {
             Plaza p1 = new Plaza();
             p1.setId("501101");
             p1.setName("MUMBAI PLAZA NH-04");
-            p1.setOrgId("PYSN");
+            p1.setOrgId("PYM1");
             p1.setAgencyId("NHAI1");
             p1.setConcessionaireId("CON-1001");
             p1.setCategory("Toll");
@@ -349,8 +349,8 @@ public class DataLoader implements CommandLineRunner {
             Plaza p2 = new Plaza();
             p2.setId("502202");
             p2.setName("PUNE BYPASS PLAZA");
-            p2.setOrgId("PYSN");
-            p2.setAgencyId("MSRDC1");
+            p2.setOrgId("PYP2");
+            p2.setAgencyId("MSRD1");
             p2.setConcessionaireId("CON-1001");
             p2.setCategory("Toll");
             p2.setBasePricing("Distance Based");
@@ -373,7 +373,7 @@ public class DataLoader implements CommandLineRunner {
             Plaza p3 = new Plaza();
             p3.setId("503303");
             p3.setName("NASHIK TOLL PLAZA");
-            p3.setOrgId("PYSN");
+            p3.setOrgId("PYN3");
             p3.setAgencyId("NHAI2");
             p3.setConcessionaireId("CON-1003");
             p3.setCategory("Toll");
@@ -397,8 +397,8 @@ public class DataLoader implements CommandLineRunner {
             Plaza p4 = new Plaza();
             p4.setId("504404");
             p4.setName("KOLHAPUR PLAZA");
-            p4.setOrgId("PYSN");
-            p4.setAgencyId("NHAI2");
+            p4.setOrgId("PYK4");
+            p4.setAgencyId("NHAI4");
             p4.setConcessionaireId("CON-1003");
             p4.setCategory("Toll");
             p4.setBasePricing("Distance Based");
@@ -421,8 +421,8 @@ public class DataLoader implements CommandLineRunner {
             Plaza p5 = new Plaza();
             p5.setId("505505");
             p5.setName("SOLAPUR PLAZA NH-65");
-            p5.setOrgId("PYSN");
-            p5.setAgencyId("NHAI3");
+            p5.setOrgId("PYS5");
+            p5.setAgencyId("NHAI5");
             p5.setConcessionaireId("CON-1002");
             p5.setCategory("Toll");
             p5.setBasePricing("Distance Based");

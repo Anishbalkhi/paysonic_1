@@ -70,7 +70,21 @@ public class OnboardingController {
                     .body(Map.of("error", "A valid Concessionaire ID is required to onboard a Plaza"));
         }
 
-        // Uniqueness validation: plazaId, name, orgId, geoCode
+        // Required field validation
+        if (plaza.getName() == null || plaza.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Plaza Name is required"));
+        }
+        if (plaza.getOrgId() == null || plaza.getOrgId().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Org ID is required"));
+        }
+        if (plaza.getAgencyId() == null || plaza.getAgencyId().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Agency Code is required"));
+        }
+        if (plaza.getGeoCode() == null || plaza.getGeoCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Geo Code is required"));
+        }
+
+        // Uniqueness validation: plazaId, name, orgId, agencyId, geoCode
         java.util.Optional<String> duplicateErr = onboardingService.checkPlazaUniqueness(plaza, null);
         if (duplicateErr.isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("error", duplicateErr.get()));

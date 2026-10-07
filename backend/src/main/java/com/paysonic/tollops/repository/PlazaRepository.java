@@ -13,5 +13,6 @@ public interface PlazaRepository extends JpaRepository<Plaza, String> {
     List<Plaza> findByStatus(String status);
     Optional<Plaza> findByNameIgnoreCase(String name);
     Optional<Plaza> findByOrgIdIgnoreCase(String orgId);
+    Optional<Plaza> findByAgencyIdIgnoreCase(String agencyId);
     Optional<Plaza> findByGeoCode(String geoCode);
 }

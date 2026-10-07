@@ -128,11 +128,21 @@ public class OnboardingBackendService {
                 return Optional.of("Org ID '" + trimmedOrg + "' already exists! Each plaza must have a unique Org ID.");
             }
         }
-        if (plaza.getGeoCode() != null && !plaza.getGeoCode().trim().isEmpty()) {
-            String trimmedGeo = plaza.getGeoCode().trim();
-            Optional<Plaza> existing = plazaRepo.findByGeoCode(trimmedGeo);
+        if (plaza.getAgencyId() != null && !plaza.getAgencyId().trim().isEmpty()) {
+            String trimmedAgency = plaza.getAgencyId().trim();
+            Optional<Plaza> existing = plazaRepo.findByAgencyIdIgnoreCase(trimmedAgency);
             if (existing.isPresent() && (excludeId == null || !existing.get().getId().equalsIgnoreCase(excludeId))) {
-                return Optional.of("Geo Code '" + trimmedGeo + "' already exists! Each plaza must have a unique Geo Code.");
+                return Optional.of("Agency Code '" + trimmedAgency + "' already exists! Each plaza must have a unique Agency Code.");
+            }
+        }
+        if (plaza.getGeoCode() != null && !plaza.getGeoCode().trim().isEmpty()) {
+            String cleanGeo = plaza.getGeoCode().replaceAll("\\s+", "").trim();
+            Optional<Plaza> existing = plazaRepo.findAll().stream()
+                    .filter(p -> p.getGeoCode() != null && p.getGeoCode().replaceAll("\\s+", "").trim().equalsIgnoreCase(cleanGeo))
+                    .filter(p -> excludeId == null || !p.getId().equalsIgnoreCase(excludeId))
+                    .findFirst();
+            if (existing.isPresent()) {
+                return Optional.of("Geo Code '" + plaza.getGeoCode().trim() + "' already exists! Each plaza must have a unique Geo Code.");
             }
         }
         return Optional.empty();

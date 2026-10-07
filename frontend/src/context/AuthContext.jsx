@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }) => {
               console.warn('[AuthContext] Session terminated because account logged in on another device.');
               sessionStorage.setItem(
                 TIMEOUT_NOTICE_KEY,
-                'You have been logged out because your account was logged in on another device. (Only Master Admin accounts permit multiple simultaneous device logins).'
+                'You have been logged out because your account was logged in on another device.'
               );
               logout();
               window.location.href = '/login?reason=concurrent_device';
@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }) => {
               console.warn('[AuthContext] Account logged in on another device. Revoking session.');
               sessionStorage.setItem(
                 TIMEOUT_NOTICE_KEY,
-                'You have been logged out because your account was logged in on another device. (Only Master Admin accounts permit multiple simultaneous device logins).'
+                'You have been logged out because your account was logged in on another device.'
               );
               logout();
               window.location.href = '/login?reason=concurrent_device';

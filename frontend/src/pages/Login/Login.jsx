@@ -26,7 +26,7 @@ export const Login = () => {
       (reason === 'inactivity'
         ? 'You have been automatically logged out due to 5 minutes of inactivity.'
         : reason === 'concurrent_device'
-        ? 'You have been logged out because your account was logged in on another device. (Only Master Admin accounts permit multiple simultaneous device logins).'
+        ? 'You have been logged out because your account was logged in on another device.'
         : '');
     if (notice) {
       setTimeoutNotice(notice);

@@ -499,7 +499,7 @@ export const Onboarding = () => {
         if (!/^[A-Z0-9 -]{1,100}$/.test(v)) {
           return 'Alphanumeric, - and spaces only · max 100 chars';
         }
-        if (store.plazas.some((p) => (p.name || '').trim().toUpperCase() === v && p.id !== editingPlazaOriginalId)) {
+        if (store.plazas.some((p) => (p.name || '').trim().toUpperCase() === v && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
           return 'Plaza Name already exists! Each plaza must have a unique Plaza Name.';
         }
         return '';
@@ -510,7 +510,7 @@ export const Onboarding = () => {
         if (!/^\d{6}$/.test(v)) {
           return 'Plaza ID must be exactly 6 digits';
         }
-        if (store.plazas.some((p) => String(p.id).trim() === v && p.id !== editingPlazaOriginalId)) {
+        if (store.plazas.some((p) => String(p.id).trim() === v && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
           return 'Plaza ID already exists! Each plaza must have a unique Plaza ID.';
         }
         return '';
@@ -518,19 +518,22 @@ export const Onboarding = () => {
       case 'orgId': {
         const v = (val !== undefined ? val : currentForm.orgId).trim().toUpperCase();
         if (!v) return 'Org ID is required';
-        if (!/^[A-Z]{4}$/.test(v)) {
-          return 'Alphabetical only · exactly 4 letters';
+        if (!/^[A-Z0-9]{3,6}$/.test(v)) {
+          return 'Alphanumeric only · 3 to 6 characters';
         }
-        if (store.plazas.some((p) => (p.orgId || '').trim().toUpperCase() === v && p.id !== editingPlazaOriginalId)) {
+        if (store.plazas.some((p) => (p.orgId || '').trim().toUpperCase() === v && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
           return 'Org ID already exists! Each plaza must have a unique Org ID.';
         }
         return '';
       }
       case 'agencyId': {
         const v = (val !== undefined ? val : currentForm.agencyId).trim().toUpperCase();
-        if (!v) return 'Agency ID is required';
-        if (!/^[A-Z]{5}$/.test(v)) {
-          return 'Alphabetical only · exactly 5 letters';
+        if (!v) return 'Agency Code is required';
+        if (!/^[A-Z0-9]{4,6}$/.test(v)) {
+          return 'Alphanumeric only · 4 to 6 characters';
+        }
+        if (store.plazas.some((p) => (p.agencyId || '').trim().toUpperCase() === v && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
+          return 'Agency Code already exists! Each plaza must have a unique Agency Code.';
         }
         return '';
       }
@@ -550,11 +553,14 @@ export const Onboarding = () => {
         return '';
       }
       case 'geoCode': {
-        const v = (val !== undefined ? val : currentForm.geoCode).trim();
-        if (v && !/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(v)) {
+        const raw = (val !== undefined ? val : currentForm.geoCode) || '';
+        const v = raw.trim();
+        if (!v) return 'Plaza Geo Code is required';
+        const cleanGeo = v.replace(/\s+/g, '');
+        if (!/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(cleanGeo)) {
           return 'Format must be Latitude,Longitude (e.g. 19.9975,73.7898)';
         }
-        if (v && store.plazas.some((p) => (p.geoCode || '').trim() === v && p.id !== editingPlazaOriginalId)) {
+        if (store.plazas.some((p) => (p.geoCode || '').replace(/\s+/g, '').trim() === cleanGeo && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
           return 'Geo Code already exists! Each plaza must have a unique Geo Code.';
         }
         return '';
@@ -636,19 +642,27 @@ export const Onboarding = () => {
     const pubKey = (plazaForm.publicKey || '').trim();
     const contactNo = (plazaForm.contactNo || '').trim();
     const contactMail = (plazaForm.contactMail || '').trim();
-    const targetOriginalId = isEditingPlaza && editingPlazaOriginalId ? editingPlazaOriginalId : null;
+    const targetOriginalId = isEditingPlaza && editingPlazaOriginalId
+      ? String(editingPlazaOriginalId).trim().toUpperCase()
+      : null;
 
     // Explicit duplicate validation against store.plazas
-    if (!errors.id && store.plazas.some((p) => String(p.id).trim() === id && String(p.id).trim() !== targetOriginalId)) {
+    if (!errors.id && store.plazas.some((p) => String(p.id).trim().toUpperCase() === id.toUpperCase() && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
       errors.id = 'Plaza ID already exists! Each plaza must have a unique Plaza ID.';
     }
-    if (!errors.name && store.plazas.some((p) => (p.name || '').trim().toUpperCase() === name && String(p.id).trim() !== targetOriginalId)) {
+    if (!errors.name && store.plazas.some((p) => (p.name || '').trim().toUpperCase() === name && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
       errors.name = 'Plaza Name already exists! Each plaza must have a unique Plaza Name.';
     }
-    if (!errors.orgId && store.plazas.some((p) => (p.orgId || '').trim().toUpperCase() === orgId && String(p.id).trim() !== targetOriginalId)) {
+    if (!errors.orgId && store.plazas.some((p) => (p.orgId || '').trim().toUpperCase() === orgId && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
       errors.orgId = 'Org ID already exists! Each plaza must have a unique Org ID.';
     }
-    if (!errors.geoCode && geoCode && store.plazas.some((p) => (p.geoCode || '').trim() === geoCode && String(p.id).trim() !== targetOriginalId)) {
+    if (!errors.agencyId && store.plazas.some((p) => (p.agencyId || '').trim().toUpperCase() === agencyId && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
+      errors.agencyId = 'Agency Code already exists! Each plaza must have a unique Agency Code.';
+    }
+    const cleanGeo = geoCode.replace(/\s+/g, '');
+    if (!cleanGeo) {
+      errors.geoCode = 'Plaza Geo Code is required';
+    } else if (!errors.geoCode && store.plazas.some((p) => (p.geoCode || '').replace(/\s+/g, '').trim() === cleanGeo && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
       errors.geoCode = 'Geo Code already exists! Each plaza must have a unique Geo Code.';
     }
 
@@ -2123,7 +2137,9 @@ export const Onboarding = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Plaza Geo Code (Lat,Long)</label>
+                  <label>
+                    Plaza Geo Code (Lat,Long) <span className="req">*</span>
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. 28.4089,76.9647"

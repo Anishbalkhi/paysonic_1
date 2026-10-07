@@ -88,6 +88,17 @@
             strong {
               color: #9f1239;
             }
+            .tat-risk-pill {
+              display: inline-block;
+              background: #ffe4e6;
+              border: 1px solid #fecdd3;
+              color: #9f1239;
+              font-size: 0.78rem;
+              font-weight: 700;
+              padding: 2px 8px;
+              border-radius: 999px;
+              margin: 0 4px;
+            }
           }
         }
 
@@ -95,6 +106,29 @@
           display: flex;
           align-items: center;
           gap: 8px;
+
+          .tat-simulate-btn {
+            background: #ffffff;
+            border: 1px dashed #f43f5e;
+            color: #e11d48;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+
+            &:hover {
+              background: #fff1f2;
+              border-color: #be123c;
+            }
+
+            &.active {
+              background: #be123c;
+              color: #ffffff;
+              border-style: solid;
+            }
+          }
 
           .tat-action-btn {
             background: #e11d48;
@@ -214,41 +248,87 @@
           }
         }
 
-        .tat-search-wrap {
+        .tat-toolbar-right {
           display: flex;
           align-items: center;
-          gap: 6px;
-          background: #ffffff;
-          border: 1px solid #fda4af;
-          border-radius: 6px;
-          padding: 4px 10px;
-          min-width: 220px;
-          color: #94a3b8;
+          gap: 10px;
+          flex-wrap: wrap;
 
-          input {
-            border: none;
-            outline: none;
-            font-size: 0.8rem;
-            color: #1e293b;
-            width: 100%;
-            background: transparent;
+          .tat-search-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #ffffff;
+            border: 1px solid #fda4af;
+            border-radius: 6px;
+            padding: 4px 10px;
+            min-width: 200px;
+            color: #94a3b8;
 
-            &::placeholder {
+            input {
+              border: none;
+              outline: none;
+              font-size: 0.8rem;
+              color: #1e293b;
+              width: 100%;
+              background: transparent;
+
+              &::placeholder {
+                color: #94a3b8;
+              }
+            }
+
+            .tat-clear-search {
+              background: none;
+              border: none;
               color: #94a3b8;
+              cursor: pointer;
+              font-size: 14px;
+              padding: 0;
+              line-height: 1;
+
+              &:hover {
+                color: #be123c;
+              }
             }
           }
 
-          .tat-clear-search {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 0;
-            line-height: 1;
+          .tat-pagesize-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #ffffff;
+            border: 1px solid #fda4af;
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-size: 0.74rem;
 
-            &:hover {
-              color: #be123c;
+            .tat-pagesize-label {
+              color: #9f1239;
+              font-weight: 600;
+              margin-right: 2px;
+            }
+
+            .tat-pagesize-btn {
+              background: transparent;
+              border: none;
+              color: #64748b;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 0.74rem;
+              font-weight: 700;
+              cursor: pointer;
+              transition: all 0.1s ease;
+
+              &:hover {
+                color: #be123c;
+                background: #ffe4e6;
+              }
+
+              &.active {
+                background: #be123c;
+                color: #ffffff;
+              }
             }
           }
         }

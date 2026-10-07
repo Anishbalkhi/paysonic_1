@@ -17,8 +17,9 @@ export const DisputeDashboard = () => {
   const [tatSearch, setTatSearch] = useState('');
   const [tatSeverity, setTatSeverity] = useState('ALL'); // 'ALL' | 'OVERDUE' | '1D' | '2D'
   const [tatPage, setTatPage] = useState(1);
+  const [tatPageSize, setTatPageSize] = useState(4);
   const [isTatCollapsed, setIsTatCollapsed] = useState(false);
-  const TAT_PAGE_SIZE = 4;
+  const [simulateHighVolume, setSimulateHighVolume] = useState(false);
 
   const defaultPlazaId = OnboardingService.getCachedPlazas()[0]?.plazaId || '501101';
   const plazaId = currentUser?.role === 'Plaza Admin' || currentUser?.role === 'Plaza POS'
@@ -43,7 +44,46 @@ export const DisputeDashboard = () => {
     return () => clearInterval(interval);
   }, [loadData]);
 
-  const atRisk = useMemo(() => stats?.atRiskDisputes || [], [stats]);
+  // High-volume simulated pool (120 disputes) for scalability testing & demonstration
+  const simulatedDisputes = useMemo(() => {
+    const reasons = [
+      'Testing 04',
+      'Testing 05',
+      'Pre Arb',
+      'FASTag Double Debit',
+      'Incorrect Toll Class',
+      'Blacklist Bypass',
+      'Technical Timeout',
+      'Overcharge Dispute',
+      'Vehicle Tag Mismatch',
+      'Split Second Double Deduction',
+    ];
+    const plazas = ['501101', '502202', '503303', '504404', '600601'];
+    const list = [];
+    for (let i = 1; i <= 120; i++) {
+      const mod = i % 3;
+      const daysLeft = mod === 0 ? -1 : mod === 1 ? 1 : 2;
+      const label = daysLeft < 0 ? 'Overdue' : `${daysLeft}d Left`;
+      const colorClass = daysLeft < 0 ? 'badge-danger' : daysLeft === 1 ? 'badge-orange' : 'badge-amber';
+      const disputeAmount = Number((40 + ((i * 37) % 350)).toFixed(2));
+      list.push({
+        rowId: `SIM-DISP-${1000 + i}`,
+        acqTxnId: `10204773580852${(4700 + i).toString().padStart(4, '0')}`,
+        cbReason: reasons[i % reasons.length],
+        disputeAmount,
+        plazaId: plazas[i % plazas.length],
+        daysLeft,
+        tatBadge: { label, colorClass },
+        vrn: `MH${12 + (i % 10)}VL${1000 + i}`,
+      });
+    }
+    return list;
+  }, []);
+
+  const atRisk = useMemo(() => {
+    if (simulateHighVolume) return simulatedDisputes;
+    return stats?.atRiskDisputes || [];
+  }, [stats, simulateHighVolume, simulatedDisputes]);
 
   // Compute severity breakdown counts
   const severityStats = useMemo(() => {
@@ -97,16 +137,16 @@ export const DisputeDashboard = () => {
     return list;
   }, [atRisk, tatSeverity, tatSearch]);
 
-  const totalTatPages = Math.ceil(filteredAtRisk.length / TAT_PAGE_SIZE) || 1;
+  const totalTatPages = Math.ceil(filteredAtRisk.length / tatPageSize) || 1;
   const paginatedAtRisk = useMemo(() => {
-    const from = (tatPage - 1) * TAT_PAGE_SIZE;
-    return filteredAtRisk.slice(from, from + TAT_PAGE_SIZE);
-  }, [filteredAtRisk, tatPage]);
+    const from = (tatPage - 1) * tatPageSize;
+    return filteredAtRisk.slice(from, from + tatPageSize);
+  }, [filteredAtRisk, tatPage, tatPageSize]);
 
-  // Reset page when filter or search changes
+  // Reset page when filter, search, page size or simulation changes
   useEffect(() => {
     setTatPage(1);
-  }, [tatSearch, tatSeverity]);
+  }, [tatSearch, tatSeverity, tatPageSize, simulateHighVolume]);
 
   if (loading || !stats) {
     return (
@@ -138,15 +178,27 @@ export const DisputeDashboard = () => {
       <div className={`tat-banner-box ${atRisk.length > 0 ? 'tat-alert' : 'tat-safe'}`}>
         {atRisk.length > 0 ? (
           <>
-            {/* Top Bar: Title, Count, Quick Actions */}
+            {/* Top Bar: Title, Count, Inline Risk Badge, and Actions */}
             <div className="tat-banner-top-bar">
               <div className="tat-banner-title">
                 <span className="tat-alert-icon">⚠️</span>
                 <span className="tat-title-text">
-                  <strong>{atRisk.length} dispute{atRisk.length > 1 ? 's' : ''}</strong> within 2 days of breaching 7-day TAT — urgent action required:
+                  <strong>{atRisk.length} dispute{atRisk.length > 1 ? 's' : ''}</strong> within 2 days of breaching 7-day TAT{' '}
+                  <span className="tat-risk-pill">
+                    ₹ {severityStats.totalAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })} at risk
+                  </span>{' '}
+                  — urgent action required:
                 </span>
               </div>
               <div className="tat-banner-actions">
+                <button
+                  type="button"
+                  className={`tat-simulate-btn ${simulateHighVolume ? 'active' : ''}`}
+                  onClick={() => setSimulateHighVolume(!simulateHighVolume)}
+                  title="Toggle 120 simulated disputes to verify high-volume performance"
+                >
+                  {simulateHighVolume ? '⚡ 120 Simulated (Reset)' : '⚡ Test 100+ Disputes'}
+                </button>
                 <button
                   type="button"
                   className="tat-action-btn"
@@ -155,20 +207,18 @@ export const DisputeDashboard = () => {
                 >
                   Take Action in Validation ({atRisk.length}) →
                 </button>
-                {atRisk.length > 2 && (
-                  <button
-                    type="button"
-                    className="tat-collapse-btn"
-                    onClick={() => setIsTatCollapsed(!isTatCollapsed)}
-                  >
-                    {isTatCollapsed ? 'Show Items ▼' : 'Minimize ▲'}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="tat-collapse-btn"
+                  onClick={() => setIsTatCollapsed(!isTatCollapsed)}
+                >
+                  {isTatCollapsed ? 'Show Items ▼' : 'Minimize ▲'}
+                </button>
               </div>
             </div>
 
-            {/* Severity Filter Pills & Search Bar (Active when > 2 at-risk disputes) */}
-            {atRisk.length > 2 && !isTatCollapsed && (
+            {/* Severity Filter Pills, Search Bar & Page Size Selector */}
+            {!isTatCollapsed && (
               <div className="tat-toolbar">
                 <div className="tat-chips">
                   <button
@@ -205,12 +255,9 @@ export const DisputeDashboard = () => {
                       ● 2d Left ({severityStats.twoDays})
                     </button>
                   )}
-                  <span className="tat-value-chip">
-                    ₹ {severityStats.totalAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })} at risk
-                  </span>
                 </div>
 
-                {atRisk.length > 4 && (
+                <div className="tat-toolbar-right">
                   <div className="tat-search-wrap">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                       <circle cx="11" cy="11" r="8" />
@@ -218,7 +265,7 @@ export const DisputeDashboard = () => {
                     </svg>
                     <input
                       type="text"
-                      placeholder="Quick filter ID, reason, plaza..."
+                      placeholder="Search ID, reason, plaza..."
                       value={tatSearch}
                       onChange={(e) => setTatSearch(e.target.value)}
                     />
@@ -228,7 +275,21 @@ export const DisputeDashboard = () => {
                       </button>
                     )}
                   </div>
-                )}
+
+                  <div className="tat-pagesize-group">
+                    <span className="tat-pagesize-label">Show:</span>
+                    {[4, 8, 12].map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        className={`tat-pagesize-btn ${tatPageSize === size ? 'active' : ''}`}
+                        onClick={() => setTatPageSize(size)}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -264,14 +325,25 @@ export const DisputeDashboard = () => {
               </div>
             )}
 
-            {/* In-Banner Pagination (Appears when items exceed TAT_PAGE_SIZE) */}
-            {!isTatCollapsed && filteredAtRisk.length > TAT_PAGE_SIZE && (
+            {/* In-Banner Pagination (Appears when items exceed tatPageSize) */}
+            {!isTatCollapsed && filteredAtRisk.length > tatPageSize && (
               <div className="tat-pagination-bar">
                 <div className="tat-page-info">
-                  Showing <strong>{(tatPage - 1) * TAT_PAGE_SIZE + 1}</strong>–<strong>{Math.min(tatPage * TAT_PAGE_SIZE, filteredAtRisk.length)}</strong> of <strong>{filteredAtRisk.length}</strong> urgent dispute{filteredAtRisk.length > 1 ? 's' : ''}
+                  Showing <strong>{(tatPage - 1) * tatPageSize + 1}</strong>–<strong>{Math.min(tatPage * tatPageSize, filteredAtRisk.length)}</strong> of <strong>{filteredAtRisk.length}</strong> urgent dispute{filteredAtRisk.length > 1 ? 's' : ''}
                   {atRisk.length !== filteredAtRisk.length && ` (filtered from ${atRisk.length})`}
                 </div>
                 <div className="tat-page-controls">
+                  {totalTatPages > 2 && (
+                    <button
+                      type="button"
+                      className="tat-page-btn"
+                      disabled={tatPage <= 1}
+                      onClick={() => setTatPage(1)}
+                      title="First Page"
+                    >
+                      « First
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="tat-page-btn"
@@ -291,6 +363,17 @@ export const DisputeDashboard = () => {
                   >
                     Next →
                   </button>
+                  {totalTatPages > 2 && (
+                    <button
+                      type="button"
+                      className="tat-page-btn"
+                      disabled={tatPage >= totalTatPages}
+                      onClick={() => setTatPage(totalTatPages)}
+                      title="Last Page"
+                    >
+                      Last »
+                    </button>
+                  )}
                 </div>
               </div>
             )}

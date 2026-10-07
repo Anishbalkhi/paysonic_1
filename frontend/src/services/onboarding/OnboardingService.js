@@ -169,11 +169,14 @@ class OnboardingService {
    * Validate uniqueness of Plaza ID, Plaza Name, Org ID, and Geo Code against live database
    */
   async validatePlazaUniqueness(plaza, { isEdit = false, originalId } = {}) {
-    const targetLookupId = isEdit && originalId ? String(originalId).trim() : String(plaza.id).trim();
+    const targetLookupId = isEdit && originalId
+      ? String(originalId).trim().toUpperCase()
+      : String(plaza.id || '').trim().toUpperCase();
     const existing = await this.getPlazas();
 
     const dupId = existing.find(
-      (p) => String(p.id).trim() === String(plaza.id).trim() && String(p.id).trim() !== targetLookupId
+      (p) => String(p.id).trim().toUpperCase() === String(plaza.id || '').trim().toUpperCase() &&
+             String(p.id).trim().toUpperCase() !== targetLookupId
     );
     if (dupId) {
       throw new Error(`Plaza ID '${plaza.id}' already exists! Each plaza must have a unique Plaza ID.`);
@@ -182,7 +185,7 @@ class OnboardingService {
     const dupName = existing.find(
       (p) =>
         (p.name || '').trim().toUpperCase() === (plaza.name || '').trim().toUpperCase() &&
-        String(p.id).trim() !== targetLookupId
+        String(p.id).trim().toUpperCase() !== targetLookupId
     );
     if (dupName) {
       throw new Error(`Plaza Name '${plaza.name}' already exists! Each plaza must have a unique Plaza Name.`);
@@ -192,18 +195,30 @@ class OnboardingService {
       const dupOrg = existing.find(
         (p) =>
           (p.orgId || '').trim().toUpperCase() === (plaza.orgId || '').trim().toUpperCase() &&
-          String(p.id).trim() !== targetLookupId
+          String(p.id).trim().toUpperCase() !== targetLookupId
       );
       if (dupOrg) {
         throw new Error(`Org ID '${plaza.orgId}' already exists! Each plaza must have a unique Org ID.`);
       }
     }
 
+    if (plaza.agencyId && plaza.agencyId.trim()) {
+      const dupAgency = existing.find(
+        (p) =>
+          (p.agencyId || '').trim().toUpperCase() === (plaza.agencyId || '').trim().toUpperCase() &&
+          String(p.id).trim().toUpperCase() !== targetLookupId
+      );
+      if (dupAgency) {
+        throw new Error(`Agency Code '${plaza.agencyId}' already exists! Each plaza must have a unique Agency Code.`);
+      }
+    }
+
     if (plaza.geoCode && plaza.geoCode.trim()) {
+      const cleanGeo = plaza.geoCode.replace(/\s+/g, '').trim();
       const dupGeo = existing.find(
         (p) =>
-          (p.geoCode || '').trim() === plaza.geoCode.trim() &&
-          String(p.id).trim() !== targetLookupId
+          (p.geoCode || '').replace(/\s+/g, '').trim() === cleanGeo &&
+          String(p.id).trim().toUpperCase() !== targetLookupId
       );
       if (dupGeo) {
         throw new Error(`Geo Code '${plaza.geoCode}' already exists! Each plaza must have a unique Geo Code.`);

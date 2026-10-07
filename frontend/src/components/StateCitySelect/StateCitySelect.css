@@ -80,7 +80,8 @@
   text-overflow: ellipsis;
 }
 
-.scs-option:hover {
+.scs-option:hover,
+.scs-option.highlighted {
   background: rgba(99, 102, 241, 0.18);
   color: #a5b4fc;
 }
@@ -103,7 +104,8 @@
   border-top: 1px dashed var(--border, #e2e8f0);
 }
 
-.scs-custom:hover {
+.scs-custom:hover,
+.scs-custom.highlighted {
   background: rgba(59, 130, 246, 0.12) !important;
 }
 
@@ -127,7 +129,11 @@ html:not([data-theme='dark']) .scs-option,
 :root:not([data-theme='dark']) .scs-option:hover,
 html:not([data-theme='dark']) .scs-option:hover,
 [data-theme='light'] .scs-option:hover,
-.light .scs-option:hover {
+.light .scs-option:hover,
+:root:not([data-theme='dark']) .scs-option.highlighted,
+html:not([data-theme='dark']) .scs-option.highlighted,
+[data-theme='light'] .scs-option.highlighted,
+.light .scs-option.highlighted {
   background: #f1f5f9;
   color: #2563eb;
 }
