@@ -392,12 +392,14 @@ export const NhaiTrafficReport = () => {
                     });
                   })}
 
-                  {/* ── Journey Total & Summary Block (Matching Image 2) ── */}
+                  {/* ── Journey Total & Summary Block ── */}
                   {/* Row 1: Total Single Journey */}
                   <tr className="row-single-total">
-                    <td className="summary-empty-cell" />
-                    <td className="summary-empty-cell" />
-                    <td className="summary-empty-cell" />
+                    <td rowSpan={4} className="summary-empty-cell" />
+                    <td rowSpan={4} className="summary-empty-cell" />
+                    <td rowSpan={4} className="summary-journey-center-cell font-bold text-center">
+                      Journey Total
+                    </td>
                     <td className="summary-yellow-cell font-bold">
                       {journeyTotals.single.journeyType}
                     </td>
@@ -419,9 +421,6 @@ export const NhaiTrafficReport = () => {
                       {journeyTotals.ret.journeyType}
                     </td>
                     <td className="summary-yellow-cell text-center font-bold">-</td>
-                    <td rowSpan={3} className="summary-journey-center-cell font-bold text-center">
-                      Journey Total
-                    </td>
                     <td className="summary-yellow-cell text-right font-bold">
                       {Number(journeyTotals.ret.transactionCount || 0).toLocaleString()}
                     </td>
@@ -431,7 +430,6 @@ export const NhaiTrafficReport = () => {
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    <td rowSpan={3} colSpan={2} className="summary-empty-white-cell" />
                   </tr>
 
                   {/* Row 3: Total DiscountDC */}
@@ -468,7 +466,7 @@ export const NhaiTrafficReport = () => {
                     </td>
                   </tr>
 
-                  {/* Row 5: GRAND TOTAL (Golden Yellow banner matching Image 2) */}
+                  {/* Row 5: GRAND TOTAL */}
                   <tr className="row-grand-total">
                     <td colSpan={5} className="grand-total-label-cell">
                       GRAND TOTAL
