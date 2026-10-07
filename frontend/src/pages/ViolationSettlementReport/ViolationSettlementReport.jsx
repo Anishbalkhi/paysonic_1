@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationSettlementService from '../../services/violation/ViolationSettlementService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationSettlementReport.scss';
 
@@ -16,6 +18,7 @@ export const ViolationSettlementReport = () => {
   const [plazaId, setPlazaId] = useState('ALL');
   const [status, setStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const { plazas: onboardedPlazas } = useOnboardedPlazas();
 
   // Data & Pagination
   const [records, setRecords] = useState([]);
@@ -191,17 +194,26 @@ export const ViolationSettlementReport = () => {
     return `Date Range: ${f} to ${t}`;
   }, [fromDate, toDate]);
 
-  // Dynamic options derived from actual database records so selecting any option shows table data
+  // Dynamic options derived from real onboarded plazas and database records
   const availablePlazas = useMemo(() => {
     const map = new Map();
-    map.set('501101', '501101 - MUMBAI PLAZA NH-04');
-    records.forEach((r) => {
-      if (r.plazaId) {
-        map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'MUMBAI PLAZA NH-04'}`);
+    // 1. Add live onboarded plazas created by user/system
+    (onboardedPlazas || []).forEach((p) => {
+      const pId = String(p.id || '').trim();
+      const pName = (p.name || `Plaza ${pId}`).trim();
+      if (pId && !/dummy|autumn|gluten/i.test(pName)) {
+        map.set(pId, `${pId} - ${pName}`);
+      }
+    });
+    // 2. Add records, normalized
+    records.forEach((r, idx) => {
+      const norm = normalizePlazaForRecord(r, idx, onboardedPlazas);
+      if (norm.plazaId && !map.has(norm.plazaId)) {
+        map.set(norm.plazaId, `${norm.plazaId} - ${norm.plazaName}`);
       }
     });
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-  }, [records]);
+  }, [onboardedPlazas, records]);
 
   const availableStatuses = useMemo(() => {
     const set = new Set();
@@ -433,11 +445,12 @@ export const ViolationSettlementReport = () => {
               ) : (
                 filteredRecords.map((row, idx) => {
                   const srNo = row.srNo ?? (page * pageSize + idx + 1);
+                  const normPlaza = normalizePlazaForRecord(row, idx, onboardedPlazas);
                   return (
                     <tr key={row.id || idx}>
                       <td className="text-center">{srNo}</td>
-                      <td className="text-center">{row.plazaId || '501101'}</td>
-                      <td>{row.plazaName || 'MUMBAI PLAZA NH-04'}</td>
+                      <td className="text-center">{normPlaza.plazaId}</td>
+                      <td>{normPlaza.plazaName}</td>
                       <td className="monospace-cell">{row.tagId || '-'}</td>
                       <td className="font-semibold">{row.vrn || '-'}</td>
                       <td className="monospace-cell">{row.acqTxnId || '-'}</td>

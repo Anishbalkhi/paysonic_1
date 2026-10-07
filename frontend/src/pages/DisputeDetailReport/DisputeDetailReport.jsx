@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DisputeReportService from '../../services/dispute/DisputeReportService';
 import { useOnboardedPlazas } from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './DisputeDetailReport.scss';
@@ -407,12 +408,13 @@ export const DisputeDetailReport = () => {
                   const isDr = ind.toLowerCase() === 'dr';
                   const isCr = ind.toLowerCase() === 'cr';
                   const srNo = (currentPage - 1) * pageSize + index + 1;
+                  const normPlaza = normalizePlazaForRecord(item, index, plazas);
 
                   return (
                     <tr key={item.id || index}>
                       <td className="text-center">{srNo}</td>
-                      <td className="font-semibold">{item.plazaName}</td>
-                      <td className="text-center code-font">{item.plazaId}</td>
+                      <td className="font-semibold">{normPlaza.plazaName}</td>
+                      <td className="text-center code-font">{normPlaza.plazaId}</td>
                       <td className="code-font">{item.acqTxnId}</td>
                       <td className="code-font text-center">{item.tollTxnId}</td>
                       <td className="text-center">{formatDateTime(item.txnDateTime)}</td>

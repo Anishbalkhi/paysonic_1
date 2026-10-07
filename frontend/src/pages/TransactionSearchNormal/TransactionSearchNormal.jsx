@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearchNormal.scss';
 
@@ -16,6 +18,7 @@ export const TransactionSearchNormal = () => {
   const [plazaId, setPlazaId] = useState('ALL');
   const [status, setStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const { plazas: onboardedPlazas } = useOnboardedPlazas();
 
   // Data & Pagination
   const [records, setRecords] = useState([]);
@@ -180,21 +183,24 @@ export const TransactionSearchNormal = () => {
     return `From Date: ${f} | To Date: ${t}`;
   }, [fromDate, toDate]);
 
-  // Dynamic options derived from actual database records so selecting any option shows table data
+  // Dynamic options derived from live onboarded plazas and database records
   const availablePlazas = useMemo(() => {
     const map = new Map();
-    map.set('501101', '501101 - MUMBAI PLAZA NH-04');
-    map.set('502202', '502202 - PUNE BYPASS PLAZA');
-    map.set('503303', '503303 - NASHIK TOLL PLAZA');
-    map.set('504404', '504404 - KOLHAPUR PLAZA');
-    map.set('505505', '505505 - SOLAPUR PLAZA NH-65');
-    records.forEach((r) => {
-      if (r.plazaId) {
-        map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'Plaza'}`);
+    (onboardedPlazas || []).forEach((p) => {
+      const pId = String(p.id || '').trim();
+      const pName = (p.name || `Plaza ${pId}`).trim();
+      if (pId && !/dummy|autumn|gluten/i.test(pName)) {
+        map.set(pId, `${pId} - ${pName}`);
+      }
+    });
+    records.forEach((r, idx) => {
+      const norm = normalizePlazaForRecord(r, idx, onboardedPlazas);
+      if (norm.plazaId && !map.has(norm.plazaId)) {
+        map.set(norm.plazaId, `${norm.plazaId} - ${norm.plazaName}`);
       }
     });
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-  }, [records]);
+  }, [onboardedPlazas, records]);
 
   const availableStatuses = useMemo(() => {
     const set = new Set();
@@ -460,13 +466,14 @@ export const TransactionSearchNormal = () => {
 
                   const srNo = page * pageSize + idx + 1;
                   const issuerBankId = getIssuerBankId(row);
+                  const normPlaza = normalizePlazaForRecord(row, idx, onboardedPlazas);
 
                   return (
                     <tr key={row.id || row.acqTxnId || idx}>
                       <td className="text-center">{srNo}</td>
                       <td className="text-center">{row.tollFileName || 'ONLINE'}</td>
-                      <td className="text-center">{row.plazaId || '-'}</td>
-                      <td>{row.plazaName || '-'}</td>
+                      <td className="text-center">{normPlaza.plazaId}</td>
+                      <td>{normPlaza.plazaName}</td>
                       <td className="text-center">{row.laneId || '-'}</td>
                       <td className="monospace-cell">{row.tagId || '-'}</td>
                       <td className="text-center font-semibold">{row.vrn || '-'}</td>

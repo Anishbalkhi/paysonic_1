@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationValidateService from '../../services/violation/ViolationValidateService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationValidateReport.scss';
 
@@ -441,6 +442,7 @@ export const ViolationValidateReport = () => {
                 records.map((row, idx) => {
                   const srNo = row.srNo ?? (page * pageSize + idx + 1);
                   const isViewViolation = row.takeAction === 'View Violation';
+                  const normPlaza = normalizePlazaForRecord(row, idx, onboardedPlazas);
 
                   return (
                     <tr key={row.id || idx}>
@@ -449,22 +451,22 @@ export const ViolationValidateReport = () => {
                         {isViewViolation ? (
                           <button
                             className="btn-action-view"
-                            onClick={() => setSelectedRecord(row)}
+                            onClick={() => setSelectedRecord({ ...row, ...normPlaza })}
                           >
                             View Violation
                           </button>
                         ) : (
                           <span
                             className="text-actioned"
-                            onClick={() => setSelectedRecord(row)}
+                            onClick={() => setSelectedRecord({ ...row, ...normPlaza })}
                             title="Click to view details"
                           >
                             Actioned
                           </span>
                         )}
                       </td>
-                      <td className="text-center font-semibold">{row.plazaId || '666666'}</td>
-                      <td>{row.plazaName || 'Autumn'}</td>
+                      <td className="text-center font-semibold">{normPlaza.plazaId}</td>
+                      <td>{normPlaza.plazaName}</td>
                       <td className="font-semibold text-royal-blue">{row.vrn || '-'}</td>
                       <td className="monospace-cell">{row.tagId || '-'}</td>
                       <td className="monospace-cell">{row.acqTxnId || '-'}</td>

@@ -92,12 +92,12 @@ public class DataLoader implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
+            seedOnboardingData();
             cleanupLegacyPlazaRecords();
             seedUsers();
             seedUserSessions();
             seedLoginHistory();
             seedAuditLogs();
-            seedOnboardingData();
             seedTollTransactions();
             seedCycleWiseTransactions();
             seedDisputeTransactions();
@@ -108,25 +108,103 @@ public class DataLoader implements CommandLineRunner {
             seedNhaiTrafficReports();
             seedTransactionSummaryReports();
             seedPassSummaryReports();
+            cleanupLegacyPlazaRecords();
             log.info("Paysonic Toll Ops Initial Database Seed Completed Successfully.");
         } catch (Exception e) {
             log.error("Error seeding initial Toll Ops data into database", e);
         }
     }
 
+    private void runSqlSafe(String sql) {
+        if (jdbcTemplate == null) return;
+        try {
+            int rows = jdbcTemplate.update(sql);
+            if (rows > 0) {
+                log.info("Executed SQL cleanup (affected {} rows): {}", rows, sql);
+            }
+        } catch (Exception e) {
+            log.debug("SQL execution notice for [{}]: {}", sql, e.getMessage());
+        }
+    }
+
     private void cleanupLegacyPlazaRecords() {
         if (jdbcTemplate == null) return;
         try {
-            log.info("Checking and cleaning up any legacy prototype plaza codes (600601, 600602, Dummytollplaza1)...");
-            // Standardize any historical records to real onboarded plazas
-            jdbcTemplate.update("UPDATE toll_transactions SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
-            jdbcTemplate.update("UPDATE dispute_transactions SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%' OR toll_plaza_name LIKE '%Gluten%'");
-            jdbcTemplate.update("UPDATE violation_transactions SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
-            jdbcTemplate.update("UPDATE violation_raw_files SET toll_plaza_id = '501101' WHERE toll_plaza_id IN ('600601', '600602')");
-            jdbcTemplate.update("UPDATE violation_settlement_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
-            jdbcTemplate.update("UPDATE violation_validate_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
-            jdbcTemplate.update("UPDATE nhai_traffic_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
-            jdbcTemplate.update("UPDATE transaction_summary_reports SET toll_plaza_id = '501101', toll_plaza_name = 'MUMBAI PLAZA NH-04' WHERE toll_plaza_id IN ('600601', '600602') OR toll_plaza_name LIKE '%Dummytoll%'");
+            log.info("Checking and cleaning up any legacy prototype plaza codes (600601, 600602, 666666, Dummytollplaza1, Autumn, Gluten)...");
+
+            // 1. Remove any dummy plaza records from plazas table
+            runSqlSafe("DELETE FROM plazas WHERE id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(name) LIKE '%dummytoll%' OR LOWER(name) LIKE '%autumn%' OR LOWER(name) LIKE '%gluten%'");
+
+            // 2. Remove lanes referencing dummy plaza ids
+            runSqlSafe("DELETE FROM lanes WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999')");
+
+            // 3. toll_transactions (columns: plaza_id, plaza_name)
+            runSqlSafe("UPDATE toll_transactions SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 4. dispute_transactions (columns: plaza_id, plaza_name)
+            runSqlSafe("UPDATE dispute_transactions SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 5. violation_transactions (columns: plaza_id, plaza_name)
+            runSqlSafe("UPDATE violation_transactions SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 6. violation_raw_files (column: toll_plaza_id)
+            runSqlSafe("UPDATE violation_raw_files SET toll_plaza_id = '501101' " +
+                    "WHERE toll_plaza_id IN ('600601', '600602', '666666', '778899', '778999')");
+
+            // 7. violation_settlement_reports (columns: plaza_id, plaza_name)
+            runSqlSafe("UPDATE violation_settlement_reports SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 8. violation_validate_reports (columns: plaza_id, plaza_name)
+            runSqlSafe("UPDATE violation_validate_reports SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 9. nhai_traffic_reports (columns: plaza_code, plaza_name)
+            runSqlSafe("UPDATE nhai_traffic_reports SET plaza_code = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_code IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 10. transaction_summary_reports (columns: plaza_id, plaza_name)
+            runSqlSafe("UPDATE transaction_summary_reports SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 11. pass_summary_reports (columns: plaza_id, plaza_name)
+            runSqlSafe("UPDATE pass_summary_reports SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' " +
+                    "WHERE plaza_id IN ('600601', '600602', '666666', '778899', '778999') " +
+                    "OR LOWER(plaza_name) LIKE '%dummytoll%' OR LOWER(plaza_name) LIKE '%autumn%' OR LOWER(plaza_name) LIKE '%gluten%'");
+
+            // 12. Distribute violation settlement records realistically across real plazas
+            runSqlSafe("UPDATE violation_settlement_reports SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' WHERE sr_no IN (1, 2, 3, 9, 10)");
+            runSqlSafe("UPDATE violation_settlement_reports SET plaza_id = '502202', plaza_name = 'PUNE BYPASS PLAZA' WHERE sr_no IN (4, 5, 6)");
+            runSqlSafe("UPDATE violation_settlement_reports SET plaza_id = '503303', plaza_name = 'NASHIK TOLL PLAZA' WHERE sr_no IN (7, 8)");
+
+            // 13. Distribute violation validate records realistically across real plazas
+            runSqlSafe("UPDATE violation_validate_reports SET plaza_id = '501101', plaza_name = 'MUMBAI PLAZA NH-04' WHERE sr_no IN (1, 2, 4, 9)");
+            runSqlSafe("UPDATE violation_validate_reports SET plaza_id = '502202', plaza_name = 'PUNE BYPASS PLAZA' WHERE sr_no IN (3, 6, 10)");
+            runSqlSafe("UPDATE violation_validate_reports SET plaza_id = '503303', plaza_name = 'NASHIK TOLL PLAZA' WHERE sr_no IN (5)");
+            runSqlSafe("UPDATE violation_validate_reports SET plaza_id = '504404', plaza_name = 'KOLHAPUR PLAZA' WHERE sr_no IN (7)");
+            runSqlSafe("UPDATE violation_validate_reports SET plaza_id = '505505', plaza_name = 'SOLAPUR PLAZA NH-65' WHERE sr_no IN (8)");
+
+            // 14. Synchronize all tables with live real plazas from `plazas` table (user-created & onboarded)
+            runSqlSafe("UPDATE violation_settlement_reports v JOIN plazas p ON v.plaza_id = p.id SET v.plaza_name = p.name");
+            runSqlSafe("UPDATE violation_validate_reports v JOIN plazas p ON v.plaza_id = p.id SET v.plaza_name = p.name");
+            runSqlSafe("UPDATE toll_transactions t JOIN plazas p ON t.plaza_id = p.id SET t.plaza_name = p.name");
+            runSqlSafe("UPDATE dispute_transactions d JOIN plazas p ON d.plaza_id = p.id SET d.plaza_name = p.name");
+            runSqlSafe("UPDATE violation_transactions v JOIN plazas p ON v.plaza_id = p.id SET v.plaza_name = p.name");
+            runSqlSafe("UPDATE transaction_summary_reports t JOIN plazas p ON t.plaza_id = p.id SET t.plaza_name = p.name");
+            runSqlSafe("UPDATE pass_summary_reports ps JOIN plazas p ON ps.plaza_id = p.id SET ps.plaza_name = p.name");
+            runSqlSafe("UPDATE nhai_traffic_reports n JOIN plazas p ON n.plaza_code = p.id SET n.plaza_name = p.name");
+
             log.info("Legacy prototype plaza cleanup completed successfully.");
         } catch (Exception e) {
             log.warn("Legacy plaza records cleanup note: {}", e.getMessage());
@@ -587,11 +665,11 @@ public class DataLoader implements CommandLineRunner {
         t2.setViolationSettledAmount(BigDecimal.ZERO);
         txns.add(t2);
 
-        // 3. Reference Screenshot Row 3 (Autumn 666666, Pending, ACCEPTED)
+        // 3. Operational Row 3 (MUMBAI PLAZA NH-04 501101, Pending, ACCEPTED)
         TollTransaction t3 = new TollTransaction();
         t3.setTollFileName("ONLINE");
-        t3.setPlazaId("666666");
-        t3.setPlazaName("Autumn");
+        t3.setPlazaId("501101");
+        t3.setPlazaName("MUMBAI PLAZA NH-04");
         t3.setLaneId("L2");
         t3.setTagId("34161FA82032890123456783");
         t3.setVrn("MH04ID2901");
@@ -615,11 +693,11 @@ public class DataLoader implements CommandLineRunner {
         t3.setViolationSettledAmount(BigDecimal.ZERO);
         txns.add(t3);
 
-        // 4. Reference Screenshot Row 4 (Autumn 666666, Pending, ACCEPTED)
+        // 4. Operational Row 4 (PUNE BYPASS PLAZA 502202, Pending, ACCEPTED)
         TollTransaction t4 = new TollTransaction();
         t4.setTollFileName("ONLINE");
-        t4.setPlazaId("666666");
-        t4.setPlazaName("Autumn");
+        t4.setPlazaId("502202");
+        t4.setPlazaName("PUNE BYPASS PLAZA");
         t4.setLaneId("L2");
         t4.setTagId("34161FA82032890123456784");
         t4.setVrn("MH04ID2902");
@@ -643,11 +721,11 @@ public class DataLoader implements CommandLineRunner {
         t4.setViolationSettledAmount(BigDecimal.ZERO);
         txns.add(t4);
 
-        // 5. Reference Screenshot Row 5 (Autumn 666666, Rejected, MALTAG)
+        // 5. Operational Row 5 (NASHIK TOLL PLAZA 503303, Rejected, MALTAG)
         TollTransaction t5 = new TollTransaction();
         t5.setTollFileName("ONLINE");
-        t5.setPlazaId("666666");
-        t5.setPlazaName("Autumn");
+        t5.setPlazaId("503303");
+        t5.setPlazaName("NASHIK TOLL PLAZA");
         t5.setLaneId("L2");
         t5.setTagId("34161FA82032890123456785");
         t5.setVrn("MH04ID2903");
@@ -1341,7 +1419,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 1
         list.add(new ViolationValidateRecord(
-                1, "Actioned", "666666", "Autumn", "MH04ID2929",
+                1, "Actioned", "501101", "MUMBAI PLAZA NH-04", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "AM170907",
                 new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 7, 0, 0),
                 "VC10", "VC18", "VC19", "ACCEPTED", "Tractor with trailer",
@@ -1350,7 +1428,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 2
         list.add(new ViolationValidateRecord(
-                2, "Actioned", "666666", "Autumn", "MH04ID2929",
+                2, "Actioned", "501101", "MUMBAI PLAZA NH-04", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "AM170906",
                 new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 6, 0, 0),
                 "VC10", "VC18", "NA", "DECLINED", "Vehicle axles are not visible",
@@ -1359,7 +1437,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 3
         list.add(new ViolationValidateRecord(
-                3, "Actioned", "666666", "Autumn", "MH04ID2929",
+                3, "Actioned", "502202", "PUNE BYPASS PLAZA", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "AM170905",
                 new BigDecimal("0.00"), LocalDateTime.of(2026, 9, 16, 4, 0, 0),
                 "VC10", "VC18", "NA", "DECLINED", "Image is Conclusive but license Number is not matching with sys",
@@ -1377,7 +1455,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 5
         list.add(new ViolationValidateRecord(
-                5, "Actioned", "666666", "Autumn", "MH04ID2929",
+                5, "Actioned", "503303", "NASHIK TOLL PLAZA", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "AM170904",
                 new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 4, 0, 0),
                 "VC10", "VC18", "NA", "DECLINED", "2 timestamps are present on the vehicle image",
@@ -1395,7 +1473,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 7
         list.add(new ViolationValidateRecord(
-                7, "Actioned", "666666", "Autumn", "MH04ID2929",
+                7, "Actioned", "504404", "KOLHAPUR PLAZA", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "AM170903",
                 new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 3, 0, 0),
                 "VC10", "VC18", "VC18", "ACCEPTED", "Tractor",
@@ -1404,7 +1482,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 8
         list.add(new ViolationValidateRecord(
-                8, "Actioned", "666666", "Autumn", "MH04ID2929",
+                8, "Actioned", "505505", "SOLAPUR PLAZA NH-65", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "AM100909",
                 new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 16, 1, 0, 0),
                 "VC10", "VC18", "NA", "DECLINED", "Wrong vehicle image",
@@ -1413,7 +1491,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 9
         list.add(new ViolationValidateRecord(
-                9, "Actioned", "666666", "Autumn", "MH04ID2929",
+                9, "Actioned", "501101", "MUMBAI PLAZA NH-04", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "ZP170912",
                 new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 15, 2, 0, 0),
                 "VC10", "VC18", "NA", "DECLINED", "Wrong vehicle image",
@@ -1422,7 +1500,7 @@ public class DataLoader implements CommandLineRunner {
 
         // Row 10
         list.add(new ViolationValidateRecord(
-                10, "View Violation", "666666", "Autumn", "MH04ID2929",
+                10, "View Violation", "502202", "PUNE BYPASS PLAZA", "MH04ID2929",
                 "34161FA82032866C020F7D20", "102047735808525000", "ZP170911",
                 new BigDecimal("120.00"), LocalDateTime.of(2026, 9, 15, 1, 0, 0),
                 "VC10", "VC7", "NA", "", "Business Rule Violation",
@@ -1465,7 +1543,8 @@ public class DataLoader implements CommandLineRunner {
                 new PlazaMeta("501101", "MUMBAI PLAZA NH-04"),
                 new PlazaMeta("502202", "PUNE BYPASS PLAZA"),
                 new PlazaMeta("503303", "NASHIK TOLL PLAZA"),
-                new PlazaMeta("666666", "Autumn")
+                new PlazaMeta("504404", "KOLHAPUR PLAZA"),
+                new PlazaMeta("505505", "SOLAPUR PLAZA NH-65")
         );
 
         // Seed across September 2026 dates (days 1, 5, 10, 15, 16, 20, 25, 30)
@@ -1533,7 +1612,8 @@ public class DataLoader implements CommandLineRunner {
                 new PlazaMeta("501101", "MUMBAI PLAZA NH-04"),
                 new PlazaMeta("502202", "PUNE BYPASS PLAZA"),
                 new PlazaMeta("503303", "NASHIK TOLL PLAZA"),
-                new PlazaMeta("666666", "Autumn")
+                new PlazaMeta("504404", "KOLHAPUR PLAZA"),
+                new PlazaMeta("505505", "SOLAPUR PLAZA NH-65")
         );
 
         record RowMeta(String status, String code, long count, String amount, int order) {}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearchDispute.scss';
 
@@ -434,16 +435,18 @@ export const TransactionSearchDispute = () => {
                   const funcCode = extractCode(funcDesc);
                   const ind = (d.settlementIndicator || '').trim();
 
+                  const normPlaza = normalizePlazaForRecord(d, index, plazas);
+
                   return (
                     <tr key={d.id || index}>
                       {/* 1. Sr No */}
                       <td className="text-center">{page * pageSize + index + 1}</td>
 
                       {/* 2. Plaza Name */}
-                      <td style={{ fontWeight: 600 }}>{d.plazaName}</td>
+                      <td style={{ fontWeight: 600 }}>{normPlaza.plazaName}</td>
 
                       {/* 3. Plaza ID */}
-                      <td className="code-font text-center">{d.plazaId}</td>
+                      <td className="code-font text-center">{normPlaza.plazaId}</td>
 
                       {/* 4. Acq Txn ID */}
                       <td>

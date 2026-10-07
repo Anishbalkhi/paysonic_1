@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NhaiTrafficService from '../../services/summary/NhaiTrafficService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlaza } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './NhaiTrafficReport.scss';
 
@@ -334,24 +335,25 @@ export const NhaiTrafficReport = () => {
                       return (
                         <tr key={`${vcGroup.classCode}-${journey.journeyType}`}>
                           {/* Col 0: Plaza Code (spans all class rows) */}
-                          {isFirstGlobalRow && (
-                            <td
-                              rowSpan={totalRowsInClasses}
-                              className="text-center font-bold border-merged-cell plaza-code-cell"
-                            >
-                              {reportData.plazaCode}
-                            </td>
-                          )}
-
-                          {/* Col 1: Plaza Name (spans all class rows) */}
-                          {isFirstGlobalRow && (
-                            <td
-                              rowSpan={totalRowsInClasses}
-                              className="font-semibold border-merged-cell plaza-name-cell"
-                            >
-                              {reportData.plazaName}
-                            </td>
-                          )}
+                          {isFirstGlobalRow && (() => {
+                            const normPlaza = normalizePlaza(reportData.plazaCode, reportData.plazaName, plazas);
+                            return (
+                              <>
+                                <td
+                                  rowSpan={totalRowsInClasses}
+                                  className="text-center font-bold border-merged-cell plaza-code-cell"
+                                >
+                                  {normPlaza.plazaId}
+                                </td>
+                                <td
+                                  rowSpan={totalRowsInClasses}
+                                  className="font-semibold border-merged-cell plaza-name-cell"
+                                >
+                                  {normPlaza.plazaName}
+                                </td>
+                              </>
+                            );
+                          })()}
 
                           {/* Col 2: Vehicle Class (spans 4 rows of the class) */}
                           {isFirstInClass && (

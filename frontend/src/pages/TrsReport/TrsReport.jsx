@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TrsReportService from '../../services/trs/TrsReportService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TrsReport.scss';
 
@@ -432,6 +433,8 @@ export const TrsReport = () => {
                     issuerBankId = '007030';
                   }
 
+                  const normPlaza = normalizePlazaForRecord(r, index, plazas);
+
                   return (
                     <tr key={r.id || r.acqTxnId || index}>
                       {/* 1. Sr No */}
@@ -441,10 +444,10 @@ export const TrsReport = () => {
                       <td>{r.tollFileName || 'ONLINE'}</td>
 
                       {/* 3. Plaza ID */}
-                      <td>{r.plazaId || ''}</td>
+                      <td>{normPlaza.plazaId}</td>
 
                       {/* 4. Plaza Name */}
-                      <td style={{ fontWeight: 500 }}>{r.plazaName || ''}</td>
+                      <td style={{ fontWeight: 500 }}>{normPlaza.plazaName}</td>
 
                       {/* 5. Lane ID */}
                       <td className="text-center">{r.laneId || ''}</td>

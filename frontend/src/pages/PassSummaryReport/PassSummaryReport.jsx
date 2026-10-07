@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PassSummaryService from '../../services/summary/PassSummaryService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './PassSummaryReport.scss';
@@ -11,6 +13,7 @@ export const PassSummaryReport = () => {
   const [fromDate, setFromDate] = useState(initial.from);
   const [toDate, setToDate] = useState(initial.to);
   const [plazaId, setPlazaId] = useState('ALL');
+  const { plazas: onboardedPlazas } = useOnboardedPlazas();
 
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -100,21 +103,25 @@ export const PassSummaryReport = () => {
   const [knownPlazas, setKnownPlazas] = useState([]);
 
   useEffect(() => {
+    const map = new Map();
+    (onboardedPlazas || []).forEach((p) => {
+      const pId = String(p.id || '').trim();
+      const pName = (p.name || `Plaza ${pId}`).trim();
+      if (pId && !/dummy|autumn|gluten/i.test(pName)) {
+        map.set(pId, { id: pId, label: `${pId} - ${pName}` });
+      }
+    });
+
     if (reportData && Array.isArray(reportData) && reportData.length > 0) {
-      setKnownPlazas((prev) => {
-        const map = new Map(prev.map((p) => [p.id, p]));
-        reportData.forEach((p) => {
-          if (p.plazaId && !map.has(p.plazaId)) {
-            map.set(p.plazaId, {
-              id: p.plazaId,
-              label: p.plazaName ? `${p.plazaId} - ${p.plazaName}` : p.plazaId
-            });
-          }
-        });
-        return Array.from(map.values());
+      reportData.forEach((p, idx) => {
+        const norm = normalizePlazaForRecord(p, idx, onboardedPlazas);
+        if (norm.plazaId && !map.has(norm.plazaId)) {
+          map.set(norm.plazaId, { id: norm.plazaId, label: `${norm.plazaId} - ${norm.plazaName}` });
+        }
       });
     }
-  }, [reportData]);
+    setKnownPlazas(Array.from(map.values()));
+  }, [onboardedPlazas, reportData]);
 
   const paginatedPlazas = useMemo(() => {
     if (!Array.isArray(reportData)) return [];
@@ -227,7 +234,8 @@ export const PassSummaryReport = () => {
                 </tr>
               ) : (
                 <>
-                  {paginatedPlazas.map((plaza) => {
+                  {paginatedPlazas.map((plaza, pIdx) => {
+                    const normPlaza = normalizePlazaForRecord(plaza, pIdx, onboardedPlazas);
                     // Count total rows per plaza: for each mode, rows.length + 1 (subtotal)
                     const totalPlazaRows = (plaza.paymentModes || []).reduce(
                       (sum, mode) => sum + (mode.rows || []).length + 1, 0
@@ -235,28 +243,28 @@ export const PassSummaryReport = () => {
                     let plazaFirstRendered = false;
 
                     return (
-                      <React.Fragment key={plaza.plazaId}>
+                      <React.Fragment key={normPlaza.plazaId}>
                         {(plaza.paymentModes || []).map((mode) => {
                           let modeFirstRendered = false;
                           const modeRows = mode.rows || [];
                           const modeSpan = modeRows.length + 1; // rows + subtotal
 
                           return (
-                            <React.Fragment key={`${plaza.plazaId}-${mode.paymentMode}`}>
+                            <React.Fragment key={`${normPlaza.plazaId}-${mode.paymentMode}`}>
                               {modeRows.map((pt) => {
                                 const isPlazaFirst = !plazaFirstRendered && (plazaFirstRendered = true);
                                 const isModeFirst = !modeFirstRendered && (modeFirstRendered = true);
 
                                 return (
-                                  <tr key={`${plaza.plazaId}-${mode.paymentMode}-${pt.passType}`}>
+                                  <tr key={`${normPlaza.plazaId}-${mode.paymentMode}-${pt.passType}`}>
                                     {isPlazaFirst && (
                                       <td rowSpan={totalPlazaRows} className="merged-cell text-center font-semibold plaza-id-cell">
-                                        {plaza.plazaId}
+                                        {normPlaza.plazaId}
                                       </td>
                                     )}
                                     {isPlazaFirst && (
                                       <td rowSpan={totalPlazaRows} className="merged-cell font-semibold plaza-name-cell">
-                                        {plaza.plazaName}
+                                        {normPlaza.plazaName}
                                       </td>
                                     )}
                                     {isModeFirst && (

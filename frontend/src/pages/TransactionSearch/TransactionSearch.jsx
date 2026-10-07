@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearch.scss';
 
@@ -678,11 +679,13 @@ export const TransactionSearch = () => {
                     else if (st === 'declined') badgeClass = 'badge-declined';
                     else if (st === 'rejected' || st === 'failed') badgeClass = 'badge-rejected';
 
+                    const normPlaza = normalizePlazaForRecord(r, idx, plazas);
+
                     return (
                       <tr key={r.id || `${r.acqTxnId || ''}-${idx}`}>
                         <td className="text-center font-semibold">{srNo}</td>
-                        <td className="text-center monospace-cell">{r.plazaId || '—'}</td>
-                        <td className="font-semibold">{r.plazaName || '—'}</td>
+                        <td className="text-center monospace-cell">{normPlaza.plazaId}</td>
+                        <td className="font-semibold">{normPlaza.plazaName}</td>
                         <td className="text-center monospace-cell">{r.laneId || '—'}</td>
                         <td className="monospace-cell">{r.acqTxnId || '—'}</td>
                         <td className="monospace-cell">{r.tollTxnId || '—'}</td>
@@ -753,11 +756,13 @@ export const TransactionSearch = () => {
                     const srNo = page * pageSize + idx + 1;
                     const settleClass = (d.settlementType || '').toUpperCase() === 'CR' ? 'cr' : 'dr';
 
+                    const normPlaza = normalizePlazaForRecord(d, idx, plazas);
+
                     return (
                       <tr key={d.id || `${d.acqTxnId || ''}-${idx}`}>
                         <td className="text-center font-semibold">{srNo}</td>
-                        <td className="font-semibold">{d.plazaName || '—'}</td>
-                        <td className="text-center monospace-cell">{d.plazaId || '—'}</td>
+                        <td className="font-semibold">{normPlaza.plazaName}</td>
+                        <td className="text-center monospace-cell">{normPlaza.plazaId}</td>
                         <td className="monospace-cell">{d.acqTxnId || '—'}</td>
                         <td className="monospace-cell">{d.tollTxnId || '—'}</td>
                         <td className="text-center">{formatDateDisplay(d.txnDateTime)}</td>

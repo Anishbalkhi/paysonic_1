@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSummaryService from '../../services/summary/TransactionSummaryService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './TransactionSummaryReport.scss';
@@ -11,6 +13,7 @@ export const TransactionSummaryReport = () => {
   const [fromDate, setFromDate] = useState(initial.from);
   const [toDate, setToDate] = useState(initial.to);
   const [plazaId, setPlazaId] = useState('ALL');
+  const { plazas: onboardedPlazas } = useOnboardedPlazas();
 
   const [reportData, setReportData] = useState([]);
   const [grandTotal, setGrandTotal] = useState(null);
@@ -86,21 +89,25 @@ export const TransactionSummaryReport = () => {
   const [knownPlazas, setKnownPlazas] = useState([]);
 
   useEffect(() => {
+    const map = new Map();
+    (onboardedPlazas || []).forEach((p) => {
+      const pId = String(p.id || '').trim();
+      const pName = (p.name || `Plaza ${pId}`).trim();
+      if (pId && !/dummy|autumn|gluten/i.test(pName)) {
+        map.set(pId, { id: pId, label: `${pId} - ${pName}` });
+      }
+    });
+
     if (reportData && Array.isArray(reportData) && reportData.length > 0) {
-      setKnownPlazas((prev) => {
-        const map = new Map(prev.map((p) => [p.id, p]));
-        reportData.forEach((p) => {
-          if (p.plazaId && !map.has(p.plazaId)) {
-            map.set(p.plazaId, {
-              id: p.plazaId,
-              label: p.plazaName && p.plazaName !== 'Plaza Name' ? `${p.plazaId} - ${p.plazaName}` : p.plazaId
-            });
-          }
-        });
-        return Array.from(map.values());
+      reportData.forEach((p, idx) => {
+        const norm = normalizePlazaForRecord(p, idx, onboardedPlazas);
+        if (norm.plazaId && !map.has(norm.plazaId)) {
+          map.set(norm.plazaId, { id: norm.plazaId, label: `${norm.plazaId} - ${norm.plazaName}` });
+        }
       });
     }
-  }, [reportData]);
+    setKnownPlazas(Array.from(map.values()));
+  }, [onboardedPlazas, reportData]);
 
   // KPI Aggregation
   const summaryKpis = useMemo(() => {
@@ -255,6 +262,7 @@ export const TransactionSummaryReport = () => {
               ) : (
                 <>
                   {paginatedPlazas.map((plaza, pIdx) => {
+                    const normPlaza = normalizePlazaForRecord(plaza, pIdx, onboardedPlazas);
                     const plazaTotalRows = (plaza.statusGroups || []).reduce((sum, sg) => sum + (sg.rows || []).length, 0);
                     let plazaFirstRendered = false;
 
@@ -267,15 +275,15 @@ export const TransactionSummaryReport = () => {
                         const isStatusFirst = !sgFirstRendered && (sgFirstRendered = true);
 
                         return (
-                          <tr key={`${plaza.plazaId}-${statusGroup.transactionStatus}-${row.responseCode}-${rIdx}`}>
+                          <tr key={`${normPlaza.plazaId}-${statusGroup.transactionStatus}-${row.responseCode}-${rIdx}`}>
                             {isPlazaFirst && (
                               <td rowSpan={plazaTotalRows} className="merged-cell text-center font-semibold">
-                                {plaza.plazaId}
+                                {normPlaza.plazaId}
                               </td>
                             )}
                             {isPlazaFirst && (
                               <td rowSpan={plazaTotalRows} className="merged-cell font-semibold">
-                                {plaza.plazaName}
+                                {normPlaza.plazaName}
                               </td>
                             )}
                             {isStatusFirst && (
