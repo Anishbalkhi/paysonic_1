@@ -266,6 +266,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const active = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
           if (active && active.sessionId) {
+            UserActivityService.forceLogout(active.sessionId, 'Session timed out after 5 minutes of inactivity').catch(() => {});
             UserActivityService.terminateSession(active.sessionId, 'Session timed out after 5 minutes of inactivity');
           }
         } catch {}
@@ -287,6 +288,28 @@ export const AuthProvider = ({ children }) => {
       clearInterval(intervalId);
     };
   }, [currentUser]);
+
+  // ─── Real-Time Session Heartbeat Telemetry ─────────────────────────────────
+  // Periodically keeps the backend session's lastActive timestamp updated
+  // while the user is actively working (stops updating if user is inactive)
+  useEffect(() => {
+    if (!currentUser || !currentUser.sessionId) return;
+
+    // Send initial heartbeat upon login/mount
+    UserActivityService.sendHeartbeat(currentUser.sessionId);
+
+    const hbTimer = setInterval(() => {
+      const lastActivityStr = localStorage.getItem(LAST_ACTIVITY_KEY);
+      const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : Date.now();
+      const elapsed = Date.now() - lastActivity;
+      // Send heartbeat only if user was active within the 5-minute timeout window
+      if (elapsed < INACTIVITY_TIMEOUT_MS) {
+        UserActivityService.sendHeartbeat(currentUser.sessionId);
+      }
+    }, 30000);
+
+    return () => clearInterval(hbTimer);
+  }, [currentUser?.sessionId]);
 
   /**
    * Real-time Login against Railway MySQL Database

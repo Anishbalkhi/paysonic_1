@@ -62,6 +62,11 @@ public class ActivityController {
         return ResponseEntity.ok(activityService.getSessionStatus(sessionId));
     }
 
+    @PostMapping("/sessions/{sessionId}/heartbeat")
+    public ResponseEntity<Map<String, Object>> heartbeat(@PathVariable String sessionId) {
+        return ResponseEntity.ok(activityService.touchSession(sessionId));
+    }
+
     @PostMapping("/sessions/{sessionId}/terminate")
     public ResponseEntity<Map<String, Object>> forceLogout(
             @PathVariable String sessionId,

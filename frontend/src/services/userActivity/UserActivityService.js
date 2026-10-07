@@ -407,7 +407,13 @@ class UserActivityService {
     const auditLogs = getStoredAuditLog();
 
     const totalUsers = users.length;
-    const activeUsersCount = activeSessions.filter((s) => s.status === 'Active').length;
+    const nowTime = Date.now();
+    const TIMEOUT_MS = 5 * 60 * 1000 + 30000;
+    const activeUsersCount = activeSessions.filter((s) => {
+      if (s.status !== 'Active') return false;
+      const ts = parseUtcTimestamp(s.lastActive || s.loginTime);
+      return ts && (nowTime - ts.getTime()) <= TIMEOUT_MS;
+    }).length;
     const inactiveUsersCount = users.filter((u) => u.status === 'Inactive').length;
     const lockedUsersCount = users.filter((u) => u.locked).length;
 
@@ -652,19 +658,46 @@ class UserActivityService {
   }
 
   /**
+   * Sends a lightweight session heartbeat to update lastActive on the backend
+   */
+  async sendHeartbeat(sessionId) {
+    if (!sessionId) return null;
+    try {
+      const res = await httpClient.post(`/api/activity/sessions/${sessionId}/heartbeat`);
+      return res.data;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Active sessions — fetched directly from Railway MySQL database via /api/activity/active-users.
-   * Prioritizes live Railway DB records.
+   * Real-time telemetry: filters strictly by active status and 5-minute inactivity window.
    */
   async getActiveUsers() {
+    const now = Date.now();
+    const TIMEOUT_MS = 5 * 60 * 1000 + 30000; // 5 minutes + 30 seconds network buffer
+
+    const isSessionActive = (s) => {
+      if (!s || s.status !== 'Active') return false;
+      const ts = parseUtcTimestamp(s.lastActive || s.loginTime);
+      if (!ts) return false;
+      return (now - ts.getTime()) <= TIMEOUT_MS;
+    };
+
     try {
       const res = await httpClient.get('/api/activity/active-users');
       if (res && res.data && Array.isArray(res.data)) {
-        return res.data.map((s) => this.enrichSession(s));
+        return res.data
+          .filter(isSessionActive)
+          .map((s) => this.enrichSession(s));
       }
     } catch (err) {
       console.warn('[UserActivityService] Railway active-users unreachable, using localStorage:', err?.message);
     }
-    return getStoredActiveSessions().map((s) => this.enrichSession(s));
+    return getStoredActiveSessions()
+      .filter(isSessionActive)
+      .map((s) => this.enrichSession(s));
   }
 
   /**

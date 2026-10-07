@@ -203,9 +203,10 @@ public class DataLoader implements CommandLineRunner {
                         s.setPlaza(n.has("plaza") ? n.get("plaza").asText() : "All plazas");
                         s.setIpAddress(n.has("ipAddress") ? n.get("ipAddress").asText() : "127.0.0.1");
                         s.setDevice(n.has("device") ? n.get("device").asText() : "Chrome / Windows");
-                        s.setStatus(n.has("status") ? n.get("status").asText() : "Active");
-                        s.setLoginTime(LocalDateTime.now().minusHours(1));
-                        s.setLastActive(LocalDateTime.now());
+                        s.setStatus("Terminated");
+                        s.setReason("Session closed");
+                        s.setLoginTime(LocalDateTime.now().minusHours(6));
+                        s.setLastActive(LocalDateTime.now().minusHours(6).plusMinutes(5));
                         list.add(s);
                     }
                     userSessionRepository.saveAll(list);

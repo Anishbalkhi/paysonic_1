@@ -51,6 +51,7 @@ public class ActivityService {
         stats.setTotalUsers(totalUsers);
         stats.setTotalUsersDelta(0.0);
 
+        expireInactiveSessions();
         long activeCount = userSessionRepository.countByStatus("Active");
         stats.setActiveUsers(activeCount);
         stats.setActiveUsersDelta(0.0);
@@ -141,8 +142,54 @@ public class ActivityService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void expireInactiveSessions() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+        List<UserSession> activeSessions = userSessionRepository.findByStatus("Active");
+        List<UserSession> toTerminate = new ArrayList<>();
+        for (UserSession s : activeSessions) {
+            LocalDateTime lastTime = s.getLastActive() != null ? s.getLastActive() : s.getLoginTime();
+            if (lastTime == null || lastTime.isBefore(cutoff)) {
+                s.setStatus("Terminated");
+                s.setReason("Session timed out after 5 minutes of inactivity");
+                s.setLastActive(lastTime != null ? lastTime : LocalDateTime.now());
+                toTerminate.add(s);
+            }
+        }
+        if (!toTerminate.isEmpty()) {
+            userSessionRepository.saveAll(toTerminate);
+        }
+    }
+
     public List<UserSession> getActiveSessions() {
+        expireInactiveSessions();
         return userSessionRepository.findByStatus("Active");
+    }
+
+    @Transactional
+    public Map<String, Object> touchSession(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            return Map.of("active", false, "status", "Terminated", "message", "Invalid sessionId");
+        }
+        Optional<UserSession> sessionOpt = userSessionRepository.findById(sessionId);
+        if (sessionOpt.isEmpty()) {
+            return Map.of("active", false, "status", "Terminated", "message", "Session not found");
+        }
+        UserSession s = sessionOpt.get();
+        if (!"Active".equalsIgnoreCase(s.getStatus())) {
+            return Map.of("active", false, "status", s.getStatus(), "reason", s.getReason() != null ? s.getReason() : "");
+        }
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+        LocalDateTime lastTime = s.getLastActive() != null ? s.getLastActive() : s.getLoginTime();
+        if (lastTime != null && lastTime.isBefore(cutoff)) {
+            s.setStatus("Terminated");
+            s.setReason("Session timed out after 5 minutes of inactivity");
+            userSessionRepository.save(s);
+            return Map.of("active", false, "status", "Terminated", "reason", "Session timed out after 5 minutes of inactivity");
+        }
+        s.setLastActive(LocalDateTime.now());
+        userSessionRepository.save(s);
+        return Map.of("active", true, "status", "Active");
     }
 
     @Transactional
@@ -188,6 +235,7 @@ public class ActivityService {
      * - Only Master Admin can be logged in on multiple devices concurrently.
      * - All other roles are restricted to one active session at a time on a single device;
      *   any previous active sessions for that user are terminated immediately.
+     * - On the same device, previous sessions for the same user are always refreshed.
      */
     @Transactional
     public UserSession registerSession(UserSession session) {
@@ -202,24 +250,25 @@ public class ActivityService {
         }
         session.setStatus("Active");
 
-        // Single device login rule (FR #7):
-        // One user can be logged in at a time on a single device EXCEPT Master Admin.
-        // Only Master Admin can be logged in on multiple devices.
-        if (!"Master Admin".equalsIgnoreCase(session.getRole())) {
-            List<UserSession> existingSessions = userSessionRepository.findByUserId(session.getUserId());
-            String newDeviceId = session.getDeviceId() != null ? session.getDeviceId().trim() : "";
-            for (UserSession s : existingSessions) {
-                if ("Active".equalsIgnoreCase(s.getStatus()) && !s.getSessionId().equals(session.getSessionId())) {
-                    String existingDeviceId = s.getDeviceId() != null ? s.getDeviceId().trim() : "";
-                    boolean isDifferentDevice = !newDeviceId.isEmpty() && !existingDeviceId.isEmpty()
-                            && !newDeviceId.equalsIgnoreCase(existingDeviceId);
+        // Expire any dormant sessions across the board
+        expireInactiveSessions();
 
+        List<UserSession> existingSessions = userSessionRepository.findByUserId(session.getUserId());
+        String newDeviceId = session.getDeviceId() != null ? session.getDeviceId().trim() : "";
+        for (UserSession s : existingSessions) {
+            if ("Active".equalsIgnoreCase(s.getStatus()) && !s.getSessionId().equals(session.getSessionId())) {
+                String existingDeviceId = s.getDeviceId() != null ? s.getDeviceId().trim() : "";
+                boolean isSameDevice = !newDeviceId.isEmpty() && !existingDeviceId.isEmpty()
+                        && newDeviceId.equalsIgnoreCase(existingDeviceId);
+
+                // Terminate if not Master Admin OR if logging in again on the same device
+                if (!"Master Admin".equalsIgnoreCase(session.getRole()) || isSameDevice) {
                     s.setStatus("Terminated");
                     s.setLastActive(LocalDateTime.now());
-                    if (isDifferentDevice) {
-                        s.setReason("Account was logged in on another device");
-                    } else {
+                    if (isSameDevice) {
                         s.setReason("Session refreshed on same device");
+                    } else {
+                        s.setReason("Account was logged in on another device");
                     }
                     userSessionRepository.save(s);
                 }
@@ -238,6 +287,13 @@ public class ActivityService {
             return Map.of("active", false, "status", "Terminated", "reason", "Session terminated", "terminatedByDifferentDevice", false);
         }
         UserSession session = sessionOpt.get();
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+        LocalDateTime lastTime = session.getLastActive() != null ? session.getLastActive() : session.getLoginTime();
+        if ("Active".equalsIgnoreCase(session.getStatus()) && lastTime != null && lastTime.isBefore(cutoff)) {
+            session.setStatus("Terminated");
+            session.setReason("Session timed out after 5 minutes of inactivity");
+            userSessionRepository.save(session);
+        }
         boolean active = "Active".equalsIgnoreCase(session.getStatus());
         Map<String, Object> res = new HashMap<>();
         res.put("active", active);
