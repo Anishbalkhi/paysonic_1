@@ -75,10 +75,20 @@ export const PassSummaryReport = () => {
     finally { setExportingCsv(false); }
   };
 
+  const formatDisplayDate = (dStr) => {
+    if (!dStr) return '';
+    try {
+      const d = new Date(dStr);
+      if (isNaN(d.getTime())) return dStr;
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return dStr;
+    }
+  };
+
   const dateSubtitle = useMemo(() => {
     if (!fromDate || !toDate) return '';
-    const f = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    return `Report Period: ${f(fromDate)} — ${f(toDate)}`;
+    return `Report Period: ${formatDisplayDate(fromDate)} — ${formatDisplayDate(toDate)}`;
   }, [fromDate, toDate]);
 
   // KPI Aggregation
@@ -203,7 +213,7 @@ export const PassSummaryReport = () => {
         <div className="table-top-banner">
           <div className="banner-title">PASS SUMMARY REPORT</div>
           <div className="banner-subtitle">
-            Report Period: {formatDisplayDate(fromDate)} — {formatDisplayDate(toDate)}
+            {dateSubtitle || `Report Period: ${formatDisplayDate(fromDate)} — ${formatDisplayDate(toDate)}`}
           </div>
           <div className="banner-green-bar" />
         </div>
