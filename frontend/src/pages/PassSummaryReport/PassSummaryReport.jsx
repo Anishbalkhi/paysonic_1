@@ -222,9 +222,9 @@ export const PassSummaryReport = () => {
           <table className="pass-summary-table">
             <thead>
               <tr>
-                <th>Plaza ID</th>
+                <th className="text-center">Plaza ID</th>
                 <th>Plaza Name</th>
-                <th>Payment Mode</th>
+                <th className="text-center">Payment Mode</th>
                 <th>Pass Type</th>
                 <th className="text-right">Count</th>
                 <th className="text-right">Amount</th>
@@ -247,9 +247,10 @@ export const PassSummaryReport = () => {
                   {paginatedPlazas.map((plaza, pIdx) => {
                     const normPlaza = normalizePlazaForRecord(plaza, pIdx, onboardedPlazas);
                     // Count total rows per plaza: for each mode, rows.length + 1 (subtotal)
+                    // Plaza ID and Name merge stops before the Grand Total row
                     const totalPlazaRows = (plaza.paymentModes || []).reduce(
                       (sum, mode) => sum + (mode.rows || []).length + 1, 0
-                    ) + 1; // +1 for grand total row
+                    );
                     let plazaFirstRendered = false;
 
                     return (
@@ -295,7 +296,7 @@ export const PassSummaryReport = () => {
 
                               {/* Subtotal row per payment mode */}
                               <tr className="row-subtotal">
-                                <td className="subtotal-label-cell">Total</td>
+                                <td className="subtotal-label-cell text-center">Total</td>
                                 <td className="subtotal-val-cell text-right font-bold">
                                   {Number(mode.totalCount || 0).toLocaleString()}
                                 </td>
@@ -307,19 +308,36 @@ export const PassSummaryReport = () => {
                           );
                         })}
 
-                        {/* Grand Total row per plaza */}
+                        {/* Grand Total row per plaza: spans columns 1-4, count in col 5, amount in col 6 */}
                         <tr className="row-grand-total">
-                          <td colSpan="3" className="grand-total-label-cell">Grand Total</td>
-                          <td className="grand-total-val-cell text-right">
+                          <td colSpan={4} className="grand-total-label-cell text-center">
+                            Grand Total
+                          </td>
+                          <td className="grand-total-val-cell text-right font-bold">
                             {Number(plaza.grandTotalCount || 0).toLocaleString()}
                           </td>
-                          <td className="grand-total-val-cell text-right">
+                          <td className="grand-total-val-cell text-right font-bold">
                             {Number(plaza.grandTotalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                         </tr>
                       </React.Fragment>
                     );
                   })}
+
+                  {/* Overall Grand Total row when multiple plazas are displayed */}
+                  {reportData.length > 1 && (
+                    <tr className="row-grand-total overall-total">
+                      <td colSpan={4} className="grand-total-label-cell text-center">
+                        Overall Grand Total
+                      </td>
+                      <td className="grand-total-val-cell text-right font-bold">
+                        {kpiMetrics.grandCount.toLocaleString()}
+                      </td>
+                      <td className="grand-total-val-cell text-right font-bold">
+                        {kpiMetrics.grandAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  )}
                 </>
               )}
             </tbody>

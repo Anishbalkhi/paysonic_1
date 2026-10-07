@@ -334,6 +334,21 @@
             background-color: #e2e8f0;
           }
 
+          &.overall-total {
+            background-color: #e2e8f0;
+            border-top: 2px double #94a3b8;
+            border-bottom: 2px double #94a3b8;
+
+            .grand-total-label-cell {
+              background-color: #e2e8f0;
+              letter-spacing: 0.06em;
+            }
+
+            .grand-total-val-cell {
+              background-color: #e2e8f0;
+            }
+          }
+
           td {
             border: 1px solid #cbd5e1;
             padding: 12px 14px;
