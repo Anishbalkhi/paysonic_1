@@ -129,7 +129,7 @@ export const Onboarding = () => {
       .catch((err) => {
         console.error('[Onboarding] Railway database load error:', err?.message);
         if (isMounted) {
-          setDbLoadError(err?.message || 'Failed to connect to Railway database');
+          setDbLoadError(err?.message || 'Failed to connect to database');
         }
       })
       .finally(() => {
@@ -1638,29 +1638,6 @@ export const Onboarding = () => {
       {/* Top Header */}
       <div className="onboarding-header">
         <div className="header-left">
-          <div className="badge-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '3px 10px',
-              borderRadius: '12px',
-              fontSize: '12px',
-              fontWeight: 600,
-              background: railwayLoading ? 'rgba(234, 179, 8, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-              color: railwayLoading ? '#eab308' : '#22c55e',
-              border: railwayLoading ? '1px solid rgba(234, 179, 8, 0.25)' : '1px solid rgba(34, 197, 94, 0.25)'
-            }}>
-              <span style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: railwayLoading ? '#eab308' : '#22c55e',
-                boxShadow: railwayLoading ? 'none' : '0 0 8px #22c55e'
-              }} />
-              {railwayLoading ? 'Connecting to Database...' : 'Operational Database (Active)'}
-            </span>
-          </div>
           <h1>Plaza Onboarding Module</h1>
         </div>
         <div className="header-actions">
@@ -1729,7 +1706,7 @@ export const Onboarding = () => {
             animation: 'spin 0.8s linear infinite'
           }} />
           <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: '#c9d1d9' }}>
-            Loading live records from Railway database...
+            Loading records...
           </p>
         </div>
       )}
@@ -1747,7 +1724,7 @@ export const Onboarding = () => {
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <span>⚠ Failed to connect to Railway database: {dbLoadError}</span>
+          <span>⚠ Failed to connect to database: {dbLoadError}</span>
           <button
             type="button"
             className="btn-secondary"
