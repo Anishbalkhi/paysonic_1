@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import OnboardingService from '../../services/onboarding/OnboardingService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizePlaza } from '../../utils/plazaNormalizer';
 import './DisputeDashboard.scss';
 
 export const DisputeDashboard = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { plazas: onboardedPlazas } = useOnboardedPlazas();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fromDate, setFromDate] = useState('');
@@ -58,7 +61,7 @@ export const DisputeDashboard = () => {
       'Vehicle Tag Mismatch',
       'Split Second Double Deduction',
     ];
-    const plazas = ['501101', '502202', '503303', '504404', '600601'];
+    const plazas = ['501101', '502202', '503303', '504404', '505505'];
     const list = [];
     for (let i = 1; i <= 120; i++) {
       const mod = i % 3;
@@ -301,26 +304,29 @@ export const DisputeDashboard = () => {
                     No at-risk disputes match the active filter or search query.
                   </div>
                 ) : (
-                  paginatedAtRisk.map((d) => (
-                    <div key={d.rowId} className="tat-item-row">
-                      <div className="tat-item-info">
-                        <strong>{d.acqTxnId}</strong> · {d.cbReason} · <span className="tat-amount">₹ {Number(d.disputeAmount || 0).toFixed(2)}</span> · Plaza {d.plazaId}
+                  paginatedAtRisk.map((d) => {
+                    const normPlaza = normalizePlaza(d.plazaId, d.plazaName, onboardedPlazas);
+                    return (
+                      <div key={d.rowId} className="tat-item-row">
+                        <div className="tat-item-info">
+                          <strong>{d.acqTxnId}</strong> · {d.cbReason} · <span className="tat-amount">₹ {Number(d.disputeAmount || 0).toFixed(2)}</span> · {normPlaza.plazaName} ({normPlaza.plazaId})
+                        </div>
+                        <div className="tat-item-tail">
+                          <span className={`badge ${d.tatBadge?.colorClass || 'badge-amber'}`}>
+                            {d.tatBadge?.label}
+                          </span>
+                          <button
+                            type="button"
+                            className="tat-row-action-btn"
+                            onClick={() => navigate('/dispute-handling/validate')}
+                            title="Open in Dispute Validation"
+                          >
+                            Validate →
+                          </button>
+                        </div>
                       </div>
-                      <div className="tat-item-tail">
-                        <span className={`badge ${d.tatBadge?.colorClass || 'badge-amber'}`}>
-                          {d.tatBadge?.label}
-                        </span>
-                        <button
-                          type="button"
-                          className="tat-row-action-btn"
-                          onClick={() => navigate('/dispute-handling/validate')}
-                          title="Open in Dispute Validation"
-                        >
-                          Validate →
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
