@@ -624,4 +624,82 @@
       }
     }
   }
+
+  /* Responsive Rules */
+  @media (max-width: 1024px) {
+    padding: 20px 20px 40px;
+
+    .dispute-summary-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px 14px 36px;
+
+    .page-header .header-titles .page-title {
+      font-size: 18px;
+    }
+
+    .dispute-summary-cards {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .filter-box {
+      padding: 16px;
+
+      .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+
+        .filter-group {
+          width: 100%;
+          min-width: 100%;
+        }
+
+        .btn-actions {
+          margin-left: 0;
+          width: 100%;
+          flex-direction: column;
+
+          button {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+    }
+
+    .table-box {
+      padding: 14px;
+
+      .table-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+
+        .banner-actions {
+          width: 100%;
+          flex-direction: column;
+
+          button {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+
+      .table-pagination {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 10px 32px;
+  }
 }

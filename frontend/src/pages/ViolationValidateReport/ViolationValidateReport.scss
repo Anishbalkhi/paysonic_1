@@ -591,6 +591,92 @@
     display: flex;
     justify-content: flex-end;
   }
+
+  /* Responsive Rules */
+  @media (max-width: 1024px) {
+    padding: 20px;
+
+    .violation-summary-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px 14px 36px;
+    gap: 16px;
+
+    .report-header-banner .report-title {
+      font-size: 1.35rem;
+    }
+
+    .violation-summary-cards {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .filter-card {
+      padding: 14px;
+
+      .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+
+        .filter-group {
+          width: 100%;
+        }
+
+        .filter-actions {
+          width: 100%;
+          flex-direction: column;
+
+          .btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+    }
+
+    .table-card {
+      padding: 14px;
+
+      .table-card-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+
+        .header-actions {
+          width: 100%;
+          flex-direction: column;
+
+          .btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      }
+
+      .table-pagination-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+    }
+
+    .modal-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .report-footer-meta {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 10px 32px;
+  }
 }
 
 @keyframes spin {
