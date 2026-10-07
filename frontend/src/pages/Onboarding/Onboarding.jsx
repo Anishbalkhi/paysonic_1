@@ -518,10 +518,10 @@ export const Onboarding = () => {
           : undefined,
       })
         .then(() => {
-          showToast(`✓ Concessionaire ${c.name} (${c.id}) deleted from Railway MySQL`, 'info');
+          showToast(`Concessionaire ${c.name} (${c.id}) deleted successfully`, 'success');
         })
         .catch((err) => {
-          showToast(`⚠ Railway Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
+          showToast(`⚠ Concessionaire Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
         });
     }
   };
@@ -587,7 +587,7 @@ export const Onboarding = () => {
     })
       .then(() => {
         showToast(
-          `✓ Concessionaire ${concessRecord.name} (${targetId}) ${wasEditing ? 'updated' : 'saved'} directly to Railway MySQL!`,
+          `Concessionaire ${concessRecord.name} (${targetId}) ${wasEditing ? 'updated' : 'saved'} successfully!`,
           'success'
         );
       })
@@ -1103,7 +1103,6 @@ export const Onboarding = () => {
       }));
 
       setLaneModalOpen(false);
-      showToast(`Lane ${laneId} configuration updated`, 'success');
 
       OnboardingService.updateLane(laneRecord, {
         oldLaneId: editingLaneId,
@@ -1112,10 +1111,10 @@ export const Onboarding = () => {
           : undefined,
       })
         .then(() => {
-          showToast(`✓ Lane ${laneId} updated directly in Railway MySQL`, 'success');
+          showToast(`Lane ${laneId} updated successfully`, 'success');
         })
         .catch((err) => {
-          showToast(`⚠ Railway Lane Update Failed: ${err?.response?.data?.error || err.message}`, 'error');
+          showToast(`Lane Update Failed: ${err?.response?.data?.error || err.message}`, 'error');
         });
     } else {
       // Optimistic update for add
@@ -1125,7 +1124,6 @@ export const Onboarding = () => {
       }));
 
       setLaneModalOpen(false);
-      showToast(`Lane ${laneId} added to Plaza ${selectedPlazaId}`, 'success');
 
       OnboardingService.saveLane(laneRecord, {
         actor: currentUser
@@ -1133,10 +1131,10 @@ export const Onboarding = () => {
           : undefined,
       })
         .then(() => {
-          showToast(`✓ Lane ${laneId} saved directly in Railway MySQL`, 'success');
+          showToast(`Lane ${laneId} saved successfully`, 'success');
         })
         .catch((err) => {
-          showToast(`⚠ Railway Lane Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+          showToast(`Lane Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
         });
     }
   };
@@ -1149,17 +1147,17 @@ export const Onboarding = () => {
         lanes: prev.lanes.filter((l) => !(l.laneId === laneId && l.plazaId === selectedPlazaId)),
       }));
 
-      // Direct Railway MySQL API delete
+      // Delete lane
       OnboardingService.deleteLane(laneId, selectedPlazaId, {
         actor: currentUser
           ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
           : undefined,
       })
         .then(() => {
-          showToast(`✓ Lane ${laneId} deleted from Railway MySQL`, 'info');
+          showToast(`Lane ${laneId} deleted successfully`, 'success');
         })
         .catch((err) => {
-          showToast(`⚠ Railway Lane Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
+          showToast(`Lane Delete Failed: ${err?.response?.data?.error || err.message}`, 'error');
         });
     }
   };
@@ -1413,9 +1411,9 @@ export const Onboarding = () => {
     OnboardingService.saveCallbacks(selectedPlazaId, callbackUrls, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
     }).then(() => {
-      showToast(`✓ ${urlLabel} for Plaza ${selectedPlazaId} saved directly in Railway MySQL`, 'success');
+      showToast(`${urlLabel} for Plaza ${selectedPlazaId} saved successfully`, 'success');
     }).catch((err) => {
-      showToast(`⚠ Railway Callback Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+      showToast(`⚠ Callback Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
     });
   };
 
@@ -1547,9 +1545,9 @@ export const Onboarding = () => {
     OnboardingService.saveFares(selectedPlazaId, plazaFares, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
     }).then(() => {
-      showToast(`✓ Fare mapping for Plaza ${selectedPlazaId} saved directly in Railway MySQL!`, 'success');
+      showToast(`Fare mapping for Plaza ${selectedPlazaId} saved successfully!`, 'success');
     }).catch((err) => {
-      showToast(`⚠ Railway Fare Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+      showToast(`⚠ Fare Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
     });
   };
 
@@ -1605,17 +1603,13 @@ export const Onboarding = () => {
       },
     }));
 
-    // Direct Railway MySQL API write
+    // Save CCH
     OnboardingService.saveCch(selectedPlazaId, updated, {
       actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
-    }).then((res) => {
-      if (res?._savedOnRailway) {
-        showToast(`✓ CCH mapping for Plaza ${selectedPlazaId} saved directly in Railway MySQL!`, 'success');
-      } else {
-        showToast(`✓ CCH mapping for Plaza ${selectedPlazaId} saved successfully`, 'success');
-      }
+    }).then(() => {
+      showToast(`CCH mapping for Plaza ${selectedPlazaId} saved successfully!`, 'success');
     }).catch((err) => {
-      showToast(`⚠ Railway CCH Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
+      showToast(`⚠ CCH Save Failed: ${err?.response?.data?.error || err.message}`, 'error');
     });
   };
 
@@ -1631,7 +1625,7 @@ export const Onboarding = () => {
           <span className="toast-icon">
             {toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ'}
           </span>
-          <span className="toast-msg">{toast.msg}</span>
+          <span className="toast-msg">{toast.msg.replace(/^[✓✕⚠ℹ]\s*/, '')}</span>
         </div>
       )}
 
@@ -3188,11 +3182,16 @@ export const Onboarding = () => {
         <div className="onboarding-modal-backdrop" onClick={() => setLaneModalOpen(false)}>
           <div className="onboarding-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{isEditingLane ? `Edit Lane ${newLane.laneId} — ${selectedPlazaObject?.name || selectedPlazaId}` : `Add Lane — ${selectedPlazaObject?.name} (${selectedPlazaId})`}</h3>
+              <h3>
+                {isEditingLane
+                  ? `Edit Lane ${newLane.laneId} — ${selectedPlazaObject?.name || selectedPlazaId} (${selectedPlazaId})`
+                  : `Add Lane — ${selectedPlazaObject?.name || selectedPlazaId} (${selectedPlazaId})`}
+              </h3>
               <button
                 type="button"
                 className="close-btn"
                 onClick={() => setLaneModalOpen(false)}
+                title="Close modal"
               >
                 ✕
               </button>
@@ -3200,10 +3199,11 @@ export const Onboarding = () => {
 
             <form onSubmit={handleSaveLane} className="modal-body">
               <div className="form-group">
-                <label>
+                <label htmlFor="lane-id-input">
                   Lane ID <span className="req">*</span>
                 </label>
                 <input
+                  id="lane-id-input"
                   type="text"
                   maxLength={6}
                   placeholder="e.g. L01"
@@ -3214,6 +3214,7 @@ export const Onboarding = () => {
                   }}
                   onBlur={handleLaneBlur}
                   className={laneError ? 'invalid' : ''}
+                  autoComplete="off"
                 />
                 <div className="field-hint">
                   Alphanumeric, max 6 chars · Unique within this plaza (reusable across plazas)
@@ -3223,19 +3224,24 @@ export const Onboarding = () => {
 
               <div className="modal-form-grid">
                 <div className="form-group">
-                  <label>Direction <span className="req">*</span></label>
+                  <label htmlFor="lane-direction-select">Direction <span className="req">*</span></label>
                   <select
+                    id="lane-direction-select"
                     value={newLane.direction}
                     onChange={(e) => setNewLane({ ...newLane, direction: e.target.value })}
                   >
                     <option value="North">North</option>
                     <option value="South">South</option>
+                    <option value="East">East</option>
+                    <option value="West">West</option>
+                    <option value="Both">Both / Bi-directional</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Lane Type <span className="req">*</span></label>
+                  <label htmlFor="lane-type-select">Lane Type <span className="req">*</span></label>
                   <select
+                    id="lane-type-select"
                     value={newLane.type}
                     onChange={(e) => setNewLane({ ...newLane, type: e.target.value })}
                   >
@@ -3245,8 +3251,9 @@ export const Onboarding = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Lane Mode <span className="req">*</span></label>
+                  <label htmlFor="lane-mode-select">Lane Mode <span className="req">*</span></label>
                   <select
+                    id="lane-mode-select"
                     value={newLane.mode}
                     onChange={(e) => setNewLane({ ...newLane, mode: e.target.value })}
                   >
@@ -3256,8 +3263,9 @@ export const Onboarding = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Lane Category <span className="req">*</span></label>
+                  <label htmlFor="lane-category-select">Lane Category <span className="req">*</span></label>
                   <select
+                    id="lane-category-select"
                     value={newLane.category}
                     onChange={(e) => setNewLane({ ...newLane, category: e.target.value })}
                   >
@@ -3268,8 +3276,9 @@ export const Onboarding = () => {
                 </div>
 
                 <div className="form-group span-full">
-                  <label>Lane Status <span className="req">*</span></label>
+                  <label htmlFor="lane-status-select">Lane Status <span className="req">*</span></label>
                   <select
+                    id="lane-status-select"
                     value={newLane.status}
                     onChange={(e) => setNewLane({ ...newLane, status: e.target.value })}
                   >
