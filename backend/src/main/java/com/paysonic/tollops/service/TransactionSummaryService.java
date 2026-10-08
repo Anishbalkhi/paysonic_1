@@ -96,21 +96,23 @@ public class TransactionSummaryService {
                 TransactionSummaryResponseDTO.StatusGroup statusGroup =
                         new TransactionSummaryResponseDTO.StatusGroup(st);
 
+                Map<String, TransactionSummaryResponseDTO.ResponseCodeRow> rowMap = new LinkedHashMap<>();
                 long subCount = 0L;
                 BigDecimal subAmount = BigDecimal.ZERO;
 
                 for (TransactionSummaryRecord rec : records) {
                     long c = rec.getTransactionCount() != null ? rec.getTransactionCount() : 0L;
                     BigDecimal a = rec.getTransactionAmount() != null ? rec.getTransactionAmount() : BigDecimal.ZERO;
+                    String code = rec.getResponseCode() != null ? rec.getResponseCode().trim() : "UNKNOWN";
 
-                    statusGroup.getRows().add(new TransactionSummaryResponseDTO.ResponseCodeRow(
-                            rec.getResponseCode(), c, a
-                    ));
-
-                    subCount += c;
-                    subAmount = subAmount.add(a);
+                    if (!rowMap.containsKey(code)) {
+                        rowMap.put(code, new TransactionSummaryResponseDTO.ResponseCodeRow(code, c, a));
+                        subCount += c;
+                        subAmount = subAmount.add(a);
+                    }
                 }
 
+                statusGroup.setRows(new ArrayList<>(rowMap.values()));
                 statusGroup.setSubtotalCount(subCount);
                 statusGroup.setSubtotalAmount(subAmount);
                 plazaGroup.getStatusGroups().add(statusGroup);

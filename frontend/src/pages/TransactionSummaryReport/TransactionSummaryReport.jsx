@@ -52,23 +52,56 @@ export const TransactionSummaryReport = () => {
     setLoading(true); setErrorMsg('');
     try {
       const data = await TransactionSummaryService.getReport({ fromDate: fDate, toDate: tDate, plazaId: pId });
-      let plazas = data?.plazas || (Array.isArray(data) ? data : []);
+      let rawPlazas = data?.plazas || (Array.isArray(data) ? data : []);
       
       // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
-      plazas = filterRecordsByPlazaScope(plazas, onboardedPlazas, currentUser);
+      rawPlazas = filterRecordsByPlazaScope(rawPlazas, onboardedPlazas, currentUser);
 
-      setReportData(plazas);
+      // Clean & deduplicate duplicate response code rows per status group
+      const sanitizedPlazas = rawPlazas.map((p) => {
+        const groups = (p.statusGroups || []).map((sg) => {
+          const rowMap = new Map();
+          (sg.rows || []).forEach((r) => {
+            const code = String(r.responseCode || '').trim();
+            if (!rowMap.has(code)) {
+              rowMap.set(code, {
+                ...r,
+                responseCode: code,
+                transactionCount: Number(r.transactionCount || 0),
+                transactionAmount: Number(r.transactionAmount || 0),
+              });
+            }
+          });
+          const dedupedRows = Array.from(rowMap.values());
+          const subtotalCount = dedupedRows.reduce((acc, r) => acc + r.transactionCount, 0);
+          const subtotalAmount = dedupedRows.reduce((acc, r) => acc + r.transactionAmount, 0);
+          return {
+            ...sg,
+            rows: dedupedRows,
+            subtotalCount,
+            subtotalAmount,
+          };
+        });
+        const plazaTotalCount = groups.reduce((acc, g) => acc + g.subtotalCount, 0);
+        const plazaTotalAmount = groups.reduce((acc, g) => acc + g.subtotalAmount, 0);
+        return {
+          ...p,
+          statusGroups: groups,
+          plazaTotalCount,
+          plazaTotalAmount,
+        };
+      });
+
+      setReportData(sanitizedPlazas);
       setCurrentPage(1);
-      if (data?.grandTotal) {
-        setGrandTotal(data.grandTotal);
-      }
+      setGrandTotal(null);
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Database error occurred';
       setErrorMsg(`Error: ${msg}`);
       setReportData([]);
       setCurrentPage(1);
     } finally { setLoading(false); }
-  }, [fromDate, toDate, plazaId, isPlazaLocked, defaultPlazaId]);
+  }, [fromDate, toDate, plazaId, isPlazaLocked, defaultPlazaId, onboardedPlazas, currentUser]);
 
   useEffect(() => { 
     handleSearch(fromDate, toDate, isPlazaLocked ? defaultPlazaId : plazaId); 
@@ -131,15 +164,6 @@ export const TransactionSummaryReport = () => {
 
   // KPI Aggregation
   const summaryKpis = useMemo(() => {
-    if (grandTotal && grandTotal.totalCount !== undefined) {
-      return {
-        totalCount: grandTotal.totalCount || 0,
-        totalAmount: grandTotal.totalAmount || 0,
-        acceptedCount: grandTotal.acceptedCount || 0,
-        declinedCount: grandTotal.declinedCount || 0,
-        npciCount: 0
-      };
-    }
     if (!reportData || !Array.isArray(reportData) || reportData.length === 0) {
       return { totalCount: 0, totalAmount: 0, acceptedCount: 0, declinedCount: 0, npciCount: 0 };
     }
@@ -156,7 +180,7 @@ export const TransactionSummaryReport = () => {
       }
     }
     return { totalCount, totalAmount, acceptedCount, declinedCount, npciCount };
-  }, [reportData, grandTotal]);
+  }, [reportData]);
 
   const kpiMetrics = summaryKpis;
 
@@ -174,7 +198,7 @@ export const TransactionSummaryReport = () => {
       <div className="page-header">
         <div className="header-titles">
           <h1 className="page-title">Transaction Summary Report</h1>
-          <p className="subtitle">Report Period: {dateSubtitle}</p>
+          <p className="subtitle">{dateSubtitle}</p>
         </div>
       </div>
 
