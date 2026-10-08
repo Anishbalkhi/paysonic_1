@@ -59,7 +59,7 @@ public class UserResponseDTO {
         dto.setCreatedAt(user.getCreatedAt());
 
         // 72-Hour Dormancy Check: User becomes dormant (locked) if not logged in for 72 hours
-        LocalDateTime refTime = user.getLastActive() != null ? user.getLastActive() : user.getCreatedAt();
+        LocalDateTime refTime = user.getLastActive();
         boolean isTrash = "Trash User".equalsIgnoreCase(user.getStatus()) || "Trash".equalsIgnoreCase(user.getStatus());
         boolean isDormant = !isTrash && !"Master Admin".equalsIgnoreCase(user.getRole()) &&
                 refTime != null &&

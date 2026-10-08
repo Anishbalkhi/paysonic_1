@@ -171,15 +171,27 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setMobile(request.getMobile());
         user.setRole(request.getRole());
-        user.setUserType(request.getUserType() != null ? request.getUserType() : "Toll Plaza");
-        // SECURITY: Always force Pending status on new user creation — never trust client values.
-        // Users must go through the approval workflow to become Active.
-        user.setStatus("Pending");
-        user.setApproval("Pending");
+        // Active / Auto-Approved status support:
+        boolean isAutoApproved = "Active".equalsIgnoreCase(request.getStatus())
+                || "Auto Approved".equalsIgnoreCase(request.getStatus())
+                || "Approved".equalsIgnoreCase(request.getApproval())
+                || "Auto-Approved".equalsIgnoreCase(request.getStatus());
+
+        if (isAutoApproved) {
+            user.setStatus("Active");
+            user.setApproval("Approved");
+            User creator = findActor(actorId);
+            String approverName = creator != null ? creator.getName() + " (" + creator.getId() + ")" : (actorId != null ? actorId : "SYSTEM");
+            user.setApprovedBy(approverName);
+        } else {
+            user.setStatus("Pending");
+            user.setApproval("Pending");
+        }
         user.setLocked(false);
         user.setCreatedBy(actorId != null ? actorId : (request.getCreatedBy() != null ? request.getCreatedBy() : "SYSTEM"));
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
+        user.setLastActive(LocalDateTime.now());
 
         // Role-based plaza assignment logic (Functional Spec v1.1 Section 5-6)
         applyPlazaRules(user, request.getRole(), request.getAssignedPlaza(), request.getPlazas());
@@ -663,7 +675,7 @@ public class UserService {
                 "Trash User".equalsIgnoreCase(user.getStatus()) || "Trash".equalsIgnoreCase(user.getStatus())) {
             return false;
         }
-        LocalDateTime refTime = user.getLastActive() != null ? user.getLastActive() : user.getCreatedAt();
+        LocalDateTime refTime = user.getLastActive();
         if (refTime != null && refTime.isBefore(LocalDateTime.now().minusHours(72))) {
             if (!user.isLocked()) {
                 user.setLocked(true);

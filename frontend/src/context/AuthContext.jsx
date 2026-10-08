@@ -431,10 +431,9 @@ export const AuthProvider = ({ children }) => {
 
     // 72-Hour Dormancy Check (User becomes dormant/locked if not logged in for 72 hours)
     const now = Date.now();
-    const lastActiveRef = match.lastActive || match.createdAt;
-    const lastActiveTime = lastActiveRef ? new Date(lastActiveRef).getTime() : null;
+    const lastActiveTime = match.lastActive ? new Date(match.lastActive).getTime() : null;
     const is72HoursInactive = lastActiveTime ? (now - lastActiveTime > 72 * 60 * 60 * 1000) : false;
-    const isDormant = Boolean(match.dormant || match.isDormant) || (is72HoursInactive && match.role !== 'Master Admin');
+    const isDormant = !isTrash && (Boolean(match.dormant || match.isDormant) || (is72HoursInactive && match.role !== 'Master Admin' && Boolean(match.locked)));
 
     if (match.locked || isDormant) {
       UserActivityService.recordLoginAttempt({

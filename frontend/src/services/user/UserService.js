@@ -130,10 +130,9 @@ class UserService {
       const approval = isTrash ? 'Locked (Trash)' : (isApproved ? 'Approved' : 'Pending');
 
       // 72-Hour Dormancy Check (User becomes dormant/locked if not logged in for 72 hours)
-      const lastActiveRef = u.lastActive || u.createdAt;
-      const lastActiveTime = lastActiveRef ? new Date(lastActiveRef).getTime() : null;
+      const lastActiveTime = u.lastActive ? new Date(u.lastActive).getTime() : null;
       const is72HoursInactive = lastActiveTime ? (Date.now() - lastActiveTime > 72 * 60 * 60 * 1000) : false;
-      const isDormant = !isTrash && (Boolean(u.dormant) || (is72HoursInactive && u.role !== 'Master Admin'));
+      const isDormant = !isTrash && (Boolean(u.dormant) || (is72HoursInactive && u.role !== 'Master Admin' && Boolean(u.locked)));
       const isLocked = isTrash || Boolean(u.locked) || isDormant;
 
       return {
@@ -274,6 +273,11 @@ class UserService {
       if (createdUser.menuAccess) {
         saveUserPermissions(createdUser.id, createdUser.menuAccess, createdUser.email, createdUser.username);
       }
+      try {
+        const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+        const updated = sortUsersNewestFirst([createdUser, ...cached.filter((u) => u.id !== createdUser.id)]);
+        localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
+      } catch {}
       recordAuditSafely({
         module: 'Administration',
         action: 'User Created',

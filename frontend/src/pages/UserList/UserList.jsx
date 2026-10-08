@@ -642,7 +642,7 @@ export const UserList = () => {
       name: '',
       role: initialRole,
       userType: ROLE_NO_USER_TYPE.includes(initialRole) ? '—' : 'Toll Plaza',
-      status: 'Pending',
+      status: 'Active',
       plaza: initialPlaza,
       password: '',
       confirmPassword: '',
@@ -674,6 +674,7 @@ export const UserList = () => {
     const u = users.find((x) => x.id === id);
     if (!u) return;
     setEditingId(id);
+    const existingPassword = u.password || 'Paysonic@2026';
     setFormValues({
       username: u.username || '',
       email: u.email || (u.username ? `${u.username}@paysonic.com` : ''),
@@ -685,8 +686,8 @@ export const UserList = () => {
         : '',
       status: u.status || 'Active',
       plaza: u.role !== 'Concessionaire' ? u.plaza : '',
-      password: '',
-      confirmPassword: '',
+      password: existingPassword,
+      confirmPassword: existingPassword,
     });
     setFormErrors({});
     setShowPassword(false);
@@ -1016,8 +1017,9 @@ export const UserList = () => {
           menuAccess: finalMenuAccess,
         } : u)));
       } else {
-        const initialStatus = isMasterAdmin && formValues.status === 'Active' ? 'Active' : 'Pending';
-        const initialApproval = isMasterAdmin && formValues.status === 'Active' ? 'Approved' : 'Pending';
+        const isAutoApproved = formValues.status === 'Active' || formValues.status === 'Auto Approved';
+        const initialStatus = isAutoApproved ? 'Active' : 'Pending';
+        const initialApproval = isAutoApproved ? 'Approved' : 'Pending';
         const generatedId = nextUserId();
         const generatedUsername = formValues.username || generatedId;
         const created = await UserService.createUser({
@@ -1960,7 +1962,7 @@ export const UserList = () => {
                       Security &amp; credentials
                       {editingId && (
                         <span style={{ fontSize: '12px', fontWeight: 'normal', color: 'var(--muted)', marginLeft: '8px' }}>
-                          (Leave blank to keep existing password)
+                          (Current password displayed · you can edit or keep as is)
                         </span>
                       )}
                     </div>
@@ -1992,12 +1994,12 @@ export const UserList = () => {
                   <div className="form-grid" style={{ marginTop: '14px' }}>
                     <div className="field">
                       <label>
-                        Password {editingId ? '' : <span className="req">*</span>}
+                        Password <span className="req">*</span>
                       </label>
                       <div className="pw-field-wrap">
                         <input
                           type={showPassword ? 'text' : 'password'}
-                          placeholder={editingId ? 'Leave blank to retain current' : 'Min 8 chars, uppercase, number, symbol'}
+                          placeholder={editingId ? 'Current password displayed' : 'Min 8 chars, uppercase, number, symbol'}
                           value={formValues.password}
                           onChange={(e) => {
                             setFormValues({ ...formValues, password: e.target.value });
@@ -2219,23 +2221,16 @@ export const UserList = () => {
                             </span>
                           </div>
                         )
-                      ) : isMasterAdmin ? (
+                      ) : (
                         <select
                           value={formValues.status}
                           onChange={(e) =>
                             setFormValues({ ...formValues, status: e.target.value })
                           }
                         >
-                          <option value="Active">Active (Auto-Approved by Master Admin)</option>
+                          <option value="Active">Auto Approved (Active)</option>
                           <option value="Pending">Pending Approval</option>
                         </select>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', height: '40px', gap: '8px' }}>
-                          <span className="badge badge-pending">Pending Approval</span>
-                          <span style={{ fontSize: '12px', color: 'var(--text-soft, #9AA5B4)' }}>
-                            (Requires hierarchy approval before activation)
-                          </span>
-                        </div>
                       )}
                     </div>
                   </div>
