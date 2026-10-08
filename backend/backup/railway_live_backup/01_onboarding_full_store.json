@@ -1,0 +1,2878 @@
+﻿{
+    "concessionaires": [
+        {
+            "id": "CON-1001",
+            "name": "MAHARASHTRA STATE ROAD DEVELOPMENT CORP (MSRDC)",
+            "address": "Bandra Worli Sea Link Project Office, Mumbai, Maharashtra",
+            "mail": "ops@msrdc.in",
+            "contact": "02226558174",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "CON-1002",
+            "name": "NATIONAL HIGHWAYS INFRA TRUST (NHIT)",
+            "address": "G-5 & 6, Sector-10, Dwarka, New Delhi",
+            "mail": "tollops@nhit.co.in",
+            "contact": "01125074100",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "CON-1003",
+            "name": "IRB INFRASTRUCTURE DEVELOPERS LTD",
+            "address": "IRB Complex, Chandivali Farm, Andheri East, Mumbai, Maharashtra",
+            "mail": "operations@irb.co.in",
+            "contact": "02266404220",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "CON-1004",
+            "name": "JFKGJASKLJGASDKJL",
+            "address": "GKGLASJLKGJSD",
+            "mail": "dsfjgdfkskld@gmail.com",
+            "contact": "9349068962",
+            "createdAt": "2026-09-28T07:10:23",
+            "updatedAt": "2026-09-28T07:10:23"
+        },
+        {
+            "id": "CON-1005",
+            "name": "MPK",
+            "address": "MPK PUNE",
+            "mail": "MPK@gmail.com",
+            "contact": "9999999888",
+            "createdAt": "2026-09-28T10:10:01",
+            "updatedAt": "2026-09-28T10:10:01"
+        },
+        {
+            "id": "CON-1006",
+            "name": "DELHI",
+            "address": "MUMBAI",
+            "mail": "conc@gmail.com",
+            "contact": "1983373872",
+            "createdAt": "2026-09-28T10:43:45",
+            "updatedAt": "2026-09-30T04:51:28"
+        },
+        {
+            "id": "CON-1008",
+            "name": "BAJAJ",
+            "address": "DELHI",
+            "mail": "bjaj@gmail.com",
+            "contact": "9096336356",
+            "createdAt": "2026-09-28T11:00:44",
+            "updatedAt": "2026-10-06T04:57:16"
+        }
+    ],
+    "plazas": [
+        {
+            "id": "090909",
+            "name": "PK1",
+            "orgId": "PYSK",
+            "agencyId": "NHAIM",
+            "concessionaireId": "CON-1001",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "ANDHRA PRADESH",
+            "city": "NELLORE",
+            "activationDate": "2026-10-07",
+            "geoCode": "11.1111,11.1118",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Draft",
+            "publicKey": "",
+            "contactAddress": "",
+            "contactNo": "",
+            "contactMail": "",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "121212",
+            "name": "OCTOBER",
+            "orgId": "OCTO",
+            "agencyId": "OCTOB",
+            "concessionaireId": "CON-1008",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "State",
+            "authority": "IHMCL",
+            "state": "MAHARASHTRA",
+            "city": "NAGPUR",
+            "activationDate": "2026-10-06",
+            "geoCode": "",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": "AWD23434SDASD",
+            "contactAddress": "234ASD",
+            "contactNo": "3242345235",
+            "contactMail": "",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "161616",
+            "name": "ARCON",
+            "orgId": "ARCO",
+            "agencyId": "AARCO",
+            "concessionaireId": "CON-1006",
+            "category": "Toll",
+            "basePricing": "Point Based",
+            "plazaInterface": "API",
+            "subtype": "State",
+            "authority": "NHAI",
+            "state": "MUMBAI",
+            "city": "MUMBAI",
+            "activationDate": "2026-09-28",
+            "geoCode": "11.4089,11.4089",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": "",
+            "contactAddress": "",
+            "contactNo": "",
+            "contactMail": "",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "222222",
+            "name": "PAY1",
+            "orgId": "PAYA",
+            "agencyId": "PAYAA",
+            "concessionaireId": "CON-1001",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "State",
+            "authority": "NHAI",
+            "state": "BIHAR",
+            "city": "PATNA",
+            "activationDate": "2026-10-06",
+            "geoCode": "11.1111,11.1111",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Draft",
+            "publicKey": "",
+            "contactAddress": "",
+            "contactNo": "",
+            "contactMail": "",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "356734",
+            "name": "KOTA",
+            "orgId": "SFDA",
+            "agencyId": "ASFAS",
+            "concessionaireId": "CON-1001",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "RAJASTHAN",
+            "city": "KOTA",
+            "activationDate": "2026-10-06",
+            "geoCode": "67.46743,67.54563",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": "",
+            "contactAddress": "TELI ROAD GLI NO. 9",
+            "contactNo": "7858456735",
+            "contactMail": "anishbalkhi1@gmail.com",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "501101",
+            "name": "MUMBAI PLAZA NH-04",
+            "orgId": "PYSN",
+            "agencyId": "NHAIT",
+            "concessionaireId": "CON-1001",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "MAHARASHTRA",
+            "city": "MUMBAI",
+            "activationDate": "2026-09-01",
+            "geoCode": "19.1726,72.9565",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Draft",
+            "publicKey": "",
+            "contactAddress": "EASTERN EXPRESS HIGHWAY, MULUND CHECK NAKA, MUMBAI, MAHARASHTRA",
+            "contactNo": "2228492011",
+            "contactMail": "mumbai.toll@nhai.gov.in",
+            "mdr": {
+                "bankFee": "0.85",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "502202",
+            "name": "PUNE BYPASS PLAZA",
+            "orgId": "PYSN",
+            "agencyId": "MSRDC1",
+            "concessionaireId": "CON-1001",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "State",
+            "authority": "MSRDC",
+            "state": "MAHARASHTRA",
+            "city": "PUNE",
+            "activationDate": "2026-09-05",
+            "geoCode": "18.7303,73.6841",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": null,
+            "contactAddress": "Mumbai-Pune Expressway Km 94, Urse Toll Plaza, Pune, Maharashtra",
+            "contactNo": "02027481920",
+            "contactMail": "pune.bypass@msrdc.in",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "503303",
+            "name": "NASHIK TOLL PLAZA",
+            "orgId": "PYSN",
+            "agencyId": "NHAI2",
+            "concessionaireId": "CON-1003",
+            "category": "Toll",
+            "basePricing": "Point Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "MAHARASHTRA",
+            "city": "NASHIK",
+            "activationDate": "2026-09-10",
+            "geoCode": "19.9975,73.7898",
+            "schemeRule": "Single Single",
+            "schemeDuration": "Same Day Midnight",
+            "status": "Active",
+            "publicKey": null,
+            "contactAddress": "NH-3 Mumbai-Agra Highway, Gonde Toll Plaza, Nashik, Maharashtra",
+            "contactNo": "02532491122",
+            "contactMail": "nashik.plaza@nhai.gov.in",
+            "mdr": {
+                "bankFee": "0.80",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "504404",
+            "name": "KOLHAPUR PLAZA",
+            "orgId": "PYSN",
+            "agencyId": "NHAI2",
+            "concessionaireId": "CON-1003",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "MAHARASHTRA",
+            "city": "KOLHAPUR",
+            "activationDate": "2026-09-12",
+            "geoCode": "16.7050,74.2433",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": null,
+            "contactAddress": "NH-4 Pune-Bengaluru Highway, Kagal Toll Plaza, Kolhapur, Maharashtra",
+            "contactNo": "02312693344",
+            "contactMail": "kolhapur.toll@nhai.gov.in",
+            "mdr": {
+                "bankFee": "0.85",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "505505",
+            "name": "SOLAPUR PLAZA NH-65",
+            "orgId": "PYSN",
+            "agencyId": "NHAI3",
+            "concessionaireId": "CON-1002",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "MAHARASHTRA",
+            "city": "SOLAPUR",
+            "activationDate": "2026-09-15",
+            "geoCode": "17.6599,75.9064",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": null,
+            "contactAddress": "NH-65 Pune-Hyderabad Highway, Mohol Toll Plaza, Solapur, Maharashtra",
+            "contactNo": "02172394455",
+            "contactMail": "solapur.plaza@nhai.gov.in",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "745643",
+            "name": "ERHSHR",
+            "orgId": "DSFH",
+            "agencyId": "SDGSD",
+            "concessionaireId": "CON-1006",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "CHHATTISGARH",
+            "city": "BILASPUR",
+            "activationDate": "2026-09-30",
+            "geoCode": "",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": "",
+            "contactAddress": "",
+            "contactNo": "",
+            "contactMail": "",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "787878",
+            "name": "PLAZA 1",
+            "orgId": "ASDF",
+            "agencyId": "AASDF",
+            "concessionaireId": "CON-1005",
+            "category": "Toll",
+            "basePricing": "Point Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "MAHARASHTRA",
+            "city": "NASHIK",
+            "activationDate": "2026-09-28",
+            "geoCode": "11.4089,11.4089",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": "",
+            "contactAddress": "",
+            "contactNo": "",
+            "contactMail": "",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "787887",
+            "name": "JEET",
+            "orgId": "HJHJ",
+            "agencyId": "HSUSJ",
+            "concessionaireId": "CON-1001",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "State",
+            "authority": "NHAI",
+            "state": "UTTAR PRADESH",
+            "city": "VARANASI",
+            "activationDate": "2026-10-05",
+            "geoCode": "34.636,63.636",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": "B6HEH6EHDHDHDDHHD",
+            "contactAddress": "VARANASI",
+            "contactNo": "8989898989",
+            "contactMail": "dhdh@gmail.com",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        },
+        {
+            "id": "908895",
+            "name": "JAIPUR",
+            "orgId": "LKFS",
+            "agencyId": "DGFLK",
+            "concessionaireId": "CON-1004",
+            "category": "Toll",
+            "basePricing": "Distance Based",
+            "plazaInterface": "API",
+            "subtype": "National",
+            "authority": "NHAI",
+            "state": "BIHAR",
+            "city": "MUZAFFARPUR",
+            "activationDate": "2026-09-28",
+            "geoCode": "45.4523,45.56334",
+            "schemeRule": "Single Return",
+            "schemeDuration": "24 Hrs",
+            "status": "Active",
+            "publicKey": "",
+            "contactAddress": "LADNUN NAGOUR",
+            "contactNo": "7067949034",
+            "contactMail": "anishbalkhi1@gmail.com",
+            "mdr": {
+                "bankFee": "0.90",
+                "npciFee": "0.15",
+                "bankGst": "18",
+                "npciGst": "18"
+            },
+            "_source": "REAL_DATABASE"
+        }
+    ],
+    "lanes": [
+        {
+            "id": "000000_L01",
+            "plazaId": "000000",
+            "laneId": "L01",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-10-06T06:20:13",
+            "updatedAt": "2026-10-06T06:20:13"
+        },
+        {
+            "id": "111111_L02",
+            "plazaId": "111111",
+            "laneId": "L02",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-29T05:28:29",
+            "updatedAt": "2026-09-29T05:28:29"
+        },
+        {
+            "id": "111111_L03",
+            "plazaId": "111111",
+            "laneId": "L03",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-30T10:44:01",
+            "updatedAt": "2026-09-30T10:44:01"
+        },
+        {
+            "id": "111111_L04",
+            "plazaId": "111111",
+            "laneId": "L04",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-10-07T06:00:20",
+            "updatedAt": "2026-10-07T06:00:20"
+        },
+        {
+            "id": "111111_L05",
+            "plazaId": "111111",
+            "laneId": "L05",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-10-07T06:00:28",
+            "updatedAt": "2026-10-07T06:00:28"
+        },
+        {
+            "id": "121212_L01",
+            "plazaId": "121212",
+            "laneId": "L01",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-10-07T05:35:07",
+            "updatedAt": "2026-10-07T05:35:07"
+        },
+        {
+            "id": "161616_L01",
+            "plazaId": "161616",
+            "laneId": "L01",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-30T10:44:18",
+            "updatedAt": "2026-09-30T10:44:18"
+        },
+        {
+            "id": "161616_L03",
+            "plazaId": "161616",
+            "laneId": "L03",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-30T10:44:11",
+            "updatedAt": "2026-09-30T10:44:11"
+        },
+        {
+            "id": "161616_L1",
+            "plazaId": "161616",
+            "laneId": "L1",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T10:48:50",
+            "updatedAt": "2026-09-28T10:48:50"
+        },
+        {
+            "id": "161616_N1",
+            "plazaId": "161616",
+            "laneId": "N1",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T10:58:16",
+            "updatedAt": "2026-09-28T10:58:16"
+        },
+        {
+            "id": "222222_L01",
+            "plazaId": "222222",
+            "laneId": "L01",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-10-06T05:45:45",
+            "updatedAt": "2026-10-06T05:45:45"
+        },
+        {
+            "id": "222222_L02",
+            "plazaId": "222222",
+            "laneId": "L02",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-10-06T05:45:50",
+            "updatedAt": "2026-10-06T05:45:50"
+        },
+        {
+            "id": "501101_L10101",
+            "plazaId": "501101",
+            "laneId": "L10101",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "501101_L10102",
+            "plazaId": "501101",
+            "laneId": "L10102",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "501101_L10103",
+            "plazaId": "501101",
+            "laneId": "L10103",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "501101_L10104",
+            "plazaId": "501101",
+            "laneId": "L10104",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "501101_L10105",
+            "plazaId": "501101",
+            "laneId": "L10105",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "501101_L10106",
+            "plazaId": "501101",
+            "laneId": "L10106",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Maintenance",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "502202_L20201",
+            "plazaId": "502202",
+            "laneId": "L20201",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "502202_L20202",
+            "plazaId": "502202",
+            "laneId": "L20202",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "502202_L20203",
+            "plazaId": "502202",
+            "laneId": "L20203",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "502202_L20204",
+            "plazaId": "502202",
+            "laneId": "L20204",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "502202_L20205",
+            "plazaId": "502202",
+            "laneId": "L20205",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "502202_L20206",
+            "plazaId": "502202",
+            "laneId": "L20206",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Maintenance",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "503303_L30301",
+            "plazaId": "503303",
+            "laneId": "L30301",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "503303_L30302",
+            "plazaId": "503303",
+            "laneId": "L30302",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "503303_L30303",
+            "plazaId": "503303",
+            "laneId": "L30303",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "503303_L30304",
+            "plazaId": "503303",
+            "laneId": "L30304",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "503303_L30305",
+            "plazaId": "503303",
+            "laneId": "L30305",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "503303_L30306",
+            "plazaId": "503303",
+            "laneId": "L30306",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Maintenance",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "504404_L40401",
+            "plazaId": "504404",
+            "laneId": "L40401",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "504404_L40402",
+            "plazaId": "504404",
+            "laneId": "L40402",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "504404_L40403",
+            "plazaId": "504404",
+            "laneId": "L40403",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "504404_L40404",
+            "plazaId": "504404",
+            "laneId": "L40404",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "504404_L40405",
+            "plazaId": "504404",
+            "laneId": "L40405",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "505505_L50501",
+            "plazaId": "505505",
+            "laneId": "L50501",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "505505_L50502",
+            "plazaId": "505505",
+            "laneId": "L50502",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "505505_L50503",
+            "plazaId": "505505",
+            "laneId": "L50503",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "505505_L50504",
+            "plazaId": "505505",
+            "laneId": "L50504",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Dedicated",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "505505_L50505",
+            "plazaId": "505505",
+            "laneId": "L50505",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Handheld",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "505505_L50506",
+            "plazaId": "505505",
+            "laneId": "L50506",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Maintenance",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T06:55:43",
+            "updatedAt": "2026-09-28T06:55:43"
+        },
+        {
+            "id": "787878_L01",
+            "plazaId": "787878",
+            "laneId": "L01",
+            "direction": "North",
+            "type": "Entry",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T10:14:10",
+            "updatedAt": "2026-09-28T10:14:10"
+        },
+        {
+            "id": "787878_L02",
+            "plazaId": "787878",
+            "laneId": "L02",
+            "direction": "South",
+            "type": "Exit",
+            "mode": "Normal",
+            "category": "Hybrid",
+            "status": "Open",
+            "createdAt": "2026-09-28T10:14:27",
+            "updatedAt": "2026-09-28T10:14:27"
+        }
+    ],
+    "callbacks": {
+        "111111": {
+            "CheckTxnStatusAPI": "https://api.paysonic.in/v1/plazas/111111/checktxnstatusapi",
+            "ResponsePayAPI": " https://api.paysonic.in/v1/plazas/111111/checktxnstatusapi",
+            "ReqPayAPI": "",
+            "TransStatusAPI": "https://api.paysonic.in/v1/plazas/111111/checktxnstatusapi ",
+            "NotificationAPI": "",
+            "SyncTimeAPI": "",
+            "ReqQueryExceptionListAPI": "",
+            "VoilationAPI": "",
+            "PassSchemeAPI": "",
+            "HeartBeatAPI": "",
+            "SignReqPayAPI": "",
+            "PlazaDetailsAPI": "",
+            "ReqGetExceptionListAPI": "",
+            "TagDetailsAPI": ""
+        },
+        "161616": {
+            "CheckTxnStatusAPI": "",
+            "ResponsePayAPI": "https://api.paysonic.in/v1/plazas/161616/responsepayapi",
+            "ReqPayAPI": "https://api.paysonic.in/v1/plazas/161616/responsepayapi",
+            "TransStatusAPI": "",
+            "NotificationAPI": "",
+            "SyncTimeAPI": "",
+            "ReqQueryExceptionListAPI": "",
+            "VoilationAPI": "",
+            "PassSchemeAPI": "",
+            "HeartBeatAPI": "",
+            "SignReqPayAPI": "",
+            "PlazaDetailsAPI": "",
+            "ReqGetExceptionListAPI": "",
+            "TagDetailsAPI": ""
+        },
+        "501101": {
+            "HeartBeatAPI": "https://api.paysonic.in/501101/heartbeatapi",
+            "PlazaStatusAPI": "https://api.paysonic.in/501101/plazastatusapi",
+            "LaneStatusAPI": "https://api.paysonic.in/501101/lanestatusapi",
+            "TagValidationAPI": "https://api.paysonic.in/501101/tagvalidationapi",
+            "TransactionStatusAPI": "https://api.paysonic.in/501101/transactionstatusapi",
+            "FareCalculationAPI": "https://api.paysonic.in/501101/farecalculationapi",
+            "QueryExceptionListAPI": "https://api.paysonic.in/501101/queryexceptionlistapi",
+            "PaymentNotificationAPI": "https://api.paysonic.in/501101/paymentnotificationapi",
+            "DisputeStatusAPI": "https://api.paysonic.in/501101/disputestatusapi",
+            "ReconFeedAPI": "https://api.paysonic.in/501101/reconfeedapi",
+            "MdrSettlementAPI": "https://api.paysonic.in/501101/mdrsettlementapi",
+            "PassValidationAPI": "https://api.paysonic.in/501101/passvalidationapi",
+            "HardwareAlertAPI": "https://api.paysonic.in/501101/hardwarealertapi",
+            "AuditExportAPI": "https://api.paysonic.in/501101/auditexportapi"
+        },
+        "502202": {
+            "HeartBeatAPI": "https://api.paysonic.in/502202/heartbeatapi",
+            "PlazaStatusAPI": "https://api.paysonic.in/502202/plazastatusapi",
+            "LaneStatusAPI": "https://api.paysonic.in/502202/lanestatusapi",
+            "TagValidationAPI": "https://api.paysonic.in/502202/tagvalidationapi",
+            "TransactionStatusAPI": "https://api.paysonic.in/502202/transactionstatusapi",
+            "FareCalculationAPI": "https://api.paysonic.in/502202/farecalculationapi",
+            "QueryExceptionListAPI": "https://api.paysonic.in/502202/queryexceptionlistapi",
+            "PaymentNotificationAPI": "https://api.paysonic.in/502202/paymentnotificationapi",
+            "DisputeStatusAPI": "https://api.paysonic.in/502202/disputestatusapi",
+            "ReconFeedAPI": "https://api.paysonic.in/502202/reconfeedapi",
+            "MdrSettlementAPI": "https://api.paysonic.in/502202/mdrsettlementapi",
+            "PassValidationAPI": "https://api.paysonic.in/502202/passvalidationapi",
+            "HardwareAlertAPI": "https://api.paysonic.in/502202/hardwarealertapi",
+            "AuditExportAPI": "https://api.paysonic.in/502202/auditexportapi"
+        },
+        "503303": {
+            "HeartBeatAPI": "https://api.paysonic.in/503303/heartbeatapi",
+            "PlazaStatusAPI": "https://api.paysonic.in/503303/plazastatusapi",
+            "LaneStatusAPI": "https://api.paysonic.in/503303/lanestatusapi",
+            "TagValidationAPI": "https://api.paysonic.in/503303/tagvalidationapi",
+            "TransactionStatusAPI": "https://api.paysonic.in/503303/transactionstatusapi",
+            "FareCalculationAPI": "https://api.paysonic.in/503303/farecalculationapi",
+            "QueryExceptionListAPI": "https://api.paysonic.in/503303/queryexceptionlistapi",
+            "PaymentNotificationAPI": "https://api.paysonic.in/503303/paymentnotificationapi",
+            "DisputeStatusAPI": "https://api.paysonic.in/503303/disputestatusapi",
+            "ReconFeedAPI": "https://api.paysonic.in/503303/reconfeedapi",
+            "MdrSettlementAPI": "https://api.paysonic.in/503303/mdrsettlementapi",
+            "PassValidationAPI": "https://api.paysonic.in/503303/passvalidationapi",
+            "HardwareAlertAPI": "https://api.paysonic.in/503303/hardwarealertapi",
+            "AuditExportAPI": "https://api.paysonic.in/503303/auditexportapi"
+        },
+        "504404": {
+            "HeartBeatAPI": "https://api.paysonic.in/504404/heartbeatapi",
+            "PlazaStatusAPI": "https://api.paysonic.in/504404/plazastatusapi",
+            "LaneStatusAPI": "https://api.paysonic.in/504404/lanestatusapi",
+            "TagValidationAPI": "https://api.paysonic.in/504404/tagvalidationapi",
+            "TransactionStatusAPI": "https://api.paysonic.in/504404/transactionstatusapi",
+            "FareCalculationAPI": "https://api.paysonic.in/504404/farecalculationapi",
+            "QueryExceptionListAPI": "https://api.paysonic.in/504404/queryexceptionlistapi",
+            "PaymentNotificationAPI": "https://api.paysonic.in/504404/paymentnotificationapi",
+            "DisputeStatusAPI": "https://api.paysonic.in/504404/disputestatusapi",
+            "ReconFeedAPI": "https://api.paysonic.in/504404/reconfeedapi",
+            "MdrSettlementAPI": "https://api.paysonic.in/504404/mdrsettlementapi",
+            "PassValidationAPI": "https://api.paysonic.in/504404/passvalidationapi",
+            "HardwareAlertAPI": "https://api.paysonic.in/504404/hardwarealertapi",
+            "AuditExportAPI": "https://api.paysonic.in/504404/auditexportapi"
+        },
+        "505505": {
+            "HeartBeatAPI": "https://api.paysonic.in/505505/heartbeatapi",
+            "PlazaStatusAPI": "https://api.paysonic.in/505505/plazastatusapi",
+            "LaneStatusAPI": "https://api.paysonic.in/505505/lanestatusapi",
+            "TagValidationAPI": "https://api.paysonic.in/505505/tagvalidationapi",
+            "TransactionStatusAPI": "https://api.paysonic.in/505505/transactionstatusapi",
+            "FareCalculationAPI": "https://api.paysonic.in/505505/farecalculationapi",
+            "QueryExceptionListAPI": "https://api.paysonic.in/505505/queryexceptionlistapi",
+            "PaymentNotificationAPI": "https://api.paysonic.in/505505/paymentnotificationapi",
+            "DisputeStatusAPI": "https://api.paysonic.in/505505/disputestatusapi",
+            "ReconFeedAPI": "https://api.paysonic.in/505505/reconfeedapi",
+            "MdrSettlementAPI": "https://api.paysonic.in/505505/mdrsettlementapi",
+            "PassValidationAPI": "https://api.paysonic.in/505505/passvalidationapi",
+            "HardwareAlertAPI": "https://api.paysonic.in/505505/hardwarealertapi",
+            "AuditExportAPI": "https://api.paysonic.in/505505/auditexportapi"
+        },
+        "787878": {
+            "CheckTxnStatusAPI": "         https://api.paysonic.in/787878/checktxnstatusapi",
+            "ResponsePayAPI": "https://api.paysonic.in/787878/responsepayapi",
+            "ReqPayAPI": "https://api.paysonic.in/787878/reqpayapi",
+            "TransStatusAPI": "https://api.paysonic.in/787878/transstatusapi",
+            "NotificationAPI": "https://api.paysonic.in/787878/notificationapi",
+            "SyncTimeAPI": "https://api.paysonic.in/787878/synctimeapi",
+            "ReqQueryExceptionListAPI": "https://api.paysonic.in/787878/reqqueryexceptionlistapi",
+            "VoilationAPI": "https://api.paysonic.in/787878/voilationapi",
+            "PassSchemeAPI": "https://api.paysonic.in/787878/passschemeapi",
+            "HeartBeatAPI": "https://api.paysonic.in/787878/heartbeatapi",
+            "SignReqPayAPI": "https://api.paysonic.in/787878/signreqpayapi",
+            "PlazaDetailsAPI": "https://api.paysonic.in/787878/plazadetailsapi",
+            "ReqGetExceptionListAPI": "https://api.paysonic.in/787878/reqgetexceptionlistapi",
+            "TagDetailsAPI": "https://api.paysonic.in/787878/tagdetailsapi"
+        }
+    },
+    "fares": {
+        "111111": {
+            "VC4": {
+                "single": 60,
+                "ret": 90,
+                "local10": 24,
+                "local20": 36,
+                "district": 1200,
+                "monthly": 2400
+            },
+            "VC5": {
+                "single": 85,
+                "ret": 128,
+                "local10": 34,
+                "local20": 51,
+                "district": 1700,
+                "monthly": 3400
+            },
+            "VC6": {
+                "single": 110,
+                "ret": 165,
+                "local10": 44,
+                "local20": 66,
+                "district": 2200,
+                "monthly": 4400
+            },
+            "VC7": {
+                "single": 135,
+                "ret": 203,
+                "local10": 54,
+                "local20": 81,
+                "district": 2700,
+                "monthly": 5400
+            },
+            "VC8": {
+                "single": 160,
+                "ret": 240,
+                "local10": 64,
+                "local20": 96,
+                "district": 3200,
+                "monthly": 6400
+            },
+            "VC9": {
+                "single": 185,
+                "ret": 278,
+                "local10": 74,
+                "local20": 111,
+                "district": 3700,
+                "monthly": 7400
+            },
+            "VC10": {
+                "single": 210,
+                "ret": 315,
+                "local10": 84,
+                "local20": 126,
+                "district": 4200,
+                "monthly": 8400
+            },
+            "VC11": {
+                "single": 235,
+                "ret": 353,
+                "local10": 94,
+                "local20": 141,
+                "district": 4700,
+                "monthly": 9400
+            },
+            "VC12": {
+                "single": 260,
+                "ret": 390,
+                "local10": 104,
+                "local20": 156,
+                "district": 5200,
+                "monthly": 10400
+            },
+            "VC13": {
+                "single": 285,
+                "ret": 428,
+                "local10": 114,
+                "local20": 171,
+                "district": 5700,
+                "monthly": 11400
+            },
+            "VC14": {
+                "single": 310,
+                "ret": 465,
+                "local10": 124,
+                "local20": 186,
+                "district": 6200,
+                "monthly": 12400
+            },
+            "VC15": {
+                "single": 335,
+                "ret": 503,
+                "local10": 134,
+                "local20": 201,
+                "district": 6700,
+                "monthly": 13400
+            },
+            "VC16": {
+                "single": 360,
+                "ret": 540,
+                "local10": 144,
+                "local20": 216,
+                "district": 7200,
+                "monthly": 14400
+            },
+            "VC17": {
+                "single": 385,
+                "ret": 578,
+                "local10": 154,
+                "local20": 231,
+                "district": 7700,
+                "monthly": 15400
+            },
+            "VC18": {
+                "single": 410,
+                "ret": 615,
+                "local10": 164,
+                "local20": 246,
+                "district": 8200,
+                "monthly": 16400
+            },
+            "VC19": {
+                "single": 435,
+                "ret": 653,
+                "local10": 174,
+                "local20": 261,
+                "district": 8700,
+                "monthly": 17400
+            },
+            "VC20": {
+                "single": 460,
+                "ret": 690,
+                "local10": 184,
+                "local20": 276,
+                "district": 9200,
+                "monthly": 18400
+            }
+        },
+        "161616": {
+            "VC4": {
+                "single": "2",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC5": {
+                "single": "00",
+                "ret": "23",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC6": {
+                "single": "00",
+                "ret": "2432",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC7": {
+                "single": "00",
+                "ret": "00",
+                "local10": "2323",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC8": {
+                "single": "00",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC9": {
+                "single": "00",
+                "ret": "00",
+                "local10": "242",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC10": {
+                "single": "00",
+                "ret": "242",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC11": {
+                "single": "00",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC12": {
+                "single": "00",
+                "ret": "00",
+                "local10": "535",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC13": {
+                "single": "00",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC14": {
+                "single": "00",
+                "ret": "32",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC15": {
+                "single": "00",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC16": {
+                "single": "00",
+                "ret": "00",
+                "local10": "2353",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC17": {
+                "single": "32423",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC18": {
+                "single": "00",
+                "ret": "00",
+                "local10": "00",
+                "local20": "2423",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC19": {
+                "single": "00",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            },
+            "VC20": {
+                "single": "00",
+                "ret": "00",
+                "local10": "00",
+                "local20": "00",
+                "district": "00",
+                "monthly": "00"
+            }
+        },
+        "501101": {
+            "VC4": {
+                "single": 50,
+                "ret": 75,
+                "local10": 20,
+                "local20": 30,
+                "district": 1000,
+                "monthly": 2000
+            },
+            "VC5": {
+                "single": 75,
+                "ret": 113,
+                "local10": 30,
+                "local20": 45,
+                "district": 1500,
+                "monthly": 3000
+            },
+            "VC6": {
+                "single": 100,
+                "ret": 150,
+                "local10": 40,
+                "local20": 60,
+                "district": 2000,
+                "monthly": 4000
+            },
+            "VC7": {
+                "single": 125,
+                "ret": 188,
+                "local10": 50,
+                "local20": 75,
+                "district": 2500,
+                "monthly": 5000
+            },
+            "VC8": {
+                "single": 150,
+                "ret": 225,
+                "local10": 60,
+                "local20": 90,
+                "district": 3000,
+                "monthly": 6000
+            },
+            "VC9": {
+                "single": 175,
+                "ret": 263,
+                "local10": 70,
+                "local20": 105,
+                "district": 3500,
+                "monthly": 7000
+            },
+            "VC10": {
+                "single": 200,
+                "ret": 300,
+                "local10": 80,
+                "local20": 120,
+                "district": 4000,
+                "monthly": 8000
+            },
+            "VC11": {
+                "single": 225,
+                "ret": 338,
+                "local10": 90,
+                "local20": 135,
+                "district": 4500,
+                "monthly": 9000
+            },
+            "VC12": {
+                "single": 250,
+                "ret": 375,
+                "local10": 100,
+                "local20": 150,
+                "district": 5000,
+                "monthly": 10000
+            },
+            "VC13": {
+                "single": 275,
+                "ret": 413,
+                "local10": 110,
+                "local20": 165,
+                "district": 5500,
+                "monthly": 11000
+            },
+            "VC14": {
+                "single": 300,
+                "ret": 450,
+                "local10": 120,
+                "local20": 180,
+                "district": 6000,
+                "monthly": 12000
+            },
+            "VC15": {
+                "single": 325,
+                "ret": 488,
+                "local10": 130,
+                "local20": 195,
+                "district": 6500,
+                "monthly": 13000
+            },
+            "VC16": {
+                "single": 350,
+                "ret": 525,
+                "local10": 140,
+                "local20": 210,
+                "district": 7000,
+                "monthly": 14000
+            },
+            "VC17": {
+                "single": 375,
+                "ret": 563,
+                "local10": 150,
+                "local20": 225,
+                "district": 7500,
+                "monthly": 15000
+            },
+            "VC18": {
+                "single": 400,
+                "ret": 600,
+                "local10": 160,
+                "local20": 240,
+                "district": 8000,
+                "monthly": 16000
+            },
+            "VC19": {
+                "single": 425,
+                "ret": 638,
+                "local10": 170,
+                "local20": 255,
+                "district": 8500,
+                "monthly": 17000
+            },
+            "VC20": {
+                "single": 450,
+                "ret": 675,
+                "local10": 180,
+                "local20": 270,
+                "district": 9000,
+                "monthly": 18000
+            }
+        },
+        "502202": {
+            "VC4": {
+                "single": 50,
+                "ret": 75,
+                "local10": 20,
+                "local20": 30,
+                "district": 1000,
+                "monthly": 2000
+            },
+            "VC5": {
+                "single": 75,
+                "ret": 113,
+                "local10": 30,
+                "local20": 45,
+                "district": 1500,
+                "monthly": 3000
+            },
+            "VC6": {
+                "single": 100,
+                "ret": 150,
+                "local10": 40,
+                "local20": 60,
+                "district": 2000,
+                "monthly": 4000
+            },
+            "VC7": {
+                "single": 125,
+                "ret": 188,
+                "local10": 50,
+                "local20": 75,
+                "district": 2500,
+                "monthly": 5000
+            },
+            "VC8": {
+                "single": 150,
+                "ret": 225,
+                "local10": 60,
+                "local20": 90,
+                "district": 3000,
+                "monthly": 6000
+            },
+            "VC9": {
+                "single": 175,
+                "ret": 263,
+                "local10": 70,
+                "local20": 105,
+                "district": 3500,
+                "monthly": 7000
+            },
+            "VC10": {
+                "single": 200,
+                "ret": 300,
+                "local10": 80,
+                "local20": 120,
+                "district": 4000,
+                "monthly": 8000
+            },
+            "VC11": {
+                "single": 225,
+                "ret": 338,
+                "local10": 90,
+                "local20": 135,
+                "district": 4500,
+                "monthly": 9000
+            },
+            "VC12": {
+                "single": 250,
+                "ret": 375,
+                "local10": 100,
+                "local20": 150,
+                "district": 5000,
+                "monthly": 10000
+            },
+            "VC13": {
+                "single": 275,
+                "ret": 413,
+                "local10": 110,
+                "local20": 165,
+                "district": 5500,
+                "monthly": 11000
+            },
+            "VC14": {
+                "single": 300,
+                "ret": 450,
+                "local10": 120,
+                "local20": 180,
+                "district": 6000,
+                "monthly": 12000
+            },
+            "VC15": {
+                "single": 325,
+                "ret": 488,
+                "local10": 130,
+                "local20": 195,
+                "district": 6500,
+                "monthly": 13000
+            },
+            "VC16": {
+                "single": 350,
+                "ret": 525,
+                "local10": 140,
+                "local20": 210,
+                "district": 7000,
+                "monthly": 14000
+            },
+            "VC17": {
+                "single": 375,
+                "ret": 563,
+                "local10": 150,
+                "local20": 225,
+                "district": 7500,
+                "monthly": 15000
+            },
+            "VC18": {
+                "single": 400,
+                "ret": 600,
+                "local10": 160,
+                "local20": 240,
+                "district": 8000,
+                "monthly": 16000
+            },
+            "VC19": {
+                "single": 425,
+                "ret": 638,
+                "local10": 170,
+                "local20": 255,
+                "district": 8500,
+                "monthly": 17000
+            },
+            "VC20": {
+                "single": 450,
+                "ret": 675,
+                "local10": 180,
+                "local20": 270,
+                "district": 9000,
+                "monthly": 18000
+            }
+        },
+        "503303": {
+            "VC4": {
+                "single": 50,
+                "ret": 75,
+                "local10": 20,
+                "local20": 30,
+                "district": 1000,
+                "monthly": 2000
+            },
+            "VC5": {
+                "single": 75,
+                "ret": 113,
+                "local10": 30,
+                "local20": 45,
+                "district": 1500,
+                "monthly": 3000
+            },
+            "VC6": {
+                "single": 100,
+                "ret": 150,
+                "local10": 40,
+                "local20": 60,
+                "district": 2000,
+                "monthly": 4000
+            },
+            "VC7": {
+                "single": 125,
+                "ret": 188,
+                "local10": 50,
+                "local20": 75,
+                "district": 2500,
+                "monthly": 5000
+            },
+            "VC8": {
+                "single": 150,
+                "ret": 225,
+                "local10": 60,
+                "local20": 90,
+                "district": 3000,
+                "monthly": 6000
+            },
+            "VC9": {
+                "single": 175,
+                "ret": 263,
+                "local10": 70,
+                "local20": 105,
+                "district": 3500,
+                "monthly": 7000
+            },
+            "VC10": {
+                "single": 200,
+                "ret": 300,
+                "local10": 80,
+                "local20": 120,
+                "district": 4000,
+                "monthly": 8000
+            },
+            "VC11": {
+                "single": 225,
+                "ret": 338,
+                "local10": 90,
+                "local20": 135,
+                "district": 4500,
+                "monthly": 9000
+            },
+            "VC12": {
+                "single": 250,
+                "ret": 375,
+                "local10": 100,
+                "local20": 150,
+                "district": 5000,
+                "monthly": 10000
+            },
+            "VC13": {
+                "single": 275,
+                "ret": 413,
+                "local10": 110,
+                "local20": 165,
+                "district": 5500,
+                "monthly": 11000
+            },
+            "VC14": {
+                "single": 300,
+                "ret": 450,
+                "local10": 120,
+                "local20": 180,
+                "district": 6000,
+                "monthly": 12000
+            },
+            "VC15": {
+                "single": 325,
+                "ret": 488,
+                "local10": 130,
+                "local20": 195,
+                "district": 6500,
+                "monthly": 13000
+            },
+            "VC16": {
+                "single": 350,
+                "ret": 525,
+                "local10": 140,
+                "local20": 210,
+                "district": 7000,
+                "monthly": 14000
+            },
+            "VC17": {
+                "single": 375,
+                "ret": 563,
+                "local10": 150,
+                "local20": 225,
+                "district": 7500,
+                "monthly": 15000
+            },
+            "VC18": {
+                "single": 400,
+                "ret": 600,
+                "local10": 160,
+                "local20": 240,
+                "district": 8000,
+                "monthly": 16000
+            },
+            "VC19": {
+                "single": 425,
+                "ret": 638,
+                "local10": 170,
+                "local20": 255,
+                "district": 8500,
+                "monthly": 17000
+            },
+            "VC20": {
+                "single": 450,
+                "ret": 675,
+                "local10": 180,
+                "local20": 270,
+                "district": 9000,
+                "monthly": 18000
+            }
+        },
+        "504404": {
+            "VC4": {
+                "single": 60,
+                "ret": 90,
+                "local10": 24,
+                "local20": 36,
+                "district": 1200,
+                "monthly": 2400
+            },
+            "VC5": {
+                "single": 85,
+                "ret": 128,
+                "local10": 34,
+                "local20": 51,
+                "district": 1700,
+                "monthly": 3400
+            },
+            "VC6": {
+                "single": 110,
+                "ret": 165,
+                "local10": 44,
+                "local20": 66,
+                "district": 2200,
+                "monthly": 4400
+            },
+            "VC7": {
+                "single": 135,
+                "ret": 203,
+                "local10": 54,
+                "local20": 81,
+                "district": 2700,
+                "monthly": 5400
+            },
+            "VC8": {
+                "single": 160,
+                "ret": 240,
+                "local10": 64,
+                "local20": 96,
+                "district": 3200,
+                "monthly": 6400
+            },
+            "VC9": {
+                "single": 185,
+                "ret": 278,
+                "local10": 74,
+                "local20": 111,
+                "district": 3700,
+                "monthly": 7400
+            },
+            "VC10": {
+                "single": 210,
+                "ret": 315,
+                "local10": 84,
+                "local20": 126,
+                "district": 4200,
+                "monthly": 8400
+            },
+            "VC11": {
+                "single": 235,
+                "ret": 353,
+                "local10": 94,
+                "local20": 141,
+                "district": 4700,
+                "monthly": 9400
+            },
+            "VC12": {
+                "single": 260,
+                "ret": 390,
+                "local10": 104,
+                "local20": 156,
+                "district": 5200,
+                "monthly": 10400
+            },
+            "VC13": {
+                "single": 285,
+                "ret": 428,
+                "local10": 114,
+                "local20": 171,
+                "district": 5700,
+                "monthly": 11400
+            },
+            "VC14": {
+                "single": 310,
+                "ret": 465,
+                "local10": 124,
+                "local20": 186,
+                "district": 6200,
+                "monthly": 12400
+            },
+            "VC15": {
+                "single": 335,
+                "ret": 503,
+                "local10": 134,
+                "local20": 201,
+                "district": 6700,
+                "monthly": 13400
+            },
+            "VC16": {
+                "single": 360,
+                "ret": 540,
+                "local10": 144,
+                "local20": 216,
+                "district": 7200,
+                "monthly": 14400
+            },
+            "VC17": {
+                "single": 385,
+                "ret": 578,
+                "local10": 154,
+                "local20": 231,
+                "district": 7700,
+                "monthly": 15400
+            },
+            "VC18": {
+                "single": 410,
+                "ret": 615,
+                "local10": 164,
+                "local20": 246,
+                "district": 8200,
+                "monthly": 16400
+            },
+            "VC19": {
+                "single": 435,
+                "ret": 653,
+                "local10": 174,
+                "local20": 261,
+                "district": 8700,
+                "monthly": 17400
+            },
+            "VC20": {
+                "single": 460,
+                "ret": 690,
+                "local10": 184,
+                "local20": 276,
+                "district": 9200,
+                "monthly": 18400
+            }
+        },
+        "505505": {
+            "VC4": {
+                "single": 50,
+                "ret": 75,
+                "local10": 20,
+                "local20": 30,
+                "district": 1000,
+                "monthly": 2000
+            },
+            "VC5": {
+                "single": 75,
+                "ret": 113,
+                "local10": 30,
+                "local20": 45,
+                "district": 1500,
+                "monthly": 3000
+            },
+            "VC6": {
+                "single": 100,
+                "ret": 150,
+                "local10": 40,
+                "local20": 60,
+                "district": 2000,
+                "monthly": 4000
+            },
+            "VC7": {
+                "single": 125,
+                "ret": 188,
+                "local10": 50,
+                "local20": 75,
+                "district": 2500,
+                "monthly": 5000
+            },
+            "VC8": {
+                "single": 150,
+                "ret": 225,
+                "local10": 60,
+                "local20": 90,
+                "district": 3000,
+                "monthly": 6000
+            },
+            "VC9": {
+                "single": 175,
+                "ret": 263,
+                "local10": 70,
+                "local20": 105,
+                "district": 3500,
+                "monthly": 7000
+            },
+            "VC10": {
+                "single": 200,
+                "ret": 300,
+                "local10": 80,
+                "local20": 120,
+                "district": 4000,
+                "monthly": 8000
+            },
+            "VC11": {
+                "single": 225,
+                "ret": 338,
+                "local10": 90,
+                "local20": 135,
+                "district": 4500,
+                "monthly": 9000
+            },
+            "VC12": {
+                "single": 250,
+                "ret": 375,
+                "local10": 100,
+                "local20": 150,
+                "district": 5000,
+                "monthly": 10000
+            },
+            "VC13": {
+                "single": 275,
+                "ret": 413,
+                "local10": 110,
+                "local20": 165,
+                "district": 5500,
+                "monthly": 11000
+            },
+            "VC14": {
+                "single": 300,
+                "ret": 450,
+                "local10": 120,
+                "local20": 180,
+                "district": 6000,
+                "monthly": 12000
+            },
+            "VC15": {
+                "single": 325,
+                "ret": 488,
+                "local10": 130,
+                "local20": 195,
+                "district": 6500,
+                "monthly": 13000
+            },
+            "VC16": {
+                "single": 350,
+                "ret": 525,
+                "local10": 140,
+                "local20": 210,
+                "district": 7000,
+                "monthly": 14000
+            },
+            "VC17": {
+                "single": 375,
+                "ret": 563,
+                "local10": 150,
+                "local20": 225,
+                "district": 7500,
+                "monthly": 15000
+            },
+            "VC18": {
+                "single": 400,
+                "ret": 600,
+                "local10": 160,
+                "local20": 240,
+                "district": 8000,
+                "monthly": 16000
+            },
+            "VC19": {
+                "single": 425,
+                "ret": 638,
+                "local10": 170,
+                "local20": 255,
+                "district": 8500,
+                "monthly": 17000
+            },
+            "VC20": {
+                "single": 450,
+                "ret": 675,
+                "local10": 180,
+                "local20": 270,
+                "district": 9000,
+                "monthly": 18000
+            }
+        },
+        "787878": {
+            "VC4": {
+                "single": "50",
+                "ret": "25",
+                "local10": 20,
+                "local20": 30,
+                "district": 1000,
+                "monthly": 2000
+            },
+            "VC5": {
+                "single": "80",
+                "ret": "40",
+                "local10": 30,
+                "local20": 45,
+                "district": 1500,
+                "monthly": 3000
+            },
+            "VC6": {
+                "single": "80",
+                "ret": "40",
+                "local10": 40,
+                "local20": 60,
+                "district": 2000,
+                "monthly": 4000
+            },
+            "VC7": {
+                "single": "80",
+                "ret": "40",
+                "local10": 50,
+                "local20": 75,
+                "district": 2500,
+                "monthly": 5000
+            },
+            "VC8": {
+                "single": "100",
+                "ret": "50",
+                "local10": 60,
+                "local20": 90,
+                "district": 3000,
+                "monthly": 6000
+            },
+            "VC9": {
+                "single": "100",
+                "ret": "50",
+                "local10": 70,
+                "local20": 105,
+                "district": 3500,
+                "monthly": 7000
+            },
+            "VC10": {
+                "single": "120",
+                "ret": "60",
+                "local10": 80,
+                "local20": 120,
+                "district": 4000,
+                "monthly": 8000
+            },
+            "VC11": {
+                "single": "120",
+                "ret": "60",
+                "local10": 90,
+                "local20": 135,
+                "district": 4500,
+                "monthly": 9000
+            },
+            "VC12": {
+                "single": "120",
+                "ret": "60",
+                "local10": 100,
+                "local20": 150,
+                "district": 5000,
+                "monthly": 10000
+            },
+            "VC13": {
+                "single": "130",
+                "ret": "70",
+                "local10": 110,
+                "local20": 165,
+                "district": 5500,
+                "monthly": 11000
+            },
+            "VC14": {
+                "single": "130",
+                "ret": "70",
+                "local10": 120,
+                "local20": 180,
+                "district": 6000,
+                "monthly": 12000
+            },
+            "VC15": {
+                "single": "130",
+                "ret": "70",
+                "local10": 130,
+                "local20": 195,
+                "district": 6500,
+                "monthly": 13000
+            },
+            "VC16": {
+                "single": "160",
+                "ret": "80",
+                "local10": 140,
+                "local20": 210,
+                "district": 7000,
+                "monthly": 14000
+            },
+            "VC17": {
+                "single": "160",
+                "ret": "80",
+                "local10": 150,
+                "local20": 225,
+                "district": 7500,
+                "monthly": 15000
+            },
+            "VC18": {
+                "single": "160",
+                "ret": "80",
+                "local10": 160,
+                "local20": 240,
+                "district": 8000,
+                "monthly": 16000
+            },
+            "VC19": {
+                "single": "180",
+                "ret": "90",
+                "local10": 170,
+                "local20": 255,
+                "district": 8500,
+                "monthly": 17000
+            },
+            "VC20": {
+                "single": "50",
+                "ret": "25",
+                "local10": 180,
+                "local20": 270,
+                "district": 9000,
+                "monthly": 18000
+            }
+        },
+        "908895": {}
+    },
+    "cch": {
+        "000000": {
+            "VC4": {
+                "current": 8,
+                "new": ""
+            },
+            "VC5": {
+                "current": 89,
+                "new": ""
+            },
+            "VC6": {
+                "current": 9,
+                "new": ""
+            },
+            "VC7": {
+                "current": 89,
+                "new": ""
+            },
+            "VC8": {
+                "current": 8,
+                "new": ""
+            },
+            "VC9": {
+                "current": 9,
+                "new": ""
+            },
+            "VC10": {
+                "current": 0,
+                "new": ""
+            },
+            "VC11": {
+                "current": 0,
+                "new": ""
+            },
+            "VC12": {
+                "current": "",
+                "new": ""
+            },
+            "VC13": {
+                "current": "",
+                "new": ""
+            },
+            "VC14": {
+                "current": 0,
+                "new": ""
+            },
+            "VC15": {
+                "current": 9,
+                "new": ""
+            },
+            "VC16": {
+                "current": 9,
+                "new": ""
+            },
+            "VC17": {
+                "current": 9,
+                "new": ""
+            },
+            "VC18": {
+                "current": 9,
+                "new": ""
+            },
+            "VC19": {
+                "current": 9,
+                "new": ""
+            },
+            "VC20": {
+                "current": 9,
+                "new": ""
+            }
+        },
+        "111111": {
+            "VC4": {
+                "current": 564643,
+                "new": ""
+            },
+            "VC5": {
+                "current": 80,
+                "new": ""
+            },
+            "VC6": {
+                "current": 888,
+                "new": ""
+            },
+            "VC7": {
+                "current": 999,
+                "new": ""
+            },
+            "VC8": {
+                "current": 1010,
+                "new": ""
+            },
+            "VC9": {
+                "current": 1111,
+                "new": ""
+            },
+            "VC10": {
+                "current": 100,
+                "new": ""
+            },
+            "VC11": {
+                "current": 100,
+                "new": ""
+            },
+            "VC12": {
+                "current": 100,
+                "new": ""
+            },
+            "VC13": {
+                "current": 100,
+                "new": ""
+            },
+            "VC14": {
+                "current": 100,
+                "new": ""
+            },
+            "VC15": {
+                "current": 100,
+                "new": ""
+            },
+            "VC16": {
+                "current": 100,
+                "new": ""
+            },
+            "VC17": {
+                "current": 100,
+                "new": ""
+            },
+            "VC18": {
+                "current": 100,
+                "new": ""
+            },
+            "VC19": {
+                "current": 100,
+                "new": ""
+            },
+            "VC20": {
+                "current": 100,
+                "new": ""
+            }
+        },
+        "501101": {
+            "VC4": {
+                "current": 100,
+                "new": ""
+            },
+            "VC5": {
+                "current": 105,
+                "new": ""
+            },
+            "VC6": {
+                "current": 110,
+                "new": ""
+            },
+            "VC7": {
+                "current": 115,
+                "new": ""
+            },
+            "VC8": {
+                "current": 120,
+                "new": ""
+            },
+            "VC9": {
+                "current": 125,
+                "new": ""
+            },
+            "VC10": {
+                "current": 130,
+                "new": ""
+            },
+            "VC11": {
+                "current": 135,
+                "new": ""
+            },
+            "VC12": {
+                "current": 140,
+                "new": ""
+            },
+            "VC13": {
+                "current": 145,
+                "new": ""
+            },
+            "VC14": {
+                "current": 150,
+                "new": ""
+            },
+            "VC15": {
+                "current": 155,
+                "new": ""
+            },
+            "VC16": {
+                "current": 160,
+                "new": ""
+            },
+            "VC17": {
+                "current": 165,
+                "new": ""
+            },
+            "VC18": {
+                "current": 170,
+                "new": ""
+            },
+            "VC19": {
+                "current": 175,
+                "new": ""
+            },
+            "VC20": {
+                "current": 180,
+                "new": ""
+            }
+        },
+        "502202": {
+            "VC4": {
+                "current": 3445,
+                "new": ""
+            },
+            "VC5": {
+                "current": 105,
+                "new": ""
+            },
+            "VC6": {
+                "current": 110,
+                "new": ""
+            },
+            "VC7": {
+                "current": 115,
+                "new": ""
+            },
+            "VC8": {
+                "current": 120,
+                "new": ""
+            },
+            "VC9": {
+                "current": 125,
+                "new": ""
+            },
+            "VC10": {
+                "current": 130,
+                "new": ""
+            },
+            "VC11": {
+                "current": 135,
+                "new": ""
+            },
+            "VC12": {
+                "current": 140,
+                "new": ""
+            },
+            "VC13": {
+                "current": 145,
+                "new": ""
+            },
+            "VC14": {
+                "current": 150,
+                "new": ""
+            },
+            "VC15": {
+                "current": 155,
+                "new": ""
+            },
+            "VC16": {
+                "current": 160,
+                "new": ""
+            },
+            "VC17": {
+                "current": 165,
+                "new": ""
+            },
+            "VC18": {
+                "current": 170,
+                "new": ""
+            },
+            "VC19": {
+                "current": 175,
+                "new": ""
+            },
+            "VC20": {
+                "current": 180,
+                "new": ""
+            }
+        },
+        "503303": {
+            "VC4": {
+                "current": 100,
+                "new": ""
+            },
+            "VC5": {
+                "current": 105,
+                "new": ""
+            },
+            "VC6": {
+                "current": 110,
+                "new": ""
+            },
+            "VC7": {
+                "current": 115,
+                "new": ""
+            },
+            "VC8": {
+                "current": 120,
+                "new": ""
+            },
+            "VC9": {
+                "current": 125,
+                "new": ""
+            },
+            "VC10": {
+                "current": 130,
+                "new": ""
+            },
+            "VC11": {
+                "current": 135,
+                "new": ""
+            },
+            "VC12": {
+                "current": 140,
+                "new": ""
+            },
+            "VC13": {
+                "current": 145,
+                "new": ""
+            },
+            "VC14": {
+                "current": 150,
+                "new": ""
+            },
+            "VC15": {
+                "current": 155,
+                "new": ""
+            },
+            "VC16": {
+                "current": 160,
+                "new": ""
+            },
+            "VC17": {
+                "current": 165,
+                "new": ""
+            },
+            "VC18": {
+                "current": 170,
+                "new": ""
+            },
+            "VC19": {
+                "current": 175,
+                "new": ""
+            },
+            "VC20": {
+                "current": 180,
+                "new": ""
+            }
+        },
+        "504404": {
+            "VC4": {
+                "current": 100,
+                "new": ""
+            },
+            "VC5": {
+                "current": 105,
+                "new": ""
+            },
+            "VC6": {
+                "current": 110,
+                "new": ""
+            },
+            "VC7": {
+                "current": 115,
+                "new": ""
+            },
+            "VC8": {
+                "current": 120,
+                "new": ""
+            },
+            "VC9": {
+                "current": 125,
+                "new": ""
+            },
+            "VC10": {
+                "current": 130,
+                "new": ""
+            },
+            "VC11": {
+                "current": 135,
+                "new": ""
+            },
+            "VC12": {
+                "current": 140,
+                "new": ""
+            },
+            "VC13": {
+                "current": 145,
+                "new": ""
+            },
+            "VC14": {
+                "current": 150,
+                "new": ""
+            },
+            "VC15": {
+                "current": 155,
+                "new": ""
+            },
+            "VC16": {
+                "current": 160,
+                "new": ""
+            },
+            "VC17": {
+                "current": 165,
+                "new": ""
+            },
+            "VC18": {
+                "current": 170,
+                "new": ""
+            },
+            "VC19": {
+                "current": 175,
+                "new": ""
+            },
+            "VC20": {
+                "current": 180,
+                "new": ""
+            }
+        },
+        "505505": {
+            "VC4": {
+                "current": 100,
+                "new": ""
+            },
+            "VC5": {
+                "current": 105,
+                "new": ""
+            },
+            "VC6": {
+                "current": 110,
+                "new": ""
+            },
+            "VC7": {
+                "current": 115,
+                "new": ""
+            },
+            "VC8": {
+                "current": 120,
+                "new": ""
+            },
+            "VC9": {
+                "current": 125,
+                "new": ""
+            },
+            "VC10": {
+                "current": 130,
+                "new": ""
+            },
+            "VC11": {
+                "current": 135,
+                "new": ""
+            },
+            "VC12": {
+                "current": 140,
+                "new": ""
+            },
+            "VC13": {
+                "current": 145,
+                "new": ""
+            },
+            "VC14": {
+                "current": 150,
+                "new": ""
+            },
+            "VC15": {
+                "current": 155,
+                "new": ""
+            },
+            "VC16": {
+                "current": 160,
+                "new": ""
+            },
+            "VC17": {
+                "current": 165,
+                "new": ""
+            },
+            "VC18": {
+                "current": 170,
+                "new": ""
+            },
+            "VC19": {
+                "current": 175,
+                "new": ""
+            },
+            "VC20": {
+                "current": 180,
+                "new": ""
+            }
+        },
+        "787878": {
+            "VC4": {
+                "current": 1,
+                "new": ""
+            },
+            "VC5": {
+                "current": 2,
+                "new": ""
+            },
+            "VC6": {
+                "current": 3,
+                "new": ""
+            },
+            "VC7": {
+                "current": 4,
+                "new": ""
+            },
+            "VC8": {
+                "current": 5,
+                "new": ""
+            },
+            "VC9": {
+                "current": 6,
+                "new": ""
+            },
+            "VC10": {
+                "current": 7,
+                "new": ""
+            },
+            "VC11": {
+                "current": 8,
+                "new": ""
+            },
+            "VC12": {
+                "current": 9,
+                "new": ""
+            },
+            "VC13": {
+                "current": 10,
+                "new": ""
+            },
+            "VC14": {
+                "current": 11,
+                "new": ""
+            },
+            "VC15": {
+                "current": 12,
+                "new": ""
+            },
+            "VC16": {
+                "current": 13,
+                "new": ""
+            },
+            "VC17": {
+                "current": 14,
+                "new": ""
+            },
+            "VC18": {
+                "current": 15,
+                "new": ""
+            },
+            "VC19": {
+                "current": 16,
+                "new": ""
+            },
+            "VC20": {
+                "current": 17,
+                "new": ""
+            }
+        },
+        "908895": {
+            "VC4": {
+                "current": 646351,
+                "new": ""
+            },
+            "VC5": {
+                "current": 100,
+                "new": ""
+            },
+            "VC6": {
+                "current": 100,
+                "new": ""
+            },
+            "VC7": {
+                "current": 100,
+                "new": ""
+            },
+            "VC8": {
+                "current": 100,
+                "new": ""
+            },
+            "VC9": {
+                "current": 100,
+                "new": ""
+            },
+            "VC10": {
+                "current": 100,
+                "new": ""
+            },
+            "VC11": {
+                "current": 100,
+                "new": ""
+            },
+            "VC12": {
+                "current": 100,
+                "new": ""
+            },
+            "VC13": {
+                "current": 100,
+                "new": ""
+            },
+            "VC14": {
+                "current": 100,
+                "new": ""
+            },
+            "VC15": {
+                "current": 100,
+                "new": ""
+            },
+            "VC16": {
+                "current": 100,
+                "new": ""
+            },
+            "VC17": {
+                "current": 100,
+                "new": ""
+            },
+            "VC18": {
+                "current": 100,
+                "new": ""
+            },
+            "VC19": {
+                "current": 100,
+                "new": ""
+            },
+            "VC20": {
+                "current": 100,
+                "new": ""
+            }
+        }
+    },
+    "source": "LIVE_BACKEND_DB",
+    "retrievedAt": "2026-10-07T17:19:28.306907935"
+}

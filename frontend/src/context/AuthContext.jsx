@@ -4,6 +4,7 @@ import UserService, { getStoredUserPermissions } from '../services/user/UserServ
 import UserActivityService, { getOrCreateDeviceId } from '../services/userActivity/UserActivityService';
 
 const STORAGE_KEY = 'paysonic_auth_session';
+export const TAB_SESSION_KEY = 'paysonic_tab_session_active';
 export const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 export const LAST_ACTIVITY_KEY = 'paysonic_last_activity';
 export const TIMEOUT_NOTICE_KEY = 'paysonic_timeout_notice';
@@ -13,6 +14,14 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
+      // Tab closure check: if tab was closed/deleted, sessionStorage is cleared by the browser
+      const isTabActive = sessionStorage.getItem(TAB_SESSION_KEY);
+      if (!isTabActive) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('actorId');
+        return null;
+      }
+
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch {
@@ -26,6 +35,15 @@ export const AuthProvider = ({ children }) => {
     let isMounted = true;
 
     try {
+      const isTabActive = sessionStorage.getItem(TAB_SESSION_KEY);
+      if (!isTabActive) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('actorId');
+        setCurrentUser(null);
+        setAuthChecked(true);
+        return;
+      }
+
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -275,6 +293,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('actorId');
         localStorage.removeItem(LAST_ACTIVITY_KEY);
         localStorage.setItem('paysonic_session_expired', Date.now().toString());
+        sessionStorage.removeItem(TAB_SESSION_KEY);
         sessionStorage.removeItem(TIMEOUT_NOTICE_KEY);
         setCurrentUser(null);
         window.location.href = '/login';
@@ -533,6 +552,7 @@ export const AuthProvider = ({ children }) => {
       locked: false,
     };
 
+    sessionStorage.setItem(TAB_SESSION_KEY, 'true');
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
     localStorage.setItem('actorId', sessionData.id);
     localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
@@ -547,6 +567,7 @@ export const AuthProvider = ({ children }) => {
         UserActivityService.forceLogout(active.sessionId, 'User signed out').catch(() => {});
       }
     } catch {}
+    sessionStorage.removeItem(TAB_SESSION_KEY);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('actorId');
     localStorage.removeItem(LAST_ACTIVITY_KEY);
