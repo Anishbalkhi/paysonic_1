@@ -6,6 +6,7 @@ import StateCitySelect from '../../components/StateCitySelect/StateCitySelect';
 import { hasMenuAccess } from '../../config/roleMenus';
 import { isUserPlazaLocked, isPlazaMatch, getScopedPlazas } from '../../utils/plazaScopeUtils';
 import TablePagination from '../../components/common/TablePagination';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './Onboarding.scss';
 
 // Vehicle classes VC4 through VC20 (NETC / NPCI Standard FASTag Specifications)
@@ -95,6 +96,7 @@ export const Onboarding = () => {
 
   // Main state — initialized empty, loaded exclusively from Railway live database
   const [store, setStore] = useState(() => getEmptyStore());
+  const [fetchTime, setFetchTime] = useState('');
 
   // ── Railway live database hydration on mount ───────────────────────────────
   const [railwayLoading, setRailwayLoading] = useState(true);
@@ -119,12 +121,15 @@ export const Onboarding = () => {
             source: 'LIVE_BACKEND_DB',
             _liveDb: true,
           });
-          // Automatically synchronize scope to first live Railway MySQL plaza
-          if (hydrated.plazas.length > 0) {
-            setSelectedPlazaId((currentId) => {
-              const hasCurrent = hydrated.plazas.some((p) => p.id === currentId);
-              return hasCurrent ? currentId : hydrated.plazas[0].id;
-            });
+          setFetchTime(formatFetchTime(new Date()));
+          // If user is locked to an assigned plaza, lock scope to that plaza; otherwise leave blank
+          if (isLocked && currentUser?.assignedPlaza && hydrated.plazas?.length > 0) {
+            const matched = hydrated.plazas.find(
+              (p) => p.name === currentUser.assignedPlaza || p.id === currentUser.assignedPlaza
+            );
+            if (matched) {
+              setSelectedPlazaId(matched.id);
+            }
           }
         }
       })
@@ -159,17 +164,24 @@ export const Onboarding = () => {
     return getScopedPlazas(store.plazas, currentUser);
   }, [store.plazas, currentUser]);
 
-  // Plaza scoped selectors (shared for Lanes, Callback, Fare, CCH)
+  // Plaza scoped selectors (shared for Lanes, Callback, Fare, CCH) — Defaults to blank until user selects
   const [selectedPlazaId, setSelectedPlazaId] = useState('');
 
   useEffect(() => {
-    if (scopedPlazas.length > 0) {
+    if (isLocked && currentUser?.assignedPlaza && scopedPlazas.length > 0) {
+      const matched = scopedPlazas.find(
+        (p) => p.name === currentUser.assignedPlaza || p.id === currentUser.assignedPlaza
+      );
+      if (matched) {
+        setSelectedPlazaId(matched.id);
+      }
+    } else if (selectedPlazaId && scopedPlazas.length > 0) {
       const exists = scopedPlazas.some((p) => p.id === selectedPlazaId);
-      if (!exists || !selectedPlazaId) {
-        setSelectedPlazaId(scopedPlazas[0].id);
+      if (!exists) {
+        setSelectedPlazaId('');
       }
     }
-  }, [scopedPlazas, selectedPlazaId]);
+  }, [scopedPlazas, selectedPlazaId, isLocked, currentUser]);
 
   // =========================================================================
   // SUBMODULE 1: VIEW PLAZA
@@ -443,8 +455,8 @@ export const Onboarding = () => {
       case 'name': {
         const v = (val !== undefined ? val : currentForm.name).trim().toUpperCase();
         if (!v) return 'Concessionaire Name is required';
-        if (!/^[A-Z &.,-]{1,100}$/.test(v)) {
-          return 'Alphabets, spaces, &, ., - allowed · max 100 chars';
+        if (!/^[A-Z0-9 &.,\-_/()]{1,100}$/.test(v)) {
+          return 'Alphanumeric characters, spaces, &, ., -, _, / allowed · max 100 chars';
         }
         return '';
       }
@@ -768,11 +780,10 @@ export const Onboarding = () => {
         const raw = (val !== undefined ? val : currentForm.geoCode) || '';
         const v = raw.trim();
         if (!v) return 'Plaza Geo Code is required';
-        const cleanGeo = v.replace(/\s+/g, '');
-        if (!/^-?\d{1,3}\.\d+,-?\d{1,3}\.\d+$/.test(cleanGeo)) {
-          return 'Format must be Latitude,Longitude (e.g. 19.9975,73.7898)';
+        if (!/^\d{1,50}$/.test(v)) {
+          return 'Geo Code must contain only numeric digits (up to 50 digits)';
         }
-        if (store.plazas.some((p) => (p.geoCode || '').replace(/\s+/g, '').trim() === cleanGeo && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
+        if (store.plazas.some((p) => (p.geoCode || '').trim() === v && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
           return 'Geo Code already exists! Each plaza must have a unique Geo Code.';
         }
         return '';
@@ -876,7 +887,9 @@ export const Onboarding = () => {
     const cleanGeo = geoCode.replace(/\s+/g, '');
     if (!cleanGeo) {
       errors.geoCode = 'Plaza Geo Code is required';
-    } else if (!errors.geoCode && store.plazas.some((p) => (p.geoCode || '').replace(/\s+/g, '').trim() === cleanGeo && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
+    } else if (!/^\d{1,50}$/.test(cleanGeo)) {
+      errors.geoCode = 'Geo Code must contain only numeric digits (up to 50 digits)';
+    } else if (!errors.geoCode && store.plazas.some((p) => (p.geoCode || '').trim() === cleanGeo && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
       errors.geoCode = 'Geo Code already exists! Each plaza must have a unique Geo Code.';
     }
 
@@ -910,7 +923,7 @@ export const Onboarding = () => {
         actor: currentUser ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' } : undefined,
       });
 
-      // Update store state on success
+      // Update store state on success — newly onboarded plazas appear at the top
       setStore((prev) => {
         let updatedPlazas = [...prev.plazas];
         const targetLookupId = isEditingPlaza && editingPlazaOriginalId ? editingPlazaOriginalId : id;
@@ -919,7 +932,7 @@ export const Onboarding = () => {
         if (existingIdx >= 0) {
           updatedPlazas[existingIdx] = savedPlaza;
         } else {
-          updatedPlazas.push(savedPlaza);
+          updatedPlazas.unshift(savedPlaza);
         }
 
         // If ID was modified during editing, ensure old ID entry is removed so no duplicates appear
@@ -1673,11 +1686,16 @@ export const Onboarding = () => {
       )}
 
       {/* Top Header */}
-      <div className="onboarding-header">
+      <div className="onboarding-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div className="header-left">
           <h1>Plaza Onboarding Module</h1>
         </div>
-        <div className="header-actions">
+        <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Data Fetch Time: {fetchTime}
+            </div>
+          )}
           {hasMenuAccess(currentUser, 'on_boarding_add_plaza') && (
             <button
               type="button"
@@ -2599,17 +2617,21 @@ export const Onboarding = () => {
 
                 <div className="form-group">
                   <label>
-                    Plaza Geo Code (Lat,Long) <span className="req">*</span>
+                    Plaza Geo Code <span className="req">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 28.4089,76.9647"
+                    maxLength={50}
+                    placeholder="Enter numeric Geo Code (up to 50 digits)"
                     value={plazaForm.geoCode}
-                    onChange={(e) => handlePlazaChange('geoCode', e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 50);
+                      handlePlazaChange('geoCode', val);
+                    }}
                     onBlur={() => handlePlazaBlur('geoCode')}
                     className={plazaErrors.geoCode ? 'invalid' : ''}
                   />
-                  <div className="field-hint">Format: Latitude,Longitude</div>
+                  <div className="field-hint">Numeric digits only · Max 50 digits</div>
                   {plazaErrors.geoCode && <div className="field-error">{plazaErrors.geoCode}</div>}
                 </div>
               </div>
@@ -2744,11 +2766,14 @@ export const Onboarding = () => {
                 {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  scopedPlazas.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id}) · ${p.status}`}
-                    </option>
-                  ))
+                  <>
+                    {!isLocked && <option value="">Select Plaza</option>}
+                    {scopedPlazas.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id}) · ${p.status}`}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
               {selectedPlazaObject && (
@@ -2893,11 +2918,14 @@ export const Onboarding = () => {
                 {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  scopedPlazas.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
-                    </option>
-                  ))
+                  <>
+                    {!isLocked && <option value="">Select Plaza</option>}
+                    {scopedPlazas.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>
@@ -3014,11 +3042,14 @@ export const Onboarding = () => {
                 {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  scopedPlazas.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
-                    </option>
-                  ))
+                  <>
+                    {!isLocked && <option value="">Select Plaza</option>}
+                    {scopedPlazas.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>
@@ -3179,11 +3210,14 @@ export const Onboarding = () => {
                 {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  scopedPlazas.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
-                    </option>
-                  ))
+                  <>
+                    {!isLocked && <option value="">Select Plaza</option>}
+                    {scopedPlazas.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>

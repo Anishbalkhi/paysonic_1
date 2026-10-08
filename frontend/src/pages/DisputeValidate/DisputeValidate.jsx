@@ -8,6 +8,7 @@ import TransactionDetailsModal from '../../components/DisputeModals/TransactionD
 import TakeActionModal from '../../components/DisputeModals/TakeActionModal';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './DisputeValidate.scss';
 
 export const DisputeValidate = () => {
@@ -21,6 +22,8 @@ export const DisputeValidate = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
 
   useEffect(() => {
     if (isPlazaLocked && defaultPlazaId && selectedPlazaId !== defaultPlazaId) {
@@ -83,6 +86,7 @@ export const DisputeValidate = () => {
       const assignedRows = (fetched || []).filter((r) => r.assigned === true);
       const scopedRows = filterRecordsByPlazaScope(assignedRows, plazas, currentUser);
       setRows(scopedRows);
+      setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
     } catch (e) {
       console.error('[DisputeValidate] Load error:', e);
@@ -125,6 +129,7 @@ export const DisputeValidate = () => {
   }, [rows, currentPage, pageSize]);
 
   const handleExportCsv = () => {
+    setDownloadTime(formatFetchTime(new Date()));
     const csvContent =
       'data:text/csv;charset=utf-8,' +
       [
@@ -145,12 +150,24 @@ export const DisputeValidate = () => {
 
   return (
     <div className="dispute-validate-page">
-      <div className="page-header-block">
+      <div className="page-header-block" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1>Validate Dispute</h1>
           <p className="subtitle">
             Disputes assigned to plaza {activePlaza.name} ({activePlazaId}). Review the acquirer's evidence and reason, and submit your verified decision (Approve or Reject) with proof.
           </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Data Fetch Time: {fetchTime}
+            </div>
+          )}
+          {downloadTime && (
+            <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              📥 Export Download Time: {downloadTime}
+            </div>
+          )}
         </div>
       </div>
 

@@ -188,7 +188,7 @@ public class ViolationValidateService {
             Cell subTitleCell = subTitleRow.createCell(0);
             String fromStr = fromDate != null ? fromDate.format(DATE_TIME_FMT) : "Beginning";
             String toStr = toDate != null ? toDate.format(DATE_TIME_FMT) : "Now";
-            subTitleCell.setCellValue("Date Range: " + fromStr + " to " + toStr + " | Generated from Paysonic Live Railway DB");
+            subTitleCell.setCellValue("Date Range: " + fromStr + " to " + toStr + " | Report Fetch Time: " + LocalDateTime.now().format(DATE_TIME_FMT));
             subTitleCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 17));
 
@@ -353,7 +353,7 @@ public class ViolationValidateService {
 
         writer.println("# VIOLATION VALIDATE REPORT");
         writer.println("# Date Range: " + (fromDate != null ? fromDate.format(DATE_TIME_FMT) : "Beginning") +
-                " to " + (toDate != null ? toDate.format(DATE_TIME_FMT) : "Now"));
+                " to " + (toDate != null ? toDate.format(DATE_TIME_FMT) : "Now") + " | Report Fetch Time: " + LocalDateTime.now().format(DATE_TIME_FMT));
         writer.println();
 
         String[] headers = {

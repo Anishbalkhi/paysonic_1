@@ -130,10 +130,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { subId: 'violation_management_violation_validate', label: 'A. Violation Validate Report', path: '/violation-management/violation-validate-report' },
-        { subId: 'violation_management_violation_settlement_report', label: 'B. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
-        { subId: 'violation_management_violation_raw_file', label: 'C. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
-        { subId: 'violation_management_violation_bulk_action', label: 'D. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
+        { subId: 'violation_management_violation_dashboard', label: 'A. Violation Dashboard', path: '/violation-management/dashboard' },
+        { subId: 'violation_management_violation_validate', label: 'B. Violation Validate Report', path: '/violation-management/violation-validate-report' },
+        { subId: 'violation_management_violation_settlement_report', label: 'C. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_raw_file', label: 'D. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
+        { subId: 'violation_management_violation_bulk_action', label: 'E. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
       ],
     },
     {
@@ -233,10 +234,11 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { subId: 'violation_management_violation_validate', label: 'A. Violation Validate Report', path: '/violation-management/violation-validate-report' },
-        { subId: 'violation_management_violation_settlement_report', label: 'B. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
-        { subId: 'violation_management_violation_raw_file', label: 'C. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
-        { subId: 'violation_management_violation_bulk_action', label: 'D. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
+        { subId: 'violation_management_violation_dashboard', label: 'A. Violation Dashboard', path: '/violation-management/dashboard' },
+        { subId: 'violation_management_violation_validate', label: 'B. Violation Validate Report', path: '/violation-management/violation-validate-report' },
+        { subId: 'violation_management_violation_settlement_report', label: 'C. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_raw_file', label: 'D. Violation Raw File Report', path: '/violation-management/violation-raw-file' },
+        { subId: 'violation_management_violation_bulk_action', label: 'E. Violation Bulk Action', path: '/violation-management/violation-bulk-action' },
       ],
     },
     {
@@ -330,7 +332,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { subId: 'violation_management_violation_settlement_report', label: 'A. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_dashboard', label: 'A. Violation Dashboard', path: '/violation-management/dashboard' },
+        { subId: 'violation_management_violation_settlement_report', label: 'B. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
       ],
     },
     {
@@ -424,7 +427,8 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Violation Management',
       icon: ICONS.violation,
       children: [
-        { subId: 'violation_management_violation_settlement_report', label: 'A. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
+        { subId: 'violation_management_violation_dashboard', label: 'A. Violation Dashboard', path: '/violation-management/dashboard' },
+        { subId: 'violation_management_violation_settlement_report', label: 'B. Violation Settlement Report', path: '/violation-management/violation-settlement-report' },
       ],
     },
     {

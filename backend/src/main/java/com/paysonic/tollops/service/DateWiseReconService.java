@@ -323,7 +323,8 @@ public class DateWiseReconService {
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
             String fromStr = fromDate != null ? fromDate.format(dtf) : "01-08-2026 00:00:00";
             String toStr = toDate != null ? toDate.format(dtf) : "31-10-2026 23:59:59";
-            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr);
+            String fetchTimeStr = LocalDateTime.now().format(dtf);
+            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr + "   |   Report Fetch Time: " + fetchTimeStr);
             subCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
 

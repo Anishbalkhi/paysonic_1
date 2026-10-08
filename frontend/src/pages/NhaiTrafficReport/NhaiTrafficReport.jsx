@@ -3,6 +3,7 @@ import NhaiTrafficService from '../../services/summary/NhaiTrafficService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { normalizePlaza } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './NhaiTrafficReport.scss';
 
@@ -27,6 +28,8 @@ export const NhaiTrafficReport = () => {
   }, [isPlazaLocked, defaultPlazaId]);
 
   const [reportData, setReportData] = useState(null);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -67,6 +70,7 @@ export const NhaiTrafficReport = () => {
         plazaCode: pCode
       });
       setReportData(data);
+      setFetchTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[NhaiTrafficReport] Failed to load data:', err);
       const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Database error occurred';
@@ -100,6 +104,7 @@ export const NhaiTrafficReport = () => {
         toDate,
         plazaCode
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[NhaiTrafficReport] Excel export failed:', err);
       alert('Failed to export Excel report. Please try again.');
@@ -117,6 +122,7 @@ export const NhaiTrafficReport = () => {
         toDate,
         plazaCode
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[NhaiTrafficReport] CSV export failed:', err);
       alert('Failed to export CSV report. Please try again.');
@@ -193,10 +199,26 @@ export const NhaiTrafficReport = () => {
       {/* Top Header */}
       <header className="page-header">
         <div className="header-titles">
-          <h1 className="page-title">NHAI Traffic Report</h1>
-          <p className="subtitle">
-            FASTag Traffic Analysis &amp; Journey Revenue Collection
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h1 className="page-title">NHAI Traffic Report</h1>
+              <p className="subtitle">
+                FASTag Traffic Analysis &amp; Journey Revenue Collection
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {fetchTime && (
+                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  🕒 Report Fetch Time: {fetchTime}
+                </div>
+              )}
+              {downloadTime && (
+                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  📥 Export Download Time: {downloadTime}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -308,7 +330,7 @@ export const NhaiTrafficReport = () => {
         <div className="table-top-banner">
           <div className="banner-title">NHAI TRAFFIC REPORT</div>
           <div className="banner-subtitle">
-            From Date: {fromDate} &nbsp; | &nbsp; To Date: {toDate}
+            From Date: {fromDate} &nbsp; | &nbsp; To Date: {toDate} &nbsp; | &nbsp; Report Fetch Time: {fetchTime}
           </div>
           <div className="banner-green-bar" />
         </div>

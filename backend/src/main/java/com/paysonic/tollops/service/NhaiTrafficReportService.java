@@ -268,7 +268,8 @@ public class NhaiTrafficReportService {
             Row subTitleRow = sheet.createRow(rowIdx++);
             subTitleRow.setHeightInPoints(18);
             Cell subTitleCell = subTitleRow.createCell(0);
-            subTitleCell.setCellValue("From Date: " + report.getFromDate() + "    To Date: " + report.getToDate());
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+            subTitleCell.setCellValue("From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Report Fetch Time: " + LocalDateTime.now().format(dtf));
             subTitleCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 6));
 
@@ -435,8 +436,9 @@ public class NhaiTrafficReportService {
         PrintWriter writer = new PrintWriter(outputStream, true, StandardCharsets.UTF_8);
         outputStream.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF}); // UTF-8 BOM
 
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         writer.println("# NHAI Traffic Report");
-        writer.println("# From Date: " + report.getFromDate() + " To Date: " + report.getToDate());
+        writer.println("# From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Report Fetch Time: " + LocalDateTime.now().format(dtf));
         writer.println("# Plaza Code: " + report.getPlazaCode() + " Plaza Name: " + report.getPlazaName());
         writer.println();
 

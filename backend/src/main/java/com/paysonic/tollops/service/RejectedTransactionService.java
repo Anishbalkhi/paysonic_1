@@ -215,7 +215,8 @@ public class RejectedTransactionService {
             Cell subCell = subRow.createCell(0);
             String fromStr = fromDate != null ? fromDate.format(DATE_FMT) : "01-09-2026 00:00:00";
             String toStr = toDate != null ? toDate.format(DATE_FMT) : "06-09-2026 23:59:59";
-            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr);
+            String fetchTimeStr = LocalDateTime.now().format(DATE_FMT);
+            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr + "   |   Report Fetch Time: " + fetchTimeStr);
             subCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
 
@@ -425,6 +426,7 @@ public class RejectedTransactionService {
 
         String fromStr = fromDate != null ? fromDate.format(DATE_FMT) : "01-09-2026 00:00:00";
         String toStr = toDate != null ? toDate.format(DATE_FMT) : "06-09-2026 23:59:59";
+        String fetchTimeStr = LocalDateTime.now().format(DATE_FMT);
         int midIdx = headers.length / 2;
 
         String[] titleLine = new String[headers.length];
@@ -434,7 +436,7 @@ public class RejectedTransactionService {
             subLine[i] = "";
         }
         titleLine[midIdx] = "REJECTED TRANSACTIONS REPORT";
-        subLine[midIdx] = "From Date: " + fromStr + "   |   To Date: " + toStr;
+        subLine[midIdx] = "From Date: " + fromStr + "   |   To Date: " + toStr + "   |   Report Fetch Time: " + fetchTimeStr;
 
         writer.println(String.join(",", titleLine));
         writer.println(String.join(",", subLine));

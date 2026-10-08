@@ -5,6 +5,7 @@ import { hasMenuAccess } from '../../config/roleMenus';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import TablePagination from '../../components/common/TablePagination';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './TagDetails.scss';
 
 export const TagDetails = () => {
@@ -13,6 +14,7 @@ export const TagDetails = () => {
   const { currentUser } = useAuth();
   const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
   const userRole = currentUser?.role || 'Admin';
+  const [fetchTime, setFetchTime] = useState(formatFetchTime(new Date()));
 
   const canAccessRequest = hasMenuAccess(currentUser, 'tag_details_request_tag_details');
   const canAccessBlacklist = hasMenuAccess(currentUser, 'tag_details_blacklist_search_history');
@@ -149,6 +151,7 @@ export const TagDetails = () => {
         npciSyncTime: new Date().toLocaleTimeString(),
         exemptionStatus: 'Standard Fastag (Toll Applicable)',
       });
+      setFetchTime(formatFetchTime(new Date()));
       setIsSearching(false);
     }, 300);
   };
@@ -184,7 +187,7 @@ export const TagDetails = () => {
       {/* Page Header */}
       <div className="page-header">
         <div className="header-info">
-          <div className="badge-row">
+          <div className="badge-row" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <span className="role-clearance-badge">
               <span className="dot" />
               NETC Registry Clearance Active
@@ -192,6 +195,11 @@ export const TagDetails = () => {
             <span className="protocol-badge">NPCI NETC Spec 2.4</span>
             {currentUser?.assignedPlaza && (
               <span className="plaza-badge">📍 {currentUser.assignedPlaza}</span>
+            )}
+            {fetchTime && (
+              <span className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.80rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', fontWeight: 600 }}>
+                🕒 Data Fetch Time: {fetchTime}
+              </span>
             )}
           </div>
           <h2>Tag Details Management</h2>

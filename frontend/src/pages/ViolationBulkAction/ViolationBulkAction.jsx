@@ -4,6 +4,7 @@ import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './ViolationBulkAction.scss';
 
 export const ViolationBulkAction = () => {
@@ -31,6 +32,8 @@ export const ViolationBulkAction = () => {
   // Data & Pagination
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [page, setPage] = useState(0);
@@ -103,6 +106,7 @@ export const ViolationBulkAction = () => {
         setServerSummary(data.summary);
       }
       setSelectedIds(new Set());
+      setFetchTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[ViolationBulkAction] Query failed:', err);
       const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Database error occurred';
@@ -207,6 +211,7 @@ export const ViolationBulkAction = () => {
         tagId: searchTerm.trim() || undefined,
         acqTxnId: searchTerm.trim() || undefined
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[ViolationBulkAction] Excel export failed:', err);
       alert('Failed to export Excel report. Please try again.');
@@ -228,6 +233,7 @@ export const ViolationBulkAction = () => {
         tagId: searchTerm.trim() || undefined,
         acqTxnId: searchTerm.trim() || undefined
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[ViolationBulkAction] CSV export failed:', err);
       alert('Failed to export CSV report. Please try again.');
@@ -339,7 +345,11 @@ export const ViolationBulkAction = () => {
       {/* 1. Centered Header Banner */}
       <div className="report-header-banner">
         <h1 className="report-title">VIOLATION BULK ACTION</h1>
-        <div className="report-subtitle">{dateSubtitle}</div>
+        <div className="report-subtitle">
+          <span>{dateSubtitle}</span>
+          {fetchTime && <span> | &nbsp; 🕒 Data Fetch Time: {fetchTime}</span>}
+          {downloadTime && <span> | &nbsp; 📥 Export Download Time: {downloadTime}</span>}
+        </div>
         <div className="report-green-accent-bar" />
       </div>
 

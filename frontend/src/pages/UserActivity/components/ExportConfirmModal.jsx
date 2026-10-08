@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import UserActivityService from '../../../services/userActivity/UserActivityService';
 
 export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportContext = null, onExportComplete }) => {
-  const [format, setFormat] = useState('csv');
-  const [scope, setScope] = useState('filtered');
+  const [format, setFormat] = useState('excel');
+  const [scope, setScope] = useState(exportContext?.initialScope || 'filtered');
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    if (exportContext?.initialScope) {
+      setScope(exportContext.initialScope);
+    }
+  }, [exportContext, isOpen]);
 
   if (!isOpen) return null;
 
@@ -31,12 +37,19 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
     activeFilterList.push(`Query: "${activeFilters.search}"`);
   }
 
+  const isFilterLedger = scope === 'filtered';
+  const modalHeading = isFilterLedger ? 'Export Filter Ledger' : 'Export Audit';
+  const actionButtonText = isFilterLedger
+    ? `Export Filter Ledger (${countToExport})`
+    : `Export Audit (${countToExport})`;
+
   const handleDownload = async () => {
     setIsExporting(true);
     try {
       const result = await UserActivityService.exportAudit(
         scope === 'filtered' ? activeFilters : {},
-        format
+        format,
+        scope === 'filtered' ? 'filter_ledger' : 'audit'
       );
       const blob = new Blob([result.data], { type: result.mimeType });
       const url = URL.createObjectURL(blob);
@@ -61,8 +74,8 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
       <div className="modal modal-sm">
         <div className="modal-head">
           <div>
-            <h2>Export Audit Repository</h2>
-            <span>Confirmation of export count and filter parameters</span>
+            <h2>{modalHeading}</h2>
+            <span>Confirmation of export count, file format and audit parameters</span>
           </div>
           <button type="button" className="close-btn" onClick={onClose} aria-label="Close">
             ✕
@@ -77,6 +90,20 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
           <div className="field">
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Export File Format</label>
             <div className="format-options">
+              <label className={`format-pill ${format === 'excel' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="format"
+                  value="excel"
+                  checked={format === 'excel'}
+                  onChange={() => setFormat('excel')}
+                />
+                <div>
+                  <strong>Export Excel (.xls)</strong>
+                  <span>Formatted Excel workbook with styled headers, Sr No sequence &amp; audit metadata</span>
+                </div>
+              </label>
+
               <label className={`format-pill ${format === 'csv' ? 'selected' : ''}`}>
                 <input
                   type="radio"
@@ -86,8 +113,8 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
                   onChange={() => setFormat('csv')}
                 />
                 <div>
-                  <strong>CSV / Excel (.csv)</strong>
-                  <span>Formatted for Excel, Google Sheets, &amp; NPCI audits</span>
+                  <strong>CSV File (.csv)</strong>
+                  <span>Standard comma-separated spreadsheet data</span>
                 </div>
               </label>
 
@@ -164,7 +191,7 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
             onClick={handleDownload}
             disabled={isExporting || countToExport === 0}
           >
-            {isExporting ? 'Compiling File...' : `Confirm & Download (${countToExport})`}
+            {isExporting ? 'Compiling File...' : actionButtonText}
           </button>
         </div>
       </div>

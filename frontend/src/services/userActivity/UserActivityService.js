@@ -1017,7 +1017,7 @@ class UserActivityService {
    * downloadable file client-side from the returned records.
    * Falls back to local getAuditLog() if Railway is unreachable.
    */
-  async exportAudit(filters = {}, format = 'csv') {
+  async exportAudit(filters = {}, format = 'csv', exportType = 'audit') {
     let records = [];
 
     // Try Railway export endpoint first
@@ -1060,20 +1060,193 @@ class UserActivityService {
       if (activeUser.name) actor = activeUser;
     } catch {}
 
+    const isFilterLedger = exportType === 'filter_ledger';
+    const reportTitle = isFilterLedger ? 'PAYSONIC AUDIT TRAIL - FILTER LEDGER EXPORT' : 'PAYSONIC AUDIT TRAIL & COMPLIANCE LEDGER';
+    const filenamePrefix = isFilterLedger ? 'paysonic_filter_ledger_export' : 'paysonic_audit_export';
+
     this.recordAuditEvent({
       module: 'Transactional Report',
       action: 'EXPORT_AUDIT_LOG',
-      actionLabel: 'Exported Audit Ledger',
+      actionLabel: isFilterLedger ? 'Exported Filter Ledger' : 'Exported Audit Ledger',
       status: 'SUCCESS',
       actor: { id: actor.id, name: actor.name, role: actor.role, ipAddress: '127.0.0.1' },
       plaza: 'All plazas',
-      target: `Audit Export (${records.length} records, ${format.toUpperCase()})`,
+      target: `${isFilterLedger ? 'Filter Ledger Export' : 'Audit Export'} (${records.length} records, ${format.toUpperCase()})`,
       details: `Compliance export compiled for ${records.length} records in ${format.toUpperCase()} format`,
     });
 
-    // Build the download payload client-side
+    // Sort records in proper sequence (newest first by timestamp)
+    const sortedRecords = [...records].sort((a, b) => {
+      const timeA = new Date(a.timestamp || 0).getTime();
+      const timeB = new Date(b.timestamp || 0).getTime();
+      return timeB - timeA;
+    });
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const now = new Date();
+    const fetchTimeStr = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+    // Helper for XML escaping
+    const escapeXml = (unsafe) => {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    if (format === 'excel' || format === 'xlsx' || format === 'xls') {
+      const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="sTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="15" ss:Color="#0F2F6B" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="sSubtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#475569"/>
+  </Style>
+  <Style ss:ID="sGreenBar">
+   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10.5" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#0F2F6B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sDataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sDataText">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sSuccess">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#047857" ss:Bold="1"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sFailure">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#B91C1C" ss:Bold="1"/>
+   <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Audit Ledger">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="45"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="135"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="80"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="220"/>
+   <Row ss:Height="28">
+    <Cell ss:MergeAcross="13" ss:StyleID="sTitle"><Data ss:Type="String">${escapeXml(reportTitle)}</Data></Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Events: ${sortedRecords.length}   |   Report Fetch Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
+   </Row>
+   <Row ss:Height="4">
+    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+   </Row>
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Event ID</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Timestamp</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Actor Name</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Actor Role</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Module</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Action</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Reference ID</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Correlation ID</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Target</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Plaza Scope</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Outcome</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">IP Address</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Details</Data></Cell>
+   </Row>
+   ${sortedRecords.map((r, idx) => `
+   <Row ss:Height="19">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.id || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.timestamp || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml((r.actor && r.actor.name) || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml((r.actor && r.actor.role) || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.module || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.actionLabel || r.action || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.referenceId || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.correlationId || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.target || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.plaza || '')}</Data></Cell>
+    <Cell ss:StyleID="${r.status === 'FAILURE' ? 'sFailure' : 'sSuccess'}"><Data ss:Type="String">${escapeXml(r.status || 'SUCCESS')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml((r.actor && r.actor.ipAddress) || '127.0.0.1')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.details || '')}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+      return {
+        data: xml,
+        filename: `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.xls`,
+        mimeType: 'application/vnd.ms-excel',
+        recordCount: sortedRecords.length,
+      };
+    }
+
+    // Build CSV payload client-side in proper sequence
     if (format === 'csv') {
       const headers = [
+        'Sr No',
         'Event ID',
         'Timestamp',
         'Actor Name',
@@ -1086,10 +1259,12 @@ class UserActivityService {
         'Plaza Scope',
         'Outcome',
         'IP Address',
+        'Details'
       ];
-      const rows = records.map((r) => [
-        r.id,
-        r.timestamp,
+      const rows = sortedRecords.map((r, idx) => [
+        idx + 1,
+        `"${r.id || ''}"`,
+        `"${r.timestamp || ''}"`,
         `"${(r.actor && r.actor.name) || ''}"`,
         `"${(r.actor && r.actor.role) || ''}"`,
         `"${r.module || ''}"`,
@@ -1098,23 +1273,30 @@ class UserActivityService {
         `"${r.correlationId || ''}"`,
         `"${r.target || ''}"`,
         `"${r.plaza || ''}"`,
-        r.status || 'SUCCESS',
-        (r.actor && r.actor.ipAddress) || '127.0.0.1',
+        `"${r.status || 'SUCCESS'}"`,
+        `"${(r.actor && r.actor.ipAddress) || '127.0.0.1'}"`,
+        `"${(r.details || '').replace(/"/g, '""')}"`
       ]);
-      const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+      const csvContent = '\uFEFF' + [
+        `# ${reportTitle}`,
+        `# Total Events: ${sortedRecords.length} | Report Fetch Time: ${fetchTimeStr}`,
+        headers.join(','),
+        ...rows.map((e) => e.join(','))
+      ].join('\n');
+
       return {
         data: csvContent,
-        filename: `paysonic_audit_export_${new Date().toISOString().slice(0, 10)}.csv`,
+        filename: `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.csv`,
         mimeType: 'text/csv',
-        recordCount: records.length,
+        recordCount: sortedRecords.length,
       };
     }
 
     return {
-      data: JSON.stringify(records, null, 2),
-      filename: `paysonic_audit_export_${new Date().toISOString().slice(0, 10)}.json`,
+      data: JSON.stringify(sortedRecords, null, 2),
+      filename: `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.json`,
       mimeType: 'application/json',
-      recordCount: records.length,
+      recordCount: sortedRecords.length,
     };
   }
 }

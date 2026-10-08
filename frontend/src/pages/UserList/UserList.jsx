@@ -4,6 +4,7 @@ import UserService, { sortUsersNewestFirst } from '../../services/user/UserServi
 import OnboardingService from '../../services/onboarding/OnboardingService';
 import { useAuth } from '../../context/AuthContext';
 import { getDefaultRouteForUser } from '../../config/roleMenus';
+import { formatFetchTime } from '../../utils/dateUtils';
 import {
   ROLE_NO_USER_TYPE,
   ALL_PLAZAS,
@@ -515,10 +516,14 @@ export const UserList = () => {
   const [parsedCsvRows, setParsedCsvRows] = useState([]);
   const [isBulkUploading, setIsBulkUploading] = useState(false);
   const [bulkUploadProgress, setBulkUploadProgress] = useState(0);
+  const [fetchTime, setFetchTime] = useState('');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    UserService.getUsers().then((res) => setUsers(sortUsersNewestFirst(res)));
+    UserService.getUsers().then((res) => {
+      setUsers(sortUsersNewestFirst(res));
+      setFetchTime(formatFetchTime(new Date()));
+    });
   }, []);
 
   const getInitials = (name) => {
@@ -1421,14 +1426,19 @@ export const UserList = () => {
   return (
     <div className="user-management-content">
       {/* Page Header */}
-      <div className="page-head">
+      <div className="page-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1>User management</h1>
           <p>
             Create, approve, lock and manage every plaza and admin user from a single consolidated view.
           </p>
         </div>
-        <div className="actions">
+        <div className="actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Data Fetch Time: {fetchTime}
+            </div>
+          )}
           <button
             type="button"
             className="btn btn-secondary"

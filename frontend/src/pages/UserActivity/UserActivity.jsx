@@ -12,6 +12,7 @@ import AuditDetailDrawer from './components/AuditDetailDrawer';
 import ExportConfirmModal from './components/ExportConfirmModal';
 import Loader from '../../components/Loader/Loader';
 import httpClient from '../../services/api/httpClient';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './UserActivity.scss';
 
 export const UserActivity = () => {
@@ -28,6 +29,8 @@ export const UserActivity = () => {
   const [exportContext, setExportContext] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
 
   const loadData = async (silent = false) => {
     if (!silent) {
@@ -50,6 +53,7 @@ export const UserActivity = () => {
       setRecentEvents(r);
       setActiveUsers(u);
       setLoginHistory(l);
+      setFetchTime(formatFetchTime(new Date()));
 
       // Silently sync user catalog to enrich audit entities with full user identities
       httpClient.get('/api/users').then((activeRes) => {
@@ -125,6 +129,7 @@ export const UserActivity = () => {
   };
 
   const handleExportComplete = async () => {
+    setDownloadTime(formatFetchTime(new Date()));
     // Refresh audit events, recent feed, and stats so the logged export event appears immediately
     const [a, r, s] = await Promise.all([
       UserActivityService.getAuditLog(),
@@ -165,7 +170,17 @@ export const UserActivity = () => {
           </p>
         </div>
 
-        <div className="head-right">
+        <div className="head-right" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Data Fetch Time: {fetchTime}
+            </div>
+          )}
+          {downloadTime && (
+            <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              📥 Export Download Time: {downloadTime}
+            </div>
+          )}
           <div className="live-telemetry-badge" title="Real-time Webhook, Sessions & DB Synchronization Active">
             <span className={`live-pulse-dot ${isSyncing ? 'syncing' : ''}`} />
             <span className="live-label">LIVE SYNC ACTIVE</span>
@@ -174,7 +189,10 @@ export const UserActivity = () => {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => setIsExportOpen(true)}
+            onClick={() => {
+              setExportContext({ count: auditEvents.length, filters: {}, initialScope: 'full', title: 'Export Audit' });
+              setIsExportOpen(true);
+            }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

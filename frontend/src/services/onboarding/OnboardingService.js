@@ -289,7 +289,7 @@ class OnboardingService {
         updatedPlazas = updatedPlazas.filter((p, i) => i === idx || p.id !== originalId);
       }
     } else {
-      updatedPlazas = [...existingPlazas, plaza];
+      updatedPlazas = [plaza, ...existingPlazas];
     }
     saveLocalStore({ ...local, plazas: updatedPlazas });
     try {

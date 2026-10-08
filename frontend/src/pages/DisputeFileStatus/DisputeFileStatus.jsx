@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TablePagination from '../../components/common/TablePagination';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './DisputeFileStatus.scss';
 
 export const DisputeFileStatus = () => {
@@ -9,9 +10,11 @@ export const DisputeFileStatus = () => {
   const [batches, setBatches] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [fetchTime, setFetchTime] = useState('');
 
   useEffect(() => {
     setBatches(DisputeManagementService.getBatches());
+    setFetchTime(formatFetchTime(new Date()));
   }, []);
 
   const paginatedBatches = useMemo(() => {
@@ -21,20 +24,27 @@ export const DisputeFileStatus = () => {
 
   return (
     <div className="dispute-file-status-page">
-      <div className="page-header-block">
+      <div className="page-header-block" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1>Dispute File Status</h1>
           <p className="subtitle">
             Audit log of all uploaded bank and NPCI dispute files, reconciliation match ratios, and processing states.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => navigate('/dispute-handling/file-upload')}
-        >
-          + Upload New Dispute File
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Data Fetch Time: {fetchTime}
+            </div>
+          )}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => navigate('/dispute-handling/file-upload')}
+          >
+            + Upload New Dispute File
+          </button>
+        </div>
       </div>
 
       <div className="status-table-card">

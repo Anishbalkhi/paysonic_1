@@ -3,6 +3,7 @@ import TollFareReportService from '../../services/tollFare/TollFareReportService
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './TollFareReport.scss';
@@ -22,6 +23,8 @@ export const TollFareReport = () => {
 
   // Live Database Data State
   const [records, setRecords] = useState([]);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -51,6 +54,7 @@ export const TollFareReport = () => {
       content = filterRecordsByPlazaScope(content, plazas, currentUser);
 
       setRecords(content);
+      setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
     } catch (err) {
       console.error('[TollFareReport] Search failed:', err);
@@ -141,6 +145,7 @@ export const TollFareReport = () => {
         plazaId,
         vehicleClass
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[TollFareReport] Export Excel error:', err);
       alert('Failed to export Excel.');
@@ -158,6 +163,7 @@ export const TollFareReport = () => {
         plazaId,
         vehicleClass
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[TollFareReport] Export CSV error:', err);
       alert('Failed to export CSV.');
@@ -188,10 +194,26 @@ export const TollFareReport = () => {
       {/* Top Header */}
       <header className="page-header">
         <div className="header-titles">
-          <h1 className="page-title">Toll Fare Report</h1>
-          <p className="subtitle">
-            Plaza Toll Fare Matrix &amp; Vehicle Class Rate Configurations
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h1 className="page-title">Toll Fare Report</h1>
+              <p className="subtitle">
+                Plaza Toll Fare Matrix &amp; Vehicle Class Rate Configurations
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {fetchTime && (
+                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  🕒 Report Fetch Time: {fetchTime}
+                </div>
+              )}
+              {downloadTime && (
+                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  📥 Export Download Time: {downloadTime}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -351,7 +373,7 @@ export const TollFareReport = () => {
         <div className="table-top-banner">
           <div className="banner-title">TOLL FARE REPORT</div>
           <div className="banner-subtitle">
-            Plaza: {plazaId === 'ALL' ? 'All Plazas' : plazaId} | Effective FASTag Toll Fare Matrix
+            Plaza: {plazaId === 'ALL' ? 'All Plazas' : plazaId} &nbsp; | &nbsp; Effective FASTag Toll Fare Matrix &nbsp; | &nbsp; Report Fetch Time: {fetchTime}
           </div>
           <div className="banner-green-bar" />
         </div>

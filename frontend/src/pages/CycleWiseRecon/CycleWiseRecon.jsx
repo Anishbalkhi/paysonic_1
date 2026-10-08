@@ -3,6 +3,7 @@ import CycleWiseReconService from '../../services/recon/CycleWiseReconService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import PlazaMultiSelect from '../../components/PlazaMultiSelect/PlazaMultiSelect';
 import TablePagination from '../../components/common/TablePagination';
@@ -38,6 +39,8 @@ export const CycleWiseRecon = () => {
 
   // Data State
   const [records, setRecords] = useState([]);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -96,6 +99,7 @@ export const CycleWiseRecon = () => {
       }
 
       setRecords(results);
+      setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
     } catch (err) {
       console.error('[CycleWiseRecon] Search failed:', err);
@@ -141,6 +145,7 @@ export const CycleWiseRecon = () => {
         cycle,
         dateType
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[CycleWiseRecon] Export failed:', err);
       alert('Failed to export Cycle Wise Report: ' + (err?.message || 'Server error'));
@@ -194,7 +199,7 @@ export const CycleWiseRecon = () => {
     const titleArr = Array(headers.length).fill('');
     titleArr[midIdx] = 'CYCLE WISE RECONCILIATION REPORT';
     const subArr = Array(headers.length).fill('');
-    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}`;
+    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}   |   Report Fetch Time: ${formatFetchTime(new Date())}`;
 
     const bannerRows = [
       titleArr.join(','),
@@ -235,6 +240,7 @@ export const CycleWiseRecon = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    setDownloadTime(formatFetchTime(new Date()));
   };
 
   // Format currency with 2 decimals
@@ -313,7 +319,7 @@ export const CycleWiseRecon = () => {
   return (
     <div className="cycle-recon-page">
       {/* Top Header */}
-      <div className="page-header-row">
+      <div className="page-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div className="title-area">
           <h1 className="page-title">
             Cycle Wise Report
@@ -323,7 +329,18 @@ export const CycleWiseRecon = () => {
             NPCI Acquirer Settlement Cycles, Dispute Adjustments & Net Bank Remittance
           </p>
         </div>
-
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Report Fetch Time: {fetchTime}
+            </div>
+          )}
+          {downloadTime && (
+            <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              📥 Export Download Time: {downloadTime}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Search & Filter Form */}

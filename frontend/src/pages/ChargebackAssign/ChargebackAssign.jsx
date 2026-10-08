@@ -7,6 +7,7 @@ import DisputeManagementService from '../../services/dispute/DisputeManagementSe
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import MoreInformationModal from '../../components/DisputeModals/MoreInformationModal';
 import TablePagination from '../../components/common/TablePagination';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './ChargebackAssign.scss';
 
 export const ChargebackAssign = () => {
@@ -15,6 +16,8 @@ export const ChargebackAssign = () => {
   const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
   const [miniStats, setMiniStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,6 +75,7 @@ export const ChargebackAssign = () => {
       const scopedRows = filterRecordsByPlazaScope(fetchedRows, plazas, currentUser);
       setRows(scopedRows);
       setMiniStats(stats);
+      setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
     } catch (e) {
       console.error('[ChargebackAssign] Load error:', e);
@@ -126,6 +130,7 @@ export const ChargebackAssign = () => {
   // Export CSV directly matching current filtered records
   const handleExportCsv = () => {
     if (!rows || rows.length === 0) return;
+    setDownloadTime(formatFetchTime(new Date()));
 
     const headers = [
       'Assign Status',
@@ -193,6 +198,7 @@ export const ChargebackAssign = () => {
   // Export Excel directly matching current filtered records with real onboarded plazas
   const handleExportExcel = () => {
     if (!rows || rows.length === 0) return;
+    setDownloadTime(formatFetchTime(new Date()));
 
     const xmlEsc = (str) =>
       String(str || '')
@@ -272,12 +278,24 @@ export const ChargebackAssign = () => {
 
   return (
     <div className="chargeback-assign-page">
-      <div className="page-header-block">
+      <div className="page-header-block" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1>Chargeback Assign</h1>
           <p className="subtitle">
             The single working queue for every dispute the acquirer needs to assign, track or review. Assign by row or bulk-assign by plaza to hand off for review.
           </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Data Fetch Time: {fetchTime}
+            </div>
+          )}
+          {downloadTime && (
+            <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              📥 Export Download Time: {downloadTime}
+            </div>
+          )}
         </div>
       </div>
 

@@ -254,7 +254,7 @@ public class ViolationBulkActionService {
             Row subTitleRow = sheet.createRow(1);
             subTitleRow.setHeightInPoints(20);
             Cell subTitleCell = subTitleRow.createCell(0);
-            subTitleCell.setCellValue("From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT));
+            subTitleCell.setCellValue("From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT) + " | Report Fetch Time: " + LocalDateTime.now().format(DATE_FMT));
             subTitleCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
 
@@ -416,7 +416,7 @@ public class ViolationBulkActionService {
 
         try (PrintWriter writer = new PrintWriter(outputStream, true, StandardCharsets.UTF_8)) {
             writer.println("\"VIOLATION BULK ACTION\"");
-            writer.println("\"From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT) + "\"");
+            writer.println("\"From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT) + " | Report Fetch Time: " + LocalDateTime.now().format(DATE_FMT) + "\"");
             writer.println();
 
             String[] headers = {

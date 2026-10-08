@@ -4,6 +4,7 @@ import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TrsReport.scss';
 
@@ -24,6 +25,8 @@ export const TrsReport = () => {
   const [plazaId, setPlazaId] = useState(defaultPlazaId || 'ALL');
   const [status, setStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
 
   useEffect(() => {
     if (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL') {
@@ -92,6 +95,7 @@ export const TrsReport = () => {
       setTotalElements(data?.totalElements ?? content.length);
       setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
       setPage(data?.number ?? 0);
+      setFetchTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[TrsReport] Database query failed:', err);
       const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Database error occurred';
@@ -176,6 +180,7 @@ export const TrsReport = () => {
         plazaId,
         status
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[TrsReport] Excel export failed:', err);
       setErrorMsg('Export Error: ' + (err?.response?.data?.error || err?.message || 'Failed to download Excel'));
@@ -196,6 +201,7 @@ export const TrsReport = () => {
         plazaId,
         status
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[TrsReport] CSV export failed:', err);
       setErrorMsg('Export Error: ' + (err?.response?.data?.error || err?.message || 'Failed to download CSV'));
@@ -222,10 +228,26 @@ export const TrsReport = () => {
       {/* Top Page Header */}
       <header className="page-header">
         <div className="header-titles">
-          <h1 className="page-title">Transaction Report</h1>
-          <p className="subtitle">
-            Audited Toll Transactions &amp; Fastag Settlement Details
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h1 className="page-title">Transaction Report</h1>
+              <p className="subtitle">
+                Audited Toll Transactions &amp; Fastag Settlement Details
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {fetchTime && (
+                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  🕒 Report Fetch Time: {fetchTime}
+                </div>
+              )}
+              {downloadTime && (
+                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  📥 Export Download Time: {downloadTime}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 

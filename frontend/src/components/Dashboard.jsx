@@ -12,6 +12,7 @@ import WorkstationTerminal from "./WorkstationTerminal/WorkstationTerminal";
 import OperationsModal from "./OperationsModal/OperationsModal";
 import { getRoleSlug } from "../config/roleMenus";
 import { isUserPlazaLocked, isPlazaMatch } from "../utils/plazaScopeUtils";
+import { formatFetchTime } from "../utils/dateUtils";
 
 function inr(n) {
   return Math.round(n).toLocaleString("en-IN");
@@ -32,6 +33,7 @@ export default function Dashboard() {
   // tier2Data: secondary panels (charts, tables) — loads after tier1 paints
   const [tier1Data, setTier1Data] = useState(null);
   const [tier2Data, setTier2Data] = useState(null);
+  const [fetchTime, setFetchTime] = useState('');
   const [loadError, setLoadError] = useState(null);
 
   // Convenience: merged view for panels that need both tiers
@@ -80,6 +82,7 @@ export default function Dashboard() {
       .then((t1) => {
         if (cancelled) return;
         setTier1Data(t1);
+        setFetchTime(formatFetchTime(new Date()));
 
         // TIER 2 — secondary panels (fired immediately after tier1 paints)
         DataService.tier2()
@@ -102,7 +105,10 @@ export default function Dashboard() {
     // 30-second auto refresh of critical stats only
     const interval = setInterval(() => {
       DataService.dashboard()
-        .then((d) => setTier1Data((prev) => (prev ? { ...prev, dashboard: d } : prev)))
+        .then((d) => {
+          setTier1Data((prev) => (prev ? { ...prev, dashboard: d } : prev));
+          setFetchTime(formatFetchTime(new Date()));
+        })
         .catch((err) => console.error("Dashboard refresh failed:", err));
     }, 30000);
 
@@ -155,14 +161,21 @@ export default function Dashboard() {
           <>
             <Hero d={d} />
 
-            <div className="section-head">
-              <h3>
-                <span className="bar"></span>Transaction metrics
-              </h3>
-              <span className="note">
-                Rolling 24-hour window · auto-refresh 30s ·{" "}
-                {IS_DEV_DATA_MODE ? "DEV (mock JSON)" : "PROD (live API)"}
-              </span>
+            <div className="section-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3>
+                  <span className="bar"></span>Transaction metrics
+                </h3>
+                <span className="note">
+                  Rolling 24-hour window · auto-refresh 30s ·{" "}
+                  {IS_DEV_DATA_MODE ? "DEV (mock JSON)" : "PROD (live API)"}
+                </span>
+              </div>
+              {fetchTime && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '5px 12px', borderRadius: '6px', fontWeight: 600 }}>
+                  🕒 Data Fetch Time: {fetchTime}
+                </div>
+              )}
             </div>
 
             <div className="seg tm-tabs">

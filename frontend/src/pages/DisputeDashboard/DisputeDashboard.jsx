@@ -6,6 +6,7 @@ import OnboardingService from '../../services/onboarding/OnboardingService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlaza } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './DisputeDashboard.scss';
 
 export const DisputeDashboard = () => {
@@ -16,6 +17,7 @@ export const DisputeDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [fetchTime, setFetchTime] = useState('');
 
   // Scalable TAT Warning Controls
   const [tatSearch, setTatSearch] = useState('');
@@ -32,6 +34,7 @@ export const DisputeDashboard = () => {
     try {
       const data = await DisputeManagementService.getPlazaDashboardStats(plazaId);
       setStats(data);
+      setFetchTime(formatFetchTime(new Date()));
     } catch (e) {
       console.error('[DisputeDashboard] Load error:', e);
     } finally {
@@ -128,16 +131,23 @@ export const DisputeDashboard = () => {
   return (
     <div className="dispute-dashboard-page">
       {/* Top Header */}
-      <div className="dashboard-header">
+      <div className="dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div className="header-left">
           <h1>Dispute Dashboard</h1>
           <p className="subtitle">
             Live view of today's and recent disputes{plazaId ? ` for Plaza ${plazaId}` : ' across all plazas'}, refreshed automatically with TAT risk up front.
           </p>
         </div>
-        <div className="live-indicator-badge">
-          <span className="live-dot" />
-          <span>Live 15s Auto-Refresh</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {fetchTime && (
+            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+              🕒 Data Fetch Time: {fetchTime}
+            </div>
+          )}
+          <div className="live-indicator-badge">
+            <span className="live-dot" />
+            <span>Live 15s Auto-Refresh</span>
+          </div>
         </div>
       </div>
 

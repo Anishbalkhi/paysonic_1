@@ -4,6 +4,7 @@ import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './PassSummaryReport.scss';
@@ -25,6 +26,8 @@ export const PassSummaryReport = () => {
   }, [isPlazaLocked, defaultPlazaId]);
 
   const [reportData, setReportData] = useState(null);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -56,6 +59,7 @@ export const PassSummaryReport = () => {
         filtered = filterRecordsByPlazaScope(data, onboardedPlazas, currentUser);
       }
       setReportData(filtered);
+      setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Database error occurred';
@@ -80,7 +84,10 @@ export const PassSummaryReport = () => {
   const handleExportExcel = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingExcel(true);
-    try { await PassSummaryService.exportExcel({ fromDate, toDate, plazaId }); }
+    try {
+      await PassSummaryService.exportExcel({ fromDate, toDate, plazaId });
+      setDownloadTime(formatFetchTime(new Date()));
+    }
     catch (err) { alert('Excel export failed. Please try again.'); }
     finally { setExportingExcel(false); }
   };
@@ -88,7 +95,10 @@ export const PassSummaryReport = () => {
   const handleExportCsv = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingCsv(true);
-    try { await PassSummaryService.exportCsv({ fromDate, toDate, plazaId }); }
+    try {
+      await PassSummaryService.exportCsv({ fromDate, toDate, plazaId });
+      setDownloadTime(formatFetchTime(new Date()));
+    }
     catch (err) { alert('CSV export failed. Please try again.'); }
     finally { setExportingCsv(false); }
   };
@@ -162,8 +172,24 @@ export const PassSummaryReport = () => {
       {/* Header */}
       <div className="page-header">
         <div className="header-titles">
-          <h1 className="page-title">Pass Summary Report</h1>
-          <p className="subtitle">{dateSubtitle}</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h1 className="page-title">Pass Summary Report</h1>
+              <p className="subtitle">{dateSubtitle}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {fetchTime && (
+                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  🕒 Report Fetch Time: {fetchTime}
+                </div>
+              )}
+              {downloadTime && (
+                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  📥 Export Download Time: {downloadTime}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -242,7 +268,7 @@ export const PassSummaryReport = () => {
         <div className="table-top-banner">
           <div className="banner-title">PASS SUMMARY REPORT</div>
           <div className="banner-subtitle">
-            {dateSubtitle || `Report Period: ${formatDisplayDate(fromDate)} — ${formatDisplayDate(toDate)}`}
+            {dateSubtitle || `Report Period: ${formatDisplayDate(fromDate)} — ${formatDisplayDate(toDate)}`} &nbsp; | &nbsp; Report Fetch Time: {fetchTime}
           </div>
           <div className="banner-green-bar" />
         </div>

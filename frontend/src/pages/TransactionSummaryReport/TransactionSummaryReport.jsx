@@ -4,6 +4,7 @@ import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './TransactionSummaryReport.scss';
@@ -35,6 +36,8 @@ export const TransactionSummaryReport = () => {
   }, [isPlazaLocked, defaultPlazaId]);
 
   const [reportData, setReportData] = useState([]);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [grandTotal, setGrandTotal] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
@@ -127,6 +130,7 @@ export const TransactionSummaryReport = () => {
       const sanitizedPlazas = Array.from(distinctPlazaMap.values());
 
       setReportData(sanitizedPlazas);
+      setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
       setGrandTotal(null);
     } catch (err) {
@@ -152,7 +156,10 @@ export const TransactionSummaryReport = () => {
   const handleExportExcel = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingExcel(true);
-    try { await TransactionSummaryService.exportExcel({ fromDate, toDate, plazaId }); }
+    try {
+      await TransactionSummaryService.exportExcel({ fromDate, toDate, plazaId });
+      setDownloadTime(formatFetchTime(new Date()));
+    }
     catch (err) { alert('Excel export failed. Please try again.'); }
     finally { setExportingExcel(false); }
   };
@@ -160,7 +167,10 @@ export const TransactionSummaryReport = () => {
   const handleExportCsv = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingCsv(true);
-    try { await TransactionSummaryService.exportCsv({ fromDate, toDate, plazaId }); }
+    try {
+      await TransactionSummaryService.exportCsv({ fromDate, toDate, plazaId });
+      setDownloadTime(formatFetchTime(new Date()));
+    }
     catch (err) { alert('CSV export failed. Please try again.'); }
     finally { setExportingCsv(false); }
   };
@@ -233,8 +243,24 @@ export const TransactionSummaryReport = () => {
       {/* Header */}
       <div className="page-header">
         <div className="header-titles">
-          <h1 className="page-title">Transaction Summary Report</h1>
-          <p className="subtitle">{dateSubtitle}</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h1 className="page-title">Transaction Summary Report</h1>
+              <p className="subtitle">{dateSubtitle}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {fetchTime && (
+                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  🕒 Report Fetch Time: {fetchTime}
+                </div>
+              )}
+              {downloadTime && (
+                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  📥 Export Download Time: {downloadTime}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

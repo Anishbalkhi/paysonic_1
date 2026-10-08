@@ -4,6 +4,7 @@ import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationValidateReport.scss';
 
@@ -29,6 +30,8 @@ export const ViolationValidateReport = () => {
   const [auditRemark, setAuditRemark] = useState('ALL');
   const [apiStatus, setApiStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
 
   // Data & Pagination
   const [records, setRecords] = useState([]);
@@ -97,6 +100,7 @@ export const ViolationValidateReport = () => {
       setTotalElements(data?.totalElements ?? content.length);
       setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
       setPage(data?.number ?? 0);
+      setFetchTime(formatFetchTime(new Date()));
       if (data?.summary) {
         setServerSummary(data.summary);
       }
@@ -139,6 +143,7 @@ export const ViolationValidateReport = () => {
   const handleExportExcel = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingExcel(true);
+    setDownloadTime(formatFetchTime(new Date()));
     try {
       await ViolationValidateService.exportExcel({
         fromDate,
@@ -162,6 +167,7 @@ export const ViolationValidateReport = () => {
   const handleExportCsv = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingCsv(true);
+    setDownloadTime(formatFetchTime(new Date()));
     try {
       await ViolationValidateService.exportCsv({
         fromDate,
@@ -270,7 +276,11 @@ export const ViolationValidateReport = () => {
       {/* 1. Header Banner */}
       <div className="report-header-banner">
         <h1 className="report-title">VIOLATION VALIDATE REPORT</h1>
-        <div className="report-subtitle">{dateSubtitle}</div>
+        <div className="report-subtitle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <span>{dateSubtitle}</span>
+          {fetchTime && <span>| &nbsp; 🕒 Report Fetch Time: {fetchTime}</span>}
+          {downloadTime && <span>| &nbsp; 📥 Export Download Time: {downloadTime}</span>}
+        </div>
         <div className="report-green-accent-bar" />
       </div>
 

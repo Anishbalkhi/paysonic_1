@@ -4,6 +4,7 @@ import { useOnboardedPlazas } from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './DisputeDetailReport.scss';
@@ -32,6 +33,8 @@ export const DisputeDetailReport = () => {
 
   // State
   const [records, setRecords] = useState([]);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -89,6 +92,7 @@ export const DisputeDetailReport = () => {
       content = filterRecordsByPlazaScope(content, plazas, currentUser);
 
       setRecords(content);
+      setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
     } catch (err) {
       console.error('[DisputeDetailReport] Search error:', err);
@@ -164,6 +168,7 @@ export const DisputeDetailReport = () => {
         plazaId,
         functionCode
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[DisputeDetailReport] Excel export error:', err);
       alert('Failed to export Excel. Please try again.');
@@ -182,6 +187,7 @@ export const DisputeDetailReport = () => {
         plazaId,
         functionCode
       });
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[DisputeDetailReport] CSV export error:', err);
       alert('Failed to export CSV. Please try again.');
@@ -219,10 +225,26 @@ export const DisputeDetailReport = () => {
       {/* Top Banner Header */}
       <header className="page-header">
         <div className="header-titles">
-          <h1 className="page-title">Dispute Detail Report</h1>
-          <p className="subtitle">
-            Audited Toll Dispute Adjustments &amp; Chargebacks
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h1 className="page-title">Dispute Detail Report</h1>
+              <p className="subtitle">
+                Audited Toll Dispute Adjustments &amp; Chargebacks
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {fetchTime && (
+                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  🕒 Report Fetch Time: {fetchTime}
+                </div>
+              )}
+              {downloadTime && (
+                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
+                  📥 Export Download Time: {downloadTime}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 

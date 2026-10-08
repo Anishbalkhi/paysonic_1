@@ -4,6 +4,7 @@ import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearchNormal.scss';
 
@@ -22,6 +23,8 @@ export const TransactionSearchNormal = () => {
   const [plazaId, setPlazaId] = useState(defaultPlazaId || 'ALL');
   const [status, setStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
 
   useEffect(() => {
     if (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL') {
@@ -95,6 +98,7 @@ export const TransactionSearchNormal = () => {
       setTotalElements(data?.totalElements ?? content.length);
       setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
       setPage(data?.number ?? 0);
+      setFetchTime(formatFetchTime(new Date()));
       if (data?.summary) {
         setServerSummary(data.summary);
       }
@@ -137,6 +141,7 @@ export const TransactionSearchNormal = () => {
   const handleExportExcel = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingExcel(true);
+    setDownloadTime(formatFetchTime(new Date()));
     try {
       await TransactionSearchNormalService.exportExcel({
         fromDate,
@@ -158,6 +163,7 @@ export const TransactionSearchNormal = () => {
   const handleExportCsv = async () => {
     if (!validateDates(fromDate, toDate)) return;
     setExportingCsv(true);
+    setDownloadTime(formatFetchTime(new Date()));
     try {
       await TransactionSearchNormalService.exportCsv({
         fromDate,
@@ -289,7 +295,11 @@ export const TransactionSearchNormal = () => {
       {/* 1. Header Banner */}
       <div className="report-header-banner">
         <h1 className="report-title">TRANSACTION REPORT</h1>
-        <div className="report-subtitle">{dateSubtitle}</div>
+        <div className="report-subtitle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <span>{dateSubtitle}</span>
+          {fetchTime && <span>| &nbsp; 🕒 Data Fetch Time: {fetchTime}</span>}
+          {downloadTime && <span>| &nbsp; 📥 Export Download Time: {downloadTime}</span>}
+        </div>
         <div className="report-green-accent-bar" />
       </div>
 

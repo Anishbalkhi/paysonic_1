@@ -6,6 +6,7 @@ import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
+import { formatFetchTime } from '../../utils/dateUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearch.scss';
 
@@ -56,6 +57,8 @@ export const TransactionSearch = () => {
 
   // Records & Pagination
   const [records, setRecords] = useState([]);
+  const [fetchTime, setFetchTime] = useState('');
+  const [downloadTime, setDownloadTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -132,6 +135,7 @@ export const TransactionSearch = () => {
         if (data?.summary) {
           setServerSummary(data.summary);
         }
+        setFetchTime(formatFetchTime(new Date()));
       } catch (err) {
         console.error('[TransactionSearch] Normal query failed:', err);
         const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Database error occurred';
@@ -160,6 +164,7 @@ export const TransactionSearch = () => {
         setTotalElements(data?.totalElements ?? content.length);
         setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
         setPage(data?.number ?? 0);
+        setFetchTime(formatFetchTime(new Date()));
       } catch (err) {
         console.error('[TransactionSearch] Dispute query failed:', err);
         const msg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Database error occurred';
@@ -231,6 +236,7 @@ export const TransactionSearch = () => {
           functionCode: disputeFuncCode
         });
       }
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[TransactionSearch] Excel export failed:', err);
       setErrorMsg('Export failed. Please verify live database connection.');
@@ -262,6 +268,7 @@ export const TransactionSearch = () => {
           functionCode: disputeFuncCode
         });
       }
+      setDownloadTime(formatFetchTime(new Date()));
     } catch (err) {
       console.error('[TransactionSearch] CSV export failed:', err);
       setErrorMsg('Export failed. Please verify live database connection.');
@@ -409,7 +416,11 @@ export const TransactionSearch = () => {
         <h1 className="report-title">
           {txnType === 'NORMAL' ? 'TRANSACTION SEARCH' : 'TRANSACTION SEARCH - DISPUTE TRANSACTION'}
         </h1>
-        <div className="report-subtitle">{dateSubtitle}</div>
+        <div className="report-subtitle">
+          <span>{dateSubtitle}</span>
+          {fetchTime && <span> | &nbsp; 🕒 Data Fetch Time: {fetchTime}</span>}
+          {downloadTime && <span> | &nbsp; 📥 Export Download Time: {downloadTime}</span>}
+        </div>
         <div className="report-green-accent-bar" />
       </div>
 

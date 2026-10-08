@@ -126,6 +126,8 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
             className="btn btn-secondary"
             onClick={() => onOpenExport({
               count: filteredEvents.length,
+              initialScope: 'filtered',
+              title: 'Export Filter Ledger',
               filters: {
                 module: moduleFilter,
                 action: actionFilter,
@@ -140,7 +142,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Export Filtered Ledger ({filteredEvents.length})
+            Export Filter Ledger ({filteredEvents.length})
           </button>
         </div>
       </div>

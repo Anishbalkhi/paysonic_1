@@ -243,7 +243,8 @@ public class TollFareReportService {
             subRow.setHeightInPoints(18);
             Cell subCell = subRow.createCell(0);
             String pStr = (plazaId != null && !plazaId.trim().isEmpty()) ? plazaId : "501101";
-            subCell.setCellValue("Plaza: " + pStr + " | Effective FASTag Toll Fare Matrix");
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+            subCell.setCellValue("Plaza: " + pStr + " | Effective FASTag Toll Fare Matrix | Report Fetch Time: " + LocalDateTime.now().format(dtf));
             subCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
 
@@ -330,7 +331,8 @@ public class TollFareReportService {
         }
         titleLine[midIdx] = "TOLL FARE REPORT";
         String pStr = (plazaId != null && !plazaId.trim().isEmpty()) ? plazaId : "501101";
-        subLine[midIdx] = "Plaza: " + pStr + " | Effective FASTag Toll Fare Matrix";
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        subLine[midIdx] = "Plaza: " + pStr + " | Effective FASTag Toll Fare Matrix | Report Fetch Time: " + LocalDateTime.now().format(dtf);
 
         writer.println(String.join(",", titleLine));
         writer.println(String.join(",", subLine));
