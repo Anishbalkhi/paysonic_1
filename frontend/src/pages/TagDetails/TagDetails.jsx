@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { hasMenuAccess } from '../../config/roleMenus';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import TablePagination from '../../components/common/TablePagination';
 import './TagDetails.scss';
 
@@ -9,6 +11,7 @@ export const TagDetails = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
   const userRole = currentUser?.role || 'Admin';
 
   const canAccessRequest = hasMenuAccess(currentUser, 'tag_details_request_tag_details');
@@ -56,15 +59,15 @@ export const TagDetails = () => {
   const [historySearch, setHistorySearch] = useState('');
   const [historyFilter, setHistoryFilter] = useState('all');
 
-  const MOCK_BLACKLIST_RECORDS = [
+  const ALL_BLACKLIST_RECORDS = [
     {
       id: 'BL-9901',
       tagId: '34161FA90234101',
-      regNumber: 'MH 04 AZ 1024',
+      regNumber: 'MH 12 AZ 1024',
       vehicleClass: 'VC4',
       reason: 'Low Balance / Frozen',
       reasonCode: '03',
-      plaza: 'Vashi Creek Bridge',
+      plaza: 'Pune Bypass Plaza',
       lane: 'Lane 02',
       syncTime: 'Today, 14:12:05',
       badgeClass: 'badge-danger',
@@ -96,11 +99,11 @@ export const TagDetails = () => {
     {
       id: 'BL-9904',
       tagId: '34161FA77239004',
-      regNumber: 'MH 02 DX 5590',
+      regNumber: 'MH 12 DX 5590',
       vehicleClass: 'VC7',
       reason: 'Class Mismatch (VC4 tag on VC7 Truck)',
       reasonCode: '08',
-      plaza: 'Vashi Creek Bridge',
+      plaza: 'Pune Bypass Plaza',
       lane: 'Lane 06',
       syncTime: 'Today, 11:15:40',
       badgeClass: 'badge-warning',
@@ -118,6 +121,10 @@ export const TagDetails = () => {
       badgeClass: 'badge-danger',
     },
   ];
+
+  const MOCK_BLACKLIST_RECORDS = useMemo(() => {
+    return filterRecordsByPlazaScope(ALL_BLACKLIST_RECORDS, plazas, currentUser, (r) => r.plaza);
+  }, [plazas, currentUser]);
 
   const handleSearchTag = (e) => {
     e?.preventDefault();

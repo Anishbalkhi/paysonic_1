@@ -1,19 +1,28 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSummaryService from '../../services/summary/TransactionSummaryService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './TransactionSummaryReport.scss';
 
 export const TransactionSummaryReport = () => {
+  const { currentUser } = useAuth();
   const getDefaultDateRange = () => ({ from: '2026-09-01', to: '2026-09-30' });
 
   const initial = getDefaultDateRange();
+  const { plazas: onboardedPlazas, isPlazaLocked, defaultPlazaId } = useOnboardedPlazas();
   const [fromDate, setFromDate] = useState(initial.from);
   const [toDate, setToDate] = useState(initial.to);
-  const [plazaId, setPlazaId] = useState('ALL');
-  const { plazas: onboardedPlazas } = useOnboardedPlazas();
+  const [plazaId, setPlazaId] = useState(defaultPlazaId || 'ALL');
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL') {
+      setPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId]);
 
   const [reportData, setReportData] = useState([]);
   const [grandTotal, setGrandTotal] = useState(null);
@@ -35,13 +44,19 @@ export const TransactionSummaryReport = () => {
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
     const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
     const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
-    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza)
+      ? overridePlaza
+      : (isPlazaLocked && defaultPlazaId !== 'ALL' ? defaultPlazaId : plazaId);
 
     if (!validateDates(fDate, tDate)) return;
     setLoading(true); setErrorMsg('');
     try {
       const data = await TransactionSummaryService.getReport({ fromDate: fDate, toDate: tDate, plazaId: pId });
-      const plazas = data?.plazas || (Array.isArray(data) ? data : []);
+      let plazas = data?.plazas || (Array.isArray(data) ? data : []);
+      
+      // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
+      plazas = filterRecordsByPlazaScope(plazas, onboardedPlazas, currentUser);
+
       setReportData(plazas);
       setCurrentPage(1);
       if (data?.grandTotal) {
@@ -53,15 +68,18 @@ export const TransactionSummaryReport = () => {
       setReportData([]);
       setCurrentPage(1);
     } finally { setLoading(false); }
-  }, [fromDate, toDate, plazaId]);
+  }, [fromDate, toDate, plazaId, isPlazaLocked, defaultPlazaId]);
 
-  useEffect(() => { handleSearch(); }, []);
+  useEffect(() => { 
+    handleSearch(fromDate, toDate, isPlazaLocked ? defaultPlazaId : plazaId); 
+  }, [isPlazaLocked, defaultPlazaId]);
 
   const handleReset = () => {
     const def = getDefaultDateRange();
-    setFromDate(def.from); setToDate(def.to); setPlazaId('ALL'); setErrorMsg('');
+    const resetPlaza = isPlazaLocked ? defaultPlazaId : 'ALL';
+    setFromDate(def.from); setToDate(def.to); setPlazaId(resetPlaza); setErrorMsg('');
     setCurrentPage(1);
-    handleSearch(def.from, def.to, 'ALL');
+    handleSearch(def.from, def.to, resetPlaza);
   };
 
   const handleExportExcel = async () => {
@@ -102,12 +120,14 @@ export const TransactionSummaryReport = () => {
       reportData.forEach((p, idx) => {
         const norm = normalizePlazaForRecord(p, idx, onboardedPlazas);
         if (norm.plazaId && !map.has(norm.plazaId)) {
-          map.set(norm.plazaId, { id: norm.plazaId, label: `${norm.plazaId} - ${norm.plazaName}` });
+          if (!isPlazaLocked || norm.plazaId === defaultPlazaId) {
+            map.set(norm.plazaId, { id: norm.plazaId, label: `${norm.plazaId} - ${norm.plazaName}` });
+          }
         }
       });
     }
     setKnownPlazas(Array.from(map.values()));
-  }, [onboardedPlazas, reportData]);
+  }, [onboardedPlazas, reportData, isPlazaLocked, defaultPlazaId]);
 
   // KPI Aggregation
   const summaryKpis = useMemo(() => {
@@ -172,17 +192,24 @@ export const TransactionSummaryReport = () => {
           <div className="filter-group filter-grow">
             <label className="filter-label">Plaza</label>
             <select
-              className="filter-select"
+              className={`filter-select ${isPlazaLocked ? 'disabled-locked' : ''}`}
               value={plazaId}
+              disabled={isPlazaLocked}
               onChange={(e) => {
                 const val = e.target.value;
                 setPlazaId(val);
                 handleSearch(fromDate, toDate, val);
               }}
             >
-              <option value="ALL">All Plazas</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas'}
+                </option>
+              )}
               {knownPlazas.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
+                <option key={p.id} value={p.id}>
+                  {isPlazaLocked ? `🔒 ${p.label} (Assigned Plaza)` : p.label}
+                </option>
               ))}
             </select>
           </div>

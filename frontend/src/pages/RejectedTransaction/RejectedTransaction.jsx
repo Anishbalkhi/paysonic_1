@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RejectedTransactionService from '../../services/rejectedTxn/RejectedTransactionService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './RejectedTransaction.scss';
 
 export const RejectedTransaction = () => {
+  const { currentUser } = useAuth();
   // Default range: September 2026 (matching live Railway DB seed data)
   const getDefaultDateRange = () => {
     return {
@@ -15,12 +18,18 @@ export const RejectedTransaction = () => {
   };
 
   const initialRange = getDefaultDateRange();
+  const { plazas, isPlazaLocked, defaultPlazaId } = useOnboardedPlazas();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
-  const [plazaId, setPlazaId] = useState('ALL');
+  const [plazaId, setPlazaId] = useState(defaultPlazaId || 'ALL');
   const [reason, setReason] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const { plazas } = useOnboardedPlazas();
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL') {
+      setPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId]);
 
   // Live Database Data State
   const [records, setRecords] = useState([]);
@@ -55,7 +64,9 @@ export const RejectedTransaction = () => {
   const handleSearch = useCallback(async (newPage = 0, newSize = pageSize, overrides = {}) => {
     const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
     const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
-    const pId = overrides.plazaId !== undefined ? overrides.plazaId : plazaId;
+    const pId = overrides.plazaId !== undefined
+      ? overrides.plazaId
+      : (isPlazaLocked && defaultPlazaId !== 'ALL' ? defaultPlazaId : plazaId);
     const rsn = overrides.reason !== undefined ? overrides.reason : reason;
 
     if (!validateDates(fDate, tDate)) return;
@@ -72,7 +83,11 @@ export const RejectedTransaction = () => {
         size: newSize
       });
 
-      const content = data?.content ? data.content : Array.isArray(data) ? data : [];
+      let content = data?.content ? data.content : Array.isArray(data) ? data : [];
+
+      // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
+      content = filterRecordsByPlazaScope(content, plazas, currentUser);
+
       setRecords(content);
       setTotalElements(data?.totalElements ?? content.length);
       setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
@@ -87,24 +102,27 @@ export const RejectedTransaction = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaId, reason, pageSize]);
+  }, [fromDate, toDate, plazaId, reason, pageSize, isPlazaLocked, defaultPlazaId]);
 
-  // Initial load on mount
+  // Initial load on mount & when scope changes
   useEffect(() => {
-    handleSearch(0, pageSize);
-  }, []);
+    handleSearch(0, pageSize, {
+      plazaId: isPlazaLocked ? defaultPlazaId : plazaId
+    });
+  }, [isPlazaLocked, defaultPlazaId]);
 
   const handleReset = () => {
     const def = getDefaultDateRange();
+    const resetPlaza = isPlazaLocked ? defaultPlazaId : 'ALL';
     setFromDate(def.from);
     setToDate(def.to);
-    setPlazaId('ALL');
+    setPlazaId(resetPlaza);
     setReason('ALL');
     setSearchTerm('');
     handleSearch(0, pageSize, {
       fromDate: def.from,
       toDate: def.to,
-      plazaId: 'ALL',
+      plazaId: resetPlaza,
       reason: 'ALL'
     });
   };
@@ -246,14 +264,19 @@ export const RejectedTransaction = () => {
             <label htmlFor="rejPlazaSelect">Plaza (Optional)</label>
             <select
               id="rejPlazaSelect"
-              className="select-input"
+              className={`select-input ${isPlazaLocked ? 'disabled-locked' : ''}`}
               value={plazaId}
+              disabled={isPlazaLocked}
               onChange={(e) => setPlazaId(e.target.value)}
             >
-              <option value="ALL">All Plazas</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas'}
+                </option>
+              )}
               {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.id})
+                  {isPlazaLocked ? `🔒 ${p.name} (${p.id}) [Assigned Plaza]` : `${p.name} (${p.id})`}
                 </option>
               ))}
             </select>

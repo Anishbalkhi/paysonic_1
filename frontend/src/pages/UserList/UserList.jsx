@@ -1042,14 +1042,16 @@ export const UserList = () => {
         });
         const newlyCreated = {
           ...created,
-          id: generatedId,
-          username: generatedUsername,
-          status: initialStatus,
-          approval: initialApproval,
-          menuAccess: finalMenuAccess,
+          id: created?.id || generatedId,
+          username: created?.username || generatedUsername,
+          status: created?.status || initialStatus,
+          approval: created?.approval || initialApproval,
+          menuAccess: created?.menuAccess || finalMenuAccess,
           createdAt: created?.createdAt || new Date().toISOString(),
         };
-        setUsers((prev) => sortUsersNewestFirst([newlyCreated, ...prev]));
+        setUsers((prev) => sortUsersNewestFirst([newlyCreated, ...prev.filter((u) => u.id !== newlyCreated.id)]));
+        // Refresh from live DB to ensure exact consistency
+        UserService.getUsers().then((fresh) => setUsers(fresh)).catch(() => {});
         setCurrentPage(1);
       }
       setIsModalOpen(false);

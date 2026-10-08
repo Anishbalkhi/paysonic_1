@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { FUNCTION_CODES } from '../../config/disputeConstants';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import TakeActionModal from '../../components/DisputeModals/TakeActionModal';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
@@ -11,9 +13,9 @@ import './DisputeValidate.scss';
 export const DisputeValidate = () => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'Master Admin';
-  const [plazas, setPlazas] = useState([]);
+  const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
   const [selectedPlazaId, setSelectedPlazaId] = useState(
-    currentUser?.plazaId || 'ALL'
+    isPlazaLocked ? (defaultPlazaId || 'ALL') : (currentUser?.plazaId || 'ALL')
   );
 
   // Pagination State
@@ -21,27 +23,18 @@ export const DisputeValidate = () => {
   const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
-    let isMounted = true;
-    DisputeManagementService.getRealtimePlazas().then((live) => {
-      if (isMounted && Array.isArray(live) && live.length > 0) {
-        setPlazas(live);
-        if (currentUser?.plazaId) {
-          setSelectedPlazaId(currentUser.plazaId);
-        }
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, [currentUser]);
+    if (isPlazaLocked && defaultPlazaId && selectedPlazaId !== defaultPlazaId) {
+      setSelectedPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId, selectedPlazaId]);
 
-  const activePlazaId = currentUser?.plazaId || selectedPlazaId || 'ALL';
+  const activePlazaId = isPlazaLocked ? (defaultPlazaId || selectedPlazaId) : (selectedPlazaId || 'ALL');
   const activePlaza =
     activePlazaId === 'ALL'
       ? { id: 'ALL', name: 'All Plazas' }
       : plazas.find((p) => String(p.id) === String(activePlazaId)) || {
           id: activePlazaId,
-          name: 'MUMBAI PLAZA NH-04',
+          name: assignedPlaza?.name || 'MUMBAI PLAZA NH-04',
         };
 
   const [rows, setRows] = useState([]);
@@ -87,8 +80,9 @@ export const DisputeValidate = () => {
         tollTxnId: tTxn,
         tagId: tId,
       });
-      // Show assigned disputes for this plaza
-      setRows(fetched.filter((r) => r.assigned === true));
+      const assignedRows = (fetched || []).filter((r) => r.assigned === true);
+      const scopedRows = filterRecordsByPlazaScope(assignedRows, plazas, currentUser);
+      setRows(scopedRows);
       setCurrentPage(1);
     } catch (e) {
       console.error('[DisputeValidate] Load error:', e);
@@ -170,12 +164,13 @@ export const DisputeValidate = () => {
               id="vdPlazaSelect"
               value={selectedPlazaId}
               onChange={(e) => setSelectedPlazaId(e.target.value)}
-              disabled={Boolean(currentUser?.plazaId)}
+              disabled={isPlazaLocked || Boolean(currentUser?.plazaId)}
+              title={isPlazaLocked ? `Locked to assigned plaza: ${assignedPlaza?.name || defaultPlazaId}` : 'Select Toll Plaza'}
             >
-              {!currentUser?.plazaId && <option value="ALL">All Plazas (ALL)</option>}
+              {!isPlazaLocked && !currentUser?.plazaId && <option value="ALL">All Plazas (ALL)</option>}
               {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.id})
+                  {isPlazaLocked ? `🔒 ${p.name || p.codeLabel} (${p.id}) (Assigned Plaza)` : `${p.name || p.codeLabel} (${p.id})`}
                 </option>
               ))}
             </select>

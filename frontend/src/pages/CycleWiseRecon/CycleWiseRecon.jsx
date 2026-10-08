@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import CycleWiseReconService from '../../services/recon/CycleWiseReconService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import PlazaMultiSelect from '../../components/PlazaMultiSelect/PlazaMultiSelect';
 import TablePagination from '../../components/common/TablePagination';
 import './CycleWiseRecon.scss';
 
 export const CycleWiseRecon = () => {
+  const { currentUser } = useAuth();
+  const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
+
   // Default range: 60 days ago to today
   const getDefaultDateRange = () => {
     const now = new Date();
@@ -20,7 +26,13 @@ export const CycleWiseRecon = () => {
   const defaultRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(defaultRange.from);
   const [toDate, setToDate] = useState(defaultRange.to);
-  const [selectedPlazas, setSelectedPlazas] = useState([]);
+  const [selectedPlazas, setSelectedPlazas] = useState(isPlazaLocked ? (defaultPlazaId ? [defaultPlazaId] : []) : []);
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && (!selectedPlazas.length || selectedPlazas[0] !== defaultPlazaId)) {
+      setSelectedPlazas([defaultPlazaId]);
+    }
+  }, [isPlazaLocked, defaultPlazaId, selectedPlazas]);
   const [cycle, setCycle] = useState('');
   const [dateType, setDateType] = useState(''); // '' ('Select Date Type') | 'Txn Date' | 'Settlement Date'
 
@@ -75,6 +87,9 @@ export const CycleWiseRecon = () => {
       });
 
       let results = data || [];
+      // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
+      results = filterRecordsByPlazaScope(results, plazas, currentUser);
+
       if (pList.length > 1) {
         const idSet = new Set(pList.map((id) => String(id).trim()));
         results = results.filter((r) => idSet.has(String(r.plazaId).trim()));
@@ -101,14 +116,15 @@ export const CycleWiseRecon = () => {
   // Reset filters
   const handleReset = () => {
     const range = getDefaultDateRange();
+    const targetPlazas = isPlazaLocked ? (defaultPlazaId ? [defaultPlazaId] : []) : [];
     setFromDate(range.from);
     setToDate(range.to);
-    setSelectedPlazas([]);
+    setSelectedPlazas(targetPlazas);
     setCycle('');
     setDateType('');
     setErrorMsg('');
     setCurrentPage(1);
-    handleSearch(range.from, range.to, [], '', '');
+    handleSearch(range.from, range.to, targetPlazas, '', '');
   };
 
   // Export to Excel (Server XLSX)

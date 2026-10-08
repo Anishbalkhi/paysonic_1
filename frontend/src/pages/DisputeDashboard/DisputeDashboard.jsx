@@ -4,13 +4,14 @@ import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import OnboardingService from '../../services/onboarding/OnboardingService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlaza } from '../../utils/plazaNormalizer';
 import './DisputeDashboard.scss';
 
 export const DisputeDashboard = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { plazas: onboardedPlazas } = useOnboardedPlazas();
+  const { plazas: onboardedPlazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fromDate, setFromDate] = useState('');
@@ -23,10 +24,9 @@ export const DisputeDashboard = () => {
   const [tatPageSize, setTatPageSize] = useState(4);
   const [isTatCollapsed, setIsTatCollapsed] = useState(false);
 
-  const defaultPlazaId = OnboardingService.getCachedPlazas()[0]?.plazaId || '501101';
-  const plazaId = currentUser?.role === 'Plaza Admin' || currentUser?.role === 'Plaza POS'
-    ? currentUser?.plazaId || defaultPlazaId
-    : null;
+  const plazaId = isPlazaLocked
+    ? (assignedPlaza?.id || defaultPlazaId || currentUser?.plazaId)
+    : (currentUser?.role === 'Plaza Admin' || currentUser?.role === 'Plaza POS' ? (currentUser?.plazaId || defaultPlazaId) : null);
 
   const loadData = useCallback(async () => {
     try {
@@ -48,8 +48,9 @@ export const DisputeDashboard = () => {
 
   // Real at-risk disputes approaching NPCI 7-day TAT SLA
   const atRisk = useMemo(() => {
-    return stats?.atRiskDisputes || [];
-  }, [stats]);
+    const raw = stats?.atRiskDisputes || [];
+    return filterRecordsByPlazaScope(raw, onboardedPlazas, currentUser);
+  }, [stats, onboardedPlazas, currentUser]);
 
   // Compute severity breakdown counts
   const severityStats = useMemo(() => {

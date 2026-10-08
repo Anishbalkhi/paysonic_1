@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import NhaiTrafficService from '../../services/summary/NhaiTrafficService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
 import { normalizePlaza } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './NhaiTrafficReport.scss';
 
 export const NhaiTrafficReport = () => {
+  const { currentUser } = useAuth();
   // Default date range: September 2026
   const getDefaultDateRange = () => ({
     from: '2026-09-01',
@@ -13,10 +15,16 @@ export const NhaiTrafficReport = () => {
   });
 
   const initialRange = getDefaultDateRange();
+  const { plazas, isPlazaLocked, defaultPlazaId } = useOnboardedPlazas();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
-  const [plazaCode, setPlazaCode] = useState('ALL');
-  const { plazas } = useOnboardedPlazas();
+  const [plazaCode, setPlazaCode] = useState(defaultPlazaId || 'ALL');
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL') {
+      setPlazaCode(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId]);
 
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -44,7 +52,9 @@ export const NhaiTrafficReport = () => {
   const handleSearch = useCallback(async (overrideFrom, overrideTo, overridePlaza) => {
     const fDate = (typeof overrideFrom === 'string' && overrideFrom) ? overrideFrom : fromDate;
     const tDate = (typeof overrideTo === 'string' && overrideTo) ? overrideTo : toDate;
-    const pCode = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaCode;
+    const pCode = (typeof overridePlaza === 'string' && overridePlaza)
+      ? overridePlaza
+      : (isPlazaLocked && defaultPlazaId !== 'ALL' ? defaultPlazaId : plazaCode);
 
     if (!validateDates(fDate, tDate)) return;
 
@@ -65,19 +75,20 @@ export const NhaiTrafficReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaCode]);
+  }, [fromDate, toDate, plazaCode, isPlazaLocked, defaultPlazaId]);
 
   useEffect(() => {
-    handleSearch();
-  }, []);
+    handleSearch(fromDate, toDate, isPlazaLocked ? defaultPlazaId : plazaCode);
+  }, [isPlazaLocked, defaultPlazaId]);
 
   const handleReset = () => {
     const def = getDefaultDateRange();
+    const resetPlaza = isPlazaLocked ? defaultPlazaId : 'ALL';
     setFromDate(def.from);
     setToDate(def.to);
-    setPlazaCode('ALL');
+    setPlazaCode(resetPlaza);
     setErrorMsg('');
-    handleSearch(def.from, def.to, 'ALL');
+    handleSearch(def.from, def.to, resetPlaza);
   };
 
   const handleExportExcel = async () => {
@@ -215,14 +226,19 @@ export const NhaiTrafficReport = () => {
           <div className="filter-group filter-grow">
             <label className="filter-label">Toll Plaza</label>
             <select
-              className="filter-select"
+              className={`filter-select ${isPlazaLocked ? 'disabled-locked' : ''}`}
               value={plazaCode}
+              disabled={isPlazaLocked}
               onChange={(e) => setPlazaCode(e.target.value)}
             >
-              <option value="ALL">All Plazas Network</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas Network'}
+                </option>
+              )}
               {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.id} - {p.name}
+                  {isPlazaLocked ? `🔒 ${p.id} - ${p.name} (Assigned Plaza)` : `${p.id} - ${p.name}`}
                 </option>
               ))}
             </select>

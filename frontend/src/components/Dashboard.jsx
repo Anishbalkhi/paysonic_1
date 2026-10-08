@@ -11,6 +11,7 @@ import Sparkline from "./Sparkline";
 import WorkstationTerminal from "./WorkstationTerminal/WorkstationTerminal";
 import OperationsModal from "./OperationsModal/OperationsModal";
 import { getRoleSlug } from "../config/roleMenus";
+import { isUserPlazaLocked, isPlazaMatch } from "../utils/plazaScopeUtils";
 
 function inr(n) {
   return Math.round(n).toLocaleString("en-IN");
@@ -1202,8 +1203,15 @@ function DeclinesPanel({ declines, errOpen, setErrOpen }) {
 }
 
 function SystemsPanel({ systems, sysFilter, setSysFilter }) {
+  const { currentUser } = useAuth();
   const stName = { ok: "Live", warn: "Degraded", off: "Offline" };
-  const rows = systems.filter((s) => sysFilter === "all" || s.status === sysFilter);
+  const rows = systems.filter((s) => {
+    if (sysFilter !== "all" && s.status !== sysFilter) return false;
+    if (isUserPlazaLocked(currentUser)) {
+      return isPlazaMatch(s, currentUser?.assignedPlaza || currentUser?.plazaId);
+    }
+    return true;
+  });
   function statusClass(v, okVal, offVal) {
     if (v === okVal) return "ok";
     if (v === offVal) return "off";
@@ -1333,6 +1341,9 @@ function PlazaStatusPanel({ plazas, plazaQuery, setPlazaQuery }) {
   const safePlazas = Array.isArray(plazas) ? plazas : [];
   const filtered = safePlazas.filter((p) => {
     if (!p) return false;
+    if (isUserPlazaLocked(currentUser)) {
+      return isPlazaMatch(p, currentUser?.assignedPlaza || currentUser?.plazaId);
+    }
     if (userRole === 'Concessionaire' && corridorOnly && !isCorridorPlaza(p)) {
       return false;
     }

@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationValidateService from '../../services/violation/ViolationValidateService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationValidateReport.scss';
 
 export const ViolationValidateReport = () => {
+  const { currentUser } = useAuth();
   // Default range: September 2026 covering all screenshot transactions
   const getDefaultDateRange = () => ({
     from: '2026-09-01T00:00:00',
@@ -15,8 +18,14 @@ export const ViolationValidateReport = () => {
   const initialRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
-  const [plazaId, setPlazaId] = useState('ALL');
-  const { plazas: onboardedPlazas } = useOnboardedPlazas();
+  const { plazas: onboardedPlazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
+  const [plazaId, setPlazaId] = useState(isPlazaLocked ? (defaultPlazaId || 'ALL') : 'ALL');
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && plazaId !== defaultPlazaId) {
+      setPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId, plazaId]);
   const [auditRemark, setAuditRemark] = useState('ALL');
   const [apiStatus, setApiStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,7 +65,9 @@ export const ViolationValidateReport = () => {
   const handleSearch = useCallback(async (newPage = 0, newSize = pageSize, overrides = {}) => {
     const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
     const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
-    const pId = overrides.plazaId !== undefined ? overrides.plazaId : plazaId;
+    const pId = overrides.plazaId !== undefined
+      ? overrides.plazaId
+      : (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL' ? defaultPlazaId : plazaId);
     const aRemark = overrides.auditRemark !== undefined ? overrides.auditRemark : auditRemark;
     const aStatus = overrides.apiStatus !== undefined ? overrides.apiStatus : apiStatus;
     const sTerm = overrides.searchTerm !== undefined ? overrides.searchTerm : searchTerm;
@@ -80,7 +91,8 @@ export const ViolationValidateReport = () => {
         size: newSize
       });
 
-      const content = data?.content || (Array.isArray(data) ? data : []);
+      let content = data?.content || (Array.isArray(data) ? data : []);
+      content = filterRecordsByPlazaScope(content, onboardedPlazas, currentUser);
       setRecords(content);
       setTotalElements(data?.totalElements ?? content.length);
       setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
@@ -98,17 +110,18 @@ export const ViolationValidateReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaId, auditRemark, apiStatus, searchTerm, pageSize]);
+  }, [fromDate, toDate, plazaId, auditRemark, apiStatus, searchTerm, pageSize, isPlazaLocked, defaultPlazaId]);
 
   useEffect(() => {
     handleSearch(0, pageSize);
-  }, []);
+  }, [handleSearch]);
 
   const handleReset = () => {
     const def = getDefaultDateRange();
+    const targetPlaza = isPlazaLocked ? (defaultPlazaId || 'ALL') : 'ALL';
     setFromDate(def.from);
     setToDate(def.to);
-    setPlazaId('ALL');
+    setPlazaId(targetPlaza);
     setAuditRemark('ALL');
     setApiStatus('ALL');
     setSearchTerm('');
@@ -116,7 +129,7 @@ export const ViolationValidateReport = () => {
     handleSearch(0, pageSize, {
       fromDate: def.from,
       toDate: def.to,
-      plazaId: 'ALL',
+      plazaId: targetPlaza,
       auditRemark: 'ALL',
       apiStatus: 'ALL',
       searchTerm: ''
@@ -290,11 +303,17 @@ export const ViolationValidateReport = () => {
               className="filter-select"
               value={plazaId}
               onChange={(e) => setPlazaId(e.target.value)}
+              disabled={isPlazaLocked}
+              title={isPlazaLocked ? `Locked to assigned plaza: ${assignedPlaza?.name || defaultPlazaId}` : 'Select Toll Plaza'}
             >
-              <option value="ALL">All Plazas</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas'}
+                </option>
+              )}
               {onboardedPlazas.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.codeLabel || `${p.id} - ${p.name}`}
+                  {isPlazaLocked ? `🔒 ${p.codeLabel || `${p.id} - ${p.name}`} (Assigned Plaza)` : (p.codeLabel || `${p.id} - ${p.name}`)}
                 </option>
               ))}
             </select>

@@ -2,12 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { hasMenuAccess } from '../../config/roleMenus';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import TablePagination from '../../components/common/TablePagination';
 import './PassIssuance.scss';
 
 export const PassIssuance = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser } = useAuth();
+  const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
 
   const TABS = [
     { key: 'issue', num: 'A', title: 'Pass Issuance', perm: 'pass_issuance_pass_issuance' },
@@ -33,26 +36,33 @@ export const PassIssuance = () => {
     }
   }, [currentTabAllowed, fallbackTab, allowedTabs.length, setSearchParams]);
 
+  const activePlazaName = assignedPlaza?.name || currentUser?.assignedPlaza || 'Pune Bypass Plaza';
+
   const [passData, setPassData] = useState({
     vehicleNo: 'MH 02 CZ 4402',
     name: 'Ramesh Verma',
     mobile: '9820123456',
     passType: 'Monthly Local Resident',
-    plaza: currentUser?.assignedPlaza || 'Vashi Creek Bridge',
+    plaza: activePlazaName,
     amount: '₹330.00',
   });
   const [passIssued, setPassIssued] = useState(false);
 
-  const MOCK_ACTIVE_PASSES = [
-    { id: 'PSN-PASS-2026-001', vrn: 'MH 02 CZ 4402', name: 'Ramesh Verma', type: 'Monthly Local Resident', plaza: 'Vashi Creek Bridge', expires: '2026-10-22', status: 'Active' },
+  const ALL_PASSES = [
+    { id: 'PSN-PASS-2026-001', vrn: 'MH 12 CZ 4402', name: 'Ramesh Verma', type: 'Monthly Local Resident', plaza: 'Pune Bypass Plaza', expires: '2026-10-22', status: 'Active' },
     { id: 'PSN-PASS-2026-002', vrn: 'MH 04 AZ 1024', name: 'Kunal Patil', type: 'Local Commercial', plaza: 'Airoli Bridge', expires: '2026-10-15', status: 'Active' },
     { id: 'PSN-PASS-2026-003', vrn: 'MH 14 CC 8412', name: 'Nilesh Shinde', type: 'Multiple Journey 50 Trips', plaza: 'Khed Shivapur', expires: '2026-11-01', status: 'Active' },
+    { id: 'PSN-PASS-2026-004', vrn: 'MH 12 TR 9901', name: 'Sanjay Deshmukh', type: 'Monthly Local Resident', plaza: 'Pune Bypass Plaza', expires: '2026-11-15', status: 'Active' },
   ];
+
+  const MOCK_ACTIVE_PASSES = useMemo(() => {
+    return filterRecordsByPlazaScope(ALL_PASSES, plazas, currentUser, (r) => r.plaza);
+  }, [plazas, currentUser]);
 
   const paginatedPasses = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     return MOCK_ACTIVE_PASSES.slice(startIndex, startIndex + pageSize);
-  }, [currentPage, pageSize]);
+  }, [MOCK_ACTIVE_PASSES, currentPage, pageSize]);
 
   const handleIssueSubmit = (e) => {
     e.preventDefault();

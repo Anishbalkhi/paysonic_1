@@ -1,15 +1,24 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TollFareReportService from '../../services/tollFare/TollFareReportService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './TollFareReport.scss';
 
 export const TollFareReport = () => {
-  const [plazaId, setPlazaId] = useState('ALL');
+  const { currentUser } = useAuth();
+  const { plazas, isPlazaLocked, defaultPlazaId } = useOnboardedPlazas();
+  const [plazaId, setPlazaId] = useState(defaultPlazaId || 'ALL');
   const [vehicleClass, setVehicleClass] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const { plazas } = useOnboardedPlazas();
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL') {
+      setPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId]);
 
   // Live Database Data State
   const [records, setRecords] = useState([]);
@@ -24,7 +33,9 @@ export const TollFareReport = () => {
 
   // Search fares from Railway DB
   const handleSearch = useCallback(async (overridePlaza, overrideClass) => {
-    const pId = (typeof overridePlaza === 'string' && overridePlaza) ? overridePlaza : plazaId;
+    const pId = (typeof overridePlaza === 'string' && overridePlaza)
+      ? overridePlaza
+      : (isPlazaLocked && defaultPlazaId !== 'ALL' ? defaultPlazaId : plazaId);
     const vClass = (typeof overrideClass === 'string' && overrideClass) ? overrideClass : vehicleClass;
 
     setLoading(true);
@@ -34,7 +45,11 @@ export const TollFareReport = () => {
         plazaId: pId,
         vehicleClass: vClass
       });
-      const content = Array.isArray(data) ? data : [];
+      let content = Array.isArray(data) ? data : [];
+
+      // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
+      content = filterRecordsByPlazaScope(content, plazas, currentUser);
+
       setRecords(content);
       setCurrentPage(1);
     } catch (err) {
@@ -46,18 +61,19 @@ export const TollFareReport = () => {
     } finally {
       setLoading(false);
     }
-  }, [plazaId, vehicleClass]);
+  }, [plazaId, vehicleClass, isPlazaLocked, defaultPlazaId]);
 
   useEffect(() => {
-    handleSearch();
-  }, [handleSearch]);
+    handleSearch(isPlazaLocked ? defaultPlazaId : plazaId, vehicleClass);
+  }, [isPlazaLocked, defaultPlazaId]);
 
   const handleReset = () => {
-    setPlazaId('ALL');
+    const resetPlaza = isPlazaLocked ? defaultPlazaId : 'ALL';
+    setPlazaId(resetPlaza);
     setVehicleClass('ALL');
     setSearchTerm('');
     setCurrentPage(1);
-    handleSearch('ALL', 'ALL');
+    handleSearch(resetPlaza, 'ALL');
   };
 
   // Sort helper: order vehicle classes ascending from VC4 to VC19 / VC20
@@ -188,14 +204,19 @@ export const TollFareReport = () => {
             </label>
             <select
               id="plazaSelect"
-              className="select-input"
+              className={`select-input ${isPlazaLocked ? 'disabled-locked' : ''}`}
               value={plazaId}
+              disabled={isPlazaLocked}
               onChange={(e) => setPlazaId(e.target.value)}
             >
-              <option value="ALL">All Plazas</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas'}
+                </option>
+              )}
               {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.id})
+                  {isPlazaLocked ? `🔒 ${p.name} (${p.id}) [Assigned Plaza]` : `${p.name} (${p.id})`}
                 </option>
               ))}
             </select>

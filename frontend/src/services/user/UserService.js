@@ -220,6 +220,24 @@ class UserService {
     return null;
   }
 
+  async _resolveRealUserId(id) {
+    if (!id) return id;
+    try {
+      const res = await httpClient.get('/api/users');
+      if (res && res.data && Array.isArray(res.data)) {
+        const found = res.data.find(
+          (u) =>
+            u.id === id ||
+            (u.username && u.username.toLowerCase() === id.toLowerCase()) ||
+            (u.email && u.email.toLowerCase() === id.toLowerCase()) ||
+            (u.name && u.name.toLowerCase() === id.toLowerCase())
+        );
+        if (found?.id) return found.id;
+      }
+    } catch {}
+    return id;
+  }
+
   async createUser(newUser) {
     const actorId = newUser.createdBy || getActiveActorId();
     const cleanUserType = newUser.userType
@@ -228,6 +246,8 @@ class UserService {
     const userTypeToSend = buildUserTypeWithPermissions(cleanUserType, newUser.menuAccess);
 
     const payload = {
+      id: newUser.id,
+      username: newUser.username || newUser.id,
       name: newUser.name || newUser.username,
       email: newUser.email,
       mobile: newUser.contact || newUser.mobile || '9999999999',
@@ -326,9 +346,25 @@ class UserService {
       ...(userTypeToSend !== undefined ? { userType: userTypeToSend } : {}),
     };
 
-    const res = await httpClient.put(`/api/users/${id}`, payloadToSend, {
-      headers: { 'X-Actor-ID': actorId },
-    });
+    let res;
+    try {
+      res = await httpClient.put(`/api/users/${id}`, payloadToSend, {
+        headers: { 'X-Actor-ID': actorId },
+      });
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        const realId = await this._resolveRealUserId(id);
+        if (realId && realId !== id) {
+          res = await httpClient.put(`/api/users/${realId}`, payloadToSend, {
+            headers: { 'X-Actor-ID': actorId },
+          });
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
 
     const resultUser = this._mapUsers([res.data])[0];
 
@@ -368,12 +404,31 @@ class UserService {
       }
     } catch {}
 
-    const res = await httpClient.delete(`/api/users/${id}`, {
-      headers: { 'X-Actor-ID': actorId },
-    });
+    let res;
+    let targetId = id;
+    try {
+      res = await httpClient.delete(`/api/users/${id}`, {
+        headers: { 'X-Actor-ID': actorId },
+      });
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        const realId = await this._resolveRealUserId(id);
+        if (realId && realId !== id) {
+          targetId = realId;
+          res = await httpClient.delete(`/api/users/${realId}`, {
+            headers: { 'X-Actor-ID': actorId },
+          });
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
+
     try {
       const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
-      const updated = cached.map((u) => (u.id === id ? { ...u, status: 'Trash User', locked: true } : u));
+      const updated = cached.map((u) => (u.id === id || u.id === targetId ? { ...u, status: 'Trash User', locked: true } : u));
       localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
     } catch {}
 
@@ -381,9 +436,9 @@ class UserService {
       module: 'Administration',
       action: 'User Deleted',
       actionLabel: 'Moved Account to Trash',
-      target: id,
+      target: targetId,
       status: 'Success',
-      details: `Moved user account ${id} to Trash status.`,
+      details: `Moved user account ${targetId} to Trash status.`,
       actor: {
         id: actorId,
         name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
@@ -396,13 +451,32 @@ class UserService {
 
   async activateUser(id) {
     const actorId = getActiveActorId();
-    const res = await httpClient.patch(`/api/users/${id}/activate`, null, {
-      headers: { 'X-Actor-ID': actorId },
-    });
+    let res;
+    let targetId = id;
+    try {
+      res = await httpClient.patch(`/api/users/${id}/activate`, null, {
+        headers: { 'X-Actor-ID': actorId },
+      });
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        const realId = await this._resolveRealUserId(id);
+        if (realId && realId !== id) {
+          targetId = realId;
+          res = await httpClient.patch(`/api/users/${realId}/activate`, null, {
+            headers: { 'X-Actor-ID': actorId },
+          });
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
+
     const resultUser = this._mapUsers([res.data])[0];
     try {
       const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
-      const updated = cached.map((u) => (u.id === id ? { ...u, status: 'Active', locked: false, approval: 'Approved' } : u));
+      const updated = cached.map((u) => (u.id === id || u.id === targetId ? { ...u, status: 'Active', locked: false, approval: 'Approved' } : u));
       localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
     } catch {}
 
@@ -410,9 +484,9 @@ class UserService {
       module: 'Administration',
       action: 'User Activated',
       actionLabel: 'Reactivated Account',
-      target: id,
+      target: targetId,
       status: 'Success',
-      details: `Reactivated and approved user account ${id}.`,
+      details: `Reactivated and approved user account ${targetId}.`,
       actor: {
         id: actorId,
         name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
@@ -426,25 +500,43 @@ class UserService {
   async toggleLock(id) {
     const actorId = getActiveActorId();
     let resData;
+    let targetId = id;
     try {
       const res = await httpClient.patch(`/api/users/${id}/lock`, null, {
         headers: { 'X-Actor-ID': actorId },
       });
       resData = res.data;
     } catch (err) {
-      console.warn('[UserService] toggleLock API error, applying local toggle fallback:', err?.message);
-      const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
-      const target = cached.find((u) => u.id === id);
-      if (target) {
-        target.locked = !target.locked;
-        if (!target.locked) {
-          target.lastActive = new Date().toISOString();
-          target.isDormant = false;
-          target.dormant = false;
+      if (err?.response?.status === 404) {
+        const realId = await this._resolveRealUserId(id);
+        if (realId && realId !== id) {
+          targetId = realId;
+          try {
+            const res = await httpClient.patch(`/api/users/${realId}/lock`, null, {
+              headers: { 'X-Actor-ID': actorId },
+            });
+            resData = res.data;
+          } catch (retryErr) {
+            console.warn('[UserService] toggleLock retry error:', retryErr?.message);
+          }
         }
-        resData = target;
-      } else {
-        throw err;
+      }
+
+      if (!resData) {
+        console.warn('[UserService] toggleLock API error, applying local toggle fallback:', err?.message);
+        const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+        const target = cached.find((u) => u.id === id || u.id === targetId);
+        if (target) {
+          target.locked = !target.locked;
+          if (!target.locked) {
+            target.lastActive = new Date().toISOString();
+            target.isDormant = false;
+            target.dormant = false;
+          }
+          resData = target;
+        } else {
+          throw err;
+        }
       }
     }
 
@@ -460,7 +552,7 @@ class UserService {
     // Keep paysonic_users_cache updated
     try {
       const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
-      const idx = cached.findIndex((u) => u.id === id);
+      const idx = cached.findIndex((u) => u.id === id || u.id === targetId);
       if (idx !== -1) {
         cached[idx] = { ...cached[idx], ...result };
         localStorage.setItem('paysonic_users_cache', JSON.stringify(cached));
@@ -472,9 +564,9 @@ class UserService {
       module: 'Security',
       action: isNowLocked ? 'Account Locked' : 'Account Unlocked',
       actionLabel: isNowLocked ? 'Locked Personnel Account' : 'Unlocked Personnel Account',
-      target: id,
+      target: targetId,
       status: 'Success',
-      details: `${isNowLocked ? 'Locked' : 'Unlocked'} security status for user ${id}.`,
+      details: `${isNowLocked ? 'Locked' : 'Unlocked'} security status for user ${targetId}.`,
       actor: {
         id: actorId,
         name: actorId === 'PSN0001' ? 'Sanjay Kulkarni' : 'Administrator',
@@ -485,11 +577,11 @@ class UserService {
     if (result && result.locked) {
       try {
         const activeSession = JSON.parse(localStorage.getItem('paysonic_auth_session') || 'null');
-        if (activeSession && activeSession.id === id) {
+        if (activeSession && (activeSession.id === id || activeSession.id === targetId)) {
           localStorage.removeItem('paysonic_auth_session');
           localStorage.removeItem('actorId');
           window.dispatchEvent(
-            new CustomEvent('paysonic_user_revoked', { detail: { id, reason: 'locked' } })
+            new CustomEvent('paysonic_user_revoked', { detail: { id: targetId, reason: 'locked' } })
           );
         }
       } catch {}
@@ -522,11 +614,46 @@ class UserService {
       throw new Error('Authentication required: please log in to perform approvals.');
     }
 
-    const res = await httpClient.patch(`/api/users/${id}/approve`, null, {
-      headers: { 'X-Actor-ID': actorId },
-    });
+    let res;
+    let targetId = id;
+    try {
+      res = await httpClient.patch(`/api/users/${id}/approve`, null, {
+        headers: { 'X-Actor-ID': actorId },
+      });
+    } catch (err) {
+      if (err?.response?.status === 404) {
+        const realId = await this._resolveRealUserId(id);
+        if (realId && realId !== id) {
+          targetId = realId;
+          try {
+            res = await httpClient.patch(`/api/users/${realId}/approve`, null, {
+              headers: { 'X-Actor-ID': actorId },
+            });
+          } catch (retryErr) {
+            console.warn('[UserService] approveUser PATCH failed on resolved ID, falling back to updateUser:', retryErr?.message);
+            return await this.updateUser(realId, { status: 'Active', approval: 'Approved' });
+          }
+        } else {
+          return await this.updateUser(targetId, { status: 'Active', approval: 'Approved' });
+        }
+      } else {
+        console.warn('[UserService] approveUser PATCH returned error, applying updateUser fallback:', err?.message);
+        return await this.updateUser(targetId, { status: 'Active', approval: 'Approved' });
+      }
+    }
 
-    return this._mapUsers([res.data])[0];
+    const approvedUser = this._mapUsers([res.data])[0];
+    try {
+      const cached = JSON.parse(localStorage.getItem('paysonic_users_cache') || '[]');
+      const updated = cached.map((u) =>
+        u.id === id || u.id === targetId || u.id === approvedUser.id
+          ? { ...u, ...approvedUser, status: 'Active', approval: 'Approved' }
+          : u
+      );
+      localStorage.setItem('paysonic_users_cache', JSON.stringify(updated));
+    } catch {}
+
+    return approvedUser;
   }
 
   async bulkUpload(file) {

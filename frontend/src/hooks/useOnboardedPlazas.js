@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import OnboardingService from '../services/onboarding/OnboardingService';
+import { useAuth } from '../context/AuthContext';
+import { getScopedPlazas, isUserPlazaLocked, getInitialPlazaScope } from '../utils/plazaScopeUtils';
 
 /**
   * useOnboardedPlazas
   * ─────────────────────────────────────────────────────────────
-  * Provides a reactive, real-time list of all plazas onboarded in the system.
-  * - Automatically updates when a new plaza is onboarded.
-  * - Automatically removes deleted plazas in real time.
-  * - Synced across all pages and modules via window events and storage.
+  * Provides a reactive, real-time list of plazas scoped to the logged-in user.
+  * - Master Admin / Admin / Bank: sees all plazas (isPlazaLocked = false, defaultPlazaId = 'ALL')
+  * - Concessionaire: sees plazas in their portfolio (isPlazaLocked = false, defaultPlazaId = 'ALL')
+  * - Plaza Admin (e.g. Pune Bypass): locked to their assigned plaza (isPlazaLocked = true, defaultPlazaId = assignedPlazaId)
   */
 export const useOnboardedPlazas = () => {
+  const { currentUser } = useAuth();
   const [plazas, setPlazas] = useState(() => {
     return OnboardingService.getCachedPlazas() || [];
   });
@@ -53,7 +56,7 @@ export const useOnboardedPlazas = () => {
   }, [fetchLivePlazas]);
 
   // Formatted plazas with display labels: "NAME (ID)" and "ID - NAME"
-  const formattedPlazas = useMemo(() => {
+  const formattedAllPlazas = useMemo(() => {
     return (plazas || []).map((p) => {
       const idStr = String(p.id || '').trim();
       const nameStr = (p.name || `Plaza ${idStr}`).trim();
@@ -67,18 +70,47 @@ export const useOnboardedPlazas = () => {
     });
   }, [plazas]);
 
+  // Scoped Plazas strictly filtered by user's organizational boundary
+  const scopedPlazas = useMemo(() => {
+    return getScopedPlazas(formattedAllPlazas, currentUser);
+  }, [formattedAllPlazas, currentUser]);
+
+  const isPlazaLocked = useMemo(() => {
+    return isUserPlazaLocked(currentUser);
+  }, [currentUser]);
+
+  const defaultPlazaId = useMemo(() => {
+    return getInitialPlazaScope(scopedPlazas, currentUser);
+  }, [scopedPlazas, currentUser]);
+
+  const assignedPlaza = useMemo(() => {
+    if (isPlazaLocked && scopedPlazas.length > 0) {
+      return scopedPlazas[0];
+    }
+    return null;
+  }, [isPlazaLocked, scopedPlazas]);
+
   const getPlazaLabel = useCallback(
     (plazaId) => {
-      if (!plazaId || plazaId === 'ALL') return 'All Plazas';
-      const found = formattedPlazas.find((p) => String(p.id) === String(plazaId));
+      if (!plazaId || plazaId === 'ALL') {
+        if (isPlazaLocked && scopedPlazas.length === 1) {
+          return scopedPlazas[0].label;
+        }
+        return currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas';
+      }
+      const found = formattedAllPlazas.find((p) => String(p.id) === String(plazaId));
       return found ? found.label : `Plaza ${plazaId}`;
     },
-    [formattedPlazas]
+    [formattedAllPlazas, isPlazaLocked, scopedPlazas, currentUser]
   );
 
   return {
-    plazas: formattedPlazas,
+    plazas: scopedPlazas,
+    allPlazas: formattedAllPlazas,
     rawPlazas: plazas,
+    isPlazaLocked,
+    defaultPlazaId,
+    assignedPlaza,
     loading,
     refresh: fetchLivePlazas,
     getPlazaLabel,
@@ -86,3 +118,4 @@ export const useOnboardedPlazas = () => {
 };
 
 export default useOnboardedPlazas;
+

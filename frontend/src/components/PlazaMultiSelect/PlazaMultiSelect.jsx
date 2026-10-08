@@ -11,8 +11,17 @@ export const PlazaMultiSelect = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { plazas } = useOnboardedPlazas();
+  const { plazas, isPlazaLocked } = useOnboardedPlazas();
   const containerRef = useRef(null);
+
+  // Auto-enforce single plaza selection if locked
+  useEffect(() => {
+    if (isPlazaLocked && plazas.length > 0) {
+      if (selectedPlazas.length !== 1 || selectedPlazas[0] !== plazas[0].id) {
+        onChange([plazas[0].id]);
+      }
+    }
+  }, [isPlazaLocked, plazas, selectedPlazas, onChange]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -40,6 +49,7 @@ export const PlazaMultiSelect = ({
   const isPartiallySelected = selectedPlazas.length > 0 && selectedPlazas.length < plazas.length;
 
   const handleToggleSelectAll = () => {
+    if (isPlazaLocked) return;
     if (isAllSelected) {
       onChange([]);
     } else {
@@ -48,6 +58,7 @@ export const PlazaMultiSelect = ({
   };
 
   const handleTogglePlaza = (plazaId) => {
+    if (isPlazaLocked) return;
     if (selectedPlazas.includes(plazaId)) {
       onChange(selectedPlazas.filter((id) => id !== plazaId));
     } else {
@@ -57,11 +68,15 @@ export const PlazaMultiSelect = ({
 
   const handleClear = (e) => {
     e.stopPropagation();
+    if (isPlazaLocked) return;
     onChange([]);
   };
 
   // Label to show on closed trigger button
   const triggerLabel = useMemo(() => {
+    if (isPlazaLocked && plazas.length > 0) {
+      return `🔒 ${plazas[0].id} - ${plazas[0].name} (Assigned Plaza)`;
+    }
     if (selectedPlazas.length === 0) {
       return placeholder;
     }
@@ -73,23 +88,25 @@ export const PlazaMultiSelect = ({
       return match ? `${match.id} - ${match.name}` : `Plaza ${selectedPlazas[0]}`;
     }
     return `${selectedPlazas.length} of ${plazas.length} Plazas Selected`;
-  }, [selectedPlazas, isAllSelected, plazas, placeholder]);
+  }, [selectedPlazas, isAllSelected, plazas, placeholder, isPlazaLocked]);
 
   return (
-    <div className="plaza-multiselect-container" ref={containerRef}>
+    <div className={`plaza-multiselect-container ${isPlazaLocked ? 'locked' : ''}`} ref={containerRef}>
       {label && <label htmlFor={id} className="multiselect-label">{label}</label>}
 
       <div
         id={id}
-        className={`multiselect-trigger ${isOpen ? 'active' : ''} ${selectedPlazas.length > 0 ? 'has-selection' : ''}`}
-        onClick={() => setIsOpen((prev) => !prev)}
-        tabIndex={0}
+        className={`multiselect-trigger ${isOpen ? 'active' : ''} ${selectedPlazas.length > 0 ? 'has-selection' : ''} ${isPlazaLocked ? 'disabled' : ''}`}
+        onClick={() => {
+          if (!isPlazaLocked) setIsOpen((prev) => !prev);
+        }}
+        tabIndex={isPlazaLocked ? -1 : 0}
         role="button"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         <div className="trigger-text" title={triggerLabel}>
-          {selectedPlazas.length > 0 && (
+          {!isPlazaLocked && selectedPlazas.length > 0 && (
             <span className="selection-badge">
               {isAllSelected ? 'ALL' : selectedPlazas.length}
             </span>
@@ -98,7 +115,7 @@ export const PlazaMultiSelect = ({
         </div>
 
         <div className="trigger-actions">
-          {selectedPlazas.length > 0 && (
+          {!isPlazaLocked && selectedPlazas.length > 0 && (
             <button
               type="button"
               className="clear-btn"
@@ -109,19 +126,21 @@ export const PlazaMultiSelect = ({
               ✕
             </button>
           )}
-          <svg
-            className={`chevron-icon ${isOpen ? 'rotate' : ''}`}
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          {!isPlazaLocked && (
+            <svg
+              className={`chevron-icon ${isOpen ? 'rotate' : ''}`}
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
         </div>
       </div>
 

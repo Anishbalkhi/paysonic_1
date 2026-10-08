@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ViolationBulkActionService from '../../services/violation/ViolationBulkActionService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './ViolationBulkAction.scss';
 
 export const ViolationBulkAction = () => {
+  const { currentUser } = useAuth();
   // Default range: September 2026 matching screenshot data
   const getDefaultDateRange = () => ({
     from: '2026-09-01T00:00:00',
@@ -13,7 +17,14 @@ export const ViolationBulkAction = () => {
   const initialRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
-  const [plazaId, setPlazaId] = useState('ALL');
+  const { plazas: onboardedPlazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
+  const [plazaId, setPlazaId] = useState(isPlazaLocked ? (defaultPlazaId || 'ALL') : 'ALL');
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && plazaId !== defaultPlazaId) {
+      setPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId, plazaId]);
   const [apiStatus, setApiStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -58,7 +69,9 @@ export const ViolationBulkAction = () => {
   const handleSearch = useCallback(async (newPage = 0, newSize = pageSize, overrides = {}) => {
     const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
     const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
-    const pId = overrides.plazaId !== undefined ? overrides.plazaId : plazaId;
+    const pId = overrides.plazaId !== undefined
+      ? overrides.plazaId
+      : (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL' ? defaultPlazaId : plazaId);
     const aStatus = overrides.apiStatus !== undefined ? overrides.apiStatus : apiStatus;
     const sTerm = overrides.searchTerm !== undefined ? overrides.searchTerm : searchTerm;
 
@@ -80,7 +93,8 @@ export const ViolationBulkAction = () => {
         size: newSize
       });
 
-      const content = data?.content || (Array.isArray(data) ? data : []);
+      let content = data?.content || (Array.isArray(data) ? data : []);
+      content = filterRecordsByPlazaScope(content, onboardedPlazas, currentUser);
       setRecords(content);
       setTotalElements(data?.totalElements ?? content.length);
       setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
@@ -99,17 +113,18 @@ export const ViolationBulkAction = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaId, apiStatus, searchTerm, pageSize]);
+  }, [fromDate, toDate, plazaId, apiStatus, searchTerm, pageSize, isPlazaLocked, defaultPlazaId]);
 
   useEffect(() => {
     handleSearch(0, pageSize);
-  }, []);
+  }, [handleSearch]);
 
   const handleReset = () => {
     const def = getDefaultDateRange();
+    const targetPlaza = isPlazaLocked ? (defaultPlazaId || 'ALL') : 'ALL';
     setFromDate(def.from);
     setToDate(def.to);
-    setPlazaId('ALL');
+    setPlazaId(targetPlaza);
     setApiStatus('ALL');
     setSearchTerm('');
     setSelectedIds(new Set());
@@ -118,7 +133,7 @@ export const ViolationBulkAction = () => {
     handleSearch(0, pageSize, {
       fromDate: def.from,
       toDate: def.to,
-      plazaId: 'ALL',
+      plazaId: targetPlaza,
       apiStatus: 'ALL',
       searchTerm: ''
     });
@@ -244,17 +259,26 @@ export const ViolationBulkAction = () => {
     return `Date Range: ${f} to ${t}`;
   }, [fromDate, toDate]);
 
-  // Dynamic options derived from actual database records so selecting any option shows table data
+  // Dynamic options derived from actual database records and onboarded plazas
   const availablePlazas = useMemo(() => {
     const map = new Map();
-    map.set('501101', '501101 - MUMBAI PLAZA NH-04');
+    (onboardedPlazas || []).forEach((p) => {
+      const pid = String(p.id || '').trim();
+      const pname = p.name || `Plaza ${pid}`;
+      if (pid && !/dummy|autumn|gluten/i.test(pname)) {
+        map.set(pid, p.codeLabel || `${pid} - ${pname}`);
+      }
+    });
     records.forEach((r) => {
-      if (r.plazaId) {
+      if (r.plazaId && !map.has(r.plazaId)) {
         map.set(r.plazaId, `${r.plazaId} - ${r.plazaName || 'MUMBAI PLAZA NH-04'}`);
       }
     });
+    if (map.size === 0) {
+      map.set('501101', '501101 - MUMBAI PLAZA NH-04');
+    }
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-  }, [records]);
+  }, [onboardedPlazas, records]);
 
   const availableStatuses = useMemo(() => {
     const set = new Set();
@@ -352,10 +376,18 @@ export const ViolationBulkAction = () => {
                 setPlazaId(val);
                 handleSearch(0, pageSize, { plazaId: val });
               }}
+              disabled={isPlazaLocked}
+              title={isPlazaLocked ? `Locked to assigned plaza: ${assignedPlaza?.name || defaultPlazaId}` : 'Select Toll Plaza'}
             >
-              <option value="ALL">All Plazas</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas'}
+                </option>
+              )}
               {availablePlazas.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
+                <option key={p.id} value={p.id}>
+                  {isPlazaLocked ? `🔒 ${p.label} (Assigned Plaza)` : p.label}
+                </option>
               ))}
             </select>
           </div>

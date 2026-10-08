@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DateWiseReconService from '../../services/recon/DateWiseReconService';
 import UserActivityService from '../../services/userActivity/UserActivityService';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import PlazaMultiSelect from '../../components/PlazaMultiSelect/PlazaMultiSelect';
 import TablePagination from '../../components/common/TablePagination';
 import './DateWiseRecon.scss';
 
 export const DateWiseRecon = () => {
+  const { currentUser } = useAuth();
+  const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
+
   // Default range: 30 days ago to today 23:59:59
   const getDefaultDateRange = () => {
     const now = new Date();
@@ -21,7 +27,13 @@ export const DateWiseRecon = () => {
   const defaultRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(defaultRange.from);
   const [toDate, setToDate] = useState(defaultRange.to);
-  const [selectedPlazas, setSelectedPlazas] = useState([]);
+  const [selectedPlazas, setSelectedPlazas] = useState(isPlazaLocked ? (defaultPlazaId ? [defaultPlazaId] : []) : []);
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && (!selectedPlazas.length || selectedPlazas[0] !== defaultPlazaId)) {
+      setSelectedPlazas([defaultPlazaId]);
+    }
+  }, [isPlazaLocked, defaultPlazaId, selectedPlazas]);
   const [dateType, setDateType] = useState(''); // '' ('Select Date Type') | 'Txn Date' | 'Settlement Date'
   const [exportMode, setExportMode] = useState('detailed'); // 'detailed' | 'collapsed' | 'currentView'
 
@@ -74,6 +86,9 @@ export const DateWiseRecon = () => {
       });
 
       let results = data || [];
+      // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
+      results = filterRecordsByPlazaScope(results, plazas, currentUser);
+
       // Multi-plaza selection filter
       if (pList.length > 1) {
         const idSet = new Set(pList.map((id) => String(id).trim()));
@@ -126,13 +141,14 @@ export const DateWiseRecon = () => {
 
   const handleReset = () => {
     const def = getDefaultDateRange();
+    const targetPlazas = isPlazaLocked ? (defaultPlazaId ? [defaultPlazaId] : []) : [];
     setFromDate(def.from);
     setToDate(def.to);
-    setSelectedPlazas([]);
+    setSelectedPlazas(targetPlazas);
     setDateType('');
     setErrorMsg('');
     setCurrentPage(1);
-    handleSearch(def.from, def.to, [], '');
+    handleSearch(def.from, def.to, targetPlazas, '');
   };
 
   // Initial load

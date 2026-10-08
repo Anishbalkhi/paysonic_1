@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { FUNCTION_CODES } from '../../config/disputeConstants';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import MoreInformationModal from '../../components/DisputeModals/MoreInformationModal';
@@ -8,8 +10,9 @@ import TablePagination from '../../components/common/TablePagination';
 import './ChargebackAssign.scss';
 
 export const ChargebackAssign = () => {
+  const { currentUser } = useAuth();
   const [rows, setRows] = useState([]);
-  const { plazas } = useOnboardedPlazas();
+  const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
   const [miniStats, setMiniStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +28,13 @@ export const ChargebackAssign = () => {
   const [plazaAction, setPlazaAction] = useState('');
   const [assignStatus, setAssignStatus] = useState('');
   const [disputeStatus, setDisputeStatus] = useState('');
-  const [tollPlazaId, setTollPlazaId] = useState('');
+  const [tollPlazaId, setTollPlazaId] = useState(isPlazaLocked ? (defaultPlazaId || '') : '');
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && tollPlazaId !== defaultPlazaId) {
+      setTollPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId, tollPlazaId]);
 
   // Bulk plaza selection chips
   const [selectedPlazaChips, setSelectedPlazaChips] = useState([]);
@@ -60,7 +69,8 @@ export const ChargebackAssign = () => {
         }),
         DisputeManagementService.getAdminMiniDashboardStats(),
       ]);
-      setRows(fetchedRows);
+      const scopedRows = filterRecordsByPlazaScope(fetchedRows, plazas, currentUser);
+      setRows(scopedRows);
       setMiniStats(stats);
       setCurrentPage(1);
     } catch (e) {
@@ -404,11 +414,13 @@ export const ChargebackAssign = () => {
               id="assignPlazaSelect"
               value={tollPlazaId}
               onChange={(e) => setTollPlazaId(e.target.value)}
+              disabled={isPlazaLocked}
+              title={isPlazaLocked ? `Locked to assigned plaza: ${assignedPlaza?.name || defaultPlazaId}` : 'Select Toll Plaza'}
             >
-              <option value="">--Select Toll Plaza Id--</option>
+              {!isPlazaLocked && <option value="">--Select Toll Plaza Id--</option>}
               {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} - {p.id}
+                  {isPlazaLocked ? `🔒 ${p.name || p.codeLabel} - ${p.id} (Assigned Plaza)` : `${p.name || p.codeLabel} - ${p.id}`}
                 </option>
               ))}
             </select>
@@ -420,6 +432,7 @@ export const ChargebackAssign = () => {
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={() => {
+              const targetPlaza = isPlazaLocked ? (defaultPlazaId || '') : '';
               setFromDate('');
               setToDate('');
               setDateType('');
@@ -427,7 +440,7 @@ export const ChargebackAssign = () => {
               setPlazaAction('');
               setAssignStatus('');
               setDisputeStatus('');
-              setTollPlazaId('');
+              setTollPlazaId(targetPlaza);
               loadData({
                 fromDate: '',
                 toDate: '',
@@ -436,7 +449,7 @@ export const ChargebackAssign = () => {
                 plazaAction: '',
                 assignStatus: '',
                 disputeStatus: '',
-                tollPlazaId: '',
+                tollPlazaId: targetPlaza,
               });
             }}
           >

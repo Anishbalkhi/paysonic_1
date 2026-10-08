@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearchNormal.scss';
 
 export const TransactionSearchNormal = () => {
+  const { currentUser } = useAuth();
   // Default range: covers August - September 2026 transactions from screenshot
   const getDefaultDateRange = () => ({
     from: '2026-08-01T00:00:00',
@@ -13,12 +16,18 @@ export const TransactionSearchNormal = () => {
   });
 
   const initialRange = getDefaultDateRange();
+  const { plazas: onboardedPlazas, isPlazaLocked, defaultPlazaId } = useOnboardedPlazas();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
-  const [plazaId, setPlazaId] = useState('ALL');
+  const [plazaId, setPlazaId] = useState(defaultPlazaId || 'ALL');
   const [status, setStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const { plazas: onboardedPlazas } = useOnboardedPlazas();
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && defaultPlazaId !== 'ALL') {
+      setPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId]);
 
   // Data & Pagination
   const [records, setRecords] = useState([]);
@@ -54,7 +63,9 @@ export const TransactionSearchNormal = () => {
   const handleSearch = useCallback(async (newPage = 0, newSize = pageSize, overrides = {}) => {
     const fDate = overrides.fromDate !== undefined ? overrides.fromDate : fromDate;
     const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
-    const pId = overrides.plazaId !== undefined ? overrides.plazaId : plazaId;
+    const pId = overrides.plazaId !== undefined
+      ? overrides.plazaId
+      : (isPlazaLocked && defaultPlazaId !== 'ALL' ? defaultPlazaId : plazaId);
     const st = overrides.status !== undefined ? overrides.status : status;
     const sTerm = overrides.searchTerm !== undefined ? overrides.searchTerm : searchTerm;
 
@@ -75,7 +86,11 @@ export const TransactionSearchNormal = () => {
         size: newSize
       });
 
-      const content = data?.content || (Array.isArray(data) ? data : []);
+      let content = data?.content || (Array.isArray(data) ? data : []);
+
+      // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
+      content = filterRecordsByPlazaScope(content, onboardedPlazas, currentUser);
+
       setRecords(content);
       setTotalElements(data?.totalElements ?? content.length);
       setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
@@ -93,24 +108,27 @@ export const TransactionSearchNormal = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, plazaId, status, searchTerm, pageSize]);
+  }, [fromDate, toDate, plazaId, status, searchTerm, pageSize, isPlazaLocked, defaultPlazaId]);
 
   useEffect(() => {
-    handleSearch(0, pageSize);
-  }, []);
+    handleSearch(0, pageSize, {
+      plazaId: isPlazaLocked ? defaultPlazaId : plazaId
+    });
+  }, [isPlazaLocked, defaultPlazaId]);
 
   const handleReset = () => {
     const def = getDefaultDateRange();
+    const resetPlaza = isPlazaLocked ? defaultPlazaId : 'ALL';
     setFromDate(def.from);
     setToDate(def.to);
-    setPlazaId('ALL');
+    setPlazaId(resetPlaza);
     setStatus('ALL');
     setSearchTerm('');
     setErrorMsg('');
     handleSearch(0, pageSize, {
       fromDate: def.from,
       toDate: def.to,
-      plazaId: 'ALL',
+      plazaId: resetPlaza,
       status: 'ALL',
       searchTerm: ''
     });
@@ -301,17 +319,24 @@ export const TransactionSearchNormal = () => {
           <div className="filter-group">
             <label className="filter-label">Plaza</label>
             <select
-              className="filter-select"
+              className={`filter-select ${isPlazaLocked ? 'disabled-locked' : ''}`}
               value={plazaId}
+              disabled={isPlazaLocked}
               onChange={(e) => {
                 const val = e.target.value;
                 setPlazaId(val);
                 handleSearch(0, pageSize, { plazaId: val });
               }}
             >
-              <option value="ALL">All Plazas</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas'}
+                </option>
+              )}
               {availablePlazas.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
+                <option key={p.id} value={p.id}>
+                  {isPlazaLocked ? `🔒 ${p.label} (Assigned Plaza)` : p.label}
+                </option>
               ))}
             </select>
           </div>

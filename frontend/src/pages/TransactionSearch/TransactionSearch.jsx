@@ -3,13 +3,16 @@ import { useSearchParams } from 'react-router-dom';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { useAuth } from '../../context/AuthContext';
+import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import './TransactionSearch.scss';
 
 export const TransactionSearch = () => {
+  const { currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { plazas } = useOnboardedPlazas();
+  const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
 
   // Mode: 'NORMAL' vs 'DISPUTE' (synced with ?type= URL search param)
   const initialType = (searchParams.get('type') || '').toLowerCase() === 'dispute' ? 'DISPUTE' : 'NORMAL';
@@ -34,7 +37,13 @@ export const TransactionSearch = () => {
   const initialRange = getDefaultDateRange();
   const [fromDate, setFromDate] = useState(initialRange.from);
   const [toDate, setToDate] = useState(initialRange.to);
-  const [plazaId, setPlazaId] = useState('ALL');
+  const [plazaId, setPlazaId] = useState(isPlazaLocked ? (defaultPlazaId || 'ALL') : 'ALL');
+
+  useEffect(() => {
+    if (isPlazaLocked && defaultPlazaId && plazaId !== defaultPlazaId) {
+      setPlazaId(defaultPlazaId);
+    }
+  }, [isPlazaLocked, defaultPlazaId, plazaId]);
 
   // Normal-specific filter
   const [normalStatus, setNormalStatus] = useState('ALL');
@@ -114,7 +123,8 @@ export const TransactionSearch = () => {
           size: newSize
         });
 
-        const content = data?.content || (Array.isArray(data) ? data : []);
+        let content = data?.content || (Array.isArray(data) ? data : []);
+        content = filterRecordsByPlazaScope(content, plazas, currentUser);
         setRecords(content);
         setTotalElements(data?.totalElements ?? content.length);
         setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
@@ -144,7 +154,8 @@ export const TransactionSearch = () => {
           size: newSize
         });
 
-        const content = data?.content ? data.content : Array.isArray(data) ? data : [];
+        let content = data?.content ? data.content : Array.isArray(data) ? data : [];
+        content = filterRecordsByPlazaScope(content, plazas, currentUser);
         setRecords(content);
         setTotalElements(data?.totalElements ?? content.length);
         setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));
@@ -169,16 +180,17 @@ export const TransactionSearch = () => {
 
   const handleReset = () => {
     const def = getDefaultDateRange();
+    const targetPlaza = isPlazaLocked ? (defaultPlazaId || 'ALL') : 'ALL';
     setFromDate(def.from);
     setToDate(def.to);
-    setPlazaId('ALL');
+    setPlazaId(targetPlaza);
     setNormalStatus('ALL');
     setDisputeFuncCode('ALL');
     setSearchTerm('');
     handleSearch(0, pageSize, {
       fromDate: def.from,
       toDate: def.to,
-      plazaId: 'ALL',
+      plazaId: targetPlaza,
       normalStatus: 'ALL',
       disputeFuncCode: 'ALL',
       searchTerm: ''
@@ -469,12 +481,18 @@ export const TransactionSearch = () => {
                 setPlazaId(val);
                 handleSearch(0, pageSize, { plazaId: val });
               }}
+              disabled={isPlazaLocked}
+              title={isPlazaLocked ? `Locked to assigned plaza: ${assignedPlaza?.name || defaultPlazaId}` : 'Select Toll Plaza'}
               id="filterPlazaSelect"
             >
-              <option value="ALL">All Plazas</option>
+              {!isPlazaLocked && (
+                <option value="ALL">
+                  {currentUser?.role === 'Concessionaire' ? 'All Portfolio Plazas' : 'All Plazas'}
+                </option>
+              )}
               {plazas.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.id})
+                  {isPlazaLocked ? `🔒 ${p.name || p.codeLabel} (${p.id}) (Assigned Plaza)` : `${p.name || p.codeLabel} (${p.id})`}
                 </option>
               ))}
             </select>

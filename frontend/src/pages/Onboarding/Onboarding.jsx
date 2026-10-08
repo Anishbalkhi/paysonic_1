@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import OnboardingService from '../../services/onboarding/OnboardingService';
 import StateCitySelect from '../../components/StateCitySelect/StateCitySelect';
 import { hasMenuAccess } from '../../config/roleMenus';
+import { isUserPlazaLocked, isPlazaMatch, getScopedPlazas } from '../../utils/plazaScopeUtils';
 import TablePagination from '../../components/common/TablePagination';
 import './Onboarding.scss';
 
@@ -152,17 +153,23 @@ export const Onboarding = () => {
     }, 3200);
   };
 
+  // Plaza scoping for role-based data segregation
+  const isLocked = isUserPlazaLocked(currentUser);
+  const scopedPlazas = useMemo(() => {
+    return getScopedPlazas(store.plazas, currentUser);
+  }, [store.plazas, currentUser]);
+
   // Plaza scoped selectors (shared for Lanes, Callback, Fare, CCH)
   const [selectedPlazaId, setSelectedPlazaId] = useState('');
 
   useEffect(() => {
-    if (store.plazas.length > 0) {
-      const exists = store.plazas.some((p) => p.id === selectedPlazaId);
+    if (scopedPlazas.length > 0) {
+      const exists = scopedPlazas.some((p) => p.id === selectedPlazaId);
       if (!exists || !selectedPlazaId) {
-        setSelectedPlazaId(store.plazas[0].id);
+        setSelectedPlazaId(scopedPlazas[0].id);
       }
     }
-  }, [store.plazas, selectedPlazaId]);
+  }, [scopedPlazas, selectedPlazaId]);
 
   // =========================================================================
   // SUBMODULE 1: VIEW PLAZA
@@ -179,7 +186,7 @@ export const Onboarding = () => {
   };
 
   const filteredPlazas = useMemo(() => {
-    return store.plazas.filter((p) => {
+    return scopedPlazas.filter((p) => {
       const matchesSearch =
         !plazaSearch ||
         (p.id + p.name + p.orgId + p.agencyId + getConcessionaireName(p.concessionaireId) + p.city + p.state)
@@ -190,7 +197,7 @@ export const Onboarding = () => {
       const matchesCategory = !plazaCategoryFilter || p.category === plazaCategoryFilter;
       return matchesSearch && matchesConcess && matchesStatus && matchesCategory;
     });
-  }, [store.plazas, plazaSearch, plazaConcessFilter, plazaStatusFilter, plazaCategoryFilter, store.concessionaires]);
+  }, [scopedPlazas, plazaSearch, plazaConcessFilter, plazaStatusFilter, plazaCategoryFilter, store.concessionaires]);
 
   // Tab A: View Plaza Pagination
   const [plazaPage, setPlazaPage] = useState(1);
@@ -215,13 +222,13 @@ export const Onboarding = () => {
   }, [store.concessionaires, concessPage, concessPageSize]);
 
   const kpis = useMemo(() => {
-    const total = store.plazas.length;
-    const active = store.plazas.filter((p) => p.status === 'Active').length;
-    const pending = store.plazas.filter((p) => p.status === 'Pending Approval').length;
-    const draft = store.plazas.filter((p) => p.status === 'Draft').length;
-    const suspended = store.plazas.filter((p) => p.status === 'Suspended').length;
+    const total = scopedPlazas.length;
+    const active = scopedPlazas.filter((p) => p.status === 'Active').length;
+    const pending = scopedPlazas.filter((p) => p.status === 'Pending Approval').length;
+    const draft = scopedPlazas.filter((p) => p.status === 'Draft').length;
+    const suspended = scopedPlazas.filter((p) => p.status === 'Suspended').length;
     return { total, active, pending, draft, suspended };
-  }, [store.plazas]);
+  }, [scopedPlazas]);
 
   const handleDownloadCsv = (plazasToExport = filteredPlazas) => {
     if (!plazasToExport || plazasToExport.length === 0) {
@@ -2731,13 +2738,15 @@ export const Onboarding = () => {
                 value={selectedPlazaId}
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
+                disabled={isLocked}
+                title={isLocked ? `Locked to assigned plaza: ${currentUser?.assignedPlaza || selectedPlazaId}` : 'Select Scoped Plaza'}
               >
-                {store.plazas.length === 0 ? (
+                {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  store.plazas.map((p) => (
+                  scopedPlazas.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.id}) · {p.status}
+                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id}) · ${p.status}`}
                     </option>
                   ))
                 )}
@@ -2878,13 +2887,15 @@ export const Onboarding = () => {
                 value={selectedPlazaId}
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
+                disabled={isLocked}
+                title={isLocked ? `Locked to assigned plaza: ${currentUser?.assignedPlaza || selectedPlazaId}` : 'Select Scoped Plaza'}
               >
-                {store.plazas.length === 0 ? (
+                {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  store.plazas.map((p) => (
+                  scopedPlazas.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.id})
+                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
                     </option>
                   ))
                 )}
@@ -2997,13 +3008,15 @@ export const Onboarding = () => {
                 value={selectedPlazaId}
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
+                disabled={isLocked}
+                title={isLocked ? `Locked to assigned plaza: ${currentUser?.assignedPlaza || selectedPlazaId}` : 'Select Scoped Plaza'}
               >
-                {store.plazas.length === 0 ? (
+                {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  store.plazas.map((p) => (
+                  scopedPlazas.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.id})
+                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
                     </option>
                   ))
                 )}
@@ -3160,13 +3173,15 @@ export const Onboarding = () => {
                 value={selectedPlazaId}
                 onChange={(e) => setSelectedPlazaId(e.target.value)}
                 className="plaza-select"
+                disabled={isLocked}
+                title={isLocked ? `Locked to assigned plaza: ${currentUser?.assignedPlaza || selectedPlazaId}` : 'Select Scoped Plaza'}
               >
-                {store.plazas.length === 0 ? (
+                {scopedPlazas.length === 0 ? (
                   <option value="">No plazas onboarded yet</option>
                 ) : (
-                  store.plazas.map((p) => (
+                  scopedPlazas.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.id})
+                      {isLocked ? `🔒 ${p.name} (${p.id}) · Assigned Plaza` : `${p.name} (${p.id})`}
                     </option>
                   ))
                 )}
