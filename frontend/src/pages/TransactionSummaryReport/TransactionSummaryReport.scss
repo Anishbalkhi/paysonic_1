@@ -245,7 +245,8 @@
           text-align: center;
           letter-spacing: 0.3px;
 
-          &.status-declined {
+          &.status-declined,
+          &.status-rejected {
             color: #dc2626;
             background-color: #fef2f2;
           }
@@ -267,6 +268,34 @@
           font-weight: 500;
           font-family: 'Courier New', monospace;
           font-size: 0.8rem;
+        }
+
+        /* Plaza Total Row */
+        .row-plaza-total {
+          background-color: #f8fafc;
+          border-top: 1px solid #cbd5e1;
+          border-bottom: 2px solid #94a3b8;
+          font-size: 0.86rem;
+
+          td {
+            border: 1px solid #cbd5e1 !important;
+            padding: 10px 14px;
+          }
+
+          .plaza-total-label-cell {
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+            font-weight: 700;
+            text-align: right;
+            padding-right: 20px;
+          }
+
+          .plaza-total-val-cell {
+            color: #0f172a !important;
+            font-weight: 700;
+            background-color: #f8fafc !important;
+            white-space: nowrap;
+          }
         }
 
         /* Grand Total - Clean Slate & Royal Blue theme */

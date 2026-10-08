@@ -8,6 +8,16 @@ import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import './TransactionSummaryReport.scss';
 
+const STATUS_DISPLAY_ORDER = ['Accepted', 'Rejected', 'NPCI Decline'];
+
+const normalizeStatusName = (st) => {
+  const s = String(st || '').trim().toLowerCase();
+  if (s === 'accepted') return 'Accepted';
+  if (s === 'declined' || s === 'rejected') return 'Rejected';
+  if (s === 'npcidecline' || s === 'npci-decline' || s === 'npci decline') return 'NPCI Decline';
+  return st;
+};
+
 export const TransactionSummaryReport = () => {
   const { currentUser } = useAuth();
   const getDefaultDateRange = () => ({ from: '2026-09-01', to: '2026-09-30' });
@@ -57,10 +67,20 @@ export const TransactionSummaryReport = () => {
       // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
       rawPlazas = filterRecordsByPlazaScope(rawPlazas, onboardedPlazas, currentUser);
 
-      // Clean & deduplicate duplicate response code rows per status group
-      const sanitizedPlazas = rawPlazas.map((p) => {
-        const groups = (p.statusGroups || []).map((sg) => {
-          const rowMap = new Map();
+      // Clean & deduplicate duplicate response code rows per status group and normalize plaza IDs
+      const distinctPlazaMap = new Map();
+      rawPlazas.forEach((p, idx) => {
+        const norm = normalizePlazaForRecord(p, idx, onboardedPlazas);
+        const pKey = norm.plazaId;
+
+        // Group status groups into Accepted, Rejected, NPCI Decline
+        const groupsByStatus = new Map();
+        (p.statusGroups || []).forEach((sg) => {
+          const normStatus = normalizeStatusName(sg.transactionStatus);
+          if (!groupsByStatus.has(normStatus)) {
+            groupsByStatus.set(normStatus, new Map());
+          }
+          const rowMap = groupsByStatus.get(normStatus);
           (sg.rows || []).forEach((r) => {
             const code = String(r.responseCode || '').trim();
             if (!rowMap.has(code)) {
@@ -72,25 +92,39 @@ export const TransactionSummaryReport = () => {
               });
             }
           });
-          const dedupedRows = Array.from(rowMap.values());
-          const subtotalCount = dedupedRows.reduce((acc, r) => acc + r.transactionCount, 0);
-          const subtotalAmount = dedupedRows.reduce((acc, r) => acc + r.transactionAmount, 0);
-          return {
-            ...sg,
-            rows: dedupedRows,
-            subtotalCount,
-            subtotalAmount,
-          };
         });
-        const plazaTotalCount = groups.reduce((acc, g) => acc + g.subtotalCount, 0);
-        const plazaTotalAmount = groups.reduce((acc, g) => acc + g.subtotalAmount, 0);
-        return {
-          ...p,
-          statusGroups: groups,
-          plazaTotalCount,
-          plazaTotalAmount,
-        };
+
+        const orderedGroups = [];
+        STATUS_DISPLAY_ORDER.forEach((statusName) => {
+          if (groupsByStatus.has(statusName)) {
+            const dedupedRows = Array.from(groupsByStatus.get(statusName).values());
+            const subtotalCount = dedupedRows.reduce((acc, r) => acc + r.transactionCount, 0);
+            const subtotalAmount = dedupedRows.reduce((acc, r) => acc + r.transactionAmount, 0);
+            orderedGroups.push({
+              transactionStatus: statusName,
+              rows: dedupedRows,
+              subtotalCount,
+              subtotalAmount,
+            });
+          }
+        });
+
+        const plazaTotalCount = orderedGroups.reduce((acc, g) => acc + g.subtotalCount, 0);
+        const plazaTotalAmount = orderedGroups.reduce((acc, g) => acc + g.subtotalAmount, 0);
+
+        if (!distinctPlazaMap.has(pKey)) {
+          distinctPlazaMap.set(pKey, {
+            ...p,
+            plazaId: norm.plazaId,
+            plazaName: norm.plazaName,
+            statusGroups: orderedGroups,
+            plazaTotalCount,
+            plazaTotalAmount,
+          });
+        }
       });
+
+      const sanitizedPlazas = Array.from(distinctPlazaMap.values());
 
       setReportData(sanitizedPlazas);
       setCurrentPage(1);
@@ -165,21 +199,23 @@ export const TransactionSummaryReport = () => {
   // KPI Aggregation
   const summaryKpis = useMemo(() => {
     if (!reportData || !Array.isArray(reportData) || reportData.length === 0) {
-      return { totalCount: 0, totalAmount: 0, acceptedCount: 0, declinedCount: 0, npciCount: 0 };
+      return { totalCount: 0, totalAmount: 0, acceptedCount: 0, rejectedCount: 0, npciCount: 0 };
     }
-    let totalCount = 0, totalAmount = 0, acceptedCount = 0, declinedCount = 0, npciCount = 0;
+    let totalCount = 0, totalAmount = 0, acceptedCount = 0, rejectedCount = 0, npciCount = 0;
     for (const plaza of reportData) {
       for (const statusGroup of (plaza.statusGroups || [])) {
         for (const row of (statusGroup.rows || [])) {
-          totalCount += Number(row.transactionCount || 0);
-          totalAmount += Number(row.transactionAmount || 0);
-          if (statusGroup.transactionStatus === 'Accepted') acceptedCount += Number(row.transactionCount || 0);
-          else if (statusGroup.transactionStatus === 'Declined') declinedCount += Number(row.transactionCount || 0);
-          else if (statusGroup.transactionStatus === 'NPCIDecline') npciCount += Number(row.transactionCount || 0);
+          const c = Number(row.transactionCount || 0);
+          const a = Number(row.transactionAmount || 0);
+          totalCount += c;
+          totalAmount += a;
+          if (statusGroup.transactionStatus === 'Accepted') acceptedCount += c;
+          else if (statusGroup.transactionStatus === 'Rejected') rejectedCount += c;
+          else if (statusGroup.transactionStatus === 'NPCI Decline') npciCount += c;
         }
       }
     }
-    return { totalCount, totalAmount, acceptedCount, declinedCount, npciCount };
+    return { totalCount, totalAmount, acceptedCount, rejectedCount, npciCount };
   }, [reportData]);
 
   const kpiMetrics = summaryKpis;
@@ -268,8 +304,8 @@ export const TransactionSummaryReport = () => {
             highlight: 'blue'
           },
           {
-            label: 'Accepted / Declined',
-            value: `${summaryKpis.acceptedCount} / ${summaryKpis.declinedCount}`,
+            label: 'Accepted / Rejected',
+            value: `${summaryKpis.acceptedCount.toLocaleString()} / ${summaryKpis.rejectedCount.toLocaleString()}`,
             sub: 'Transaction Status Ratio',
             highlight: 'green'
           }
@@ -317,50 +353,68 @@ export const TransactionSummaryReport = () => {
                     const plazaTotalRows = (plaza.statusGroups || []).reduce((sum, sg) => sum + (sg.rows || []).length, 0);
                     let plazaFirstRendered = false;
 
-                    return (plaza.statusGroups || []).map((statusGroup, sgIdx) => {
-                      const sgRows = statusGroup.rows || [];
-                      let sgFirstRendered = false;
+                    return (
+                      <React.Fragment key={`plaza-group-${normPlaza.plazaId}-${pIdx}`}>
+                        {(plaza.statusGroups || []).map((statusGroup) => {
+                          const sgRows = statusGroup.rows || [];
+                          let sgFirstRendered = false;
 
-                      return sgRows.map((row, rIdx) => {
-                        const isPlazaFirst = !plazaFirstRendered && (plazaFirstRendered = true);
-                        const isStatusFirst = !sgFirstRendered && (sgFirstRendered = true);
+                          return sgRows.map((row, rIdx) => {
+                            const isPlazaFirst = !plazaFirstRendered && (plazaFirstRendered = true);
+                            const isStatusFirst = !sgFirstRendered && (sgFirstRendered = true);
+                            const statusCssClass = statusGroup.transactionStatus.toLowerCase().replace(/\s+/g, '-');
 
-                        return (
-                          <tr key={`${normPlaza.plazaId}-${statusGroup.transactionStatus}-${row.responseCode}-${rIdx}`}>
-                            {isPlazaFirst && (
-                              <td rowSpan={plazaTotalRows} className="merged-cell text-center font-semibold">
-                                {normPlaza.plazaId}
-                              </td>
-                            )}
-                            {isPlazaFirst && (
-                              <td rowSpan={plazaTotalRows} className="merged-cell font-semibold">
-                                {normPlaza.plazaName}
-                              </td>
-                            )}
-                            {isStatusFirst && (
-                              <td rowSpan={sgRows.length} className={`merged-cell status-cell status-${statusGroup.transactionStatus.toLowerCase().replace('npci','npci-')}`}>
-                                {statusGroup.transactionStatus}
-                              </td>
-                            )}
-                            <td className="response-code-cell">{row.responseCode}</td>
-                            <td className="text-right">{Number(row.transactionCount || 0).toLocaleString()}</td>
-                            <td className="text-right font-semibold">
-                              {Number(row.transactionAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </td>
-                          </tr>
-                        );
-                      });
-                    });
+                            return (
+                              <tr key={`${normPlaza.plazaId}-${statusGroup.transactionStatus}-${row.responseCode}-${rIdx}`}>
+                                {isPlazaFirst && (
+                                  <td rowSpan={plazaTotalRows} className="merged-cell text-center font-semibold">
+                                    {normPlaza.plazaId}
+                                  </td>
+                                )}
+                                {isPlazaFirst && (
+                                  <td rowSpan={plazaTotalRows} className="merged-cell font-semibold">
+                                    {normPlaza.plazaName}
+                                  </td>
+                                )}
+                                {isStatusFirst && (
+                                  <td rowSpan={sgRows.length} className={`merged-cell status-cell status-${statusCssClass}`}>
+                                    {statusGroup.transactionStatus}
+                                  </td>
+                                )}
+                                <td className="response-code-cell">{row.responseCode}</td>
+                                <td className="text-right">{Number(row.transactionCount || 0).toLocaleString()}</td>
+                                <td className="text-right font-semibold">
+                                  {Number(row.transactionAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                            );
+                          });
+                        })}
+
+                        {/* Total Row For This Plaza */}
+                        <tr key={`plaza-total-${normPlaza.plazaId}-${pIdx}`} className="row-plaza-total">
+                          <td colSpan="4" className="plaza-total-label-cell">
+                            Total for {normPlaza.plazaName} ({normPlaza.plazaId})
+                          </td>
+                          <td className="plaza-total-val-cell text-right font-semibold">
+                            {Number(plaza.plazaTotalCount || 0).toLocaleString()}
+                          </td>
+                          <td className="plaza-total-val-cell text-right font-semibold">
+                            ₹ {Number(plaza.plazaTotalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    );
                   })}
 
-                  {/* Grand Total Row */}
+                  {/* Overall Grand Total Row */}
                   <tr className="row-grand-total">
                     <td colSpan="4" className="grand-total-label-cell">Grand Total</td>
                     <td className="grand-total-val-cell text-right">
                       {summaryKpis.totalCount.toLocaleString()}
                     </td>
                     <td className="grand-total-val-cell text-right">
-                      {summaryKpis.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₹ {summaryKpis.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </>
@@ -394,8 +448,8 @@ export const TransactionSummaryReport = () => {
           <span className="kpi-val">{summaryKpis.acceptedCount.toLocaleString()}</span>
         </div>
         <div className="kpi-card kpi-red">
-          <span className="kpi-label">Declined</span>
-          <span className="kpi-val">{summaryKpis.declinedCount.toLocaleString()}</span>
+          <span className="kpi-label">Rejected</span>
+          <span className="kpi-val">{summaryKpis.rejectedCount.toLocaleString()}</span>
         </div>
         <div className="kpi-card kpi-amber">
           <span className="kpi-label">NPCI Decline</span>

@@ -26,7 +26,16 @@ public class TransactionSummaryService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-    private static final List<String> STATUS_ORDER = List.of("Declined", "NPCIDecline", "Accepted");
+    private static final List<String> STATUS_ORDER = List.of("Accepted", "Rejected", "NPCI Decline");
+
+    private String normalizeStatus(String st) {
+        if (st == null) return "Accepted";
+        String s = st.trim().toLowerCase();
+        if (s.contains("accept")) return "Accepted";
+        if (s.contains("decline") && s.contains("npci")) return "NPCI Decline";
+        if (s.contains("decline") || s.contains("reject")) return "Rejected";
+        return st;
+    }
 
     public TransactionSummaryService(TransactionSummaryRepository repository) {
         this.repository = repository;
@@ -59,8 +68,9 @@ public class TransactionSummaryService {
         Map<String, String> plazaNames = new HashMap<>();
 
         for (TransactionSummaryRecord r : rawList) {
+            String normStatus = normalizeStatus(r.getTransactionStatus());
             if (statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter)) {
-                if (!statusFilter.equalsIgnoreCase(r.getTransactionStatus())) {
+                if (!statusFilter.equalsIgnoreCase(normStatus)) {
                     continue;
                 }
             }
@@ -69,16 +79,16 @@ public class TransactionSummaryService {
             plazaNames.putIfAbsent(r.getPlazaId(), r.getPlazaName());
 
             Map<String, List<TransactionSummaryRecord>> statusMap = plazaMap.get(r.getPlazaId());
-            statusMap.putIfAbsent(r.getTransactionStatus(), new ArrayList<>());
-            statusMap.get(r.getTransactionStatus()).add(r);
+            statusMap.putIfAbsent(normStatus, new ArrayList<>());
+            statusMap.get(normStatus).add(r);
         }
 
         long grandTotalCount = 0L;
         BigDecimal grandTotalAmount = BigDecimal.ZERO;
         long acceptedCount = 0L;
         BigDecimal acceptedAmount = BigDecimal.ZERO;
-        long declinedCount = 0L;
-        BigDecimal declinedAmount = BigDecimal.ZERO;
+        long rejectedCount = 0L;
+        BigDecimal rejectedAmount = BigDecimal.ZERO;
 
         for (Map.Entry<String, Map<String, List<TransactionSummaryRecord>>> pEntry : plazaMap.entrySet()) {
             String pId = pEntry.getKey();
@@ -124,8 +134,8 @@ public class TransactionSummaryService {
                     acceptedCount += subCount;
                     acceptedAmount = acceptedAmount.add(subAmount);
                 } else {
-                    declinedCount += subCount;
-                    declinedAmount = declinedAmount.add(subAmount);
+                    rejectedCount += subCount;
+                    rejectedAmount = rejectedAmount.add(subAmount);
                 }
             }
 
@@ -143,8 +153,8 @@ public class TransactionSummaryService {
         grand.setTotalAmount(grandTotalAmount);
         grand.setAcceptedCount(acceptedCount);
         grand.setAcceptedAmount(acceptedAmount);
-        grand.setDeclinedCount(declinedCount);
-        grand.setDeclinedAmount(declinedAmount);
+        grand.setDeclinedCount(rejectedCount);
+        grand.setDeclinedAmount(rejectedAmount);
         response.setGrandTotal(grand);
 
         return response;

@@ -9,8 +9,8 @@
 
 import OnboardingService from '../services/onboarding/OnboardingService';
 
-const DUMMY_IDS = new Set(['600601', '600602', '666666', '778899', '778999']);
-const DUMMY_NAME_REGEX = /dummy|autumn|gluten/i;
+const DUMMY_IDS = new Set(['600601', '600602', '666666', '778899', '778999', 'Plaza 1', 'Plaza 2', 'plaza 1', 'plaza 2']);
+const DUMMY_NAME_REGEX = /dummy|autumn|gluten|^plaza\s*\d*$|^plaza\s*name$/i;
 
 /**
  * Checks if a given plaza ID or Name represents dummy test data
@@ -19,7 +19,7 @@ export const isDummyPlaza = (id, name) => {
   const idStr = String(id || '').trim();
   const nameStr = String(name || '').trim();
 
-  if (DUMMY_IDS.has(idStr)) return true;
+  if (DUMMY_IDS.has(idStr) || DUMMY_NAME_REGEX.test(idStr)) return true;
   if (!nameStr) return false;
   return DUMMY_NAME_REGEX.test(nameStr);
 };
