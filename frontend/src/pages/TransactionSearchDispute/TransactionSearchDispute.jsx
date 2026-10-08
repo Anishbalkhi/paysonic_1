@@ -233,7 +233,7 @@ export const TransactionSearchDispute = () => {
       {/* Top Page Header */}
       <header className="page-header">
         <div className="header-titles">
-          <h1 className="page-title">Transaction Search - Dispute Transaction</h1>
+          <h1 className="page-title">Dispute Detail Report</h1>
           <p className="subtitle">
             Audited Dispute Transactions &amp; Adjustments
           </p>
@@ -409,7 +409,7 @@ export const TransactionSearchDispute = () => {
       <div className="table-container">
         {/* Centered Table Banner matching Reference Image */}
         <div className="table-top-banner">
-          <div className="banner-title">TRANSACTION SEARCH - DISPUTE TRANSACTION</div>
+          <div className="banner-title">DISPUTE DETAIL REPORT</div>
           <div className="banner-subtitle">
             From Date: {formatDateTimeDisplay(fromDate)} &nbsp; | &nbsp; To Date: {formatDateTimeDisplay(toDate)}
           </div>
@@ -444,8 +444,7 @@ export const TransactionSearchDispute = () => {
                   <th>TID</th>
                   <th>Issuer ID</th>
                   <th>Int Tracking No</th>
-                  <th className="text-center">Function Code</th>
-                  <th>Function Code Description</th>
+                  <th>Function Code</th>
                   <th className="text-center">Settlement Indicator</th>
                   <th>Message Reason Code</th>
                   <th>Member Message Text</th>
@@ -516,16 +515,11 @@ export const TransactionSearchDispute = () => {
                       <td className="text-center">{d.intTrackingNo || 'NA'}</td>
 
                       {/* 14. Function Code */}
-                      <td className="text-center font-bold code-font">
-                        {funcCode}
+                      <td className="font-semibold">
+                        {funcDesc || funcCode}
                       </td>
 
-                      {/* 15. Function Code Description */}
-                      <td style={{ fontWeight: 500 }}>
-                        {funcDesc}
-                      </td>
-
-                      {/* 16. Settlement Indicator */}
+                      {/* 15. Settlement Indicator */}
                       <td className="text-center">
                         <span className={`settle-badge ${ind.toLowerCase()}`}>
                           {ind || '--'}

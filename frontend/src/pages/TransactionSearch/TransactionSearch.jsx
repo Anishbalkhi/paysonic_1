@@ -639,12 +639,12 @@ export const TransactionSearch = () => {
 
       {/* 3. Table Container */}
       <div className="table-container">
-        {/* Top Centered Banner matching user specifications */}
+        {/* Top Centered Banner */}
         <div className="table-top-banner">
           <div className="banner-title">
             {txnType === 'NORMAL'
-              ? 'TRANSACTION SEARCH - NORMAL TRANSACTION'
-              : 'TRANSACTION SEARCH - DISPUTE TRANSACTION'}
+              ? 'TRANSACTION REPORT'
+              : 'DISPUTE DETAIL REPORT'}
           </div>
           <div className="banner-subtitle">{dateSubtitle}</div>
           <div className="banner-green-bar" />
@@ -652,29 +652,42 @@ export const TransactionSearch = () => {
 
         <div className="table-scroll-wrapper">
           {txnType === 'NORMAL' ? (
-            /* NORMAL TRANSACTIONS TABLE */
+            /* NORMAL TRANSACTIONS TABLE - TRANSACTION REPORT FORMAT */
             <table className="dispute-styled-table">
               <thead>
                 <tr>
-                  <th style={{ width: '50px' }}>SR NO</th>
-                  <th>PLAZA ID</th>
-                  <th>PLAZA NAME</th>
-                  <th>LANE ID</th>
-                  <th>ACQ TXN ID</th>
-                  <th>TOLL TXN ID</th>
-                  <th>TXN DATE TIME</th>
-                  <th className="text-right">TXN AMOUNT</th>
-                  <th>VEHICLE NO</th>
-                  <th>TAG ID</th>
+                  <th className="text-center" style={{ width: '50px' }}>Sr No</th>
+                  <th>Toll File Name</th>
+                  <th>Plaza ID</th>
+                  <th>Plaza Name</th>
+                  <th>Lane ID</th>
+                  <th>Tag ID</th>
+                  <th>VRN</th>
+                  <th>Acq Txn ID</th>
+                  <th>Toll Txn ID</th>
+                  <th>Toll Message ID</th>
+                  <th>MVC</th>
+                  <th>Tag VC</th>
+                  <th>AVC</th>
+                  <th>Transaction Status</th>
+                  <th>Reason</th>
+                  <th className="text-right">Transaction Amount</th>
+                  <th>Transaction Date</th>
+                  <th>Plaza Posted Date</th>
+                  <th>NPCI Error Code</th>
+                  <th>NPCI Response Date</th>
+                  <th>Transaction Type</th>
+                  <th>Issuer Bank ID</th>
+                  <th>Issuer Bank Name</th>
                   <th>TID</th>
-                  <th>STATUS</th>
-                  <th>REASON</th>
+                  <th>Plaza Type</th>
+                  <th className="text-center">Is Manual</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={13} className="table-loading-cell">
+                    <td colSpan={26} className="table-loading-cell">
                       <div className="spinner" /> Loading transactions...
                     </td>
                   </tr>
@@ -682,7 +695,7 @@ export const TransactionSearch = () => {
 
                 {!loading && filteredRecords.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="table-empty-cell">
+                    <td colSpan={26} className="table-empty-cell">
                       No normal transactions found matching the selected filters.
                     </td>
                   </tr>
@@ -702,18 +715,18 @@ export const TransactionSearch = () => {
                     return (
                       <tr key={r.id || `${r.acqTxnId || ''}-${idx}`}>
                         <td className="text-center font-semibold">{srNo}</td>
+                        <td>{r.tollFileName || 'ONLINE'}</td>
                         <td className="text-center monospace-cell">{normPlaza.plazaId}</td>
                         <td className="font-semibold">{normPlaza.plazaName}</td>
                         <td className="text-center monospace-cell">{r.laneId || '—'}</td>
+                        <td className="monospace-cell">{r.tagId || '—'}</td>
+                        <td className="font-semibold">{r.vehicleNo || r.vrn || '—'}</td>
                         <td className="monospace-cell">{r.acqTxnId || '—'}</td>
                         <td className="monospace-cell">{r.tollTxnId || '—'}</td>
-                        <td className="text-center">{formatDateDisplay(r.txnDateTime)}</td>
-                        <td className="text-right font-semibold">
-                          ₹{Number(r.txnAmount || 0).toFixed(2)}
-                        </td>
-                        <td className="font-semibold">{r.vehicleNo || '—'}</td>
-                        <td className="monospace-cell">{r.tagId || '—'}</td>
-                        <td className="monospace-cell">{r.tid || '—'}</td>
+                        <td className="monospace-cell">{r.tollMessageId || r.messageId || '—'}</td>
+                        <td className="text-center">{r.mvc || 'VC4'}</td>
+                        <td className="text-center">{r.tagVc || 'VC4'}</td>
+                        <td className="text-center">{r.avc || 'VC4'}</td>
                         <td className="text-center">
                           <span className={`status-pill ${badgeClass}`}>
                             {r.status || 'Accepted'}
@@ -726,36 +739,53 @@ export const TransactionSearch = () => {
                             <span className="text-muted">SUCCESS</span>
                           )}
                         </td>
+                        <td className="text-right font-semibold">
+                          ₹{Number(r.txnAmount || 0).toFixed(2)}
+                        </td>
+                        <td className="text-center">{formatDateDisplay(r.txnDateTime)}</td>
+                        <td className="text-center">{formatDateDisplay(r.plazaPostedDate || r.txnDateTime)}</td>
+                        <td className="text-center">{r.npciErrorCode || '000'}</td>
+                        <td className="text-center">{formatDateDisplay(r.npciResponseDate || r.txnDateTime)}</td>
+                        <td className="text-center">{r.txnType || 'Toll'}</td>
+                        <td className="text-center monospace-cell">{r.issuerBankId || '052337'}</td>
+                        <td>{r.issuerBankName || 'PAYTM'}</td>
+                        <td className="monospace-cell">{r.tid || '—'}</td>
+                        <td className="text-center">{r.plazaType || 'National'}</td>
+                        <td className="text-center">{r.isManual ? 'Yes' : 'No'}</td>
                       </tr>
                     );
                   })}
               </tbody>
             </table>
           ) : (
-            /* DISPUTE TRANSACTIONS TABLE */
+            /* DISPUTE TRANSACTIONS TABLE - DISPUTE DETAIL REPORT FORMAT */
             <table className="dispute-styled-table">
               <thead>
                 <tr>
-                  <th style={{ width: '50px' }}>SR NO</th>
-                  <th>PLAZA NAME</th>
-                  <th>PLAZA ID</th>
-                  <th>ACQ TXN ID</th>
-                  <th>TOLL TXN ID</th>
-                  <th>TXN DATE TIME</th>
-                  <th className="text-right">TXN AMOUNT</th>
-                  <th className="text-right">DISPUTE AMOUNT</th>
-                  <th>VEHICLE NO</th>
-                  <th>TAG ID</th>
+                  <th className="text-center" style={{ width: '50px' }}>Sr No</th>
+                  <th>Plaza Name</th>
+                  <th>Plaza ID</th>
+                  <th>Acq Txn ID</th>
+                  <th>Toll Txn ID</th>
+                  <th>Txn Date Time</th>
+                  <th className="text-right">Txn Amount</th>
+                  <th className="text-right">Dispute Amount</th>
+                  <th>Vehicle No</th>
+                  <th>Tag ID</th>
                   <th>TID</th>
-                  <th>SETTLEMENT TYPE</th>
-                  <th>FUNCTION CODE</th>
-                  <th>FULL PARTICULARS / MSG</th>
+                  <th>Issuer ID</th>
+                  <th>Int Tracking No</th>
+                  <th>Function Code</th>
+                  <th className="text-center">Settlement Indicator</th>
+                  <th>Message Reason Code</th>
+                  <th>Member Message Text</th>
+                  <th>NPCI Settlement Date</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={14} className="table-loading-cell">
+                    <td colSpan={18} className="table-loading-cell">
                       <div className="spinner" /> Loading dispute transactions...
                     </td>
                   </tr>
@@ -763,7 +793,7 @@ export const TransactionSearch = () => {
 
                 {!loading && filteredRecords.length === 0 && (
                   <tr>
-                    <td colSpan={14} className="table-empty-cell">
+                    <td colSpan={18} className="table-empty-cell">
                       No dispute transactions found matching the selected filters.
                     </td>
                   </tr>
@@ -772,8 +802,7 @@ export const TransactionSearch = () => {
                 {!loading &&
                   filteredRecords.map((d, idx) => {
                     const srNo = page * pageSize + idx + 1;
-                    const settleClass = (d.settlementType || '').toUpperCase() === 'CR' ? 'cr' : 'dr';
-
+                    const settleClass = (d.settlementIndicator || d.settlementType || '').toLowerCase() === 'cr' ? 'cr' : 'dr';
                     const normPlaza = normalizePlazaForRecord(d, idx, plazas);
 
                     return (
@@ -793,17 +822,19 @@ export const TransactionSearch = () => {
                         <td className="font-semibold">{d.vehicleNo || '—'}</td>
                         <td className="monospace-cell">{d.tagId || '—'}</td>
                         <td className="monospace-cell">{d.tid || '—'}</td>
+                        <td className="text-center monospace-cell">{d.issuerId || '052337'}</td>
+                        <td className="text-center">{d.intTrackingNo || 'NA'}</td>
+                        <td className="font-semibold">{d.functionCode || '762: Credit Adjustment'}</td>
                         <td className="text-center">
                           <span className={`settle-badge ${settleClass}`}>
-                            {d.settlementType || 'CR'}
+                            {d.settlementIndicator || d.settlementType || 'CR'}
                           </span>
                         </td>
-                        <td className="text-center font-semibold">
-                          {extractCode(d.functionCode)}
+                        <td className="text-center">{d.messageReasonCode || 'NA'}</td>
+                        <td className="msg-text-cell" title={d.memberMessageText || d.fullParticulars || d.functionCode}>
+                          {d.memberMessageText || d.fullParticulars || d.functionCode || '—'}
                         </td>
-                        <td className="msg-text-cell" title={d.fullParticulars || d.functionCode}>
-                          {d.fullParticulars || d.functionCode || '—'}
-                        </td>
+                        <td className="text-center">{formatDateDisplay(d.npciSettlementDate || d.txnDateTime)}</td>
                       </tr>
                     );
                   })}

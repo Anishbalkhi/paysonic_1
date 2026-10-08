@@ -288,7 +288,7 @@ export const TransactionSearchNormal = () => {
     <div className="transaction-search-normal-page">
       {/* 1. Header Banner */}
       <div className="report-header-banner">
-        <h1 className="report-title">TRANSACTION SEARCH</h1>
+        <h1 className="report-title">TRANSACTION REPORT</h1>
         <div className="report-subtitle">{dateSubtitle}</div>
         <div className="report-green-accent-bar" />
       </div>
