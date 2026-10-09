@@ -319,12 +319,9 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Dispute Handling',
       icon: ICONS.dispute,
       children: [
-        { subId: 'dispute_handling_dispute_dashboard', label: 'A. Dispute DashBoard', path: '/dispute-handling/dashboard' },
-        { subId: 'dispute_handling_file_upload', label: 'B. Dispute File Upload', path: '/dispute-handling/file-upload' },
-        { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
-        { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
-        { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
-        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_validate_dispute', label: 'A. Validate Dispute', path: '/dispute-handling/validate' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'B. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_dispute_dashboard', label: 'C. Dispute DashBoard', path: '/dispute-handling/dashboard' },
       ],
     },
     {
@@ -414,12 +411,9 @@ export const ROLE_NAVIGATION_MAP = {
       label: 'Dispute Handling',
       icon: ICONS.dispute,
       children: [
-        { subId: 'dispute_handling_dispute_dashboard', label: 'A. Dispute DashBoard', path: '/dispute-handling/dashboard' },
-        { subId: 'dispute_handling_file_upload', label: 'B. Dispute File Upload', path: '/dispute-handling/file-upload' },
-        { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
-        { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
-        { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
-        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_validate_dispute', label: 'A. Validate Dispute', path: '/dispute-handling/validate' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'B. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_dispute_dashboard', label: 'C. Dispute DashBoard', path: '/dispute-handling/dashboard' },
       ],
     },
     {

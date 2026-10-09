@@ -8,312 +8,90 @@ import {
 import httpClient from '../api/httpClient';
 import OnboardingService from '../onboarding/OnboardingService';
 
-const STORAGE_KEY_DISPUTES = 'paysonic_disputes_v1';
-const STORAGE_KEY_BATCHES = 'paysonic_dispute_batches_v1';
-const STORAGE_KEY_AUDIT = 'paysonic_dispute_audit_v1';
+const STORAGE_KEY_DISPUTES = 'paysonic_disputes_live_v1';
+const STORAGE_KEY_BATCHES = 'paysonic_dispute_batches_live_v1';
+const STORAGE_KEY_AUDIT = 'paysonic_dispute_audit_live_v1';
 
-const INITIAL_SEED_ROWS = [
-  {
-    rowId: 'DISP-1001',
-    acqTxnId: '102047735808524718',
-    tollTxnId: 'AM020905',
-    vrn: 'MH12VL3467',
-    tagId: '34161FA820328EB002947820',
-    plazaId: '501101',
-    plazaName: 'MUMBAI PLAZA NH-04',
-    txnDate: '02-09-2026 05:30:00',
-    txnAmount: 5.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '27-09-2026',
-    cbRaisedDaysAgo: 6,
-    cbReason: 'FASTag Double Debit',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'No',
-    disputeStatus: 'NA',
-    plazaReason: 'NA',
-    assigned: false,
-    adminReason: '',
-    adminEvidence: [],
-    plazaEvidence: [],
-    decidedAt: null,
-  },
-  {
-    rowId: 'DISP-1002',
-    acqTxnId: '102047735808524720',
-    tollTxnId: 'AM020906',
-    vrn: 'MH12VL3467',
-    tagId: '34161FA820328EB002947820',
-    plazaId: '502202',
-    plazaName: 'PUNE BYPASS PLAZA',
-    txnDate: '02-09-2026 06:30:00',
-    txnAmount: 5.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '28-09-2026',
-    cbRaisedDaysAgo: 5,
-    cbReason: 'Incorrect Toll Fare Deduction',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'No',
-    disputeStatus: 'NA',
-    plazaReason: 'NA',
-    assigned: false,
-    adminReason: '',
-    adminEvidence: [],
-    plazaEvidence: [],
-    decidedAt: null,
-  },
-  {
-    rowId: 'DISP-1003',
-    acqTxnId: '102047735808524714',
-    tollTxnId: 'AM020903',
-    vrn: 'MH12VL3467',
-    tagId: '34161FA820328EB002947820',
-    plazaId: '503303',
-    plazaName: 'NASHIK TOLL PLAZA',
-    txnDate: '02-09-2026 03:30:00',
-    txnAmount: 5.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 1,
-    cbReason: 'FASTag Duplicate Deduction',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'Yes',
-    disputeStatus: 'Approved',
-    plazaReason: 'Valid toll transaction fee refunded.',
-    assigned: true,
-    adminReason: 'Reviewed and assigned for plaza verification.',
-    adminEvidence: ['dispute_proof_scan.pdf'],
-    plazaEvidence: ['plaza_cctv_snapshot.jpg'],
-    decidedAt: '2026-10-05T09:15:00Z',
-  },
-  {
-    rowId: 'DISP-1004',
-    acqTxnId: '102047735808524716',
-    tollTxnId: 'AM020904',
-    vrn: 'MH12VL3467',
-    tagId: '34161FA820328EB002947820',
-    plazaId: '504404',
-    plazaName: 'KOLHAPUR PLAZA',
-    txnDate: '02-09-2026 04:30:00',
-    txnAmount: 5.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 1,
-    cbReason: 'Tag In Blacklist Exception',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'Yes',
-    disputeStatus: 'Rejected',
-    plazaReason: 'Vehicle physically passed through lane 2.',
-    assigned: true,
-    adminReason: 'Reviewed and assigned for plaza verification.',
-    adminEvidence: ['dispute_proof_scan.pdf'],
-    plazaEvidence: ['plaza_anpr_camera.jpg'],
-    decidedAt: '2026-10-05T09:20:00Z',
-  },
-  {
-    rowId: 'DISP-1005',
-    acqTxnId: '102047735808524712',
-    tollTxnId: 'AM020902',
-    vrn: 'MH12VL3467',
-    tagId: '34161FA820328EB002947820',
-    plazaId: '505505',
-    plazaName: 'SOLAPUR PLAZA NH-65',
-    txnDate: '02-09-2026 02:30:00',
-    txnAmount: 5.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 1,
-    cbReason: 'Overcharged Toll Fare',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'Yes',
-    disputeStatus: 'Approved',
-    plazaReason: 'NA',
-    assigned: true,
-    adminReason: 'Assigned for immediate plaza audit.',
-    adminEvidence: ['bank_intimation.pdf'],
-    plazaEvidence: [],
-    decidedAt: '2026-10-04T14:10:00Z',
-  },
-  {
-    rowId: 'DISP-1006',
-    acqTxnId: '102047735808524722',
-    tollTxnId: 'AM020907',
-    vrn: 'MH12VL3467',
-    tagId: '34161FA820328EB002947820',
-    plazaId: '908895',
-    plazaName: 'JAIPUR',
-    txnDate: '02-09-2026 07:30:00',
-    txnAmount: 5.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 1,
-    cbReason: 'Toll Deducted Without Passage',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'Yes',
-    disputeStatus: 'Rejected',
-    plazaReason: 'Automatic toll boom opened and lane barrier sensor triggered.',
-    assigned: true,
-    adminReason: 'Assigned for evidence check.',
-    adminEvidence: ['statement_copy.pdf'],
-    plazaEvidence: ['lane_log_extract.txt'],
-    decidedAt: '2026-10-04T16:45:00Z',
-  },
-  {
-    rowId: 'DISP-1007',
-    acqTxnId: '102047735808524706',
-    tollTxnId: 'SK030902',
-    vrn: '34MH51FA820',
-    tagId: '34161FA82032866C03B7B640',
-    plazaId: '501101',
-    plazaName: 'MUMBAI PLAZA NH-04',
-    txnDate: '03-09-2026 10:00:00',
-    txnAmount: 25.0,
-    disputeAmount: 25.0,
-    cbRaisedDate: '03-09-2026',
-    cbRaisedDaysAgo: 1,
-    cbReason: 'FASTag Double Debit',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'Yes',
-    disputeStatus: 'Rejected',
-    plazaReason: 'AVC optical sensor verified vehicle passage.',
-    assigned: true,
-    adminReason: 'Verify if multiple debits occurred.',
-    adminEvidence: ['customer_complaint.pdf'],
-    plazaEvidence: ['avc_classification_report.pdf'],
-    decidedAt: '2026-10-05T08:00:00Z',
-  },
-  {
-    rowId: 'DISP-1008',
-    acqTxnId: '102047735808524702',
-    tollTxnId: 'ZP030902',
-    vrn: 'GH92DD6152',
-    tagId: '34161FA82033E8260213B680',
-    plazaId: '503303',
-    plazaName: 'NASHIK TOLL PLAZA',
-    txnDate: '02-09-2026 02:00:00',
-    txnAmount: 5.0,
-    disputeAmount: 5.0,
-    cbRaisedDate: '26-09-2026',
-    cbRaisedDaysAgo: 7,
-    cbReason: 'Pre-Arbitration: Unrecognized Journey',
-    functionCode: 471,
-    disputeType: 'Pre-Arbitration Raised',
-    plazaAction: 'No',
-    disputeStatus: 'NA',
-    plazaReason: 'NA',
-    assigned: false,
-    adminReason: '',
-    adminEvidence: [],
-    plazaEvidence: [],
-    decidedAt: null,
-  },
-  {
-    rowId: 'DISP-1009',
-    acqTxnId: '102047735808524700',
-    tollTxnId: 'ZP030901',
-    vrn: 'GH92DD6152',
-    tagId: '34161FA82033E8260213B680',
-    plazaId: '121212',
-    plazaName: 'OCTOBER',
-    txnDate: '02-09-2026 01:00:00',
-    txnAmount: 5.0,
-    disputeAmount: 5.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 1,
-    cbReason: 'Goodfaith Adjustment: Toll Gate Boom Failure Reversal',
-    functionCode: 680,
-    disputeType: 'Goodfaith Raised',
-    plazaAction: 'No',
-    disputeStatus: 'NA',
-    plazaReason: 'NA',
-    assigned: false,
-    adminReason: '',
-    adminEvidence: [],
-    plazaEvidence: [],
-    decidedAt: null,
-  },
-  {
-    rowId: 'DISP-1010',
-    acqTxnId: '102047735808524702',
-    tollTxnId: 'ZP030902',
-    vrn: 'GH92DD6152',
-    tagId: '34161FA82033E8260213B680',
-    plazaId: '111111',
-    plazaName: 'PAY PAY 1',
-    txnDate: '02-09-2026 02:00:00',
-    txnAmount: 5.0,
-    disputeAmount: 5.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 1,
-    cbReason: 'Arbitration: Vehicle Class Discrepancy',
-    functionCode: 479,
-    disputeType: 'Arbitration Raised',
-    plazaAction: 'No',
-    disputeStatus: 'NA',
-    plazaReason: 'NA',
-    assigned: false,
-    adminReason: '',
-    adminEvidence: [],
-    plazaEvidence: [],
-    decidedAt: null,
-  },
-  {
-    rowId: 'DISP-1011',
-    acqTxnId: '102047735808524698',
-    tollTxnId: 'ZP020929',
-    vrn: 'GH92DD6152',
-    tagId: '34161FA82032866C020F7D20',
-    plazaId: '161616',
-    plazaName: 'ARCON',
-    txnDate: '02-09-2026 11:00:00',
-    txnAmount: 80.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 2,
-    cbReason: 'Arbitration: Optical Sensor Discrepancy',
-    functionCode: 479,
-    disputeType: 'Arbitration Raised',
-    plazaAction: 'No',
-    disputeStatus: 'NA',
-    plazaReason: 'NA',
-    assigned: false,
-    adminReason: '',
-    adminEvidence: [],
-    plazaEvidence: [],
-    decidedAt: null,
-  },
-  {
-    rowId: 'DISP-1012',
-    acqTxnId: '102047735808524696',
-    tollTxnId: 'ZP020928',
-    vrn: 'GH92DD6152',
-    tagId: '34161FA82032866C020F7D20',
-    plazaId: '745643',
-    plazaName: 'ERHSHR',
-    txnDate: '02-09-2026 10:00:00',
-    txnAmount: 80.0,
-    disputeAmount: 80.0,
-    cbRaisedDate: '02-09-2026',
-    cbRaisedDaysAgo: 2,
-    cbReason: 'Delayed Settlement Dispute',
-    functionCode: 450,
-    disputeType: 'Debit Chargeback Raised',
-    plazaAction: 'No',
-    disputeStatus: 'NA',
-    plazaReason: 'NA',
-    assigned: false,
-    adminReason: '',
-    adminEvidence: [],
-    plazaEvidence: [],
-    decidedAt: null,
-  },
-];
+/**
+ * Parses YYMMDD (e.g. '261008' -> '08-10-2026') or DD-MM-YYYY / YYYY-MM-DD
+ */
+export function parseSettlementDate(raw) {
+  if (!raw) {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: today };
+  }
+
+  const str = String(raw).trim();
+  // 6-digit YYMMDD format: e.g. 261008
+  if (/^\d{6}$/.test(str)) {
+    const yy = parseInt(str.substring(0, 2), 10);
+    const mm = parseInt(str.substring(2, 4), 10);
+    const dd = parseInt(str.substring(4, 6), 10);
+    const yyyy = 2000 + yy;
+    const dateObj = new Date(yyyy, mm - 1, dd);
+    const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
+    return { formatted, dateObj };
+  }
+
+  // DD-MM-YYYY format
+  if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+    const [dd, mm, yyyy] = str.split('-').map((v) => parseInt(v, 10));
+    return { formatted: str, dateObj: new Date(yyyy, mm - 1, dd) };
+  }
+
+  // YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [yyyy, mm, dd] = str.split('-').map((v) => parseInt(v, 10));
+    const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
+    return { formatted, dateObj: new Date(yyyy, mm - 1, dd) };
+  }
+
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const yyyy = parsed.getFullYear();
+    return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: parsed };
+  }
+
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const yyyy = today.getFullYear();
+  return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: today };
+}
+
+/**
+ * Calculate TAT Due Date = Settlement Date + 8 days (T+8)
+ */
+export function computeTatDueDate(settlementDateStr) {
+  const { dateObj } = parseSettlementDate(settlementDateStr);
+  const due = new Date(dateObj);
+  due.setDate(due.getDate() + 8);
+  const dd = String(due.getDate()).padStart(2, '0');
+  const mm = String(due.getMonth() + 1).padStart(2, '0');
+  const yyyy = due.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+/**
+ * Format current timestamp in IST: DD-MM-YYYY HH:mm:ss
+ */
+export function formatIstTimestamp(date = new Date()) {
+  const d = new Date(date);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
+}
+
+const INITIAL_SEED_ROWS = [];
 
 class DisputeManagementService {
   constructor() {
@@ -323,127 +101,23 @@ class DisputeManagementService {
   initStore() {
     if (typeof window === 'undefined') return;
     try {
+      // Clear any legacy test keys to guarantee 100% clean real data
+      localStorage.removeItem('paysonic_disputes_v1');
+      localStorage.removeItem('paysonic_disputes_v2');
+      localStorage.removeItem('paysonic_dispute_batches_v1');
+      localStorage.removeItem('paysonic_dispute_batches_v2');
+
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
-      if (!raw || raw.includes('Testing 04') || raw.includes('Testing 05') || raw.includes('PLAZA 1')) {
-        localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(INITIAL_SEED_ROWS));
-      } else {
-        // Automatically migrate any legacy prototype records if found
-        this.migrateLegacyDisputes(JSON.parse(raw));
+      if (!raw) {
+        localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify([]));
       }
       const rawBatches = localStorage.getItem(STORAGE_KEY_BATCHES);
       if (!rawBatches) {
-        const seedBatches = [
-          {
-            batchId: 'BATCH-2026-0901',
-            fileName: '011IBKL2590002223106.csv',
-            uploadedAt: '01-09-2026 14:22:10',
-            uploadedBy: 'Master Admin',
-            totalRows: 6,
-            matchedRows: 5,
-            unmatchedRows: 1,
-            status: 'Processed',
-          },
-        ];
-        localStorage.setItem(STORAGE_KEY_BATCHES, JSON.stringify(seedBatches));
+        localStorage.setItem(STORAGE_KEY_BATCHES, JSON.stringify([]));
       }
     } catch (e) {
       console.warn('[DisputeManagementService] Store init warning:', e);
     }
-  }
-
-  migrateLegacyDisputes(rows, customPool = null) {
-    if (!Array.isArray(rows)) return INITIAL_SEED_ROWS;
-    let modified = false;
-
-    const REASON_MAPPING = {
-      'Testing 04': 'FASTag Double Debit',
-      'Testing 05': 'Incorrect Toll Fare Deduction',
-      'Testing 01': 'Overcharged Toll Fare',
-      'Testing 02': 'FASTag Duplicate Deduction',
-      'Testing 03': 'Tag In Blacklist Exception',
-      'Testing 06': 'Toll Deducted Without Passage',
-      'Testing CB': 'Delayed Settlement Dispute',
-      'Pre Arb': 'Pre-Arbitration: Unrecognized Journey',
-      'Dummy Testing': 'AVC optical sensor verified vehicle passage',
-    };
-
-    // Dynamically retrieve realtime onboarded plazas from OnboardingService
-    const onboardedList = (Array.isArray(customPool) && customPool.length > 0)
-      ? customPool
-      : (OnboardingService.getCachedPlazas()?.length > 0
-          ? OnboardingService.getCachedPlazas()
-          : DEFAULT_PLAZAS);
-
-    const validPlazas = onboardedList.filter((p) => {
-      const id = String(p.id || p.plazaId || '').trim();
-      const name = (p.name || p.plazaName || '').trim().toLowerCase();
-      return (
-        id &&
-        id !== '600601' &&
-        id !== '600602' &&
-        id !== '778999' &&
-        id !== '778899' &&
-        id !== '787878' &&
-        !name.includes('dummy') &&
-        name !== 'gluten' &&
-        name !== 'plaza 1'
-      );
-    });
-
-    const activePool = validPlazas.length > 0 ? validPlazas : DEFAULT_PLAZAS;
-    const validIdSet = new Set(activePool.map((p) => String(p.id || p.plazaId)));
-
-    const updated = rows.map((r, idx) => {
-      let rowUpdated = { ...r };
-      const pId = String(r.plazaId || '').trim();
-      const pName = (r.plazaName || '').trim();
-      const pNameLower = pName.toLowerCase();
-
-      const isLegacy =
-        !pName ||
-        !pId ||
-        pNameLower.includes('dummy') ||
-        pNameLower === 'gluten' ||
-        pNameLower === 'plaza 1' ||
-        pId === '600601' ||
-        pId === '600602' ||
-        pId === '778899' ||
-        pId === '778999' ||
-        pId === '787878' ||
-        !validIdSet.has(pId);
-
-      if (isLegacy) {
-        modified = true;
-        const target = activePool[idx % activePool.length];
-        const tid = String(target.id || target.plazaId);
-        const tname = target.name || target.plazaName || `Plaza ${tid}`;
-        rowUpdated.plazaId = tid;
-        rowUpdated.plazaName = tname;
-      }
-
-      // Sanitize dummy testing reasons
-      if (REASON_MAPPING[r.cbReason] || (r.cbReason && r.cbReason.toLowerCase().startsWith('testing'))) {
-        modified = true;
-        rowUpdated.cbReason = REASON_MAPPING[r.cbReason] || 'FASTag Double Debit';
-      }
-
-      // Sanitize dummy testing plaza decisions
-      if (r.plazaReason === 'Dummy Testing') {
-        modified = true;
-        rowUpdated.plazaReason = 'AVC optical sensor verified vehicle passage';
-      }
-
-      return rowUpdated;
-    });
-
-    if (modified) {
-      try {
-        localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('[DisputeManagementService] Migration save warning:', e);
-      }
-    }
-    return updated;
   }
 
   async getRealtimePlazas() {
@@ -470,13 +144,31 @@ class DisputeManagementService {
     return DEFAULT_PLAZAS;
   }
 
-  getStoredDisputes(overridePool = null) {
+  getStoredDisputes() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
-      const parsed = raw ? JSON.parse(raw) : INITIAL_SEED_ROWS;
-      return this.migrateLegacyDisputes(parsed, overridePool);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return parsed.map((r) => {
+        const settlement = r.settlementDate || r.cbRaisedDate || '';
+        const tatDue = r.tatDueDate || (settlement ? computeTatDueDate(settlement) : '');
+        let lifecycleStatus = r.lifecycleStatus;
+        if (!lifecycleStatus) {
+          if (r.closed) lifecycleStatus = 'Closed';
+          else if (r.disputeStatus === 'Approved') lifecycleStatus = 'Plaza Accepted';
+          else if (r.disputeStatus === 'Rejected') lifecycleStatus = 'Plaza Rejected';
+          else if (r.assigned) lifecycleStatus = 'Assigned to Plaza';
+          else lifecycleStatus = 'Pending Assignment';
+        }
+        return {
+          ...r,
+          settlementDate: settlement,
+          tatDueDate: tatDue,
+          lifecycleStatus,
+          closed: Boolean(r.closed),
+        };
+      });
     } catch {
-      return INITIAL_SEED_ROWS;
+      return [];
     }
   }
 
@@ -507,7 +199,7 @@ class DisputeManagementService {
     }
   }
 
-  logAudit(action, details) {
+  logAudit(action, details, actor = null) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_AUDIT);
       const list = raw ? JSON.parse(raw) : [];
@@ -516,25 +208,31 @@ class DisputeManagementService {
         action,
         details,
         timestamp: new Date().toISOString(),
-        actor: localStorage.getItem('actorId') || 'Master Admin',
+        actor: actor || localStorage.getItem('actorId') || 'Master Admin',
       });
-      localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(list.slice(0, 100)));
+      localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(list.slice(0, 200)));
     } catch (e) {
       console.warn('[DisputeManagementService] Audit error:', e);
     }
   }
 
   computeDaysLeft(row) {
+    if (row.tatDueDate) {
+      const { dateObj } = parseSettlementDate(row.tatDueDate);
+      const now = new Date();
+      const diffMs = dateObj.getTime() - now.getTime();
+      return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    }
     const daysAgo = row.cbRaisedDaysAgo ?? 1;
     return DEFAULT_TAT_DAYS - daysAgo;
   }
 
   getTatBadge(row) {
-    if (row.assigned && row.disputeStatus !== 'NA') {
+    if (row.closed || row.disputeStatus !== 'NA') {
       return { status: 'closed', label: 'Closed', colorClass: 'badge-gray' };
     }
     const daysLeft = this.computeDaysLeft(row);
-    if (daysLeft <= 0) {
+    if (daysLeft < 0) {
       return { status: 'overdue', label: 'Overdue', colorClass: 'badge-red' };
     }
     if (daysLeft <= 2) {
@@ -547,16 +245,10 @@ class DisputeManagementService {
    * Search / filter disputes
    */
   async searchDisputes(filters = {}) {
-    let livePlazas = [];
-    try {
-      livePlazas = await OnboardingService.getPlazas();
-    } catch {
-      livePlazas = OnboardingService.getCachedPlazas();
-    }
-    let rows = this.getStoredDisputes(livePlazas);
+    let rows = this.getStoredDisputes();
 
     // Plaza scope filter if user is Plaza role
-    if (filters.scopedPlazaId) {
+    if (filters.scopedPlazaId && filters.scopedPlazaId !== 'ALL') {
       rows = rows.filter((r) => String(r.plazaId) === String(filters.scopedPlazaId));
     }
 
@@ -571,9 +263,13 @@ class DisputeManagementService {
     if (filters.assignStatus) {
       if (filters.assignStatus === 'Assigned') {
         rows = rows.filter((r) => r.assigned === true);
-      } else if (filters.assignStatus === 'Unassigned' || filters.assignStatus === 'UnAssigned') {
+      } else if (filters.assignStatus === 'Unassigned' || filters.assignStatus === 'UnAssigned' || filters.assignStatus === 'Pending Assignment') {
         rows = rows.filter((r) => r.assigned === false);
       }
+    }
+
+    if (filters.lifecycleStatus && filters.lifecycleStatus !== 'ALL') {
+      rows = rows.filter((r) => r.lifecycleStatus === filters.lifecycleStatus);
     }
 
     if (filters.disputeStatus && filters.disputeStatus !== 'ALL') {
@@ -645,13 +341,7 @@ class DisputeManagementService {
    * Mini Dashboard metrics for Admin Chargeback Assign (Section 6.1)
    */
   async getAdminMiniDashboardStats() {
-    let livePlazas = [];
-    try {
-      livePlazas = await OnboardingService.getPlazas();
-    } catch {
-      livePlazas = OnboardingService.getCachedPlazas();
-    }
-    const rows = this.getStoredDisputes(livePlazas);
+    const rows = this.getStoredDisputes();
     const unassigned = rows.filter((r) => !r.assigned).length;
     const assigned = rows.filter((r) => r.assigned).length;
 
@@ -685,12 +375,12 @@ class DisputeManagementService {
    */
   async getPlazaDashboardStats(plazaId) {
     const all = this.getStoredDisputes();
-    const plazaRows = plazaId
+    const plazaRows = (plazaId && plazaId !== 'ALL')
       ? all.filter((r) => String(r.plazaId) === String(plazaId))
       : all;
 
-    const openRows = plazaRows.filter((r) => r.disputeStatus === 'NA');
-    const closedRows = plazaRows.filter((r) => r.disputeStatus !== 'NA');
+    const openRows = plazaRows.filter((r) => r.disputeStatus === 'NA' && !r.closed);
+    const closedRows = plazaRows.filter((r) => r.disputeStatus !== 'NA' || r.closed);
 
     const openValue = openRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
     const closedValue = closedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
@@ -699,7 +389,7 @@ class DisputeManagementService {
     const approvedCount = plazaRows.filter((r) => r.disputeStatus === 'Approved').length;
     const rejectedCount = plazaRows.filter((r) => r.disputeStatus === 'Rejected').length;
 
-    // TAT Warning Items
+    // TAT Warning Items (open rows with <= 2 days left)
     const atRiskDisputes = openRows
       .filter((r) => this.computeDaysLeft(r) <= 2)
       .map((r) => ({
@@ -749,7 +439,7 @@ class DisputeManagementService {
   /**
    * Bulk assign selected plazas (Section 6.4)
    */
-  async bulkAssignPlazas(selectedPlazaIds, defaultReason = 'Bulk-assigned for plaza review') {
+  async bulkAssignPlazas(selectedPlazaIds, defaultReason = 'Bulk-assigned for plaza review', actor = 'Master Admin') {
     const rows = this.getStoredDisputes();
     let updatedCount = 0;
 
@@ -759,6 +449,9 @@ class DisputeManagementService {
         return {
           ...r,
           assigned: true,
+          lifecycleStatus: 'Assigned to Plaza',
+          assignedBy: actor,
+          assignedAt: new Date().toISOString(),
           adminReason: r.adminReason || defaultReason,
         };
       }
@@ -766,14 +459,14 @@ class DisputeManagementService {
     });
 
     this.saveDisputes(newRows);
-    this.logAudit('BULK_ASSIGN', `Assigned ${updatedCount} rows for plazas: ${selectedPlazaIds.join(', ')}`);
+    this.logAudit('BULK_ASSIGN', `Assigned ${updatedCount} rows for plazas: ${selectedPlazaIds.join(', ')}`, actor);
     return { updatedCount };
   }
 
   /**
    * Bulk unassign selected plazas (Section 6.4)
    */
-  async bulkUnassignPlazas(selectedPlazaIds) {
+  async bulkUnassignPlazas(selectedPlazaIds, actor = 'Master Admin') {
     const rows = this.getStoredDisputes();
     let updatedCount = 0;
 
@@ -781,26 +474,34 @@ class DisputeManagementService {
       if (
         selectedPlazaIds.includes(String(r.plazaId)) &&
         r.assigned &&
-        r.disputeStatus === 'NA'
+        r.disputeStatus === 'NA' &&
+        !r.closed
       ) {
         updatedCount++;
         return {
           ...r,
           assigned: false,
+          lifecycleStatus: 'Pending Assignment',
+          assignedBy: null,
+          assignedAt: null,
         };
       }
       return r;
     });
 
     this.saveDisputes(newRows);
-    this.logAudit('BULK_UNASSIGN', `Unassigned ${updatedCount} open rows for plazas: ${selectedPlazaIds.join(', ')}`);
+    this.logAudit('BULK_UNASSIGN', `Unassigned ${updatedCount} open rows for plazas: ${selectedPlazaIds.join(', ')}`, actor);
     return { updatedCount };
   }
 
   /**
    * Assign a single row with admin evidence and reason (Section 7.2)
    */
-  async assignRow(rowId, adminReason, evidenceList = []) {
+  async assignRow(rowId, adminReason, evidenceList = [], actor = 'Master Admin') {
+    if (!adminReason || !adminReason.trim()) {
+      throw new Error('Reason / remarks explaining the dispute is mandatory.');
+    }
+
     const rows = this.getStoredDisputes();
     const row = rows.find((r) => r.rowId === rowId);
     if (!row) throw new Error('Dispute row not found');
@@ -811,7 +512,10 @@ class DisputeManagementService {
         return {
           ...r,
           assigned: true,
-          adminReason,
+          lifecycleStatus: 'Assigned to Plaza',
+          assignedBy: actor,
+          assignedAt: new Date().toISOString(),
+          adminReason: adminReason.trim(),
           adminEvidence: evidenceList.length > 0 ? evidenceList : r.adminEvidence,
         };
       }
@@ -819,18 +523,28 @@ class DisputeManagementService {
     });
 
     this.saveDisputes(updated);
-    this.logAudit('ROW_ASSIGN', `Assigned dispute ${rowId} to plaza ${row.plazaId}`);
+    this.logAudit('ROW_ASSIGN', `Assigned dispute ${rowId} to plaza ${row.plazaId}`, actor);
     return { success: true };
   }
 
   /**
    * Plaza submits decision (Section 10)
+   * If rejected, evidenceList must contain at least 1 counter-evidence file.
    */
-  async submitPlazaDecision(rowId, decision, plazaReason, evidenceList = []) {
+  async submitPlazaDecision(rowId, decision, plazaReason, evidenceList = [], actor = 'Plaza User') {
+    if (!plazaReason || !plazaReason.trim()) {
+      throw new Error('Plaza remarks / justification are mandatory.');
+    }
+    if (decision === 'Rejected' && (!evidenceList || evidenceList.length === 0)) {
+      throw new Error('At least one counter-evidence file is mandatory when rejecting a dispute.');
+    }
+
     const rows = this.getStoredDisputes();
     const row = rows.find((r) => r.rowId === rowId);
     if (!row) throw new Error('Dispute row not found');
     if (row.disputeStatus !== 'NA') throw new Error('Decision has already been submitted and locked');
+
+    const istNow = formatIstTimestamp();
 
     const updated = rows.map((r) => {
       if (r.rowId === rowId) {
@@ -838,8 +552,11 @@ class DisputeManagementService {
           ...r,
           plazaAction: 'Yes',
           disputeStatus: decision,
-          plazaReason,
+          lifecycleStatus: decision === 'Approved' ? 'Plaza Accepted' : 'Plaza Rejected',
+          plazaReason: plazaReason.trim(),
           plazaEvidence: evidenceList.length > 0 ? evidenceList : r.plazaEvidence,
+          plazaActionTime: istNow,
+          plazaActionBy: actor,
           decidedAt: new Date().toISOString(),
         };
       }
@@ -847,7 +564,34 @@ class DisputeManagementService {
     });
 
     this.saveDisputes(updated);
-    this.logAudit('PLAZA_DECISION', `Plaza decided ${decision} for dispute ${rowId}`);
+    this.logAudit('PLAZA_DECISION', `Plaza decided ${decision} for dispute ${rowId} at ${istNow}`, actor);
+    return { success: true };
+  }
+
+  /**
+   * Admin Closes Dispute (Stage 4)
+   */
+  async closeDispute(rowId, actor = 'Master Admin') {
+    const rows = this.getStoredDisputes();
+    const row = rows.find((r) => r.rowId === rowId);
+    if (!row) throw new Error('Dispute row not found');
+    if (row.closed) throw new Error('Dispute is already closed');
+
+    const updated = rows.map((r) => {
+      if (r.rowId === rowId) {
+        return {
+          ...r,
+          closed: true,
+          lifecycleStatus: 'Closed',
+          closedBy: actor,
+          closedAt: new Date().toISOString(),
+        };
+      }
+      return r;
+    });
+
+    this.saveDisputes(updated);
+    this.logAudit('CLOSE_DISPUTE', `Admin closed dispute ${rowId}`, actor);
     return { success: true };
   }
 
@@ -857,12 +601,29 @@ class DisputeManagementService {
   matchCsvRows(parsedRows) {
     const existing = this.getStoredDisputes();
     const results = [];
+    const errorRows = [];
     let matchedCount = 0;
     let unmatchedCount = 0;
+    let duplicateCount = 0;
 
-    parsedRows.forEach((row) => {
-      const rrn = (row['RRN'] || row['rrn'] || '').trim();
-      const funcCodeNum = Number(row['Function Code'] || row['functionCode'] || 450);
+    parsedRows.forEach((row, idx) => {
+      const rowNum = idx + 2; // 1-based header offset
+      const rrn = (row['RRN'] || row['rrn'] || row['Acq Txn ID'] || row['Acquirer Reference Number'] || '').trim();
+      const funcCodeNum = Number(row['Function Code'] || row['functionCode'] || row['FunctionCode'] || 450);
+      const rawSettlement = row['Settlement Date'] || row['settlementDate'] || row['Settlement_Date'] || '';
+      const { formatted: settlementDate } = parseSettlementDate(rawSettlement);
+      const tatDueDate = computeTatDueDate(settlementDate);
+
+      if (!rrn) {
+        errorRows.push({
+          rowNumber: rowNum,
+          rrn: 'EMPTY',
+          reason: 'Missing RRN / Acq Txn ID',
+        });
+        unmatchedCount++;
+        return;
+      }
+
       const masterHit = TRANSACTION_MASTER[rrn];
 
       // Check deduplication key (RRN, Function Code)
@@ -870,9 +631,19 @@ class DisputeManagementService {
         (e) => e.acqTxnId === rrn && Number(e.functionCode) === funcCodeNum
       );
 
+      if (alreadyQueued) {
+        duplicateCount++;
+        errorRows.push({
+          rowNumber: rowNum,
+          rrn,
+          reason: `Duplicate row: RRN ${rrn} with function code ${funcCodeNum} already exists in queue`,
+        });
+      }
+
       if (masterHit) {
         matchedCount++;
         results.push({
+          rowNumber: rowNum,
           status: alreadyQueued ? 'Duplicate' : 'Matched',
           isMatched: true,
           alreadyQueued,
@@ -880,6 +651,8 @@ class DisputeManagementService {
           tagId: masterHit.tagId || row['Tag ID'] || '—',
           functionCode: funcCodeNum,
           disputeType: FUNCTION_CODE_MAP[funcCodeNum] || `Code ${funcCodeNum}`,
+          settlementDate,
+          tatDueDate,
           txnAmount: masterHit.txnAmount || Number(row['Transaction Amount'] || 0),
           disputeAmount: masterHit.txnAmount || Number(row['Transaction Amount'] || 0),
           memberMessageText: row['Member Message Text'] || row['CB Reason'] || 'Imported from bank file',
@@ -891,7 +664,13 @@ class DisputeManagementService {
         });
       } else {
         unmatchedCount++;
+        errorRows.push({
+          rowNumber: rowNum,
+          rrn,
+          reason: `Unmatched: RRN ${rrn} not found in authoritative Transaction Master`,
+        });
         results.push({
+          rowNumber: rowNum,
           status: 'Unmatched',
           isMatched: false,
           alreadyQueued: false,
@@ -899,6 +678,8 @@ class DisputeManagementService {
           tagId: row['Tag ID'] || '—',
           functionCode: funcCodeNum,
           disputeType: FUNCTION_CODE_MAP[funcCodeNum] || `Code ${funcCodeNum}`,
+          settlementDate,
+          tatDueDate,
           txnAmount: Number(row['Transaction Amount'] || 0),
           disputeAmount: Number(row['Transaction Amount'] || 0),
           memberMessageText: row['Member Message Text'] || '—',
@@ -915,14 +696,16 @@ class DisputeManagementService {
       totalRows: parsedRows.length,
       matchedCount,
       unmatchedCount,
+      duplicateCount,
       results,
+      errorRows,
     };
   }
 
   /**
    * Add verified matched rows to Chargeback Assign queue
    */
-  async commitMatchedRows(fileName, matchedResults) {
+  async commitMatchedRows(fileName, matchedResults, actor = 'Master Admin') {
     const existing = this.getStoredDisputes();
     let inserted = 0;
 
@@ -943,6 +726,8 @@ class DisputeManagementService {
         plazaId: String(r.plazaId),
         plazaName: r.plazaName,
         txnDate: r.txnDate,
+        settlementDate: r.settlementDate,
+        tatDueDate: r.tatDueDate,
         txnAmount: r.txnAmount,
         disputeAmount: r.disputeAmount,
         cbRaisedDate: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
@@ -950,14 +735,21 @@ class DisputeManagementService {
         cbReason: r.memberMessageText,
         functionCode: r.functionCode,
         disputeType: r.disputeType,
+        lifecycleStatus: 'Pending Assignment',
         plazaAction: 'No',
         disputeStatus: 'NA',
         plazaReason: 'NA',
         assigned: false,
+        assignedBy: null,
+        assignedAt: null,
         adminReason: '',
         adminEvidence: [],
         plazaEvidence: [],
+        plazaActionTime: null,
         decidedAt: null,
+        closed: false,
+        closedBy: null,
+        closedAt: null,
       });
       inserted++;
     });
@@ -970,16 +762,17 @@ class DisputeManagementService {
       batchId: `BATCH-${Date.now().toString().slice(-6)}`,
       fileName,
       uploadedAt: new Date().toLocaleString('en-GB'),
-      uploadedBy: localStorage.getItem('actorId') || 'Master Admin',
+      uploadedBy: actor,
       totalRows: matchedResults.length,
       matchedRows: inserted,
       unmatchedRows: matchedResults.length - inserted,
       status: 'Processed',
     });
 
-    this.logAudit('FILE_UPLOAD', `Uploaded ${fileName}: added ${inserted} disputes`);
+    this.logAudit('FILE_UPLOAD', `Uploaded ${fileName}: added ${inserted} disputes to queue`, actor);
     return { inserted };
   }
 }
 
 export default new DisputeManagementService();
+

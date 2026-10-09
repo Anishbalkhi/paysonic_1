@@ -141,11 +141,14 @@ export const ChargebackAssign = () => {
       'Toll Plaza Name',
       'Toll Plaza ID',
       'Txn Date',
+      'Settlement Date',
+      'TAT Due Date (T+8)',
       'CB Raised Date',
       'CB Reason',
       'Function Code',
       'Dispute Type',
       'Plaza Action',
+      'Plaza Action Date & Time',
       'Dispute Status',
       'Plaza Reason',
       'Txn Amount',
@@ -162,7 +165,7 @@ export const ChargebackAssign = () => {
     const csvRows = rows.map((r) => {
       const tat = DisputeManagementService.getTatBadge(r);
       return [
-        r.assigned ? 'Assigned' : 'Unassigned',
+        r.lifecycleStatus || (r.assigned ? 'Assigned' : 'Unassigned'),
         r.acqTxnId,
         r.tollTxnId,
         r.vrn,
@@ -170,11 +173,14 @@ export const ChargebackAssign = () => {
         r.plazaName,
         r.plazaId,
         r.txnDate,
+        r.settlementDate || '—',
+        r.tatDueDate || '—',
         r.cbRaisedDate,
         r.cbReason,
         r.functionCode,
         r.disputeType,
         r.plazaAction === 'Yes' ? 'Yes' : 'No',
+        r.plazaActionTime || '—',
         r.disputeStatus,
         r.plazaReason,
         Number(r.txnAmount || 0).toFixed(2),
@@ -210,9 +216,9 @@ export const ChargebackAssign = () => {
 
     const headers = [
       'Assign Status', 'Acq Txn ID', 'Toll Txn ID', 'VRN', 'Tag ID',
-      'Toll Plaza Name', 'Toll Plaza ID', 'Txn Date', 'CB Raised Date',
-      'CB Reason', 'Function Code', 'Dispute Type', 'Plaza Action',
-      'Dispute Status', 'Plaza Reason', 'Txn Amount', 'Dispute Amount', 'TAT'
+      'Toll Plaza Name', 'Toll Plaza ID', 'Txn Date', 'Settlement Date', 'TAT Due Date (T+8)',
+      'CB Raised Date', 'CB Reason', 'Function Code', 'Dispute Type', 'Plaza Action',
+      'Plaza Action Date & Time', 'Dispute Status', 'Plaza Reason', 'Txn Amount', 'Dispute Amount', 'TAT'
     ];
 
     let dataXml = '';
@@ -220,7 +226,7 @@ export const ChargebackAssign = () => {
       const tat = DisputeManagementService.getTatBadge(r);
       dataXml += `
       <Row ss:Height="20">
-        <Cell><Data ss:Type="String">${xmlEsc(r.assigned ? 'Assigned' : 'Unassigned')}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.lifecycleStatus || (r.assigned ? 'Assigned' : 'Unassigned'))}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.acqTxnId)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.tollTxnId)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.vrn)}</Data></Cell>
@@ -228,11 +234,14 @@ export const ChargebackAssign = () => {
         <Cell><Data ss:Type="String">${xmlEsc(r.plazaName)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.plazaId)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.cbRaisedDate)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
         <Cell><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.disputeType)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.plazaAction === 'Yes' ? 'Yes' : 'No')}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaActionTime || '—')}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.disputeStatus)}</Data></Cell>
         <Cell><Data ss:Type="String">${xmlEsc(r.plazaReason)}</Data></Cell>
         <Cell><Data ss:Type="Number">${Number(r.txnAmount || 0)}</Data></Cell>
@@ -269,6 +278,19 @@ export const ChargebackAssign = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleCloseDispute = async (rowId) => {
+    if (!window.confirm(`Are you sure you want to close dispute ${rowId}? This action will finalize the dispute.`)) {
+      return;
+    }
+    try {
+      const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
+      await DisputeManagementService.closeDispute(rowId, actorName);
+      loadData();
+    } catch (err) {
+      alert(`Error closing dispute: ${err.message}`);
+    }
   };
 
   const paginatedRows = useMemo(() => {
@@ -567,11 +589,13 @@ export const ChargebackAssign = () => {
                 <th>Tag ID</th>
                 <th>Toll Plaza</th>
                 <th>Txn Date</th>
-                <th>CB Raised Date</th>
+                <th>Settlement Date</th>
+                <th>TAT Due Date</th>
                 <th>CB Reason</th>
                 <th>Function Code</th>
                 <th>Dispute Type</th>
                 <th>Plaza Action</th>
+                <th>Plaza Action Time</th>
                 <th>Dispute Status</th>
                 <th>Plaza Reason</th>
                 <th style={{ textAlign: 'right' }}>Txn Amt</th>
@@ -583,26 +607,33 @@ export const ChargebackAssign = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="18" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="20" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     Loading dispute queue...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan="18" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="20" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     No disputes found for the selected criteria.
                   </td>
                 </tr>
               ) : (
                 paginatedRows.map((r) => {
                   const tat = DisputeManagementService.getTatBadge(r);
+                  const canClose = (r.disputeStatus === 'Approved' || r.disputeStatus === 'Rejected') && !r.closed;
                   return (
                     <tr key={r.rowId}>
                       <td>
-                        {r.assigned ? (
-                          <span className="badge tag-assigned">Assigned</span>
+                        {r.closed ? (
+                          <span className="badge badge-gray">Closed</span>
+                        ) : r.lifecycleStatus === 'Plaza Accepted' ? (
+                          <span className="badge badge-green">Plaza Accepted</span>
+                        ) : r.lifecycleStatus === 'Plaza Rejected' ? (
+                          <span className="badge badge-red">Plaza Rejected</span>
+                        ) : r.assigned ? (
+                          <span className="badge tag-assigned">Assigned to Plaza</span>
                         ) : (
-                          <span className="badge tag-cb-assign">CB Assign</span>
+                          <span className="badge tag-cb-assign">Pending Assignment</span>
                         )}
                       </td>
                       <td>
@@ -619,7 +650,8 @@ export const ChargebackAssign = () => {
                       <td className="code-cell">{r.tagId ? `${r.tagId.slice(0, 10)}…` : '—'}</td>
                       <td>{r.plazaName} ({r.plazaId})</td>
                       <td>{r.txnDate}</td>
-                      <td>{r.cbRaisedDate}</td>
+                      <td>{r.settlementDate || r.cbRaisedDate || '—'}</td>
+                      <td style={{ fontWeight: 600, color: '#0369a1' }}>{r.tatDueDate || '—'}</td>
                       <td>{r.cbReason}</td>
                       <td className="code-cell" style={{ textAlign: 'center' }}>{r.functionCode}</td>
                       <td>{r.disputeType}</td>
@@ -627,6 +659,9 @@ export const ChargebackAssign = () => {
                         <span className={`badge ${r.plazaAction === 'Yes' ? 'badge-blue' : 'badge-gray'}`}>
                           {r.plazaAction === 'Yes' ? 'Yes' : 'No'}
                         </span>
+                      </td>
+                      <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap', color: '#0f172a' }}>
+                        {r.plazaActionTime || '—'}
                       </td>
                       <td>
                         {r.disputeStatus === 'Approved' ? (
@@ -645,24 +680,28 @@ export const ChargebackAssign = () => {
                       <td>
                         <span className={`badge ${tat.colorClass}`}>{tat.label}</span>
                       </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {r.assigned ? (
+                      <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
                           <button
                             type="button"
-                            className="btn btn-secondary btn-sm"
+                            className={`btn ${r.assigned ? 'btn-secondary' : 'btn-primary'} btn-sm`}
                             onClick={() => setCbModalRow(r)}
                           >
-                            View
+                            {r.assigned ? 'View' : 'CB Assign'}
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn btn-primary btn-sm"
-                            onClick={() => setCbModalRow(r)}
-                          >
-                            CB Assign
-                          </button>
-                        )}
+
+                          {canClose && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={() => handleCloseDispute(r.rowId)}
+                              title="Close this dispute"
+                              style={{ padding: '4px 8px', fontSize: '0.78rem' }}
+                            >
+                              Close
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

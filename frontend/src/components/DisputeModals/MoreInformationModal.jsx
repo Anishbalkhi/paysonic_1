@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import EvidencePreviewModal from './EvidencePreviewModal';
+import EvidenceUploader from './EvidenceUploader';
 import './DisputeModals.scss';
 
 export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
+  const { currentUser } = useAuth();
   const [adminReason, setAdminReason] = useState('');
   const [adminEvidence, setAdminEvidence] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,48 +26,21 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
 
   const isAssigned = Boolean(disputeRow.assigned);
 
-  const handleUploadFile = (e) => {
-    if (isAssigned) return;
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const fileObj = {
-        name: file.name,
-        size: file.size,
-        type: file.type || 'application/octet-stream',
-        dataUrl: reader.result,
-        uploadedAt: new Date().toISOString(),
-      };
-      setAdminEvidence((prev) => [...prev, fileObj]);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  const handleRemoveFile = (index) => {
-    if (isAssigned) return;
-    setAdminEvidence((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleAssignToPlaza = async () => {
     if (!adminReason.trim()) {
-      setErrorMsg('Please enter a reason before assigning to the plaza.');
-      return;
-    }
-    if (adminEvidence.length === 0) {
-      setErrorMsg('Please upload at least one evidence file before assigning.');
+      setErrorMsg('Reason / remarks explaining the dispute is mandatory.');
       return;
     }
 
     try {
       setIsSubmitting(true);
       setErrorMsg('');
+      const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
       await DisputeManagementService.assignRow(
         disputeRow.rowId,
         adminReason.trim(),
-        adminEvidence
+        adminEvidence,
+        actorName
       );
       if (onUpdated) onUpdated();
       onClose();
@@ -113,21 +89,9 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
           >
             👁️ View
           </button>
-
-          {isAdminCol && !isAssigned ? (
-            <button
-              type="button"
-              className="btn-remove-file"
-              onClick={() => handleRemoveFile(index)}
-              title="Remove file"
-            >
-              ✕ Remove
-            </button>
-          ) : (
-            <span className="locked-tag">
-              {isAdminCol ? 'Locked' : 'View Only'}
-            </span>
-          )}
+          <span className="locked-tag">
+            {isAdminCol ? (isAssigned ? 'Locked' : 'Attached') : 'View Only'}
+          </span>
         </div>
       </div>
     );
@@ -171,6 +135,16 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                 <label>Plaza ID</label>
                 <div className="meta-display">{disputeRow.plazaId}</div>
               </div>
+              <div className="meta-box">
+                <label>Settlement Date</label>
+                <div className="meta-display">{disputeRow.settlementDate || disputeRow.cbRaisedDate || '—'}</div>
+              </div>
+              <div className="meta-box">
+                <label>TAT Due Date</label>
+                <div className="meta-display" style={{ color: '#0369a1', fontWeight: 600 }}>
+                  {disputeRow.tatDueDate || '—'}
+                </div>
+              </div>
             </div>
 
             {/* Two Independent Columns: Admin (Left) & Plaza (Right) */}
@@ -181,27 +155,14 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   Admin · User's Reasons and Proof
                 </div>
                 <div className="section-content">
-                  <div className="attachment-section-label">
-                    <span>Admin Attachments ({adminEvidence.length})</span>
-                    <span className="sub-tag">Visible to Admin &amp; Plaza</span>
-                  </div>
-
-                  <div className="files-container">
-                    {adminEvidence.length === 0 ? (
-                      <div className="no-evidence-text">No evidence uploaded yet</div>
-                    ) : (
-                      adminEvidence.map((f, i) =>
-                        renderEvidenceChip(f, i, true)
-                      )
-                    )}
-                  </div>
-
                   <div className="field-block">
-                    <label htmlFor="adminReasonInput">Reason</label>
+                    <label htmlFor="adminReasonInput">
+                      Reason / Explanation <span style={{ color: '#ef4444' }}>* (Mandatory)</span>
+                    </label>
                     <textarea
                       id="adminReasonInput"
                       rows={3}
-                      placeholder="Enter reason for chargeback assignment..."
+                      placeholder="Enter mandatory reason explaining the chargeback assignment..."
                       value={adminReason}
                       onChange={(e) => setAdminReason(e.target.value)}
                       disabled={isAssigned}
@@ -210,31 +171,43 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
 
                   {!isAssigned ? (
                     <>
-                      <div className="file-upload-dropzone">
-                        <label className="upload-label" htmlFor="adminFileUpload">
-                          <span>📎 Attach Acquirer Proof (PDF, JPG, PNG)</span>
-                        </label>
-                        <input
-                          type="file"
-                          id="adminFileUpload"
-                          onChange={handleUploadFile}
-                        />
-                      </div>
+                      <EvidenceUploader
+                        files={adminEvidence}
+                        onChange={setAdminEvidence}
+                        disabled={isSubmitting}
+                        label="Acquirer Evidence Attachments"
+                        isMandatory={false}
+                        onPreview={(file) => setPreviewTarget({ file, source: 'Acquirer Evidence' })}
+                      />
 
                       <button
                         type="button"
                         className="btn btn-primary"
                         onClick={handleAssignToPlaza}
-                        disabled={isSubmitting || !adminReason.trim() || adminEvidence.length === 0}
-                        style={{ width: '100%', marginTop: '6px' }}
+                        disabled={isSubmitting || !adminReason.trim()}
+                        style={{ width: '100%', marginTop: '10px' }}
                       >
                         {isSubmitting ? 'Assigning...' : 'Assign to Plaza'}
                       </button>
                     </>
                   ) : (
-                    <div className="audit-locked-banner">
-                      🔒 Submitted &amp; Assigned — Locked for audit. Cannot be edited or deleted.
-                    </div>
+                    <>
+                      <div className="attachment-section-label" style={{ marginTop: '10px' }}>
+                        <span>Admin Attachments ({adminEvidence.length})</span>
+                        <span className="sub-tag">Visible to Admin &amp; Plaza</span>
+                      </div>
+                      <div className="files-container">
+                        {adminEvidence.length === 0 ? (
+                          <div className="no-evidence-text">No evidence uploaded</div>
+                        ) : (
+                          adminEvidence.map((f, i) => renderEvidenceChip(f, i, true))
+                        )}
+                      </div>
+                      <div className="audit-locked-banner" style={{ marginTop: '10px' }}>
+                        🔒 Assigned by {disputeRow.assignedBy || 'Admin'} on{' '}
+                        {disputeRow.assignedAt ? new Date(disputeRow.assignedAt).toLocaleString('en-GB') : '—'} — Locked for audit.
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -242,7 +215,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
               {/* Right: Plaza's Uploaded Evidence (Read-Only to Admin) */}
               <div className="evidence-section-card">
                 <div className="section-banner plaza-banner">
-                  Plaza · Evidence Uploaded by Plaza
+                  Plaza · Evidence &amp; Decision from Plaza
                 </div>
                 <div className="section-content">
                   <div className="attachment-section-label">
@@ -252,7 +225,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
 
                   <div className="files-container">
                     {(disputeRow.plazaEvidence || []).length === 0 ? (
-                      <div className="no-evidence-text">No data available</div>
+                      <div className="no-evidence-text">No counter-evidence uploaded</div>
                     ) : (
                       disputeRow.plazaEvidence.map((f, i) =>
                         renderEvidenceChip(f, i, false)
@@ -261,9 +234,16 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   </div>
 
                   <div className="field-block">
-                    <label>Plaza Reason</label>
+                    <label>Plaza Reason / Remarks</label>
                     <div className="readonly-value-box">
                       {disputeRow.plazaReason || 'NA'}
+                    </div>
+                  </div>
+
+                  <div className="field-block">
+                    <label>Plaza Action Date &amp; Time (IST)</label>
+                    <div className="readonly-value-box" style={{ fontWeight: 600, color: '#0369a1' }}>
+                      {disputeRow.plazaActionTime || 'Pending Plaza Decision'}
                     </div>
                   </div>
 
@@ -271,9 +251,9 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                     <label>Plaza Decision</label>
                     <div>
                       {disputeRow.disputeStatus === 'Approved' ? (
-                        <span className="badge badge-green">Approved</span>
+                        <span className="badge badge-green">Plaza Accepted</span>
                       ) : disputeRow.disputeStatus === 'Rejected' ? (
-                        <span className="badge badge-red">Rejected</span>
+                        <span className="badge badge-red">Plaza Rejected</span>
                       ) : (
                         <span className="badge badge-gray">Pending Plaza Decision</span>
                       )}
@@ -308,3 +288,4 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
 };
 
 export default MoreInformationModal;
+

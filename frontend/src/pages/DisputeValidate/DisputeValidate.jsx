@@ -130,22 +130,65 @@ export const DisputeValidate = () => {
 
   const handleExportCsv = () => {
     setDownloadTime(formatFetchTime(new Date()));
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [
-        'Acq Txn ID,Toll Txn ID,VRN,Tag ID,Toll Plaza ID,Txn Date,CB Raised Date,CB Reason,Function Code,Plaza Action,Dispute Status,Dispute Amount',
-        ...rows.map(
-          (r) =>
-            `"${r.acqTxnId}","${r.tollTxnId}","${r.vrn}","${r.tagId}","${r.plazaId}","${r.txnDate}","${r.cbRaisedDate}","${r.cbReason}","${r.functionCode}","${r.plazaAction}","${r.disputeStatus}","${r.disputeAmount}"`
-        ),
-      ].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = [
+      'Acq Txn ID',
+      'Toll Txn ID',
+      'VRN',
+      'Tag ID',
+      'Toll Plaza ID',
+      'Toll Plaza Name',
+      'Txn Date',
+      'Settlement Date',
+      'TAT Due Date (T+8)',
+      'CB Raised Date',
+      'CB Reason',
+      'Function Code',
+      'Plaza Action',
+      'Dispute Status',
+      'Plaza Reason',
+      'Dispute Amount',
+      'SLA Status'
+    ];
+
+    const csvRows = rows.map((r) => {
+      const tat = DisputeManagementService.getTatBadge(r);
+      return [
+        r.acqTxnId,
+        r.tollTxnId,
+        r.vrn,
+        r.tagId,
+        r.plazaId,
+        r.plazaName,
+        r.txnDate,
+        r.settlementDate || '—',
+        r.tatDueDate || '—',
+        r.cbRaisedDate,
+        r.cbReason,
+        r.functionCode,
+        r.plazaAction,
+        r.disputeStatus,
+        r.plazaReason,
+        r.disputeAmount,
+        tat.label
+      ].map(escapeCsv).join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...csvRows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Validate_Disputes_Plaza_${activePlazaId}.csv`);
+    link.href = url;
+    link.setAttribute('download', `Validate_Disputes_Plaza_${activePlazaId}_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -154,7 +197,7 @@ export const DisputeValidate = () => {
         <div>
           <h1>Validate Dispute</h1>
           <p className="subtitle">
-            Disputes assigned to plaza {activePlaza.name} ({activePlazaId}). Review the acquirer's evidence and reason, and submit your verified decision (Approve or Reject) with proof.
+            Disputes assigned to plaza {activePlaza.name} ({activePlazaId}). Review the acquirer's evidence and reason, and submit your verified decision (Accept or Reject) with counter-evidence.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -336,7 +379,7 @@ export const DisputeValidate = () => {
           {
             label: 'Pending Plaza Action',
             value: rows.filter(r => r.disputeStatus === 'NA').length,
-            sub: `Decided / Closed: ${rows.filter(r => r.disputeStatus !== 'NA').length}`,
+            sub: `Decided: ${rows.filter(r => r.disputeStatus !== 'NA').length}`,
             highlight: rows.some(r => r.disputeStatus === 'NA') ? 'amber' : 'green'
           }
         ]}
@@ -351,13 +394,6 @@ export const DisputeValidate = () => {
             onClick={handleExportCsv}
           >
             Export CSV
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={handleExportCsv}
-          >
-            Export Excel
           </button>
         </div>
         <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
@@ -378,25 +414,26 @@ export const DisputeValidate = () => {
                 <th>Tag ID</th>
                 <th>Toll Plaza</th>
                 <th>Txn Date</th>
-                <th>CB Raised Date</th>
+                <th>Settlement Date</th>
+                <th>TAT Due Date</th>
                 <th>CB Reason</th>
                 <th>Function Code</th>
                 <th>Plaza Action</th>
                 <th>Dispute Status</th>
                 <th style={{ textAlign: 'center' }}>Attachments</th>
-                <th>TAT</th>
+                <th>SLA Status</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="14" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="15" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     Loading plaza disputes...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan="14" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="15" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     No disputes assigned to your plaza match the filters.
                   </td>
                 </tr>
@@ -443,7 +480,8 @@ export const DisputeValidate = () => {
                       <td className="code-cell">{r.tagId ? `${r.tagId.slice(0, 10)}…` : '—'}</td>
                       <td>{r.plazaName ? `${r.plazaName} (${r.plazaId})` : `${activePlaza.name} (${r.plazaId})`}</td>
                       <td>{r.txnDate}</td>
-                      <td>{r.cbRaisedDate}</td>
+                      <td>{r.settlementDate || r.cbRaisedDate || '—'}</td>
+                      <td style={{ fontWeight: 600, color: '#0369a1' }}>{r.tatDueDate || '—'}</td>
                       <td>{r.cbReason}</td>
                       <td className="code-cell" style={{ textAlign: 'center' }}>{r.functionCode}</td>
                       <td>
@@ -453,11 +491,11 @@ export const DisputeValidate = () => {
                       </td>
                       <td>
                         {r.disputeStatus === 'Approved' ? (
-                          <span className="badge badge-green">Approved</span>
+                          <span className="badge badge-green">Plaza Accepted</span>
                         ) : r.disputeStatus === 'Rejected' ? (
-                          <span className="badge badge-red">Rejected</span>
+                          <span className="badge badge-red">Plaza Rejected</span>
                         ) : (
-                          <span className="badge badge-gray">NA</span>
+                          <span className="badge badge-gray">Pending Action</span>
                         )}
                       </td>
                       <td style={{ textAlign: 'center' }}>

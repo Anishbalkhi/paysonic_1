@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TablePagination from '../../components/common/TablePagination';
 import './DisputeFileUpload.scss';
 
-
 export const DisputeFileUpload = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [selectedFileName, setSelectedFileName] = useState('');
   const [parsedRows, setParsedRows] = useState([]);
   const [matchResult, setMatchResult] = useState(null);
@@ -50,7 +51,6 @@ export const DisputeFileUpload = () => {
     reader.readAsText(file);
   };
 
-
   const handleRunMatching = () => {
     if (parsedRows.length === 0) {
       setAlertMsg('Please choose a valid CSV file first.');
@@ -83,13 +83,41 @@ export const DisputeFileUpload = () => {
     setCurrentPage(1);
   };
 
+  const handleDownloadErrorCsv = () => {
+    if (!matchResult?.errorRows || matchResult.errorRows.length === 0) return;
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const headers = ['Row Number', 'RRN', 'Reason'];
+    const rows = matchResult.errorRows.map((err) =>
+      [err.rowNumber, err.rrn, err.reason].map(escapeCsv).join(',')
+    );
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Dispute_Upload_Errors_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleCommit = async () => {
     if (!matchResult) return;
     try {
       setIsCommitting(true);
+      const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
       const { inserted } = await DisputeManagementService.commitMatchedRows(
         selectedFileName || 'Uploaded_Dispute_File.csv',
-        matchResult.results
+        matchResult.results,
+        actorName
       );
       alert(`Success: ${inserted} matched dispute records added to the Chargeback Assign queue.`);
       navigate('/dispute-handling/chargeback-assign');
@@ -125,7 +153,7 @@ export const DisputeFileUpload = () => {
             {selectedFileName ? selectedFileName : 'Click to choose a CSV file or drag and drop here'}
           </span>
           <span className="format-hint">
-            Expected columns: Tag ID, Function Code, RRN, Acquirer ID, Transaction Amount, Message Reason Code, Member Message Text, Merchant ID, Vehicle Registration Number ...
+            Expected columns: Tag ID, Function Code, RRN, Acquirer ID, Transaction Amount, Settlement Date (YYMMDD), Message Reason Code, Member Message Text, Merchant ID, Vehicle Registration Number ...
           </span>
           <input
             id="csvFileInput"
@@ -154,7 +182,19 @@ export const DisputeFileUpload = () => {
       {/* Step 2: Match Results */}
       {matchResult && (
         <div className="match-result-card">
-          <div className="card-title">Step 2 — Master Reconcile &amp; Matching Result</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+            <div className="card-title" style={{ margin: 0 }}>Step 2 — Master Reconcile &amp; Matching Result</div>
+            {matchResult.errorRows?.length > 0 && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={handleDownloadErrorCsv}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' }}
+              >
+                ⚠️ Download Error CSV ({matchResult.errorRows.length} issues)
+              </button>
+            )}
+          </div>
 
           <div className="match-stats-grid">
             <div className="stat-pill-box">
@@ -166,8 +206,8 @@ export const DisputeFileUpload = () => {
               <strong>{matchResult.matchedCount}</strong>
             </div>
             <div className="stat-pill-box danger">
-              <span>Unmatched (Master Record Missing)</span>
-              <strong>{matchResult.unmatchedCount}</strong>
+              <span>Unmatched / Duplicates</span>
+              <strong>{matchResult.unmatchedCount + (matchResult.duplicateCount || 0)}</strong>
             </div>
           </div>
 
@@ -178,6 +218,8 @@ export const DisputeFileUpload = () => {
                   <th>Status</th>
                   <th>RRN (Acq Txn ID)</th>
                   <th>Tag ID</th>
+                  <th>Settlement Date</th>
+                  <th>TAT Due Date (T+8)</th>
                   <th>Function Code</th>
                   <th>Dispute Type</th>
                   <th>Txn Amount</th>
@@ -201,6 +243,8 @@ export const DisputeFileUpload = () => {
                     </td>
                     <td className="code">{r.rrn}</td>
                     <td className="code">{r.tagId}</td>
+                    <td>{r.settlementDate || '—'}</td>
+                    <td style={{ fontWeight: 600, color: '#0369a1' }}>{r.tatDueDate || '—'}</td>
                     <td>{r.functionCode}</td>
                     <td>{r.disputeType}</td>
                     <td>₹ {Number(r.txnAmount || 0).toFixed(2)}</td>
@@ -244,3 +288,4 @@ export const DisputeFileUpload = () => {
 };
 
 export default DisputeFileUpload;
+

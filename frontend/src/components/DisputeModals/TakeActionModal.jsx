@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import EvidencePreviewModal from './EvidencePreviewModal';
+import EvidenceUploader from './EvidenceUploader';
 import './DisputeModals.scss';
 
 export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
@@ -27,49 +28,26 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
 
   const isDecided = disputeRow.disputeStatus !== 'NA';
 
-  const handleUploadFile = (e) => {
-    if (isDecided) return;
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const fileObj = {
-        name: file.name,
-        size: file.size,
-        type: file.type || 'application/octet-stream',
-        dataUrl: reader.result,
-        uploadedAt: new Date().toISOString(),
-      };
-      setPlazaEvidence((prev) => [...prev, fileObj]);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  const handleRemoveFile = (index) => {
-    if (isDecided) return;
-    setPlazaEvidence((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleDecision = async (decision) => {
     if (!plazaReason.trim()) {
-      setErrorMsg('Please enter your reason before submitting a decision.');
+      setErrorMsg('Plaza remarks / justification are mandatory before submitting a decision.');
       return;
     }
-    if (plazaEvidence.length === 0) {
-      setErrorMsg('Please upload at least one evidence file before submitting.');
+    if (decision === 'Rejected' && plazaEvidence.length === 0) {
+      setErrorMsg('At least one counter-evidence file is mandatory when rejecting a dispute.');
       return;
     }
 
     try {
       setIsSubmitting(true);
       setErrorMsg('');
+      const actorName = currentUser?.name || currentUser?.role || 'Plaza User';
       await DisputeManagementService.submitPlazaDecision(
         disputeRow.rowId,
         decision,
         plazaReason.trim(),
-        plazaEvidence
+        plazaEvidence,
+        actorName
       );
       if (onUpdated) onUpdated();
       onClose();
@@ -118,21 +96,9 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
           >
             👁️ View
           </button>
-
-          {isPlazaCol && !isDecided ? (
-            <button
-              type="button"
-              className="btn-remove-file"
-              onClick={() => handleRemoveFile(index)}
-              title="Remove file"
-            >
-              ✕ Remove
-            </button>
-          ) : (
-            <span className="locked-tag">
-              {isDecided ? 'Locked' : 'View Only'}
-            </span>
-          )}
+          <span className="locked-tag">
+            {isDecided ? 'Locked' : 'View Only'}
+          </span>
         </div>
       </div>
     );
@@ -192,6 +158,18 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                   {disputeRow.acqTxnId}
                 </div>
               </div>
+              <div className="meta-box">
+                <label>Settlement Date</label>
+                <div className="meta-display">
+                  {disputeRow.settlementDate || disputeRow.cbRaisedDate || '—'}
+                </div>
+              </div>
+              <div className="meta-box">
+                <label>TAT Due Date (T+8)</label>
+                <div className="meta-display" style={{ color: '#0369a1', fontWeight: 600 }}>
+                  {disputeRow.tatDueDate || '—'}
+                </div>
+              </div>
             </div>
 
             {/* Two Columns: Acquirer (Left) & Plaza (Right) */}
@@ -209,7 +187,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
 
                   <div className="files-container">
                     {(disputeRow.adminEvidence || []).length === 0 ? (
-                      <div className="no-evidence-text">No evidence uploaded yet</div>
+                      <div className="no-evidence-text">No evidence uploaded by acquirer</div>
                     ) : (
                       disputeRow.adminEvidence.map((f, i) =>
                         renderEvidenceChip(f, i, false)
@@ -220,7 +198,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                   <div className="field-block">
                     <label>Reason Given by Acquirer</label>
                     <div className="readonly-value-box">
-                      {disputeRow.adminReason || 'Not provided yet'}
+                      {disputeRow.adminReason || 'Not provided'}
                     </div>
                   </div>
 
@@ -236,30 +214,17 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                   {isAdmin ? 'Plaza · Response & Decision' : 'Your Plaza · Response & Decision'}
                 </div>
                 <div className="section-content">
-                  <div className="attachment-section-label">
-                    <span>Plaza Attachments ({plazaEvidence.length})</span>
-                    <span className="sub-tag">Visible to Admin &amp; Plaza</span>
-                  </div>
-
-                  <div className="files-container">
-                    {plazaEvidence.length === 0 ? (
-                      <div className="no-evidence-text">No evidence uploaded yet</div>
-                    ) : (
-                      plazaEvidence.map((f, i) =>
-                        renderEvidenceChip(f, i, true)
-                      )
-                    )}
-                  </div>
-
                   <div className="field-block">
-                    <label htmlFor="plazaReasonInput">Plaza Reason</label>
+                    <label htmlFor="plazaReasonInput">
+                      Plaza Remarks / Justification <span style={{ color: '#ef4444' }}>* (Mandatory)</span>
+                    </label>
                     <textarea
                       id="plazaReasonInput"
                       rows={3}
                       placeholder={
                         isDecided
                           ? 'No reason recorded'
-                          : 'Explain your decision (required)...'
+                          : 'Explain your validation decision in detail (mandatory)...'
                       }
                       value={plazaReason}
                       onChange={(e) => setPlazaReason(e.target.value)}
@@ -269,55 +234,63 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
 
                   {!isDecided ? (
                     <>
-                      <div className="file-upload-dropzone">
-                        <label className="upload-label" htmlFor="plazaFileUpload">
-                          <span>📎 Attach Verification Evidence (JPG, PNG, PDF, TXT)</span>
-                        </label>
-                        <input
-                          type="file"
-                          id="plazaFileUpload"
-                          onChange={handleUploadFile}
-                        />
-                      </div>
+                      <EvidenceUploader
+                        files={plazaEvidence}
+                        onChange={setPlazaEvidence}
+                        disabled={isSubmitting}
+                        label="Plaza Counter-Evidence"
+                        isMandatory={false}
+                        onPreview={(file) => setPreviewTarget({ file, source: 'Plaza Counter-Evidence' })}
+                      />
 
-                      <div className="decision-actions-row">
+                      <div className="decision-actions-row" style={{ marginTop: '14px', display: 'flex', gap: '10px' }}>
                         <button
                           type="button"
                           className="btn-approve"
                           onClick={() => handleDecision('Approved')}
-                          disabled={
-                            isSubmitting ||
-                            !plazaReason.trim() ||
-                            plazaEvidence.length === 0
-                          }
+                          disabled={isSubmitting || !plazaReason.trim()}
+                          style={{ flex: 1, padding: '10px 16px', fontWeight: 600 }}
                         >
-                          {isSubmitting ? 'Submitting...' : '✓ Approve'}
+                          {isSubmitting ? 'Submitting...' : '✓ Accept Dispute'}
                         </button>
                         <button
                           type="button"
                           className="btn-reject"
                           onClick={() => handleDecision('Rejected')}
-                          disabled={
-                            isSubmitting ||
-                            !plazaReason.trim() ||
-                            plazaEvidence.length === 0
-                          }
+                          disabled={isSubmitting || !plazaReason.trim()}
+                          style={{ flex: 1, padding: '10px 16px', fontWeight: 600 }}
+                          title={plazaEvidence.length === 0 ? 'Upload at least 1 counter-evidence file to reject' : 'Reject dispute'}
                         >
-                          {isSubmitting ? 'Submitting...' : '✕ Reject'}
+                          {isSubmitting ? 'Submitting...' : '✕ Reject Dispute (Requires File)'}
                         </button>
                       </div>
                     </>
                   ) : (
-                    <div
-                      className="audit-locked-banner"
-                      style={{
-                        background: '#ecfdf5',
-                        borderColor: '#a7f3d0',
-                        color: '#065f46',
-                      }}
-                    >
-                      🔒 Decision submitted ({disputeRow.disputeStatus}) — Locked for audit.
-                    </div>
+                    <>
+                      <div className="attachment-section-label" style={{ marginTop: '10px' }}>
+                        <span>Plaza Attachments ({plazaEvidence.length})</span>
+                      </div>
+                      <div className="files-container">
+                        {plazaEvidence.length === 0 ? (
+                          <div className="no-evidence-text">No counter-evidence attached</div>
+                        ) : (
+                          plazaEvidence.map((f, i) => renderEvidenceChip(f, i, true))
+                        )}
+                      </div>
+
+                      <div
+                        className="audit-locked-banner"
+                        style={{
+                          background: '#ecfdf5',
+                          borderColor: '#a7f3d0',
+                          color: '#065f46',
+                          marginTop: '10px',
+                        }}
+                      >
+                        🔒 Decision submitted ({disputeRow.disputeStatus === 'Approved' ? 'Plaza Accepted' : 'Plaza Rejected'})
+                        {disputeRow.plazaActionTime ? ` on ${disputeRow.plazaActionTime}` : ''} — Locked for audit.
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -345,3 +318,4 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
 };
 
 export default TakeActionModal;
+
