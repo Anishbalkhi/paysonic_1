@@ -100,7 +100,7 @@ public class DataLoader implements CommandLineRunner {
             seedAuditLogs();
             seedTollTransactions();
             seedCycleWiseTransactions();
-            seedDisputeTransactions();
+            clearDisputeTransactions();
             seedViolationTransactions();
             seedViolationRawRecords();
             seedViolationSettlementRecords();
@@ -993,147 +993,9 @@ public class DataLoader implements CommandLineRunner {
         log.info("Seeded {} Cycle Wise Reconciliation transactions for Plazas 501101 & 502202.", list.size());
     }
 
-    private void seedDisputeTransactions() {
-        if (disputeTransactionRepository.count() > 0) {
-            log.info("Dispute transactions already seeded ({} records).", disputeTransactionRepository.count());
-            return;
-        }
-
-        List<DisputeTransaction> list = new ArrayList<>();
-
-        // Row 1
-        list.add(new DisputeTransaction(
-                "MUMBAI PLAZA NH-04", "501101", "102047735808525000", "2F020919",
-                LocalDateTime.of(2026, 9, 1, 10, 0, 0),
-                new BigDecimal("60.00"), new BigDecimal("2.00"),
-                "MP07ZA2173", "34161FA82032890002077020", "E2001105274580940CAAC0", "608032",
-                "2501", "753: Debit Adjustment", "Cr", "0",
-                "User crossed toll plaza no extra money debited",
-                java.time.LocalDate.of(2026, 9, 2)
-        ));
-
-        // Row 2
-        list.add(new DisputeTransaction(
-                "PUNE BYPASS PLAZA", "502202", "102047735808525000", "2F020919",
-                LocalDateTime.of(2026, 9, 1, 11, 0, 0),
-                new BigDecimal("60.00"), new BigDecimal("2.00"),
-                "MP07ZA2173", "34161FA82032890002077020", "E2001105274580940CAAC0", "608032",
-                "2501", "762: Credit Adjustment", "Dr", "0",
-                "User crossed toll plaza no extra money debited",
-                java.time.LocalDate.of(2026, 9, 2)
-        ));
-
-        // Row 3
-        list.add(new DisputeTransaction(
-                "NASHIK TOLL PLAZA", "503303", "102047735808525000", "2F020920",
-                LocalDateTime.of(2026, 9, 1, 5, 0, 0),
-                new BigDecimal("5.00"), new BigDecimal("2.00"),
-                "MP07ZA2173", "34161FA82032782402138480", "E2001105274580940CAAC0", "608032",
-                "2501", "762: Credit Adjustment", "Dr", "0",
-                "money debited",
-                java.time.LocalDate.of(2026, 9, 3)
-        ));
-
-        // Row 4
-        list.add(new DisputeTransaction(
-                "KOLHAPUR PLAZA", "504404", "102047735808525000", "2F020919",
-                LocalDateTime.of(2026, 9, 1, 7, 0, 0),
-                new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "504404",
-                "NA", "753: Debit Adjustment", "--", "1005",
-                "MMT",
-                java.time.LocalDate.of(2026, 9, 3)
-        ));
-
-        // Row 5
-        list.add(new DisputeTransaction(
-                "SOLAPUR PLAZA NH-65", "505505", "102047735808525000", "2F020918",
-                LocalDateTime.of(2026, 9, 1, 8, 0, 0),
-                new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "505505",
-                "NA", "753: Debit Adjustment", "--", "1005",
-                "MMT",
-                java.time.LocalDate.of(2026, 9, 3)
-        ));
-
-        // Row 6
-        list.add(new DisputeTransaction(
-                "MUMBAI PLAZA NH-04", "501101", "102047735808525000", "2F020910",
-                LocalDateTime.of(2026, 9, 1, 10, 0, 0),
-                new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "501101",
-                "NA", "753: Debit Adjustment", "--", "1005",
-                "MMT",
-                java.time.LocalDate.of(2026, 9, 3)
-        ));
-
-        // Row 7
-        list.add(new DisputeTransaction(
-                "PUNE BYPASS PLAZA", "502202", "102047735808525000", "2F020901",
-                LocalDateTime.of(2026, 9, 2, 1, 0, 0),
-                new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "502202",
-                "NA", "753: Debit Adjustment", "--", "1005",
-                "MMT",
-                java.time.LocalDate.of(2026, 9, 4)
-        ));
-
-        // Row 8
-        list.add(new DisputeTransaction(
-                "NASHIK TOLL PLAZA", "503303", "102047735808525000", "2F020900",
-                LocalDateTime.of(2026, 9, 2, 2, 0, 0),
-                new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "503303",
-                "NA", "753: Debit Adjustment", "--", "1005",
-                "MMT",
-                java.time.LocalDate.of(2026, 9, 4)
-        ));
-
-        // Row 9
-        list.add(new DisputeTransaction(
-                "KOLHAPUR PLAZA", "504404", "102047735808525000", "2F020899",
-                LocalDateTime.of(2026, 9, 2, 3, 0, 0),
-                new BigDecimal("5.00"), new BigDecimal("5.00"),
-                "TN06ED8759", "34161FA82032782402138480", "34161FA82000008260119A50", "504404",
-                "NA", "753: Debit Adjustment", "--", "1005",
-                "MMT",
-                java.time.LocalDate.of(2026, 9, 4)
-        ));
-
-        // Row 10
-        list.add(new DisputeTransaction(
-                "SOLAPUR PLAZA NH-65", "505505", "102047735808525000", "2F020802",
-                LocalDateTime.of(2026, 9, 3, 6, 0, 0),
-                new BigDecimal("25.00"), new BigDecimal("25.00"),
-                "MH04DJ5492", "34161FA82032890204678840", "34161FA820000084326078A0", "505505",
-                "NA", "753: Debit Adjustment", "--", "1005",
-                "MMT",
-                java.time.LocalDate.of(2026, 9, 4)
-        ));
-
-        // Additional realistic rows for broader coverage
-        list.add(new DisputeTransaction(
-                "MUMBAI PLAZA NH-04", "501101", "102047735808525001", "2F020921",
-                LocalDateTime.of(2026, 9, 4, 14, 30, 0),
-                new BigDecimal("80.00"), new BigDecimal("80.00"),
-                "DL01AB1234", "34161FA82032890002077055", "E2001105274580940CAAC9", "608032",
-                "2502", "753: Debit Adjustment", "Cr", "0",
-                "Tag read failure manual validation",
-                java.time.LocalDate.of(2026, 9, 5)
-        ));
-
-        list.add(new DisputeTransaction(
-                "PUNE BYPASS PLAZA", "502202", "102047735808525002", "2F020922",
-                LocalDateTime.of(2026, 9, 5, 16, 15, 0),
-                new BigDecimal("40.00"), new BigDecimal("40.00"),
-                "KA05MN8899", "34161FA82032782402139999", "34161FA82000008260119B99", "502202",
-                "NA", "762: Credit Adjustment", "Dr", "1005",
-                "Overcharge refund credited",
-                java.time.LocalDate.of(2026, 9, 6)
-        ));
-
-        disputeTransactionRepository.saveAll(list);
-        log.info("Seeded {} Dispute Transactions into Railway DB successfully.", list.size());
+    private void clearDisputeTransactions() {
+        disputeTransactionRepository.deleteAll();
+        log.info("Cleared all dispute transaction seed data from database successfully.");
     }
 
     private void seedViolationTransactions() {
