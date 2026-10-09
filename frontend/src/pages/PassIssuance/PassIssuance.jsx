@@ -83,11 +83,6 @@ export const PassIssuance = () => {
             {currentUser?.assignedPlaza && (
               <span className="plaza-badge">📍 {currentUser.assignedPlaza}</span>
             )}
-            {fetchTime && (
-              <span className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.80rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '4px', fontWeight: 600 }}>
-                🕒 Data Fetch Time: {fetchTime}
-              </span>
-            )}
           </div>
           <h2>Pass Issuance &amp; Approvals</h2>
           <p>

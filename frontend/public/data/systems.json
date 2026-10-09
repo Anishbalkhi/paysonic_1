@@ -1,5 +1,19 @@
 [
   {
+    "name": "Pune Bypass",
+    "id": "502202",
+    "status": "ok",
+    "exception": "Synced 1 min ago",
+    "heartbeat": "Normal",
+    "sync": "00:01:24",
+    "requestTag": "OK",
+    "requestPay": "OK",
+    "violationApi": "OK",
+    "lane": "10 / 10",
+    "failedRate": "1.2%",
+    "blt": "Connected"
+  },
+  {
     "name": "Kherki Daula",
     "id": "PLZ-1734",
     "status": "ok",

@@ -163,8 +163,7 @@ export const ViolationDashboard = () => {
       <div className="report-header-banner">
         <h1 className="report-title">VIOLATION DASHBOARD</h1>
         <div className="report-subtitle">
-          From Date: {formatDateTimeDisplay(fromDate)} &nbsp;|&nbsp; To Date: {formatDateTimeDisplay(toDate)} &nbsp;|&nbsp; 
-          <span className="fetch-time-badge">Report Fetch Time: {fetchTime}</span>
+          From Date: {formatDateTimeDisplay(fromDate)} &nbsp;|&nbsp; To Date: {formatDateTimeDisplay(toDate)}
         </div>
         <div className="report-green-accent-bar" />
       </div>

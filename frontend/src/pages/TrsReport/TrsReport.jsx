@@ -228,26 +228,10 @@ export const TrsReport = () => {
       {/* Top Page Header */}
       <header className="page-header">
         <div className="header-titles">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <h1 className="page-title">Transaction Report</h1>
-              <p className="subtitle">
-                Audited Toll Transactions &amp; Fastag Settlement Details
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {fetchTime && (
-                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-                  🕒 Report Fetch Time: {fetchTime}
-                </div>
-              )}
-              {downloadTime && (
-                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-                  📥 Export Download Time: {downloadTime}
-                </div>
-              )}
-            </div>
-          </div>
+          <h1 className="page-title">Transaction Report</h1>
+          <p className="subtitle">
+            Audited Toll Transactions &amp; Fastag Settlement Details
+          </p>
         </div>
       </header>
 
@@ -664,6 +648,34 @@ export const TrsReport = () => {
             </div>
           </div>
         )}
+
+        {/* Table Bottom Export Download Time Strip */}
+        <div
+          className="table-bottom-export-bar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            padding: '10px 18px',
+            backgroundColor: '#f8fafc',
+            borderTop: '1px solid #e2e8f0',
+            fontSize: '0.84rem',
+            color: '#0369a1',
+            marginTop: '8px'
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>📥 Export Download Time:</span>
+          <span
+            style={{
+              fontFamily: 'monospace',
+              color: downloadTime ? '#0369a1' : '#64748b',
+              fontWeight: downloadTime ? 600 : 400
+            }}
+          >
+            {downloadTime || 'Not exported yet'}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -177,18 +177,6 @@ export const PassSummaryReport = () => {
               <h1 className="page-title">Pass Summary Report</h1>
               <p className="subtitle">{dateSubtitle}</p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              {fetchTime && (
-                <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-                  🕒 Report Fetch Time: {fetchTime}
-                </div>
-              )}
-              {downloadTime && (
-                <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-                  📥 Export Download Time: {downloadTime}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -268,7 +256,7 @@ export const PassSummaryReport = () => {
         <div className="table-top-banner">
           <div className="banner-title">PASS SUMMARY REPORT</div>
           <div className="banner-subtitle">
-            {dateSubtitle || `Report Period: ${formatDisplayDate(fromDate)} — ${formatDisplayDate(toDate)}`} &nbsp; | &nbsp; Report Fetch Time: {fetchTime}
+            {dateSubtitle || `Report Period: ${formatDisplayDate(fromDate)} — ${formatDisplayDate(toDate)}`}
           </div>
           <div className="banner-green-bar" />
         </div>
@@ -411,6 +399,34 @@ export const PassSummaryReport = () => {
           }}
           pageSizeOptions={[10, 25, 50, 100]}
         />
+
+        {/* Table Bottom Export Download Time Strip */}
+        <div
+          className="table-bottom-export-bar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            padding: '10px 18px',
+            backgroundColor: '#f8fafc',
+            borderTop: '1px solid #e2e8f0',
+            fontSize: '0.84rem',
+            color: '#0369a1',
+            marginTop: '8px'
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>📥 Export Download Time:</span>
+          <span
+            style={{
+              fontFamily: 'monospace',
+              color: downloadTime ? '#0369a1' : '#64748b',
+              fontWeight: downloadTime ? 600 : 400
+            }}
+          >
+            {downloadTime || 'Not exported yet'}
+          </span>
+        </div>
       </div>
 
       {/* Footer */}

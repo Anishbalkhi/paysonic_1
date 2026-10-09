@@ -1434,11 +1434,6 @@ export const UserList = () => {
           </p>
         </div>
         <div className="actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {fetchTime && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-              🕒 Data Fetch Time: {fetchTime}
-            </div>
-          )}
           <button
             type="button"
             className="btn btn-secondary"

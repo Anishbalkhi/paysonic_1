@@ -200,18 +200,6 @@ export const DisputeValidate = () => {
             Disputes assigned to plaza {activePlaza.name} ({activePlazaId}). Review the acquirer's evidence and reason, and submit your verified decision (Accept or Reject) with counter-evidence.
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {fetchTime && (
-            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-              🕒 Data Fetch Time: {fetchTime}
-            </div>
-          )}
-          {downloadTime && (
-            <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-              📥 Export Download Time: {downloadTime}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Search Criteria Card */}
@@ -554,8 +542,16 @@ export const DisputeValidate = () => {
           pageSizeOptions={[10, 25, 50, 100]}
         />
 
-        <div className="table-footer-bar">
-          Total records: <strong>{rows.length}</strong>
+        <div className="table-footer-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            Total records: <strong>{rows.length}</strong>
+          </div>
+          <div style={{ color: '#0369a1', fontWeight: 600 }}>
+            <span>📥 Export Download Time: </span>
+            <span style={{ fontFamily: 'monospace', color: downloadTime ? '#0369a1' : '#64748b', fontWeight: downloadTime ? 600 : 400 }}>
+              {downloadTime || 'Not exported yet'}
+            </span>
+          </div>
         </div>
       </div>
 

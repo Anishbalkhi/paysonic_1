@@ -199,7 +199,7 @@ export const CycleWiseRecon = () => {
     const titleArr = Array(headers.length).fill('');
     titleArr[midIdx] = 'CYCLE WISE RECONCILIATION REPORT';
     const subArr = Array(headers.length).fill('');
-    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}   |   Report Fetch Time: ${formatFetchTime(new Date())}`;
+    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}   |   Data Export Time: ${formatFetchTime(new Date())}`;
 
     const bannerRows = [
       titleArr.join(','),
@@ -319,27 +319,15 @@ export const CycleWiseRecon = () => {
   return (
     <div className="cycle-recon-page">
       {/* Top Header */}
-      <div className="page-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="page-header-row">
         <div className="title-area">
           <h1 className="page-title">
             Cycle Wise Report
             <span className="live-tag">Live Bank Recon</span>
           </h1>
           <p className="page-subtitle">
-            NPCI Acquirer Settlement Cycles, Dispute Adjustments & Net Bank Remittance
+            NPCI Acquirer Settlement Cycles, Dispute Adjustments &amp; Net Bank Remittance
           </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          {fetchTime && (
-            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-              🕒 Report Fetch Time: {fetchTime}
-            </div>
-          )}
-          {downloadTime && (
-            <div className="report-download-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#0369a1', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-              📥 Export Download Time: {downloadTime}
-            </div>
-          )}
         </div>
       </div>
 
@@ -619,6 +607,34 @@ export const CycleWiseRecon = () => {
           }}
           pageSizeOptions={[10, 25, 50, 100]}
         />
+
+        {/* Table Bottom Export Download Time Strip */}
+        <div
+          className="table-bottom-export-bar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            padding: '10px 18px',
+            backgroundColor: '#f8fafc',
+            borderTop: '1px solid #e2e8f0',
+            fontSize: '0.84rem',
+            color: '#0369a1',
+            marginTop: '8px'
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>📥 Export Download Time:</span>
+          <span
+            style={{
+              fontFamily: 'monospace',
+              color: downloadTime ? '#0369a1' : '#64748b',
+              fontWeight: downloadTime ? 600 : 400
+            }}
+          >
+            {downloadTime || 'Not exported yet'}
+          </span>
+        </div>
       </div>
     </div>
   );

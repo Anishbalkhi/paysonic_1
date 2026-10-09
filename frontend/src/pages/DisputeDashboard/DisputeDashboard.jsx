@@ -139,11 +139,6 @@ export const DisputeDashboard = () => {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {fetchTime && (
-            <div className="report-fetch-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#1e293b', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '6px', fontWeight: 600 }}>
-              🕒 Data Fetch Time: {fetchTime}
-            </div>
-          )}
           <div className="live-indicator-badge">
             <span className="live-dot" />
             <span>Live 15s Auto-Refresh</span>

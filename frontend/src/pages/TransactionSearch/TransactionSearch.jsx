@@ -418,8 +418,6 @@ export const TransactionSearch = () => {
         </h1>
         <div className="report-subtitle">
           <span>{dateSubtitle}</span>
-          {fetchTime && <span> | &nbsp; 🕒 Data Fetch Time: {fetchTime}</span>}
-          {downloadTime && <span> | &nbsp; 📥 Export Download Time: {downloadTime}</span>}
         </div>
         <div className="report-green-accent-bar" />
       </div>
@@ -914,6 +912,34 @@ export const TransactionSearch = () => {
               &raquo;
             </button>
           </div>
+        </div>
+
+        {/* Table Bottom Export Download Time Strip */}
+        <div
+          className="table-bottom-export-bar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            padding: '10px 18px',
+            backgroundColor: '#f8fafc',
+            borderTop: '1px solid #e2e8f0',
+            fontSize: '0.84rem',
+            color: '#0369a1',
+            marginTop: '8px'
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>📥 Export Download Time:</span>
+          <span
+            style={{
+              fontFamily: 'monospace',
+              color: downloadTime ? '#0369a1' : '#64748b',
+              fontWeight: downloadTime ? 600 : 400
+            }}
+          >
+            {downloadTime || 'Not exported yet'}
+          </span>
         </div>
 
         {/* 4. Bottom Summary KPI Bar */}

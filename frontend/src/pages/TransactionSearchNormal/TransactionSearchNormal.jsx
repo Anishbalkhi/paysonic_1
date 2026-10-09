@@ -295,10 +295,8 @@ export const TransactionSearchNormal = () => {
       {/* 1. Header Banner */}
       <div className="report-header-banner">
         <h1 className="report-title">TRANSACTION REPORT</h1>
-        <div className="report-subtitle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+        <div className="report-subtitle">
           <span>{dateSubtitle}</span>
-          {fetchTime && <span>| &nbsp; 🕒 Data Fetch Time: {fetchTime}</span>}
-          {downloadTime && <span>| &nbsp; 📥 Export Download Time: {downloadTime}</span>}
         </div>
         <div className="report-green-accent-bar" />
       </div>
@@ -584,6 +582,34 @@ export const TransactionSearchNormal = () => {
               Next
             </button>
           </div>
+        </div>
+
+        {/* Table Bottom Export Download Time Strip */}
+        <div
+          className="table-bottom-export-bar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            padding: '10px 18px',
+            backgroundColor: '#f8fafc',
+            borderTop: '1px solid #e2e8f0',
+            fontSize: '0.84rem',
+            color: '#0369a1',
+            marginTop: '8px'
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>📥 Export Download Time:</span>
+          <span
+            style={{
+              fontFamily: 'monospace',
+              color: downloadTime ? '#0369a1' : '#64748b',
+              fontWeight: downloadTime ? 600 : 400
+            }}
+          >
+            {downloadTime || 'Not exported yet'}
+          </span>
         </div>
       </div>
 
