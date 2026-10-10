@@ -353,27 +353,58 @@ export const DisputeDashboard = () => {
         )}
       </div>
 
-      {/* Open vs Closed Summary Cards (Section 12.4) */}
-      <div className="summary-metrics-grid">
+      {/* Spec Count & Amount Tiles */}
+      <div className="summary-metrics-grid" style={{ marginBottom: '14px' }}>
+        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }} title="Click to view all assigned disputes">
+          <span className="stat-label">Total Assigned</span>
+          <span className="stat-value">{stats.totalAssigned || stats.totalDisputes}</span>
+          <span className="stat-subtext">₹ {Number(stats.totalDisputedAmount || stats.totalValue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })} total value</span>
+        </div>
+        <div className="stat-card highlight-open clickable-card" onClick={() => navigate('/dispute-handling/validate')} style={{ cursor: 'pointer' }} title="Click to take action on pending disputes">
+          <span className="stat-label">Pending Action</span>
+          <span className="stat-value" style={{ color: '#d97706' }}>{stats.openDisputes}</span>
+          <span className="stat-subtext" style={{ color: '#2563eb', fontWeight: 600 }}>👉 Take Action in Validate</span>
+        </div>
+        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }}>
+          <span className="stat-label">Accepted</span>
+          <span className="stat-value" style={{ color: '#16a34a' }}>{stats.approvedCount}</span>
+          <span className="stat-subtext">₹ {Number(stats.acceptedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        </div>
+        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }}>
+          <span className="stat-label">Rejected</span>
+          <span className="stat-value" style={{ color: '#dc2626' }}>{stats.rejectedCount}</span>
+          <span className="stat-subtext">₹ {Number(stats.rejectedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+        </div>
+        <div className="stat-card highlight-closed clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }}>
+          <span className="stat-label">Closed</span>
+          <span className="stat-value">{stats.closedCount || stats.closedDisputes}</span>
+          <span className="stat-subtext">Reviewed &amp; settled</span>
+        </div>
+      </div>
+
+      {/* Amount & TAT Split Grid */}
+      <div className="summary-metrics-grid" style={{ marginBottom: '20px' }}>
         <div className="stat-card">
-          <span className="stat-label">Total Disputes</span>
-          <span className="stat-value">{stats.totalDisputes}</span>
-          <span className="stat-subtext">₹ {Number(stats.totalValue || 0).toFixed(2)} total value</span>
+          <span className="stat-label">Total Disputed Amount</span>
+          <span className="stat-value">₹ {Number(stats.totalDisputedAmount || stats.totalValue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+          <span className="stat-subtext">Gross claims filed</span>
         </div>
-        <div className="stat-card highlight-open">
-          <span className="stat-label">Open Disputes</span>
-          <span className="stat-value">{stats.openDisputes}</span>
-          <span className="stat-subtext">₹ {Number(stats.openValue || 0).toFixed(2)} at risk</span>
+        <div className="stat-card">
+          <span className="stat-label">Within TAT</span>
+          <span className="stat-value" style={{ color: '#16a34a' }}>{stats.withinTatCount ?? stats.openDisputes}</span>
+          <span className="stat-subtext">Inside 8-day SLA window</span>
         </div>
-        <div className="stat-card highlight-closed">
-          <span className="stat-label">Closed Disputes</span>
-          <span className="stat-value">{stats.closedDisputes}</span>
-          <span className="stat-subtext">₹ {Number(stats.closedValue || 0).toFixed(2)} settled</span>
+        <div className="stat-card">
+          <span className="stat-label">TAT Breached</span>
+          <span className="stat-value" style={{ color: (stats.tatBreachedCount || 0) > 0 ? '#dc2626' : '#64748b' }}>
+            {stats.tatBreachedCount || 0}
+          </span>
+          <span className="stat-subtext">Exceeded T+8 SLA</span>
         </div>
         <div className="stat-card highlight-split">
-          <span className="stat-label">Approved vs Rejected</span>
+          <span className="stat-label">Approved vs Rejected Ratio</span>
           <span className="stat-value">{stats.approvedVsRejectedRatio}</span>
-          <span className="stat-subtext">{stats.approvedCount} approved / {stats.rejectedCount} rejected</span>
+          <span className="stat-subtext">{stats.approvedCount} accepted / {stats.rejectedCount} rejected</span>
         </div>
       </div>
 

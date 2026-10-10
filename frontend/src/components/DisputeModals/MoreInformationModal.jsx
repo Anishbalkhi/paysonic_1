@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import EvidenceUploader from './EvidenceUploader';
@@ -7,8 +8,10 @@ import './DisputeModals.scss';
 
 export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
   const { currentUser } = useAuth();
+  const { plazas } = useOnboardedPlazas();
   const [adminReason, setAdminReason] = useState('');
   const [adminEvidence, setAdminEvidence] = useState([]);
+  const [targetPlazaId, setTargetPlazaId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [previewTarget, setPreviewTarget] = useState(null);
@@ -17,6 +20,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
     if (disputeRow) {
       setAdminReason(disputeRow.adminReason || '');
       setAdminEvidence(disputeRow.adminEvidence || []);
+      setTargetPlazaId(disputeRow.plazaId || '505505');
       setErrorMsg('');
       setPreviewTarget(null);
     }
@@ -40,7 +44,8 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
         disputeRow.rowId,
         adminReason.trim(),
         adminEvidence,
-        actorName
+        actorName,
+        targetPlazaId || disputeRow.plazaId
       );
       if (onUpdated) onUpdated();
       onClose();
@@ -155,6 +160,26 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   Admin · User's Reasons and Proof
                 </div>
                 <div className="section-content">
+                  {!isAssigned && (
+                    <div className="field-block" style={{ marginBottom: '10px' }}>
+                      <label htmlFor="targetPlazaSelect" style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        Assign To Toll Plaza:
+                      </label>
+                      <select
+                        id="targetPlazaSelect"
+                        value={targetPlazaId}
+                        onChange={(e) => setTargetPlazaId(e.target.value)}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                      >
+                        {plazas.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="field-block">
                     <label htmlFor="adminReasonInput">
                       Reason / Explanation <span style={{ color: '#ef4444' }}>* (Mandatory)</span>

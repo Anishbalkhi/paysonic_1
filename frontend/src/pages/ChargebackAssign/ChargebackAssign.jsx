@@ -114,16 +114,26 @@ export const ChargebackAssign = () => {
     loadData();
   };
 
-  // Sync with realtime onboarded plaza updates (creation, deletion, edit)
+  // Sync with realtime onboarded plaza updates and dispute state updates
   useEffect(() => {
-    const handlePlazasChange = () => {
+    const handleSync = () => {
       loadData();
     };
-    window.addEventListener('paysonic:plazas_updated', handlePlazasChange);
-    window.addEventListener('storage', handlePlazasChange);
+    window.addEventListener('paysonic:plazas_updated', handleSync);
+    window.addEventListener('paysonic:disputes_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    let bc;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bc = new BroadcastChannel('paysonic_disputes_channel');
+        bc.onmessage = () => loadData();
+      } catch {}
+    }
     return () => {
-      window.removeEventListener('paysonic:plazas_updated', handlePlazasChange);
-      window.removeEventListener('storage', handlePlazasChange);
+      window.removeEventListener('paysonic:plazas_updated', handleSync);
+      window.removeEventListener('paysonic:disputes_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+      if (bc) bc.close();
     };
   }, [loadData]);
 

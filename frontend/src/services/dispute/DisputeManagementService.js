@@ -251,10 +251,44 @@ export const INITIAL_DISPUTE_DATA = [
     assigned: false,
     assignedAt: null,
     assignedToPlaza: null,
-    disputeStatus: 'Pending',
+    disputeStatus: 'NA',
     lifecycleStatus: 'Pending Assignment',
     adminRemarks: '',
     adminRemarksAt: null,
+    plazaAction: null,
+    plazaActionAt: null,
+    plazaRemarks: '',
+    closed: false
+  },
+  {
+    disputeId: 'DISP-2026-015',
+    batchId: 'BATCH-2026-1008-01',
+    settlementDate: '08-10-2026',
+    tatDueDate: '16-10-2026',
+    cbRaisedDate: '08-10-2026',
+    acqTxnId: '102047735808524799',
+    tollTxnId: 'SO020915',
+    txnDateTime: '02-09-2026 08:45:00',
+    txnAmount: 85.00,
+    disputeAmount: 85.00,
+    functionCode: '450',
+    functionLabel: 'Debit Chargeback Raised',
+    plazaId: '505505',
+    plazaName: 'SOLAPUR PLAZA NH-65',
+    laneId: 'Lane-02',
+    vrn: 'MH13BN8890',
+    tagId: '34161FA820328EB002947999',
+    tid: 'TID-88499',
+    cbReason: 'Multiple Debit for Same Transit Transaction',
+    caseId: 'CASE-2026-015',
+    assigned: true,
+    assignedAt: '08-10-2026 14:00:00',
+    assignedToPlaza: '505505',
+    disputeStatus: 'NA',
+    lifecycleStatus: 'Assigned to Plaza',
+    adminRemarks: 'Assigned to Solapur Plaza for fastlane validation.',
+    adminReason: 'Assigned to Solapur Plaza for fastlane validation.',
+    adminRemarksAt: '08-10-2026 14:00:00',
     plazaAction: null,
     plazaActionAt: null,
     plazaRemarks: '',
@@ -533,9 +567,20 @@ class DisputeManagementService {
       localStorage.removeItem('paysonic_dispute_batches_v2');
 
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
-      if (!raw || raw === '[]') {
-        localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(INITIAL_DISPUTE_DATA));
+      let parsed = raw ? JSON.parse(raw) : [];
+
+      // Ensure Solapur Plaza (505505) and any missing initial records are always present
+      const hasSolapur = parsed.some((r) => String(r.plazaId) === '505505');
+      if (!raw || raw === '[]' || !hasSolapur || parsed.length < INITIAL_DISPUTE_DATA.length) {
+        const merged = [...parsed];
+        INITIAL_DISPUTE_DATA.forEach((initRow) => {
+          if (!merged.some((m) => m.disputeId === initRow.disputeId)) {
+            merged.push(initRow);
+          }
+        });
+        localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(merged));
       }
+
       const rawBatches = localStorage.getItem(STORAGE_KEY_BATCHES);
       if (!rawBatches || rawBatches === '[]') {
         localStorage.setItem(STORAGE_KEY_BATCHES, JSON.stringify(INITIAL_BATCHES_DATA));
@@ -573,21 +618,32 @@ class DisputeManagementService {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
       const parsed = raw ? JSON.parse(raw) : [];
-      return parsed.map((r) => {
+      return parsed.map((r, idx) => {
+        const id = r.rowId || r.disputeId || `ROW-${idx + 1}`;
         const settlement = r.settlementDate || r.cbRaisedDate || '';
         const tatDue = r.tatDueDate || (settlement ? computeTatDueDate(settlement) : '');
+        const txnDateStr = r.txnDate || (r.txnDateTime ? r.txnDateTime.split(' ')[0] : '');
+        let dStatus = r.disputeStatus;
+        if (!dStatus || dStatus === 'Pending') {
+          dStatus = 'NA';
+        }
         let lifecycleStatus = r.lifecycleStatus;
         if (!lifecycleStatus) {
           if (r.closed) lifecycleStatus = 'Closed';
-          else if (r.disputeStatus === 'Approved') lifecycleStatus = 'Plaza Accepted';
-          else if (r.disputeStatus === 'Rejected') lifecycleStatus = 'Plaza Rejected';
+          else if (dStatus === 'Approved') lifecycleStatus = 'Plaza Accepted';
+          else if (dStatus === 'Rejected') lifecycleStatus = 'Plaza Rejected';
           else if (r.assigned) lifecycleStatus = 'Assigned to Plaza';
           else lifecycleStatus = 'Pending Assignment';
         }
         return {
           ...r,
+          rowId: id,
+          disputeId: r.disputeId || id,
+          txnDate: txnDateStr,
+          txnDateTime: r.txnDateTime || txnDateStr,
           settlementDate: settlement,
           tatDueDate: tatDue,
+          disputeStatus: dStatus,
           lifecycleStatus,
           closed: Boolean(r.closed),
         };
@@ -600,6 +656,14 @@ class DisputeManagementService {
   saveDisputes(disputes) {
     try {
       localStorage.setItem(STORAGE_KEY_DISPUTES, JSON.stringify(disputes));
+      window.dispatchEvent(new CustomEvent('paysonic:disputes_updated', { detail: disputes }));
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const bc = new BroadcastChannel('paysonic_disputes_channel');
+          bc.postMessage({ type: 'DISPUTES_UPDATED', timestamp: Date.now() });
+          bc.close();
+        } catch {}
+      }
     } catch (e) {
       console.warn('[DisputeManagementService] Save error:', e);
     }
@@ -748,7 +812,9 @@ class DisputeManagementService {
       if (fromTime !== null || toTime !== null) {
         const isTxn = filters.dateType === 'Transaction DateTime';
         rows = rows.filter((r) => {
-          const targetStr = isTxn ? r.txnDate : (r.cbRaisedDate || r.txnDate);
+          const targetStr = isTxn
+            ? (r.txnDate || r.txnDateTime)
+            : (r.settlementDate || r.cbRaisedDate || r.txnDate || r.txnDateTime);
           const itemDate = parseDate(targetStr);
           if (!itemDate) return true;
           const itemTime = itemDate.getTime();
@@ -811,8 +877,17 @@ class DisputeManagementService {
     const closedValue = closedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
     const totalValue = openValue + closedValue;
 
-    const approvedCount = plazaRows.filter((r) => r.disputeStatus === 'Approved').length;
-    const rejectedCount = plazaRows.filter((r) => r.disputeStatus === 'Rejected').length;
+    const approvedRows = plazaRows.filter((r) => r.disputeStatus === 'Approved');
+    const rejectedRows = plazaRows.filter((r) => r.disputeStatus === 'Rejected');
+    const approvedCount = approvedRows.length;
+    const rejectedCount = rejectedRows.length;
+    const acceptedAmount = approvedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
+    const rejectedAmount = rejectedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
+    const closedCount = plazaRows.filter((r) => r.closed).length;
+    const totalAssigned = plazaRows.filter((r) => r.assigned).length;
+
+    const withinTatCount = openRows.filter((r) => this.computeDaysLeft(r) >= 0).length;
+    const tatBreachedCount = openRows.filter((r) => this.computeDaysLeft(r) < 0).length;
 
     // TAT Warning Items (open rows with <= 2 days left)
     const atRiskDisputes = openRows
@@ -848,13 +923,20 @@ class DisputeManagementService {
 
     return {
       totalDisputes: plazaRows.length,
+      totalAssigned,
       totalValue,
+      totalDisputedAmount: totalValue,
       openDisputes: openRows.length,
       openValue,
       closedDisputes: closedRows.length,
       closedValue,
+      closedCount,
       approvedCount,
       rejectedCount,
+      acceptedAmount,
+      rejectedAmount,
+      withinTatCount,
+      tatBreachedCount,
       approvedVsRejectedRatio: `${approvedCount} / ${rejectedCount}`,
       atRiskDisputes,
       dayCards,
@@ -922,20 +1004,23 @@ class DisputeManagementService {
   /**
    * Assign a single row with admin evidence and reason (Section 7.2)
    */
-  async assignRow(rowId, adminReason, evidenceList = [], actor = 'Master Admin') {
+  async assignRow(rowId, adminReason, evidenceList = [], actor = 'Master Admin', targetPlazaId = null) {
     if (!adminReason || !adminReason.trim()) {
       throw new Error('Reason / remarks explaining the dispute is mandatory.');
     }
 
     const rows = this.getStoredDisputes();
-    const row = rows.find((r) => r.rowId === rowId);
+    const row = rows.find((r) => r.rowId === rowId || r.disputeId === rowId);
     if (!row) throw new Error('Dispute row not found');
     if (row.assigned) throw new Error('Row is already assigned (locked for audit)');
 
+    const finalPlazaId = targetPlazaId || row.plazaId;
     const updated = rows.map((r) => {
-      if (r.rowId === rowId) {
+      if (r.rowId === rowId || r.disputeId === rowId) {
         return {
           ...r,
+          plazaId: String(finalPlazaId),
+          assignedToPlaza: String(finalPlazaId),
           assigned: true,
           lifecycleStatus: 'Assigned to Plaza',
           assignedBy: actor,
@@ -948,7 +1033,7 @@ class DisputeManagementService {
     });
 
     this.saveDisputes(updated);
-    this.logAudit('ROW_ASSIGN', `Assigned dispute ${rowId} to plaza ${row.plazaId}`, actor);
+    this.logAudit('ROW_ASSIGN', `Assigned dispute ${rowId} to plaza ${finalPlazaId}`, actor);
     return { success: true };
   }
 
@@ -965,14 +1050,14 @@ class DisputeManagementService {
     }
 
     const rows = this.getStoredDisputes();
-    const row = rows.find((r) => r.rowId === rowId);
+    const row = rows.find((r) => r.rowId === rowId || r.disputeId === rowId);
     if (!row) throw new Error('Dispute row not found');
     if (row.disputeStatus !== 'NA') throw new Error('Decision has already been submitted and locked');
 
     const istNow = formatIstTimestamp();
 
     const updated = rows.map((r) => {
-      if (r.rowId === rowId) {
+      if (r.rowId === rowId || r.disputeId === rowId) {
         return {
           ...r,
           plazaAction: 'Yes',
@@ -998,12 +1083,12 @@ class DisputeManagementService {
    */
   async closeDispute(rowId, actor = 'Master Admin') {
     const rows = this.getStoredDisputes();
-    const row = rows.find((r) => r.rowId === rowId);
+    const row = rows.find((r) => r.rowId === rowId || r.disputeId === rowId);
     if (!row) throw new Error('Dispute row not found');
     if (row.closed) throw new Error('Dispute is already closed');
 
     const updated = rows.map((r) => {
-      if (r.rowId === rowId) {
+      if (r.rowId === rowId || r.disputeId === rowId) {
         return {
           ...r,
           closed: true,

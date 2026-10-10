@@ -45,7 +45,7 @@ export const DisputeValidate = () => {
 
   // Filters (Section 9)
   const [fromDate, setFromDate] = useState('2026-09-01');
-  const [toDate, setToDate] = useState('2026-10-05');
+  const [toDate, setToDate] = useState('2026-10-31');
   const [dateType, setDateType] = useState('Transaction DateTime');
   const [functionCode, setFunctionCode] = useState('');
   const [plazaAction, setPlazaAction] = useState('');
@@ -83,7 +83,14 @@ export const DisputeValidate = () => {
         tollTxnId: tTxn,
         tagId: tId,
       });
-      const assignedRows = (fetched || []).filter((r) => r.assigned === true);
+      const assignedRows = (fetched || []).filter((r) => {
+        if (!r.assigned) return false;
+        if (pAct === 'Yes') return r.plazaAction === 'Yes';
+        if (pAct === 'No') return r.plazaAction !== 'Yes';
+        if (dStat) return r.disputeStatus === dStat;
+        // Spec rule: By default on Validate Dispute, acted disputes drop off this list
+        return r.disputeStatus === 'NA' || !r.disputeStatus || r.disputeStatus === 'Pending';
+      });
       const scopedRows = filterRecordsByPlazaScope(assignedRows, plazas, currentUser);
       setRows(scopedRows);
       setFetchTime(formatFetchTime(new Date()));
@@ -99,9 +106,30 @@ export const DisputeValidate = () => {
     loadData();
   }, [loadData]);
 
+  // Synchronize across browser tabs/windows when Master Admin assigns disputes
+  useEffect(() => {
+    const handleDisputesChange = () => {
+      loadData();
+    };
+    window.addEventListener('paysonic:disputes_updated', handleDisputesChange);
+    window.addEventListener('storage', handleDisputesChange);
+    let bc;
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        bc = new BroadcastChannel('paysonic_disputes_channel');
+        bc.onmessage = () => loadData();
+      } catch {}
+    }
+    return () => {
+      window.removeEventListener('paysonic:disputes_updated', handleDisputesChange);
+      window.removeEventListener('storage', handleDisputesChange);
+      if (bc) bc.close();
+    };
+  }, [loadData]);
+
   const handleReset = () => {
     setFromDate('2026-09-01');
-    setToDate('2026-10-05');
+    setToDate('2026-10-31');
     setDateType('Transaction DateTime');
     setFunctionCode('');
     setPlazaAction('');
@@ -112,7 +140,7 @@ export const DisputeValidate = () => {
     setCurrentPage(1);
     loadData({
       fromDate: '2026-09-01',
-      toDate: '2026-10-05',
+      toDate: '2026-10-31',
       dateType: 'Transaction DateTime',
       functionCode: '',
       plazaAction: '',
