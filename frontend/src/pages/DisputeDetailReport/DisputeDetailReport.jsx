@@ -332,7 +332,102 @@ export const DisputeDetailReport = () => {
   };
 
   const handleExportExcel = () => {
-    handleExportCsv();
+    if (filteredRecords.length === 0) return;
+    setExportingExcel(true);
+    try {
+      const xmlEsc = (str) =>
+        String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+
+      const headers = [
+        'Dispute ID',
+        'Acq Txn ID',
+        'Toll Txn ID',
+        'VRN',
+        'Tag ID',
+        'Plaza Name',
+        'Plaza ID',
+        'Txn Date Time',
+        'Settlement Date',
+        'TAT Due Date',
+        'Dispute Amount',
+        'Function Code',
+        'Admin Reason',
+        'Assigned Date',
+        'Plaza Action',
+        'Plaza Action Time',
+        'Plaza Remarks',
+        'Action By',
+        'Status',
+        'Closure Date'
+      ];
+
+      let dataXml = '';
+      filteredRecords.forEach((r) => {
+        dataXml += `
+        <Row ss:Height="20">
+          <Cell><Data ss:Type="String">${xmlEsc(r.disputeId || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.acqTxnId || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.tollTxnId || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.vehicleNo || r.vrn || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.tagId || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.plazaName || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.plazaId || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.txnDateTime || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
+          <Cell><Data ss:Type="Number">${Number(r.disputeAmount || 0)}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.functionCode || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.adminReason || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.assignedAt || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.disputeStatus === 'Approved' ? 'Accepted' : r.disputeStatus === 'Rejected' ? 'Rejected' : 'Pending')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.plazaActionTime || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.plazaReason || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.plazaActionBy || '—')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.lifecycleStatus || 'Pending Assignment')}</Data></Cell>
+          <Cell><Data ss:Type="String">${xmlEsc(r.closureDate || '—')}</Data></Cell>
+        </Row>`;
+      });
+
+      const headerXml = `
+        <Row ss:Height="24">
+          ${headers.map((h) => `<Cell><Data ss:Type="String">${xmlEsc(h)}</Data></Cell>`).join('')}
+        </Row>`;
+
+      const excelXml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="Dispute Detailed Report">
+  <Table>
+   ${headerXml}
+   ${dataXml}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+      const blob = new Blob([excelXml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Dispute_Detail_Report_${Date.now()}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setDownloadTime(formatFetchTime(new Date()));
+    } catch (err) {
+      console.error('[DisputeDetailReport] Excel export error:', err);
+      alert('Failed to export Excel. Please try again.');
+    } finally {
+      setExportingExcel(false);
+    }
   };
 
   const formatDateTime = (val) => {

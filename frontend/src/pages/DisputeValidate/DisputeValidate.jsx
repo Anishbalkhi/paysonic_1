@@ -219,6 +219,93 @@ export const DisputeValidate = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportExcel = () => {
+    if (!rows || rows.length === 0) return;
+    setDownloadTime(formatFetchTime(new Date()));
+
+    const xmlEsc = (str) =>
+      String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
+    const headers = [
+      'Acq Txn ID',
+      'Toll Txn ID',
+      'VRN',
+      'Tag ID',
+      'Toll Plaza ID',
+      'Toll Plaza Name',
+      'Txn Date',
+      'Settlement Date',
+      'TAT Due Date (T+8)',
+      'CB Raised Date',
+      'CB Reason',
+      'Function Code',
+      'Plaza Action',
+      'Dispute Status',
+      'Plaza Reason',
+      'Dispute Amount',
+      'SLA Status'
+    ];
+
+    let dataXml = '';
+    rows.forEach((r) => {
+      const tat = DisputeManagementService.getTatBadge(r);
+      dataXml += `
+      <Row ss:Height="20">
+        <Cell><Data ss:Type="String">${xmlEsc(r.acqTxnId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.tollTxnId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.vrn)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.tagId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaId)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaName)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.cbRaisedDate)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
+        <Cell><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaAction)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.disputeStatus)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(r.plazaReason)}</Data></Cell>
+        <Cell><Data ss:Type="Number">${Number(r.disputeAmount || 0)}</Data></Cell>
+        <Cell><Data ss:Type="String">${xmlEsc(tat.label)}</Data></Cell>
+      </Row>`;
+    });
+
+    const headerXml = `
+      <Row ss:Height="24">
+        ${headers.map((h) => `<Cell><Data ss:Type="String">${xmlEsc(h)}</Data></Cell>`).join('')}
+      </Row>`;
+
+    const excelXml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="Validate Disputes">
+  <Table>
+   ${headerXml}
+   ${dataXml}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([excelXml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Validate_Disputes_Plaza_${activePlazaId}_${Date.now()}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="dispute-validate-page">
       <div className="page-header-block" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
@@ -408,8 +495,19 @@ export const DisputeValidate = () => {
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={handleExportCsv}
+            disabled={!rows || rows.length === 0}
+            id="valExportCsvBtn"
           >
             Export CSV
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleExportExcel}
+            disabled={!rows || rows.length === 0}
+            id="valExportExcelBtn"
+          >
+            Export Excel
           </button>
         </div>
         <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
