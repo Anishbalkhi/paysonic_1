@@ -321,7 +321,7 @@ export const DisputeDetailReport = () => {
 
       const bannerRows = [
         `"PAYSONIC DISPUTE MANAGEMENT — DETAILED AUDIT REPORT"`,
-        `"Date Range: ${fromDate.slice(0, 10)} to ${toDate.slice(0, 10)}   |   Generated: ${fetchTimeStr}   |   Total Records: ${filteredRecords.length}   |   Total Value: ₹ ${totDispute}"`,
+        `"Date Range: ${fromDate.slice(0, 10)} to ${toDate.slice(0, 10)}   |   Export Time: ${fetchTimeStr}   |   Total Records: ${filteredRecords.length}   |   Total Value: ₹ ${totDispute}"`,
         ''
       ];
 
@@ -568,7 +568,7 @@ export const DisputeDetailReport = () => {
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE MANAGEMENT — DETAILED AUDIT REPORT</Data></Cell>
    </Row>
    <Row ss:Height="20">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Date Range: ${xmlEsc(fromDate.slice(0, 10))} to ${xmlEsc(toDate.slice(0, 10))}   |   Generated: ${xmlEsc(fetchTimeStr)}   |   Total Audited Records: ${filteredRecords.length}   |   Total Dispute Value: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Date Range: ${xmlEsc(fromDate.slice(0, 10))} to ${xmlEsc(toDate.slice(0, 10))}   |   Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Audited Records: ${filteredRecords.length}   |   Total Dispute Value: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>

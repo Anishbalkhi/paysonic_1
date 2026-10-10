@@ -116,7 +116,7 @@ public class PassSummaryService {
             Row titleRow = sheet.createRow(0);
             Cell titleCell = titleRow.createCell(0);
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-            titleCell.setCellValue("Pass Summary Report | " + fromDate.format(fmt) + " to " + toDate.format(fmt) + " | Report Fetch Time: " + LocalDateTime.now().format(dtf));
+            titleCell.setCellValue("Pass Summary Report | " + fromDate.format(fmt) + " to " + toDate.format(fmt) + " | Export Time: " + LocalDateTime.now().format(dtf));
             CellStyle titleStyle = wb.createCellStyle();
             Font titleFont = wb.createFont();
             titleFont.setBold(true);
@@ -221,7 +221,7 @@ public class PassSummaryService {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         StringBuilder sb = new StringBuilder();
         sb.append('\uFEFF'); // UTF-8 BOM
-        sb.append("# Pass Summary Report | ").append(fromDate.format(fmt)).append(" to ").append(toDate.format(fmt)).append(" | Report Fetch Time: ").append(LocalDateTime.now().format(dtf)).append("\n");
+        sb.append("# Pass Summary Report | ").append(fromDate.format(fmt)).append(" to ").append(toDate.format(fmt)).append(" | Export Time: ").append(LocalDateTime.now().format(dtf)).append("\n");
         sb.append("Plaza ID,Plaza Name,Payment Mode,Pass Type,Count,Amount\n");
 
         for (PassSummaryResponseDTO plaza : data) {

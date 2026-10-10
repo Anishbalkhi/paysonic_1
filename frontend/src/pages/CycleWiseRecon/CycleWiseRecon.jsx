@@ -195,15 +195,9 @@ export const CycleWiseRecon = () => {
 
     const fromStr = fromDate ? fromDate.replace('T', ' ') : '01-08-2026 00:00:00';
     const toStr = toDate ? toDate.replace('T', ' ') : '31-10-2026 23:59:59';
-    const midIdx = Math.floor(headers.length / 2);
-    const titleArr = Array(headers.length).fill('');
-    titleArr[midIdx] = 'CYCLE WISE RECONCILIATION REPORT';
-    const subArr = Array(headers.length).fill('');
-    subArr[midIdx] = `From Date: ${fromStr}   |   To Date: ${toStr}   |   Data Export Time: ${formatFetchTime(new Date())}`;
-
     const bannerRows = [
-      titleArr.join(','),
-      subArr.join(','),
+      `"CYCLE WISE RECONCILIATION REPORT"`,
+      `"From Date: ${fromStr}   |   To Date: ${toStr}   |   Export Time: ${formatFetchTime(new Date())}"`,
       ''
     ];
 

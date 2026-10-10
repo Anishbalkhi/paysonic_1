@@ -211,7 +211,7 @@ export const ChargebackAssign = () => {
 
     const bannerRows = [
       `"PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — WORKING QUEUE"`,
-      `"Export Date: ${fetchTimeStr}   |   Total Queue Disputes: ${rows.length}   |   Cumulative Dispute Value: ₹ ${totDispute}"`,
+      `"Export Time: ${fetchTimeStr}   |   Total Queue Disputes: ${rows.length}   |   Cumulative Dispute Value: ₹ ${totDispute}"`,
       ''
     ];
 
@@ -456,7 +456,7 @@ export const ChargebackAssign = () => {
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE &amp; CHARGEBACK OPERATIONS — WORKING QUEUE</Data></Cell>
    </Row>
    <Row ss:Height="20">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Generated: ${xmlEsc(fetchTimeStr)}   |   Total Queue Records: ${rows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Queue Records: ${rows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>

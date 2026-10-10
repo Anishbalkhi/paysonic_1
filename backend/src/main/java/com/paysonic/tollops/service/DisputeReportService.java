@@ -221,7 +221,7 @@ public class DisputeReportService {
             String fromStr = fromDate != null ? fromDate.format(DATE_TIME_FMT) : "01-09-2026 00:00:00";
             String toStr = toDate != null ? toDate.format(DATE_TIME_FMT) : "30-09-2026 23:59:59";
             String exportTimeStr = LocalDateTime.now().format(DATE_TIME_FMT);
-            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr + "   |   Data Export Time: " + exportTimeStr);
+            subCell.setCellValue("From Date: " + fromStr + "   |   To Date: " + toStr + "   |   Export Time: " + exportTimeStr);
             subCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
 
@@ -394,7 +394,7 @@ public class DisputeReportService {
             subLine[i] = "";
         }
         titleLine[midIdx] = "DISPUTE DETAIL REPORT";
-        subLine[midIdx] = "From Date: " + fromStr + "   |   To Date: " + toStr + "   |   Data Export Time: " + exportTimeStr;
+        subLine[midIdx] = "From Date: " + fromStr + "   |   To Date: " + toStr + "   |   Export Time: " + exportTimeStr;
 
         writer.println(String.join(",", titleLine));
         writer.println(String.join(",", subLine));

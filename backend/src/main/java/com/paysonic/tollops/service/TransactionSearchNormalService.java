@@ -220,7 +220,7 @@ public class TransactionSearchNormalService {
             Row subTitleRow = sheet.createRow(1);
             subTitleRow.setHeightInPoints(20);
             Cell subTitleCell = subTitleRow.createCell(0);
-            subTitleCell.setCellValue("From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT) + " | Report Fetch Time: " + LocalDateTime.now().format(DATE_FMT));
+            subTitleCell.setCellValue("From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT) + " | Export Time: " + LocalDateTime.now().format(DATE_FMT));
             subTitleCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, headers.length - 1));
 
@@ -436,7 +436,7 @@ public class TransactionSearchNormalService {
         try (PrintWriter writer = new PrintWriter(outputStream, true, StandardCharsets.UTF_8)) {
             // Header Title Banner
             writer.println("\"TRANSACTION SEARCH\"");
-            writer.println("\"From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT) + " | Report Fetch Time: " + LocalDateTime.now().format(DATE_FMT) + "\"");
+            writer.println("\"From Date: " + fromDate.format(DATE_FMT) + " | To Date: " + toDate.format(DATE_FMT) + " | Export Time: " + LocalDateTime.now().format(DATE_FMT) + "\"");
             writer.println();
 
             String[] headers = {

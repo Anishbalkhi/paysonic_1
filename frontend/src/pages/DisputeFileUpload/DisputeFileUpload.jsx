@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TablePagination from '../../components/common/TablePagination';
+import { formatFetchTime } from '../../utils/dateUtils';
 import './DisputeFileUpload.scss';
 
 export const DisputeFileUpload = () => {
@@ -92,12 +93,23 @@ export const DisputeFileUpload = () => {
       return `"${str}"`;
     };
 
+    const fetchTimeStr = formatFetchTime(new Date());
     const headers = ['Row Number', 'RRN', 'Reason'];
     const rows = matchResult.errorRows.map((err) =>
       [err.rowNumber, err.rrn, err.reason].map(escapeCsv).join(',')
     );
 
-    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+    const bannerRows = [
+      `"PAYSONIC DISPUTE UPLOAD — VALIDATION ERROR REPORT"`,
+      `"Export Time: ${fetchTimeStr}   |   Failed Records: ${matchResult.errorRows.length}"`,
+      ''
+    ];
+
+    const csvContent = '\uFEFF' + [
+      ...bannerRows,
+      headers.map(escapeCsv).join(','),
+      ...rows
+    ].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

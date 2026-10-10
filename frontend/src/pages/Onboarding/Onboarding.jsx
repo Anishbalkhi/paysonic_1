@@ -310,7 +310,18 @@ export const Onboarding = () => {
       escapeCsv(p.mdr?.npciGst ?? '0'),
     ]);
 
-    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+    const fetchTimeStr = formatFetchTime(new Date());
+    const bannerRows = [
+      `"PAYSONIC PLAZA ONBOARDING DIRECTORY"`,
+      `"Export Time: ${fetchTimeStr}   |   Total Plazas: ${plazasToExport.length}"`,
+      ''
+    ];
+
+    const csvContent = '\uFEFF' + [
+      ...bannerRows,
+      headers.map(escapeCsv).join(','),
+      ...rows.map((r) => r.join(','))
+    ].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -332,6 +343,8 @@ export const Onboarding = () => {
       return;
     }
 
+    const fetchTimeStr = formatFetchTime(new Date());
+
     const escapeXml = (val) => {
       if (val === undefined || val === null) return '';
       return String(val)
@@ -351,6 +364,8 @@ export const Onboarding = () => {
       'Bank Fee (%)', 'NPCI Fee (%)', 'Bank GST (%)', 'NPCI GST (%)',
     ];
 
+    const colSpan = headers.length - 1;
+
     let xml = `<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -359,10 +374,24 @@ export const Onboarding = () => {
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
  <Styles>
+  <Style ss:ID="sTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="16" ss:Bold="1" ss:Color="#002060"/>
+  </Style>
+  <Style ss:ID="sSubtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Italic="1" ss:Color="#4B5563"/>
+  </Style>
+  <Style ss:ID="sGreenBar">
+   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+  </Style>
   <Style ss:ID="Header">
    <Font ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+   <Interior ss:Color="#002060" ss:Pattern="Solid"/>
    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
   </Style>
   <Style ss:ID="Default">
    <Alignment ss:Vertical="Center"/>
@@ -370,7 +399,17 @@ export const Onboarding = () => {
  </Styles>
  <Worksheet ss:Name="Plazas">
   <Table>
-   <Row ss:StyleID="Header">`;
+   <Row ss:Height="30">
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC PLAZA ONBOARDING DIRECTORY</Data></Cell>
+   </Row>
+   <Row ss:Height="20">
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${escapeXml(fetchTimeStr)}   |   Total Plazas: ${plazasToExport.length}</Data></Cell>
+   </Row>
+   <Row ss:Height="4">
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>
+   </Row>
+   <Row ss:Height="10"></Row>
+   <Row ss:StyleID="Header" ss:Height="24">`;
 
     headers.forEach((h) => {
       xml += `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`;

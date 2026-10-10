@@ -218,7 +218,7 @@ export const DisputeValidate = () => {
 
     const bannerRows = [
       `"PAYSONIC DISPUTE MANAGEMENT — VALIDATE DISPUTES QUEUE"`,
-      `"Plaza: ${activePlaza.name} (${activePlazaId})   |   Generated: ${fetchTimeStr}   |   Assigned Disputes: ${rows.length}   |   Total Value: ₹ ${totDispute}"`,
+      `"Plaza: ${activePlaza.name} (${activePlazaId})   |   Export Time: ${fetchTimeStr}   |   Assigned Disputes: ${rows.length}   |   Total Value: ₹ ${totDispute}"`,
       ''
     ];
 
@@ -467,7 +467,7 @@ export const DisputeValidate = () => {
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE MANAGEMENT — VALIDATE DISPUTES</Data></Cell>
    </Row>
    <Row ss:Height="20">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Toll Plaza: ${xmlEsc(activePlaza.name)} (${xmlEsc(activePlazaId)})   |   Generated: ${xmlEsc(fetchTimeStr)}   |   Total Records: ${rows.length}   |   Total Value: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Toll Plaza: ${xmlEsc(activePlaza.name)} (${xmlEsc(activePlazaId)})   |   Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Records: ${rows.length}   |   Total Value: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>

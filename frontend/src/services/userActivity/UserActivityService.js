@@ -1193,7 +1193,7 @@ class UserActivityService {
     <Cell ss:MergeAcross="13" ss:StyleID="sTitle"><Data ss:Type="String">${escapeXml(reportTitle)}</Data></Cell>
    </Row>
    <Row ss:Height="18">
-    <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Events: ${sortedRecords.length}   |   Data Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
+    <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Events: ${sortedRecords.length}   |   Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
     ${Array(14).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
@@ -1279,7 +1279,7 @@ class UserActivityService {
       ]);
       const csvContent = '\uFEFF' + [
         `# ${reportTitle}`,
-        `# Total Events: ${sortedRecords.length} | Data Export Time: ${fetchTimeStr}`,
+        `# Total Events: ${sortedRecords.length} | Export Time: ${fetchTimeStr}`,
         headers.join(','),
         ...rows.map((e) => e.join(','))
       ].join('\n');

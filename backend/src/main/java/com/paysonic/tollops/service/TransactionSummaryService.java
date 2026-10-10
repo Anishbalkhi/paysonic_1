@@ -284,7 +284,7 @@ public class TransactionSummaryService {
             subTitleRow.setHeightInPoints(18);
             Cell subTitleCell = subTitleRow.createCell(0);
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-            subTitleCell.setCellValue("From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Report Fetch Time: " + LocalDateTime.now().format(dtf));
+            subTitleCell.setCellValue("From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Export Time: " + LocalDateTime.now().format(dtf));
             subTitleCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 5));
 
@@ -405,7 +405,7 @@ public class TransactionSummaryService {
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         writer.println("# Transaction Summary Report");
-        writer.println("# From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Report Fetch Time: " + LocalDateTime.now().format(dtf));
+        writer.println("# From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Export Time: " + LocalDateTime.now().format(dtf));
         writer.println();
 
         String[] headers = {

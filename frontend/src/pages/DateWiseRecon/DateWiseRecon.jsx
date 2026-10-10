@@ -364,7 +364,7 @@ export const DateWiseRecon = () => {
 
    <!-- Row 2: Subtitle -->
    <Row ss:Height="20">
-    <Cell ss:MergeAcross="4" ss:StyleID="sSubtitle"><Data ss:Type="String">From Date: ${escapeXml(fromStr)}   |   To Date: ${escapeXml(toStr)}   |   Data Export Time: ${escapeXml(formatFetchTime(new Date()))}</Data></Cell>
+    <Cell ss:MergeAcross="4" ss:StyleID="sSubtitle"><Data ss:Type="String">From Date: ${escapeXml(fromStr)}   |   To Date: ${escapeXml(toStr)}   |   Export Time: ${escapeXml(formatFetchTime(new Date()))}</Data></Cell>
    </Row>
 
    <!-- Row 3: Green Accent Stripe -->
@@ -430,7 +430,7 @@ export const DateWiseRecon = () => {
 
    <!-- Row 2: Subtitle -->
    <Row ss:Height="20">
-    <Cell ss:MergeAcross="5" ss:StyleID="sSubtitle"><Data ss:Type="String">From Date: ${escapeXml(fromStr)}   |   To Date: ${escapeXml(toStr)}   |   Data Export Time: ${escapeXml(formatFetchTime(new Date()))}</Data></Cell>
+    <Cell ss:MergeAcross="5" ss:StyleID="sSubtitle"><Data ss:Type="String">From Date: ${escapeXml(fromStr)}   |   To Date: ${escapeXml(toStr)}   |   Export Time: ${escapeXml(formatFetchTime(new Date()))}</Data></Cell>
    </Row>
 
    <!-- Row 3: Green Accent Stripe -->
@@ -568,7 +568,7 @@ export const DateWiseRecon = () => {
 
     if (exportMode === 'collapsed') {
       rows.push(['DATE WISE RECONCILIATION REPORT (SUMMARY)', '', '', '', '']);
-      rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}   |   Data Export Time: ${formatFetchTime(new Date())}`, '', '', '', '']);
+      rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}   |   Export Time: ${formatFetchTime(new Date())}`, '', '', '', '']);
       rows.push(['', '', '', '', '']);
       rows.push(['Plaza ID', 'Plaza Name', 'Txn Date', 'Txn Count', 'Settled Amount']);
 
@@ -586,7 +586,7 @@ export const DateWiseRecon = () => {
     } else {
       // Detailed or Current View Mode
       rows.push(['DATE WISE RECONCILIATION REPORT', '', '', '', '', '']);
-      rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}   |   Data Export Time: ${formatFetchTime(new Date())}`, '', '', '', '', '']);
+      rows.push([`From Date: ${fromStr}   |   To Date: ${toStr}   |   Export Time: ${formatFetchTime(new Date())}`, '', '', '', '', '']);
       rows.push(['', '', '', '', '', '']);
       rows.push(['Plaza ID', 'Plaza Name', 'Txn Date', 'Settlement Date', 'Txn Count', 'Settled Amount']);
 

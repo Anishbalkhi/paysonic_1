@@ -270,7 +270,7 @@ public class NhaiTrafficReportService {
             subTitleRow.setHeightInPoints(18);
             Cell subTitleCell = subTitleRow.createCell(0);
             DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-            subTitleCell.setCellValue("From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Report Fetch Time: " + LocalDateTime.now().format(dtf));
+            subTitleCell.setCellValue("From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Export Time: " + LocalDateTime.now().format(dtf));
             subTitleCell.setCellStyle(subTitleStyle);
             sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 6));
 
@@ -439,7 +439,7 @@ public class NhaiTrafficReportService {
 
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         writer.println("# NHAI Traffic Report");
-        writer.println("# From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Report Fetch Time: " + LocalDateTime.now().format(dtf));
+        writer.println("# From Date: " + report.getFromDate() + "   |   To Date: " + report.getToDate() + "   |   Export Time: " + LocalDateTime.now().format(dtf));
         writer.println("# Plaza Code: " + report.getPlazaCode() + " Plaza Name: " + report.getPlazaName());
         writer.println();
 
