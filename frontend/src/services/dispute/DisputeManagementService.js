@@ -811,12 +811,15 @@ class DisputeManagementService {
 
       if (fromTime !== null || toTime !== null) {
         const isTxn = filters.dateType === 'Transaction DateTime';
+        const isPlazaAction = filters.dateType === 'Plaza Action Date';
         rows = rows.filter((r) => {
-          const targetStr = isTxn
+          const targetStr = isPlazaAction
+            ? (r.plazaActionTime || r.decidedAt)
+            : isTxn
             ? (r.txnDate || r.txnDateTime)
             : (r.settlementDate || r.cbRaisedDate || r.txnDate || r.txnDateTime);
           const itemDate = parseDate(targetStr);
-          if (!itemDate) return true;
+          if (!itemDate) return !isPlazaAction;
           const itemTime = itemDate.getTime();
           if (fromTime !== null && itemTime < fromTime) return false;
           if (toTime !== null && itemTime > toTime + 86400000) return false;
@@ -1018,6 +1021,9 @@ class DisputeManagementService {
     const row = rows.find((r) => String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId);
     if (!row) throw new Error('Dispute row not found');
     if (row.assigned) throw new Error('Row is already assigned (locked for audit)');
+    if (row.plazaAction === 'Yes' || (row.disputeStatus && row.disputeStatus !== 'NA')) {
+      throw new Error('Admin cannot re-assign a dispute after the plaza has acted (Accept or Reject).');
+    }
 
     const finalPlazaId = targetPlazaId ? String(targetPlazaId) : String(row.plazaId);
     const targetPlazaName = PLAZA_MAP[finalPlazaId] || row.plazaName;
@@ -1049,7 +1055,7 @@ class DisputeManagementService {
    * Plaza submits decision (Section 10)
    * If rejected, evidenceList must contain at least 1 counter-evidence file.
    */
-  async submitPlazaDecision(rowId, decision, plazaReason, evidenceList = [], actor = 'Plaza User') {
+  async submitPlazaDecision(rowId, decision, plazaReason, evidenceList = [], actor = 'Plaza User', actorPlazaId = null) {
     if (!plazaReason || !plazaReason.trim()) {
       throw new Error('Plaza remarks / justification are mandatory.');
     }
@@ -1058,14 +1064,20 @@ class DisputeManagementService {
     }
 
     const rows = this.getStoredDisputes();
-    const row = rows.find((r) => r.rowId === rowId || r.disputeId === rowId);
+    const cleanId = String(rowId || '').trim();
+    const row = rows.find((r) => String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId);
     if (!row) throw new Error('Dispute row not found');
-    if (row.disputeStatus !== 'NA') throw new Error('Decision has already been submitted and locked');
+    if (row.disputeStatus !== 'NA' || row.plazaAction === 'Yes') {
+      throw new Error('Decision has already been submitted and locked (single-submit rule)');
+    }
+    if (actorPlazaId && actorPlazaId !== 'ALL' && String(row.plazaId).trim() !== String(actorPlazaId).trim()) {
+      throw new Error('Plaza cannot act on a dispute not mapped to its own plaza ID.');
+    }
 
     const istNow = formatIstTimestamp();
 
     const updated = rows.map((r) => {
-      if (r.rowId === rowId || r.disputeId === rowId) {
+      if (String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId) {
         return {
           ...r,
           plazaAction: 'Yes',
@@ -1082,7 +1094,7 @@ class DisputeManagementService {
     });
 
     this.saveDisputes(updated);
-    this.logAudit('PLAZA_DECISION', `Plaza decided ${decision} for dispute ${rowId} at ${istNow}`, actor);
+    this.logAudit('PLAZA_DECISION', `Plaza decided ${decision} for dispute ${cleanId} at ${istNow}`, actor);
     return { success: true };
   }
 
@@ -1144,17 +1156,23 @@ class DisputeManagementService {
 
       const masterHit = TRANSACTION_MASTER[rrn];
 
-      // Check deduplication key (RRN, Function Code)
-      const alreadyQueued = existing.some(
+      // A transaction can have only one open dispute at a time
+      const hasOpenDispute = existing.some(
+        (e) => e.acqTxnId === rrn && !e.closed
+      );
+      const isExactDuplicate = existing.some(
         (e) => e.acqTxnId === rrn && Number(e.functionCode) === funcCodeNum
       );
+      const alreadyQueued = hasOpenDispute || isExactDuplicate;
 
       if (alreadyQueued) {
         duplicateCount++;
         errorRows.push({
           rowNumber: rowNum,
           rrn,
-          reason: `Duplicate row: RRN ${rrn} with function code ${funcCodeNum} already exists in queue`,
+          reason: hasOpenDispute
+            ? `Duplicate row: Transaction RRN ${rrn} already has an active open dispute in queue`
+            : `Duplicate row: RRN ${rrn} with function code ${funcCodeNum} already exists in queue`,
         });
       }
 

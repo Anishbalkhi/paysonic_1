@@ -42,12 +42,14 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
       setIsSubmitting(true);
       setErrorMsg('');
       const actorName = currentUser?.name || currentUser?.role || 'Plaza User';
+      const actorPlazaId = currentUser?.assignedPlazaId || currentUser?.plazaId;
       await DisputeManagementService.submitPlazaDecision(
-        disputeRow.rowId,
+        disputeRow.rowId || disputeRow.disputeId,
         decision,
         plazaReason.trim(),
         plazaEvidence,
-        actorName
+        actorName,
+        actorPlazaId
       );
       if (onUpdated) onUpdated();
       onClose();

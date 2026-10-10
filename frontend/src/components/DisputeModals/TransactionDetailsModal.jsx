@@ -33,7 +33,10 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     { label: 'Dispute Amount', val: `₹ ${Number(disputeRow.disputeAmount || 0).toFixed(2)}`, isHighlight: true },
     { label: 'Function Code', val: disputeRow.functionCode || '—', isCode: true },
     { label: 'Dispute Name', val: disputeRow.disputeType || '—' },
+    { label: 'Assigned Date & Time', val: disputeRow.assignedAt || '—' },
+    { label: 'TAT Due Date', val: disputeRow.tatDueDate || '—', isHighlight: true },
     { label: 'Plaza Action', val: disputeRow.plazaAction || 'No' },
+    { label: 'Plaza Action Date & Time', val: disputeRow.plazaActionTime || '—' },
     { label: 'CB Plaza Status', val: disputeRow.disputeStatus || 'NA' },
   ];
 

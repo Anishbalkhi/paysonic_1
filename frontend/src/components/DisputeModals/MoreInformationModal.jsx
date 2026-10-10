@@ -150,6 +150,16 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   {disputeRow.tatDueDate || '—'}
                 </div>
               </div>
+              <div className="meta-box">
+                <label>Assigned Date &amp; Time</label>
+                <div className="meta-display">{disputeRow.assignedAt || '—'}</div>
+              </div>
+              <div className="meta-box">
+                <label>Plaza Action Date &amp; Time</label>
+                <div className="meta-display" style={{ fontWeight: 600 }}>
+                  {disputeRow.plazaActionTime || '—'}
+                </div>
+              </div>
             </div>
 
             {/* Two Independent Columns: Admin (Left) & Plaza (Right) */}

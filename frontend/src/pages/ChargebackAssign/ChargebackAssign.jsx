@@ -304,10 +304,34 @@ export const ChargebackAssign = () => {
     }
   };
 
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState({ field: null, direction: 'asc' });
+
+  const handleSort = (field) => {
+    setSortConfig((prev) => {
+      if (prev.field === field) {
+        return { field, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { field, direction: 'desc' };
+    });
+  };
+
+  const sortedRows = useMemo(() => {
+    if (!sortConfig.field) return rows;
+    return [...rows].sort((a, b) => {
+      if (sortConfig.field === 'plazaActionDate') {
+        const timeA = a.decidedAt ? new Date(a.decidedAt).getTime() : (a.plazaActionTime ? 1 : 0);
+        const timeB = b.decidedAt ? new Date(b.decidedAt).getTime() : (b.plazaActionTime ? 1 : 0);
+        return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
+      }
+      return 0;
+    });
+  }, [rows, sortConfig]);
+
   const paginatedRows = useMemo(() => {
     const from = (currentPage - 1) * pageSize;
-    return rows.slice(from, from + pageSize);
-  }, [rows, currentPage, pageSize]);
+    return sortedRows.slice(from, from + pageSize);
+  }, [sortedRows, currentPage, pageSize]);
 
   return (
     <div className="chargeback-assign-page">
@@ -389,6 +413,7 @@ export const ChargebackAssign = () => {
               <option value="">Select Date Type</option>
               <option value="Transaction DateTime">Transaction DateTime</option>
               <option value="Chargeback Date">Chargeback Date</option>
+              <option value="Plaza Action Date">Plaza Action Date</option>
             </select>
           </div>
 
@@ -594,7 +619,13 @@ export const ChargebackAssign = () => {
                 <th>Function Code</th>
                 <th>Dispute Type</th>
                 <th>Plaza Action</th>
-                <th>Plaza Action Time</th>
+                <th
+                  style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                  onClick={() => handleSort('plazaActionDate')}
+                  title="Click to sort by Plaza Action Date & Time"
+                >
+                  Plaza Action Date &amp; Time {sortConfig.field === 'plazaActionDate' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+                </th>
                 <th>Dispute Status</th>
                 <th>Plaza Reason</th>
                 <th style={{ textAlign: 'right' }}>Txn Amt</th>
