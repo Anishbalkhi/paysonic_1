@@ -220,13 +220,32 @@ CREATE TABLE IF NOT EXISTS `toll_transactions` (
     INDEX `idx_trs_acq_txn_id` (`acq_txn_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 12. Dispute Transactions Table
+-- 12. Dispute Batches Table
+CREATE TABLE IF NOT EXISTS `dispute_batches` (
+    `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `batch_id` VARCHAR(64) NOT NULL UNIQUE,
+    `file_name` VARCHAR(255) NOT NULL,
+    `uploaded_by` VARCHAR(100) NOT NULL DEFAULT 'Master Admin',
+    `upload_timestamp` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `total_rows` INT NOT NULL DEFAULT 0,
+    `matched_rows` INT NOT NULL DEFAULT 0,
+    `unmatched_rows` INT NOT NULL DEFAULT 0,
+    `duplicate_rows` INT NOT NULL DEFAULT 0,
+    `status` VARCHAR(32) NOT NULL DEFAULT 'Processed',
+    PRIMARY KEY (`id`),
+    INDEX `idx_batch_id` (`batch_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 12.1 Dispute Transactions Table
 CREATE TABLE IF NOT EXISTS `dispute_transactions` (
     `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `dispute_id` VARCHAR(64) NULL,
+    `batch_id` VARCHAR(64) NULL,
     `plaza_name` VARCHAR(120) NOT NULL,
     `plaza_id` VARCHAR(32) NOT NULL,
     `acq_txn_id` VARCHAR(32) NOT NULL,
     `toll_txn_id` VARCHAR(32) NOT NULL,
+    `lane_id` VARCHAR(32) NULL DEFAULT 'Lane-01',
     `txn_date_time` DATETIME NOT NULL,
     `txn_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     `dispute_amount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -236,17 +255,47 @@ CREATE TABLE IF NOT EXISTS `dispute_transactions` (
     `issuer_id` VARCHAR(32) NOT NULL,
     `int_tracking_no` VARCHAR(32) NULL DEFAULT 'NA',
     `function_code` VARCHAR(64) NOT NULL,
-    `settlement_indicator` VARCHAR(10) NOT NULL,
+    `function_label` VARCHAR(100) NULL,
+    `settlement_indicator` VARCHAR(10) NOT NULL DEFAULT 'Dr',
     `message_reason_code` VARCHAR(100) NULL,
     `member_message_text` VARCHAR(255) NULL,
+    `settlement_date` VARCHAR(32) NULL,
+    `tat_due_date` VARCHAR(32) NULL,
+    `cb_raised_date` VARCHAR(32) NULL,
     `npci_settlement_date` DATE NULL,
+    `assigned` BOOLEAN NOT NULL DEFAULT FALSE,
+    `assigned_at` DATETIME NULL,
+    `assigned_to_plaza` VARCHAR(32) NULL,
+    `admin_remarks` VARCHAR(500) NULL,
+    `admin_remarks_at` DATETIME NULL,
+    `plaza_action` VARCHAR(32) NULL,
+    `plaza_action_at` DATETIME NULL,
+    `plaza_action_time` VARCHAR(32) NULL,
+    `plaza_action_by` VARCHAR(100) NULL,
+    `plaza_remarks` VARCHAR(500) NULL,
+    `counter_evidence_name` VARCHAR(255) NULL,
+    `counter_evidence_url` TEXT NULL,
+    `dispute_status` VARCHAR(32) NOT NULL DEFAULT 'NA',
+    `lifecycle_status` VARCHAR(64) NOT NULL DEFAULT 'Pending Assignment',
+    `closed` BOOLEAN NOT NULL DEFAULT FALSE,
+    `closed_at` DATETIME NULL,
+    `closed_by` VARCHAR(100) NULL,
+    `close_remarks` VARCHAR(500) NULL,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
+    INDEX `idx_disp_dispute_id` (`dispute_id`),
+    INDEX `idx_disp_batch_id` (`batch_id`),
+    INDEX `idx_disp_acq_txn_id` (`acq_txn_id`),
     INDEX `idx_disp_txn_date` (`txn_date_time`),
     INDEX `idx_disp_plaza_date` (`plaza_id`, `txn_date_time`),
     INDEX `idx_disp_func_code` (`function_code`),
-    INDEX `idx_disp_tag_id` (`tag_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;-- 13. Violation Transactions Table (Violation Bulk Action)
+    INDEX `idx_disp_tag_id` (`tag_id`),
+    INDEX `idx_disp_lifecycle` (`lifecycle_status`),
+    INDEX `idx_disp_assigned` (`assigned`, `assigned_to_plaza`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 13. Violation Transactions Table (Violation Bulk Action)
+
 CREATE TABLE IF NOT EXISTS `violation_transactions` (
     `id` BIGINT AUTO_INCREMENT NOT NULL,
     `plaza_id` VARCHAR(32) NOT NULL,

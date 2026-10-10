@@ -100,7 +100,6 @@ public class DataLoader implements CommandLineRunner {
             seedAuditLogs();
             seedTollTransactions();
             seedCycleWiseTransactions();
-            clearDisputeTransactions();
             seedViolationTransactions();
             seedViolationRawRecords();
             seedViolationSettlementRecords();

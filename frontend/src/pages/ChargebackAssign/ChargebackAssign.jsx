@@ -291,13 +291,27 @@ export const ChargebackAssign = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleClearAllDisputes = async () => {
+    if (window.confirm('Are you sure you want to clear all dispute records from Railway MySQL database? This will completely reset the dispute queue.')) {
+      try {
+        setLoading(true);
+        await DisputeManagementService.clearAllDisputes();
+        await loadData();
+      } catch (err) {
+        alert('Failed to clear dispute records: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleCloseDispute = async (rowId) => {
     if (!window.confirm(`Are you sure you want to close dispute ${rowId}? This action will finalize the dispute.`)) {
       return;
     }
     try {
       const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
-      await DisputeManagementService.closeDispute(rowId, actorName);
+      await DisputeManagementService.closeDispute(rowId, '', actorName);
       loadData();
     } catch (err) {
       alert(`Error closing dispute: ${err.message}`);
@@ -342,6 +356,19 @@ export const ChargebackAssign = () => {
             The single working queue for every dispute the acquirer needs to assign, track or review. Assign by row or bulk-assign by plaza to hand off for review.
           </p>
         </div>
+        {(!currentUser?.role || currentUser.role === 'MASTER_ADMIN' || currentUser.role === 'ADMIN') && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={handleClearAllDisputes}
+              title="Clear all dispute records from Railway database"
+              style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+            >
+              🗑️ Clear DB Disputes
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 6.1 Mini Dashboard (Top Strip) */}
