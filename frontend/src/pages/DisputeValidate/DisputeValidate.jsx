@@ -315,14 +315,20 @@ export const DisputeValidate = () => {
         ${headers.map((h) => `<Cell ss:StyleID="sMainHeader"><Data ss:Type="String">${xmlEsc(h)}</Data></Cell>`).join('')}
       </Row>`;
 
+    const totalCells = [
+      '<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>',
+      `<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Assigned Disputes: ${rows.length}</Data></Cell>`,
+      ...Array(13).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>'),
+      `<Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt}</Data></Cell>`,
+      '<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>'
+    ];
     const totalXml = `
       <Row ss:Height="24">
-        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>
-        <Cell ss:StyleID="sTotalLabel" ss:MergeAcross="13"><Data ss:Type="String">Total Assigned Disputes: ${rows.length}</Data></Cell>
-        <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt}</Data></Cell>
-        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>
+        ${totalCells.join('')}
       </Row>`;
 
+    const colWidths = [185, 140, 115, 195, 95, 160, 135, 115, 135, 115, 160, 95, 110, 115, 160, 110, 110];
+    const colsXml = colWidths.map((w) => `<Column ss:Width="${w}"/>`).join('');
     const colSpan = headers.length - 1;
 
     const excelXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -463,20 +469,27 @@ export const DisputeValidate = () => {
  </Styles>
  <Worksheet ss:Name="Validate Disputes">
   <Table>
-   <Row ss:Height="32">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE MANAGEMENT — VALIDATE DISPUTES</Data></Cell>
-   </Row>
-   <Row ss:Height="20">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Toll Plaza: ${xmlEsc(activePlaza.name)} (${xmlEsc(activePlazaId)})   |   Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Records: ${rows.length}   |   Total Value: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
-   </Row>
-   <Row ss:Height="4">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>
-   </Row>
-   <Row ss:Height="12"></Row>
-   ${headerXml}
-   ${dataXml}
-   ${totalXml}
-  </Table>
+    ${colsXml}
+    <Row ss:Height="32">
+     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE MANAGEMENT — VALIDATE DISPUTES</Data></Cell>
+    </Row>
+    <Row ss:Height="20">
+     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Toll Plaza: ${xmlEsc(activePlaza.name)} (${xmlEsc(activePlazaId)})   |   Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Records: ${rows.length}   |   Total Value: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
+    </Row>
+    <Row ss:Height="4">
+     ${Array(headers.length).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+    </Row>
+    ${headerXml}
+    ${dataXml}
+    ${totalXml}
+   </Table>
+   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+    <FreezePanes/>
+    <FrozenNoSplit/>
+    <SplitHorizontal>4</SplitHorizontal>
+    <TopRowBottomPane>4</TopRowBottomPane>
+    <ActivePane>2</ActivePane>
+   </WorksheetOptions>
  </Worksheet>
 </Workbook>`;
 

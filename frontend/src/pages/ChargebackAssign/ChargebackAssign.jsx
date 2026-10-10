@@ -306,13 +306,38 @@ export const ChargebackAssign = () => {
     const totalXml = `
       <Row ss:Height="24">
         <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>
-        <Cell ss:StyleID="sTotalLabel" ss:MergeAcross="16"><Data ss:Type="String">Total Disputes: ${rows.length}</Data></Cell>
-        <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalTxnAmt}</Data></Cell>
-        <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt}</Data></Cell>
+        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Disputes: ${rows.length}</Data></Cell>
+        ${Array(16).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>').join('')}
+        <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalTxnAmt.toFixed(2)}</Data></Cell>
+        <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt.toFixed(2)}</Data></Cell>
         <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>
       </Row>`;
 
     const colSpan = headers.length - 1;
+
+    const colWidths = [
+      120, // Assign Status
+      185, // Acq Txn ID
+      140, // Toll Txn ID
+      115, // VRN
+      195, // Tag ID
+      160, // Toll Plaza Name
+      90,  // Toll Plaza ID
+      135, // Txn Date
+      115, // Settlement Date
+      135, // TAT Due Date (T+8)
+      115, // CB Raised Date
+      160, // CB Reason
+      95,  // Function Code
+      115, // Dispute Type
+      100, // Plaza Action
+      150, // Plaza Action Date & Time
+      120, // Dispute Status
+      160, // Plaza Reason
+      110, // Txn Amount
+      110, // Dispute Amount
+      105  // TAT
+    ];
 
     const excelXml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
@@ -345,7 +370,7 @@ export const ChargebackAssign = () => {
    <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
   </Style>
   <Style ss:ID="sMainHeader">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
@@ -451,21 +476,29 @@ export const ChargebackAssign = () => {
   </Style>
  </Styles>
  <Worksheet ss:Name="Chargeback Queue">
-  <Table>
-   <Row ss:Height="32">
+  <Table ss:DefaultRowHeight="20">
+   ${colWidths.map((w) => `<Column ss:Width="${w}"/>`).join('\n   ')}
+   <Row ss:Height="30">
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE &amp; CHARGEBACK OPERATIONS — WORKING QUEUE</Data></Cell>
    </Row>
    <Row ss:Height="20">
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Queue Records: ${rows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>
+    ${Array(headers.length).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
    </Row>
-   <Row ss:Height="12"></Row>
    ${headerXml}
    ${dataXml}
    ${totalXml}
   </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <Selected/>
+   <FreezePanes/>
+   <FrozenNoSplit/>
+   <SplitHorizontal>4</SplitHorizontal>
+   <TopRowBottomPane>4</TopRowBottomPane>
+   <ActivePane>2</ActivePane>
+  </WorksheetOptions>
  </Worksheet>
 </Workbook>`;
 

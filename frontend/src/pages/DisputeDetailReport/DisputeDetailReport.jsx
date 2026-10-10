@@ -430,12 +430,36 @@ export const DisputeDetailReport = () => {
       const totalXml = `
         <Row ss:Height="24">
           <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>
-          <Cell ss:StyleID="sTotalLabel" ss:MergeAcross="8"><Data ss:Type="String">Total Audited Disputes: ${filteredRecords.length}</Data></Cell>
-          <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt}</Data></Cell>
-          <Cell ss:StyleID="sTotalLabel" ss:MergeAcross="8"><Data ss:Type="String"></Data></Cell>
+          <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Audited Disputes: ${filteredRecords.length}</Data></Cell>
+          ${Array(8).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>').join('')}
+          <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt.toFixed(2)}</Data></Cell>
+          ${Array(9).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>').join('')}
         </Row>`;
 
       const colSpan = headers.length - 1;
+
+      const colWidths = [
+        95,  // Dispute ID
+        185, // Acq Txn ID
+        140, // Toll Txn ID
+        115, // VRN
+        195, // Tag ID
+        160, // Plaza Name
+        85,  // Plaza ID
+        140, // Txn Date Time
+        115, // Settlement Date
+        115, // TAT Due Date
+        110, // Dispute Amount
+        95,  // Function Code
+        150, // Admin Reason
+        115, // Assigned Date
+        105, // Plaza Action
+        140, // Plaza Action Time
+        160, // Plaza Remarks
+        110, // Action By
+        135, // Status
+        110  // Closure Date
+      ];
 
       const excelXml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
@@ -468,7 +492,7 @@ export const DisputeDetailReport = () => {
    <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
   </Style>
   <Style ss:ID="sMainHeader">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
@@ -563,21 +587,29 @@ export const DisputeDetailReport = () => {
   </Style>
  </Styles>
  <Worksheet ss:Name="Dispute Detailed Report">
-  <Table>
-   <Row ss:Height="32">
+  <Table ss:DefaultRowHeight="20">
+   ${colWidths.map((w) => `<Column ss:Width="${w}"/>`).join('\n   ')}
+   <Row ss:Height="30">
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE MANAGEMENT — DETAILED AUDIT REPORT</Data></Cell>
    </Row>
    <Row ss:Height="20">
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Date Range: ${xmlEsc(fromDate.slice(0, 10))} to ${xmlEsc(toDate.slice(0, 10))}   |   Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Audited Records: ${filteredRecords.length}   |   Total Dispute Value: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>
+    ${Array(headers.length).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
    </Row>
-   <Row ss:Height="12"></Row>
    ${headerXml}
    ${dataXml}
    ${totalXml}
   </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <Selected/>
+   <FreezePanes/>
+   <FrozenNoSplit/>
+   <SplitHorizontal>4</SplitHorizontal>
+   <TopRowBottomPane>4</TopRowBottomPane>
+   <ActivePane>2</ActivePane>
+  </WorksheetOptions>
  </Worksheet>
 </Workbook>`;
 
