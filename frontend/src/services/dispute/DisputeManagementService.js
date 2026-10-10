@@ -142,7 +142,7 @@ function mapDbRecordToUi(r, idx = 0) {
     adminReason: r.adminRemarks || '',
     adminRemarks: r.adminRemarks || '',
     adminRemarksAt: r.adminRemarksAt || '',
-    plazaAction: r.plazaAction ? 'Yes' : 'No',
+    plazaAction: (r.plazaAction === true || r.plazaAction === 'Yes' || r.plazaAction === 'Accepted' || r.plazaAction === 'Rejected') ? 'Yes' : 'No',
     plazaActionTime: r.plazaActionTime || '',
     plazaActionAt: r.plazaActionAt || '',
     decidedAt: r.plazaActionAt || null,
@@ -537,13 +537,19 @@ class DisputeManagementService {
     const cleanId = String(rowId || '').trim();
     const row = rows.find((r) => String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId);
     if (!row) throw new Error('Dispute row not found');
-    if (row.assigned) throw new Error('Row is already assigned (locked for audit)');
-    if (row.plazaAction === 'Yes' || (row.disputeStatus && row.disputeStatus !== 'NA')) {
+    const hasPlazaActed =
+      row.disputeStatus === 'Approved' ||
+      row.disputeStatus === 'Rejected' ||
+      (row.plazaAction === 'Yes' && row.disputeStatus !== 'NA' && row.disputeStatus !== 'Pending');
+
+    if (hasPlazaActed) {
       throw new Error('Admin cannot re-assign a dispute after the plaza has acted (Accept or Reject).');
     }
 
     const finalPlazaId = targetPlazaId ? String(targetPlazaId) : String(row.plazaId);
-    const targetPlazaName = PLAZA_MAP[finalPlazaId] || row.plazaName;
+    const cachedPlazas = OnboardingService.getCachedPlazas() || [];
+    const matchedApiPlaza = cachedPlazas.find((p) => String(p.id).trim() === finalPlazaId);
+    const targetPlazaName = matchedApiPlaza?.name || PLAZA_MAP[finalPlazaId] || row.plazaName;
 
     try {
       await httpClient.put(`/api/disputes/workflow/assign/${cleanId}`, {
