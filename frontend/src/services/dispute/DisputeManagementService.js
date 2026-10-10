@@ -569,10 +569,9 @@ class DisputeManagementService {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
       let parsed = raw ? JSON.parse(raw) : [];
 
-      // Ensure Solapur Plaza (505505) and Mumbai Plaza (501101) and any missing initial records are always present
+      // Ensure Solapur Plaza (505505) and any missing initial records are always present
       const hasSolapur = parsed.some((r) => String(r.plazaId) === '505505');
-      const hasMumbai = parsed.some((r) => String(r.plazaId) === '501101');
-      if (!raw || raw === '[]' || !hasSolapur || !hasMumbai || parsed.length < INITIAL_DISPUTE_DATA.length) {
+      if (!raw || raw === '[]' || !hasSolapur || parsed.length < INITIAL_DISPUTE_DATA.length) {
         const merged = [...parsed];
         INITIAL_DISPUTE_DATA.forEach((initRow) => {
           if (!merged.some((m) => m.disputeId === initRow.disputeId)) {

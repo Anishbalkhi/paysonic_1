@@ -13,7 +13,6 @@
 
 import httpClient from '../api/httpClient';
 import UserActivityService from '../userActivity/UserActivityService';
-import { DEFAULT_PLAZAS } from '../../config/disputeConstants';
 
 // ─── Real Database Storage Mode (Direct Railway MySQL) ────────────────────────
 const getLocalStore = () => ({});
@@ -51,31 +50,16 @@ class OnboardingService {
   getCachedPlazas() {
     try {
       const raw = localStorage.getItem(CACHE_KEY_PLAZAS);
-      let list = [];
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
       const localStore = getLocalStore();
-      if (list.length === 0 && localStore?.plazas && Array.isArray(localStore.plazas) && localStore.plazas.length > 0) {
-        list = localStore.plazas;
+      if (localStore?.plazas && Array.isArray(localStore.plazas) && localStore.plazas.length > 0) {
+        return localStore.plazas;
       }
-      const merged = [...list];
-      DEFAULT_PLAZAS.forEach((dp) => {
-        if (!merged.some((p) => String(p.id) === String(dp.id))) {
-          merged.push({
-            id: String(dp.id),
-            name: dp.name,
-            category: 'Toll',
-            status: 'Active',
-            authority: 'NHAI',
-            state: 'MAHARASHTRA',
-          });
-        }
-      });
-      return merged;
     } catch {}
-    return DEFAULT_PLAZAS;
+    return [];
   }
 
   /**
@@ -116,21 +100,6 @@ class OnboardingService {
           },
           _fromRailway: true,
         }));
-
-        // Merge standard system plazas so core plazas (Mumbai 501101, Solapur 505505) are never missing
-        DEFAULT_PLAZAS.forEach((dp) => {
-          if (!normalised.some((p) => String(p.id) === String(dp.id))) {
-            normalised.push({
-              id: String(dp.id),
-              name: dp.name,
-              category: 'Toll',
-              status: 'Active',
-              authority: 'NHAI',
-              state: 'MAHARASHTRA',
-            });
-          }
-        });
-
         try {
           localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(normalised));
         } catch {}

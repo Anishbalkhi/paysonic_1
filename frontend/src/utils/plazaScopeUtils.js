@@ -141,19 +141,11 @@ export function getScopedPlazas(allPlazas = [], currentUser = null) {
   // Fallback if not yet loaded from DB: create a synthetic plaza record so UI doesn't crash
   const cleanName = assigned.replace(/\s*\[\d+\]$/, '').replace(/\s*\(\d+\)$/, '').trim().toUpperCase();
   const idMatch = assigned.match(/\[(\d+)\]/) || assigned.match(/\((\d+)\)/);
-  let fallbackId = idMatch ? idMatch[1] : currentUser.assignedPlazaId;
-  if (!fallbackId) {
-    if (/mumbai/i.test(assigned)) fallbackId = '501101';
-    else if (/solapur/i.test(assigned)) fallbackId = '505505';
-    else if (/pune/i.test(assigned)) fallbackId = '502202';
-    else if (/nashik/i.test(assigned)) fallbackId = '503303';
-    else if (/kolhapur/i.test(assigned)) fallbackId = '504404';
-    else fallbackId = '101001';
-  }
+  const fallbackId = idMatch ? idMatch[1] : (currentUser.assignedPlazaId || '101001');
 
   return [
     {
-      id: String(fallbackId),
+      id: fallbackId,
       name: cleanName,
       label: `${cleanName} (${fallbackId})`,
       codeLabel: `${fallbackId} - ${cleanName}`,
@@ -193,11 +185,7 @@ export function getInitialPlazaScope(scopedPlazas = [], currentUser = null) {
     if (idMatch) return idMatch[1];
     if (currentUser?.assignedPlazaId) return String(currentUser.assignedPlazaId);
     if (currentUser?.plazaId) return String(currentUser.plazaId);
-    if (/mumbai/i.test(assigned)) return '501101';
-    if (/solapur/i.test(assigned)) return '505505';
     if (/pune/i.test(assigned)) return '502202';
-    if (/nashik/i.test(assigned)) return '503303';
-    if (/kolhapur/i.test(assigned)) return '504404';
   }
   return 'ALL';
 }
