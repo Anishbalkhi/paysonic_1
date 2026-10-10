@@ -253,7 +253,16 @@ class DisputeManagementService {
     }
   }
 
-  async getBatches() {
+  getBatches() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_BATCHES);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async fetchBatches() {
     try {
       const res = await httpClient.get('/api/disputes/workflow/batches');
       if (Array.isArray(res.data) && res.data.length > 0) {
@@ -273,13 +282,9 @@ class DisputeManagementService {
     } catch (e) {
       console.debug('[DisputeManagementService] Backend batches fetch notice:', e?.message);
     }
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_BATCHES);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
+    return this.getBatches();
   }
+
 
   saveBatch(batch) {
     try {

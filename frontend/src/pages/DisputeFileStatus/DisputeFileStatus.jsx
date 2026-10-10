@@ -13,11 +13,26 @@ export const DisputeFileStatus = () => {
   const [fetchTime, setFetchTime] = useState('');
 
   useEffect(() => {
-    setBatches(DisputeManagementService.getBatches());
-    setFetchTime(formatFetchTime(new Date()));
+    const load = async () => {
+      const initial = DisputeManagementService.getBatches();
+      if (Array.isArray(initial)) {
+        setBatches(initial);
+      }
+      try {
+        const live = await DisputeManagementService.fetchBatches();
+        if (Array.isArray(live)) {
+          setBatches(live);
+        }
+      } catch (e) {
+        console.debug('Batches fetch notice:', e);
+      }
+      setFetchTime(formatFetchTime(new Date()));
+    };
+    load();
   }, []);
 
   const paginatedBatches = useMemo(() => {
+    if (!Array.isArray(batches)) return [];
     const from = (currentPage - 1) * pageSize;
     return batches.slice(from, from + pageSize);
   }, [batches, currentPage, pageSize]);

@@ -331,6 +331,7 @@ export const ChargebackAssign = () => {
   };
 
   const sortedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
     if (!sortConfig.field) return rows;
     return [...rows].sort((a, b) => {
       if (sortConfig.field === 'plazaActionDate') {
@@ -343,6 +344,7 @@ export const ChargebackAssign = () => {
   }, [rows, sortConfig]);
 
   const paginatedRows = useMemo(() => {
+    if (!Array.isArray(sortedRows)) return [];
     const from = (currentPage - 1) * pageSize;
     return sortedRows.slice(from, from + pageSize);
   }, [sortedRows, currentPage, pageSize]);
