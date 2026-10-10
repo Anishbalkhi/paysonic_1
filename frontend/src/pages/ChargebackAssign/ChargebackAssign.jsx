@@ -89,8 +89,9 @@ export const ChargebackAssign = () => {
   }, [loadData]);
 
   const togglePlazaChip = (plazaId) => {
+    const idStr = String(plazaId);
     setSelectedPlazaChips((prev) =>
-      prev.includes(plazaId) ? prev.filter((p) => p !== plazaId) : [...prev, plazaId]
+      prev.includes(idStr) ? prev.filter((p) => p !== idStr) : [...prev, idStr]
     );
   };
 
@@ -512,7 +513,7 @@ export const ChargebackAssign = () => {
 
         <div className="plaza-chips-row">
           {plazas.map((p) => {
-            const isPicked = selectedPlazaChips.includes(p.id);
+            const isPicked = selectedPlazaChips.includes(String(p.id));
             return (
               <button
                 key={p.id}

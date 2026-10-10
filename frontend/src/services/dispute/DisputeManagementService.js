@@ -569,9 +569,10 @@ class DisputeManagementService {
       const raw = localStorage.getItem(STORAGE_KEY_DISPUTES);
       let parsed = raw ? JSON.parse(raw) : [];
 
-      // Ensure Solapur Plaza (505505) and any missing initial records are always present
+      // Ensure Solapur Plaza (505505) and Mumbai Plaza (501101) and any missing initial records are always present
       const hasSolapur = parsed.some((r) => String(r.plazaId) === '505505');
-      if (!raw || raw === '[]' || !hasSolapur || parsed.length < INITIAL_DISPUTE_DATA.length) {
+      const hasMumbai = parsed.some((r) => String(r.plazaId) === '501101');
+      if (!raw || raw === '[]' || !hasSolapur || !hasMumbai || parsed.length < INITIAL_DISPUTE_DATA.length) {
         const merged = [...parsed];
         INITIAL_DISPUTE_DATA.forEach((initRow) => {
           if (!merged.some((m) => m.disputeId === initRow.disputeId)) {
@@ -949,9 +950,11 @@ class DisputeManagementService {
   async bulkAssignPlazas(selectedPlazaIds, defaultReason = 'Bulk-assigned for plaza review', actor = 'Master Admin') {
     const rows = this.getStoredDisputes();
     let updatedCount = 0;
+    const normalizedIds = (selectedPlazaIds || []).map((id) => String(id).trim().toLowerCase());
 
     const newRows = rows.map((r) => {
-      if (selectedPlazaIds.includes(String(r.plazaId)) && !r.assigned) {
+      const rId = String(r.plazaId || '').trim().toLowerCase();
+      if (normalizedIds.includes(rId) && !r.assigned) {
         updatedCount++;
         return {
           ...r,
@@ -976,12 +979,14 @@ class DisputeManagementService {
   async bulkUnassignPlazas(selectedPlazaIds, actor = 'Master Admin') {
     const rows = this.getStoredDisputes();
     let updatedCount = 0;
+    const normalizedIds = (selectedPlazaIds || []).map((id) => String(id).trim().toLowerCase());
 
     const newRows = rows.map((r) => {
+      const rId = String(r.plazaId || '').trim().toLowerCase();
       if (
-        selectedPlazaIds.includes(String(r.plazaId)) &&
+        normalizedIds.includes(rId) &&
         r.assigned &&
-        r.disputeStatus === 'NA' &&
+        (r.disputeStatus === 'NA' || !r.disputeStatus || r.disputeStatus === 'Pending') &&
         !r.closed
       ) {
         updatedCount++;
@@ -1010,17 +1015,21 @@ class DisputeManagementService {
     }
 
     const rows = this.getStoredDisputes();
-    const row = rows.find((r) => r.rowId === rowId || r.disputeId === rowId);
+    const cleanId = String(rowId || '').trim();
+    const row = rows.find((r) => String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId);
     if (!row) throw new Error('Dispute row not found');
     if (row.assigned) throw new Error('Row is already assigned (locked for audit)');
 
-    const finalPlazaId = targetPlazaId || row.plazaId;
+    const finalPlazaId = targetPlazaId ? String(targetPlazaId) : String(row.plazaId);
+    const targetPlazaName = PLAZA_MAP[finalPlazaId] || row.plazaName;
+
     const updated = rows.map((r) => {
-      if (r.rowId === rowId || r.disputeId === rowId) {
+      if (String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId) {
         return {
           ...r,
-          plazaId: String(finalPlazaId),
-          assignedToPlaza: String(finalPlazaId),
+          plazaId: finalPlazaId,
+          assignedToPlaza: finalPlazaId,
+          plazaName: targetPlazaName,
           assigned: true,
           lifecycleStatus: 'Assigned to Plaza',
           assignedBy: actor,
@@ -1033,7 +1042,7 @@ class DisputeManagementService {
     });
 
     this.saveDisputes(updated);
-    this.logAudit('ROW_ASSIGN', `Assigned dispute ${rowId} to plaza ${finalPlazaId}`, actor);
+    this.logAudit('ROW_ASSIGN', `Assigned dispute ${cleanId} to plaza ${finalPlazaId}`, actor);
     return { success: true };
   }
 

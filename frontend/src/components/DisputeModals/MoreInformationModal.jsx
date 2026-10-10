@@ -38,10 +38,10 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
 
     try {
       setIsSubmitting(true);
-      setErrorMsg('');
       const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
+      const rowIdentifier = disputeRow.rowId || disputeRow.disputeId;
       await DisputeManagementService.assignRow(
-        disputeRow.rowId,
+        rowIdentifier,
         adminReason.trim(),
         adminEvidence,
         actorName,
@@ -171,6 +171,11 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                         onChange={(e) => setTargetPlazaId(e.target.value)}
                         style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                       >
+                        {targetPlazaId && !plazas.some((p) => String(p.id) === String(targetPlazaId)) && (
+                          <option value={targetPlazaId}>
+                            {disputeRow.plazaName || 'Plaza'} ({targetPlazaId})
+                          </option>
+                        )}
                         {plazas.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name} ({p.id})
