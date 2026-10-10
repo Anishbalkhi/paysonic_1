@@ -138,10 +138,11 @@ export const ChargebackAssign = () => {
     };
   }, [loadData]);
 
-  // Export CSV directly matching current filtered records
+  // Export CSV directly matching current filtered records with Paysonic theme
   const handleExportCsv = () => {
     if (!rows || rows.length === 0) return;
-    setDownloadTime(formatFetchTime(new Date()));
+    const fetchTimeStr = formatFetchTime(new Date());
+    setDownloadTime(fetchTimeStr);
 
     const headers = [
       'Assign Status',
@@ -200,7 +201,27 @@ export const ChargebackAssign = () => {
       ].map(escapeCsv).join(',');
     });
 
-    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...csvRows].join('\r\n');
+    const totTxn = rows.reduce((s, r) => s + Number(r.txnAmount || 0), 0).toFixed(2);
+    const totDispute = rows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
+
+    const totalRow = Array(headers.length).fill('""');
+    totalRow[0] = '"TOTAL"';
+    totalRow[18] = `"${totTxn}"`;
+    totalRow[19] = `"${totDispute}"`;
+
+    const bannerRows = [
+      `"PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — WORKING QUEUE"`,
+      `"Export Date: ${fetchTimeStr}   |   Total Queue Disputes: ${rows.length}   |   Cumulative Dispute Value: ₹ ${totDispute}"`,
+      ''
+    ];
+
+    const csvContent = '\uFEFF' + [
+      ...bannerRows,
+      headers.map(escapeCsv).join(','),
+      ...csvRows,
+      totalRow.join(',')
+    ].join('\r\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -212,10 +233,11 @@ export const ChargebackAssign = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Export Excel directly matching current filtered records with real onboarded plazas
+  // Export Excel directly matching current filtered records with Paysonic branded theme
   const handleExportExcel = () => {
     if (!rows || rows.length === 0) return;
-    setDownloadTime(formatFetchTime(new Date()));
+    const fetchTimeStr = formatFetchTime(new Date());
+    setDownloadTime(fetchTimeStr);
 
     const xmlEsc = (str) =>
       String(str || '')
@@ -233,49 +255,216 @@ export const ChargebackAssign = () => {
     ];
 
     let dataXml = '';
+    let totalTxnAmt = 0;
+    let totalDisputeAmt = 0;
+
     rows.forEach((r) => {
       const tat = DisputeManagementService.getTatBadge(r);
+      const isAssigned = Boolean(r.assigned);
+      const isAccepted = r.disputeStatus === 'Approved';
+      const isRejected = r.disputeStatus === 'Rejected';
+      const statusStyle = isAccepted ? 'sBadgeGreen' : isRejected ? 'sBadgeRed' : isAssigned ? 'sBadgeBlue' : 'sBadgeAmber';
+
+      const tatStyle = tat.status === 'safe' ? 'sBadgeGreen' : tat.status === 'at-risk' ? 'sBadgeAmber' : tat.status === 'overdue' ? 'sBadgeRed' : 'sDataCenter';
+
+      const tAmt = Number(r.txnAmount || 0);
+      const dAmt = Number(r.disputeAmount || 0);
+      totalTxnAmt += tAmt;
+      totalDisputeAmt += dAmt;
+
       dataXml += `
-      <Row ss:Height="20">
-        <Cell><Data ss:Type="String">${xmlEsc(r.lifecycleStatus || (r.assigned ? 'Assigned' : 'Unassigned'))}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.acqTxnId)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.tollTxnId)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.vrn)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.tagId)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.plazaName)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.plazaId)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.cbRaisedDate)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
-        <Cell><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.disputeType)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.plazaAction === 'Yes' ? 'Yes' : 'No')}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.plazaActionTime || '—')}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.disputeStatus)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(r.plazaReason)}</Data></Cell>
-        <Cell><Data ss:Type="Number">${Number(r.txnAmount || 0)}</Data></Cell>
-        <Cell><Data ss:Type="Number">${Number(r.disputeAmount || 0)}</Data></Cell>
-        <Cell><Data ss:Type="String">${xmlEsc(tat.label)}</Data></Cell>
+      <Row ss:Height="21">
+        <Cell ss:StyleID="${statusStyle}"><Data ss:Type="String">${xmlEsc(r.lifecycleStatus || (isAssigned ? 'Assigned' : 'Unassigned'))}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.acqTxnId)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tollTxnId)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.vrn)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tagId)}</Data></Cell>
+        <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaName)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaId)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.cbRaisedDate)}</Data></Cell>
+        <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
+        <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.disputeType)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaAction === 'Yes' ? 'Yes' : 'No')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaActionTime || '—')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.disputeStatus)}</Data></Cell>
+        <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaReason)}</Data></Cell>
+        <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${tAmt}</Data></Cell>
+        <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${dAmt}</Data></Cell>
+        <Cell ss:StyleID="${tatStyle}"><Data ss:Type="String">${xmlEsc(tat.label)}</Data></Cell>
       </Row>`;
     });
 
     const headerXml = `
-      <Row ss:Height="24">
-        ${headers.map((h) => `<Cell><Data ss:Type="String">${xmlEsc(h)}</Data></Cell>`).join('')}
+      <Row ss:Height="26">
+        ${headers.map((h) => `<Cell ss:StyleID="sMainHeader"><Data ss:Type="String">${xmlEsc(h)}</Data></Cell>`).join('')}
       </Row>`;
 
-    const excelXml = `<?xml version="1.0"?>
+    const totalXml = `
+      <Row ss:Height="24">
+        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>
+        <Cell ss:StyleID="sTotalLabel" ss:MergeAcross="16"><Data ss:Type="String">Total Disputes: ${rows.length}</Data></Cell>
+        <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalTxnAmt}</Data></Cell>
+        <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt}</Data></Cell>
+        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>
+      </Row>`;
+
+    const colSpan = headers.length - 1;
+
+    const excelXml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:office"
  xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Paysonic Toll Operations</Author>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="sTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="16" ss:Bold="1" ss:Color="#002060"/>
+  </Style>
+  <Style ss:ID="sSubtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#64748B"/>
+  </Style>
+  <Style ss:ID="sGreenBar">
+   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sMainHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10.5" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#0F2F6B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sDataText">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="sDataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="sDataAmt">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+  <Style ss:ID="sBadgeGreen">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#047857"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sBadgeRed">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#B91C1C"/>
+   <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sBadgeAmber">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#B45309"/>
+   <Interior ss:Color="#FEF3C7" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sBadgeBlue">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#1D4ED8"/>
+   <Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sTotalLabel">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#002060"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#002060"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#002060"/>
+   <Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sTotalAmt">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Double" ss:Weight="3" ss:Color="#002060"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#002060"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#002060"/>
+   <Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+ </Styles>
  <Worksheet ss:Name="Chargeback Queue">
   <Table>
+   <Row ss:Height="32">
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE &amp; CHARGEBACK OPERATIONS — WORKING QUEUE</Data></Cell>
+   </Row>
+   <Row ss:Height="20">
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Generated: ${xmlEsc(fetchTimeStr)}   |   Total Queue Records: ${rows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
+   </Row>
+   <Row ss:Height="4">
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>
+   </Row>
+   <Row ss:Height="12"></Row>
    ${headerXml}
    ${dataXml}
+   ${totalXml}
   </Table>
  </Worksheet>
 </Workbook>`;
