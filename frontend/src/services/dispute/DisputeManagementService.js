@@ -689,6 +689,16 @@ class DisputeManagementService {
     let unmatchedCount = 0;
     let duplicateCount = 0;
 
+    // Integrate live onboarded plazas from OnboardingService API
+    const cachedPlazas = OnboardingService.getCachedPlazas() || [];
+    const apiPlazaMap = {};
+    cachedPlazas.forEach((p) => {
+      const pid = String(p.id || '').trim();
+      if (pid) {
+        apiPlazaMap[pid] = p.name || `Plaza ${pid}`;
+      }
+    });
+
     parsedRows.forEach((row, idx) => {
       const rowNum = idx + 2; // 1-based header offset
       const rrn = (row['RRN'] || row['rrn'] || row['Acq Txn ID'] || row['Acquirer Reference Number'] || '').trim();
@@ -729,27 +739,44 @@ class DisputeManagementService {
         });
       }
 
-      if (masterHit) {
+      const csvPlazaId = (row['Plaza ID'] || row['Merchant ID'] || row['plazaId'] || row['Toll Plaza ID'] || '').trim();
+      const resolvedPlazaName = apiPlazaMap[csvPlazaId] || PLAZA_MAP[csvPlazaId];
+      const directPlazaHit = (csvPlazaId && resolvedPlazaName) ? {
+        tollTxnId: row['Toll Txn ID'] || row['tollTxnId'] || `TXN-${rrn.slice(-6)}`,
+        vrn: row['Vehicle Registration Number'] || row['VRN'] || row['vrn'] || '—',
+        tagId: row['Tag ID'] || row['tagId'] || '—',
+        plazaId: csvPlazaId,
+        plazaName: resolvedPlazaName,
+        txnDate: row['Txn Date'] || row['txnDate'] || '—',
+        txnAmount: Number(row['Transaction Amount'] || row['txnAmount'] || row['Dispute Amount'] || 0),
+      } : null;
+
+      const hit = masterHit || directPlazaHit;
+
+      if (hit) {
         matchedCount++;
+        const plazaId = hit.plazaId || csvPlazaId || '501101';
+        const plazaName = hit.plazaName || apiPlazaMap[plazaId] || PLAZA_MAP[plazaId] || 'MUMBAI PLAZA NH-04';
+
         results.push({
           rowNumber: rowNum,
           status: alreadyQueued ? 'Duplicate' : 'Matched',
           isMatched: true,
           alreadyQueued,
           rrn,
-          tagId: masterHit.tagId || row['Tag ID'] || '—',
+          tagId: hit.tagId || row['Tag ID'] || '—',
           functionCode: funcCodeNum,
           disputeType: FUNCTION_CODE_MAP[funcCodeNum] || `Code ${funcCodeNum}`,
           settlementDate,
           tatDueDate,
-          txnAmount: masterHit.txnAmount || Number(row['Transaction Amount'] || 0),
-          disputeAmount: masterHit.txnAmount || Number(row['Transaction Amount'] || 0),
+          txnAmount: hit.txnAmount || Number(row['Transaction Amount'] || 0),
+          disputeAmount: hit.txnAmount || Number(row['Transaction Amount'] || 0),
           memberMessageText: row['Member Message Text'] || row['CB Reason'] || 'Imported from bank file',
-          plazaId: masterHit.plazaId || row['Merchant ID'] || '501101',
-          plazaName: masterHit.plazaName || PLAZA_MAP[masterHit.plazaId] || 'MUMBAI PLAZA NH-04',
-          vrn: masterHit.vrn || row['Vehicle Registration Number'] || '—',
-          tollTxnId: masterHit.tollTxnId || '—',
-          txnDate: masterHit.txnDate || '—',
+          plazaId,
+          plazaName,
+          vrn: hit.vrn || row['Vehicle Registration Number'] || '—',
+          tollTxnId: hit.tollTxnId || '—',
+          txnDate: hit.txnDate || '—',
         });
       } else {
         unmatchedCount++;
