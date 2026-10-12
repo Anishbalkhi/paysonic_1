@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { formatDisplayDateTime } from '../../services/dispute/DisputeManagementService';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import EvidenceUploader from './EvidenceUploader';
 import './DisputeModals.scss';
 
 export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
   const { currentUser } = useAuth();
-  const { plazas } = useOnboardedPlazas();
   const [adminReason, setAdminReason] = useState('');
   const [adminEvidence, setAdminEvidence] = useState([]);
-  const [targetPlazaId, setTargetPlazaId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [previewTarget, setPreviewTarget] = useState(null);
 
   useEffect(() => {
     if (disputeRow) {
-      setAdminReason(disputeRow.adminReason || '');
+      // Pick reason directly from dispute file (Member Message Text / CB Reason)
+      const fileReason = (disputeRow.memberMessageText || disputeRow.cbReason || '').trim();
+      const existingAdminReason = (disputeRow.adminReason || disputeRow.adminRemarks || '').trim();
+      const initialReason = (!existingAdminReason || existingAdminReason === 'Bulk-assigned for plaza review') && fileReason
+        ? fileReason
+        : (existingAdminReason || fileReason);
+
+      setAdminReason(initialReason);
       setAdminEvidence(disputeRow.adminEvidence || []);
-      setTargetPlazaId(disputeRow.plazaId || '505505');
       setErrorMsg('');
       setPreviewTarget(null);
     }
@@ -29,6 +32,25 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
   if (!isOpen || !disputeRow) return null;
 
   const isAssigned = Boolean(disputeRow.assigned);
+
+  const assignedAtDisplay = (() => {
+    if (disputeRow.assignedAt) {
+      const f = formatDisplayDateTime(disputeRow.assignedAt);
+      if (f) return f;
+    }
+    if (disputeRow.adminRemarksAt) {
+      const f = formatDisplayDateTime(disputeRow.adminRemarksAt);
+      if (f) return f;
+    }
+    if (isAssigned) {
+      const fallback = disputeRow.updatedAt || disputeRow.plazaActionTime || disputeRow.createdAt;
+      if (fallback && fallback !== 'Pending Plaza Decision') {
+        const f = formatDisplayDateTime(fallback);
+        if (f) return f;
+      }
+    }
+    return '—';
+  })();
 
   const handleAssignToPlaza = async () => {
     if (!adminReason.trim()) {
@@ -45,7 +67,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
         adminReason.trim(),
         adminEvidence,
         actorName,
-        targetPlazaId || disputeRow.plazaId
+        disputeRow.plazaId
       );
       if (onUpdated) onUpdated();
       onClose();
@@ -69,11 +91,13 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
     const icon = isImg ? '📷' : isPdf ? '📄' : isLog ? '📝' : '📎';
     const sourceLabel = isAdminCol ? 'Acquirer Evidence' : 'Plaza Evidence';
 
+    const fileListForSource = isAdminCol ? (adminEvidence || []) : (disputeRow.plazaEvidence || []);
+
     return (
       <div key={index} className="evidence-chip rich-evidence-card">
         <div
           className="file-meta clickable-meta"
-          onClick={() => setPreviewTarget({ file: item, source: sourceLabel })}
+          onClick={() => setPreviewTarget({ file: item, source: sourceLabel, fileList: fileListForSource })}
           title={`Click to view ${fileName}`}
         >
           <span className="file-type-icon">{icon}</span>
@@ -89,7 +113,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
           <button
             type="button"
             className="btn-preview-evidence"
-            onClick={() => setPreviewTarget({ file: item, source: sourceLabel })}
+            onClick={() => setPreviewTarget({ file: item, source: sourceLabel, fileList: fileListForSource })}
             title="View Attachment"
           >
             👁️ View
@@ -141,7 +165,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                 <div className="meta-display">{disputeRow.plazaId}</div>
               </div>
               <div className="meta-box">
-                <label>Settlement Date</label>
+                <label>Dispute Raise Date</label>
                 <div className="meta-display">{disputeRow.settlementDate || disputeRow.cbRaisedDate || '—'}</div>
               </div>
               <div className="meta-box">
@@ -152,7 +176,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
               </div>
               <div className="meta-box">
                 <label>Assigned Date &amp; Time</label>
-                <div className="meta-display">{disputeRow.assignedAt || '—'}</div>
+                <div className="meta-display">{assignedAtDisplay}</div>
               </div>
               <div className="meta-box">
                 <label>Plaza Action Date &amp; Time</label>
@@ -170,26 +194,6 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   Admin · User's Reasons and Proof
                 </div>
                 <div className="section-content">
-                  {!isAssigned && (
-                    <div className="field-block" style={{ marginBottom: '10px' }}>
-                      <label htmlFor="targetPlazaSelect" style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                        Assign To Toll Plaza:
-                      </label>
-                      <select
-                        id="targetPlazaSelect"
-                        value={targetPlazaId}
-                        onChange={(e) => setTargetPlazaId(e.target.value)}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
-                      >
-                        {plazas.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} ({p.id})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
                   <div className="field-block">
                     <label htmlFor="adminReasonInput">
                       Reason / Explanation <span style={{ color: '#ef4444' }}>* (Mandatory)</span>
@@ -212,7 +216,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                         disabled={isSubmitting}
                         label="Acquirer Evidence Attachments"
                         isMandatory={false}
-                        onPreview={(file) => setPreviewTarget({ file, source: 'Acquirer Evidence' })}
+                        onPreview={(file) => setPreviewTarget({ file, source: 'Acquirer Evidence', fileList: adminEvidence })}
                       />
 
                       <button
@@ -240,7 +244,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                       </div>
                       <div className="audit-locked-banner" style={{ marginTop: '10px' }}>
                         🔒 Assigned by {disputeRow.assignedBy || 'Admin'} on{' '}
-                        {disputeRow.assignedAt ? new Date(disputeRow.assignedAt).toLocaleString('en-GB') : '—'} — Locked for audit.
+                        {assignedAtDisplay !== '—' ? assignedAtDisplay : '—'} — Locked for audit.
                       </div>
                     </>
                   )}
@@ -315,6 +319,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
         isOpen={Boolean(previewTarget)}
         onClose={() => setPreviewTarget(null)}
         file={previewTarget?.file}
+        fileList={previewTarget?.fileList || []}
         source={previewTarget?.source || 'Evidence'}
         disputeRow={disputeRow}
       />

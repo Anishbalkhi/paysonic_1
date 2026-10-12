@@ -84,10 +84,8 @@ export const DisputeDetailReport = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      // 1. Load from DisputeManagementService lifecycle queue
-      const lifecycleDisputes = DisputeManagementService.getStoredDisputes();
-
-      // 2. Fetch live database disputes
+      // 1. Separate 03 Report data: 01 chargeback lifecycle queue is NOT shown here
+      // Dedicated 03 report file data will be populated separately upon 03 file upload
       let dbDisputes = [];
       try {
         const data = await DisputeReportService.searchDisputes({
@@ -100,31 +98,11 @@ export const DisputeDetailReport = () => {
         });
         dbDisputes = data?.content ? data.content : Array.isArray(data) ? data : [];
       } catch (dbErr) {
-        console.warn('[DisputeDetailReport] Database query warning (falling back to lifecycle store):', dbErr?.message);
+        console.warn('[DisputeDetailReport] 03 database query notice:', dbErr?.message);
       }
 
-      // Merge records, giving precedence to lifecycle disputes
       const seenRrn = new Set();
       const combined = [];
-
-      lifecycleDisputes.forEach((r) => {
-        const rrn = String(r.acqTxnId || r.rowId || '').trim();
-        if (rrn) seenRrn.add(rrn);
-        combined.push({
-          ...r,
-          id: r.rowId || r.disputeId,
-          vehicleNo: r.vrn || r.vehicleNo || '—',
-          plazaName: r.plazaName || `Plaza ${r.plazaId}`,
-          txnDateTime: r.txnDateTime || r.txnDate,
-          lifecycleStatus: r.lifecycleStatus || (r.assigned ? 'Assigned to Plaza' : 'Pending Assignment'),
-          disputeStatus: r.disputeStatus || 'NA',
-          plazaAction: r.plazaAction || (r.disputeStatus === 'Approved' || r.disputeStatus === 'Rejected' ? 'Yes' : 'No'),
-          plazaReason: r.plazaReason || '—',
-          plazaActionTime: r.plazaActionTime || '—',
-          adminReason: r.adminReason || r.adminRemarks || '—',
-          closureDate: r.closedAt ? r.closedAt.slice(0, 10) : '—'
-        });
-      });
 
       dbDisputes.forEach((d) => {
         const rrn = String(d.acqTxnId || d.id || '').trim();
@@ -276,7 +254,7 @@ export const DisputeDetailReport = () => {
         'Plaza Name',
         'Plaza ID',
         'Txn Date Time',
-        'Settlement Date',
+        'Dispute Raise Date',
         'TAT Due Date',
         'Dispute Amount',
         'Function Code',
@@ -372,7 +350,7 @@ export const DisputeDetailReport = () => {
         'Plaza Name',
         'Plaza ID',
         'Txn Date Time',
-        'Settlement Date',
+        'Dispute Raise Date',
         'TAT Due Date',
         'Dispute Amount',
         'Function Code',
@@ -447,7 +425,7 @@ export const DisputeDetailReport = () => {
         160, // Plaza Name
         85,  // Plaza ID
         140, // Txn Date Time
-        115, // Settlement Date
+        115, // Dispute Raise Date
         115, // TAT Due Date
         110, // Dispute Amount
         95,  // Function Code
@@ -843,7 +821,7 @@ export const DisputeDetailReport = () => {
                 <th>Tag ID</th>
                 <th>Toll Plaza</th>
                 <th>Txn Date Time</th>
-                <th>Settlement Date</th>
+                <th>Dispute Raise Date</th>
                 <th>TAT Due Date</th>
                 <th className="num-col">Dispute Amount</th>
                 <th>Admin Reason</th>

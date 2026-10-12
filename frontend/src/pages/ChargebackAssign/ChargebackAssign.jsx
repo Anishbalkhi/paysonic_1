@@ -73,7 +73,16 @@ export const ChargebackAssign = () => {
         DisputeManagementService.getAdminMiniDashboardStats(),
       ]);
       const scopedRows = filterRecordsByPlazaScope(fetchedRows, plazas, currentUser);
-      setRows(scopedRows);
+      // In Chargeback Assign, only show chargebacks needing assignment or awaiting plaza decision
+      const chargebackQueueRows = scopedRows.filter((r) => {
+        const isActionTaken =
+          r.plazaAction === 'Yes' ||
+          r.disputeStatus === 'Approved' ||
+          r.disputeStatus === 'Rejected' ||
+          r.closed === true;
+        return !isActionTaken;
+      });
+      setRows(chargebackQueueRows);
       setMiniStats(stats);
       setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
@@ -95,14 +104,34 @@ export const ChargebackAssign = () => {
     );
   };
 
+  const handleSelectAllPlazas = () => {
+    const allIds = (plazas || []).map((p) => String(p.id));
+    setSelectedPlazaChips(allIds);
+    setBulkFeedback(`Selected all ${allIds.length} plaza(s).`);
+  };
+
+  const handleUnselectAllPlazas = () => {
+    setSelectedPlazaChips([]);
+    setBulkFeedback('Cleared plaza selection.');
+  };
+
   const handleBulkAssign = async () => {
     if (selectedPlazaChips.length === 0) {
       setBulkFeedback('Please pick at least one plaza chip first.');
       return;
     }
-    const { updatedCount } = await DisputeManagementService.bulkAssignPlazas(selectedPlazaChips);
-    setBulkFeedback(`✓ ${updatedCount} row(s) assigned across ${selectedPlazaChips.length} plaza(s).`);
-    loadData();
+    try {
+      setBulkFeedback('Assigning selected plazas...');
+      const { updatedCount } = await DisputeManagementService.bulkAssignPlazas(selectedPlazaChips);
+      if (updatedCount === 0) {
+        setBulkFeedback(`ℹ️ No unassigned open disputes found for the selected plaza(s).`);
+      } else {
+        setBulkFeedback(`✓ ${updatedCount} row(s) assigned across ${selectedPlazaChips.length} plaza(s).`);
+      }
+      loadData();
+    } catch (err) {
+      setBulkFeedback(`⚠️ Failed to bulk assign: ${err.message}`);
+    }
   };
 
   const handleBulkUnassign = async () => {
@@ -110,9 +139,18 @@ export const ChargebackAssign = () => {
       setBulkFeedback('Please pick at least one plaza chip first.');
       return;
     }
-    const { updatedCount } = await DisputeManagementService.bulkUnassignPlazas(selectedPlazaChips);
-    setBulkFeedback(`✓ ${updatedCount} open row(s) unassigned. Decided rows were kept.`);
-    loadData();
+    try {
+      setBulkFeedback('Unassigning selected plazas...');
+      const { updatedCount } = await DisputeManagementService.bulkUnassignPlazas(selectedPlazaChips);
+      if (updatedCount === 0) {
+        setBulkFeedback(`ℹ️ No assigned, undecided rows found for the selected plaza(s).`);
+      } else {
+        setBulkFeedback(`✓ ${updatedCount} open row(s) unassigned across ${selectedPlazaChips.length} plaza(s). Decided rows were kept.`);
+      }
+      loadData();
+    } catch (err) {
+      setBulkFeedback(`⚠️ Failed to bulk unassign: ${err.message}`);
+    }
   };
 
   // Sync with realtime onboarded plaza updates and dispute state updates
@@ -153,7 +191,7 @@ export const ChargebackAssign = () => {
       'Toll Plaza Name',
       'Toll Plaza ID',
       'Txn Date',
-      'Settlement Date',
+      'Dispute Raise Date',
       'TAT Due Date (T+8)',
       'CB Raised Date',
       'CB Reason',
@@ -249,7 +287,7 @@ export const ChargebackAssign = () => {
 
     const headers = [
       'Assign Status', 'Acq Txn ID', 'Toll Txn ID', 'VRN', 'Tag ID',
-      'Toll Plaza Name', 'Toll Plaza ID', 'Txn Date', 'Settlement Date', 'TAT Due Date (T+8)',
+      'Toll Plaza Name', 'Toll Plaza ID', 'Txn Date', 'Dispute Raise Date', 'TAT Due Date (T+8)',
       'CB Raised Date', 'CB Reason', 'Function Code', 'Dispute Type', 'Plaza Action',
       'Plaza Action Date & Time', 'Dispute Status', 'Plaza Reason', 'Txn Amount', 'Dispute Amount', 'TAT'
     ];
@@ -324,7 +362,7 @@ export const ChargebackAssign = () => {
       160, // Toll Plaza Name
       90,  // Toll Plaza ID
       135, // Txn Date
-      115, // Settlement Date
+      115, // Dispute Raise Date
       135, // TAT Due Date (T+8)
       115, // CB Raised Date
       160, // CB Reason
@@ -782,10 +820,52 @@ export const ChargebackAssign = () => {
 
       {/* 6.4 Dedicated Bulk Control Card */}
       <div className="bulk-control-card">
-        <div className="card-title">Bulk Assign / Unassign — by Plaza</div>
-        <p className="bulk-hint">
-          Pick one or more plazas and apply to every currently-filtered, unassigned row for those plazas in one go.
-        </p>
+        <div className="card-top-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
+          <div>
+            <div className="card-title">Bulk Assign / Unassign — by Plaza</div>
+            <p className="bulk-hint">
+              Pick one or more plazas and apply to every open row for those plazas in one go.
+            </p>
+          </div>
+          <div className="plaza-selection-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm"
+              onClick={handleSelectAllPlazas}
+              title="Select all plazas"
+              id="cbaSelectAllPlazasBtn"
+              style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: '6px' }}
+            >
+              ✓ Select All ({plazas.length})
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={handleUnselectAllPlazas}
+              disabled={selectedPlazaChips.length === 0}
+              title="Clear plaza selection"
+              id="cbaUnselectAllPlazasBtn"
+              style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: '6px' }}
+            >
+              ✕ Unselect All
+            </button>
+            {selectedPlazaChips.length > 0 && (
+              <span
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  backgroundColor: '#eff6ff',
+                  color: '#1d4ed8',
+                  padding: '3px 8px',
+                  borderRadius: '12px',
+                  border: '1px solid #bfdbfe',
+                }}
+              >
+                {selectedPlazaChips.length} of {plazas.length} selected
+              </span>
+            )}
+          </div>
+        </div>
 
         <div className="plaza-chips-row">
           {plazas.map((p) => {
@@ -858,13 +938,14 @@ export const ChargebackAssign = () => {
             <thead>
               <tr>
                 <th>Assign Status</th>
+                <th style={{ textAlign: 'center' }}>Action</th>
                 <th>Acq Txn ID</th>
                 <th>Toll Txn ID</th>
                 <th>VRN</th>
                 <th>Tag ID</th>
                 <th>Toll Plaza</th>
                 <th>Txn Date</th>
-                <th>Settlement Date</th>
+                <th>Dispute Raise Date</th>
                 <th>TAT Due Date</th>
                 <th>CB Reason</th>
                 <th>Function Code</th>
@@ -882,7 +963,6 @@ export const ChargebackAssign = () => {
                 <th style={{ textAlign: 'right' }}>Txn Amt</th>
                 <th style={{ textAlign: 'right' }}>Dispute Amt</th>
                 <th>TAT</th>
-                <th style={{ textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -916,6 +996,29 @@ export const ChargebackAssign = () => {
                         ) : (
                           <span className="badge tag-cb-assign">Pending Assignment</span>
                         )}
+                      </td>
+                      <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className={`btn ${r.assigned ? 'btn-secondary' : 'btn-primary'} btn-sm`}
+                            onClick={() => setCbModalRow(r)}
+                          >
+                            {r.assigned ? 'View' : 'CB Assign'}
+                          </button>
+
+                          {canClose && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={() => handleCloseDispute(r.rowId)}
+                              title="Close this dispute"
+                              style={{ padding: '4px 8px', fontSize: '0.78rem' }}
+                            >
+                              Close
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <span
@@ -960,29 +1063,6 @@ export const ChargebackAssign = () => {
                       <td className="bold-amt">₹ {Number(r.disputeAmount || 0).toFixed(2)}</td>
                       <td>
                         <span className={`badge ${tat.colorClass}`}>{tat.label}</span>
-                      </td>
-                      <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-                          <button
-                            type="button"
-                            className={`btn ${r.assigned ? 'btn-secondary' : 'btn-primary'} btn-sm`}
-                            onClick={() => setCbModalRow(r)}
-                          >
-                            {r.assigned ? 'View' : 'CB Assign'}
-                          </button>
-
-                          {canClose && (
-                            <button
-                              type="button"
-                              className="btn btn-outline-primary btn-sm"
-                              onClick={() => handleCloseDispute(r.rowId)}
-                              title="Close this dispute"
-                              style={{ padding: '4px 8px', fontSize: '0.78rem' }}
-                            >
-                              Close
-                            </button>
-                          )}
-                        </div>
                       </td>
                     </tr>
                   );

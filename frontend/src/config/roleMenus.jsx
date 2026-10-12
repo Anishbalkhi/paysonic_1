@@ -122,7 +122,8 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
         { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
         { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
-        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_closed_disputes', label: 'F. Closed Disputes', path: '/dispute-handling/closed-disputes' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'G. Dispute Detail Report', path: '/dispute-handling/detail-report' },
       ],
     },
     {
@@ -226,7 +227,8 @@ export const ROLE_NAVIGATION_MAP = {
         { subId: 'dispute_handling_file_status', label: 'C. Dispute File Status', path: '/dispute-handling/file-status' },
         { subId: 'dispute_handling_chargeback_assign', label: 'D. Chargeback Assign', path: '/dispute-handling/chargeback-assign' },
         { subId: 'dispute_handling_validate_dispute', label: 'E. Validate Dispute', path: '/dispute-handling/validate' },
-        { subId: 'dispute_handling_dispute_detail_report', label: 'F. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_closed_disputes', label: 'F. Closed Disputes', path: '/dispute-handling/closed-disputes' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'G. Dispute Detail Report', path: '/dispute-handling/detail-report' },
       ],
     },
     {
@@ -320,8 +322,9 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.dispute,
       children: [
         { subId: 'dispute_handling_validate_dispute', label: 'A. Validate Dispute', path: '/dispute-handling/validate' },
-        { subId: 'dispute_handling_dispute_detail_report', label: 'B. Dispute Detail Report', path: '/dispute-handling/detail-report' },
-        { subId: 'dispute_handling_dispute_dashboard', label: 'C. Dispute DashBoard', path: '/dispute-handling/dashboard' },
+        { subId: 'dispute_handling_closed_disputes', label: 'B. Closed Disputes', path: '/dispute-handling/closed-disputes' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'C. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_dispute_dashboard', label: 'D. Dispute DashBoard', path: '/dispute-handling/dashboard' },
       ],
     },
     {
@@ -412,8 +415,9 @@ export const ROLE_NAVIGATION_MAP = {
       icon: ICONS.dispute,
       children: [
         { subId: 'dispute_handling_validate_dispute', label: 'A. Validate Dispute', path: '/dispute-handling/validate' },
-        { subId: 'dispute_handling_dispute_detail_report', label: 'B. Dispute Detail Report', path: '/dispute-handling/detail-report' },
-        { subId: 'dispute_handling_dispute_dashboard', label: 'C. Dispute DashBoard', path: '/dispute-handling/dashboard' },
+        { subId: 'dispute_handling_closed_disputes', label: 'B. Closed Disputes', path: '/dispute-handling/closed-disputes' },
+        { subId: 'dispute_handling_dispute_detail_report', label: 'C. Dispute Detail Report', path: '/dispute-handling/detail-report' },
+        { subId: 'dispute_handling_dispute_dashboard', label: 'D. Dispute DashBoard', path: '/dispute-handling/dashboard' },
       ],
     },
     {

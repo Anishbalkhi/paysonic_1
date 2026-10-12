@@ -7,6 +7,7 @@ import {
 } from '../../config/disputeConstants';
 import httpClient from '../api/httpClient';
 import OnboardingService from '../onboarding/OnboardingService';
+import evidenceStorage, { isValidMediaUrl } from './evidenceStorage';
 
 const STORAGE_KEY_DISPUTES = 'paysonic_disputes_db_cache_v1';
 const STORAGE_KEY_BATCHES = 'paysonic_dispute_batches_db_cache_v1';
@@ -92,6 +93,44 @@ export function formatIstTimestamp(date = new Date()) {
 }
 
 /**
+ * Format any date/timestamp into standard DD-MM-YYYY HH:mm:ss IST format
+ */
+export function formatDisplayDateTime(val) {
+  if (!val || val === '—' || val === 'null' || val === 'undefined') return '';
+  const str = String(val).trim();
+  if (!str) return '';
+
+  // If already in DD-MM-YYYY HH:mm:ss format
+  if (/^\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}:\d{2}$/.test(str)) {
+    return str;
+  }
+  // If DD-MM-YYYY HH:mm format
+  if (/^\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}$/.test(str)) {
+    return `${str}:00`;
+  }
+  // If DD-MM-YYYY only
+  if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+    return `${str} 00:00:00`;
+  }
+
+  // Handle ISO strings, e.g. 2026-10-10T09:54:52 or timestamps
+  try {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
+    }
+  } catch {}
+
+  return str;
+}
+
+/**
  * Normalizes a raw database record from Railway MySQL into the UI shape
  */
 function mapDbRecordToUi(r, idx = 0) {
@@ -114,6 +153,27 @@ function mapDbRecordToUi(r, idx = 0) {
     else lifecycleStatus = 'Pending Assignment';
   }
 
+  const isAssigned = Boolean(r.assigned);
+  let resolvedAssignedAt = null;
+  if (isAssigned) {
+    const candidate =
+      r.assignedAt ||
+      r.assigned_at ||
+      r.adminRemarksAt ||
+      r.admin_remarks_at ||
+      (r.plazaActionTime && r.plazaActionTime !== 'Pending Plaza Decision' ? r.plazaActionTime : null) ||
+      r.plazaActionAt ||
+      r.updatedAt ||
+      r.createdAt;
+    resolvedAssignedAt = candidate ? (formatDisplayDateTime(candidate) || String(candidate)) : formatIstTimestamp();
+  }
+
+  const fileReason = (r.memberMessageText || r.cbReason || r.member_message_text || r.cb_reason || '').trim();
+  const existingRemarks = (r.adminRemarks || r.adminReason || '').trim();
+  const resolvedAdminReason = (!existingRemarks || existingRemarks === 'Bulk-assigned for plaza review') && fileReason
+    ? fileReason
+    : (existingRemarks || fileReason);
+
   return {
     ...r,
     rowId: dispId,
@@ -135,13 +195,14 @@ function mapDbRecordToUi(r, idx = 0) {
     settlementDate: settlement,
     tatDueDate: tatDue,
     cbRaisedDate: r.cbRaisedDate || settlement,
-    cbReason: r.memberMessageText || '',
-    memberMessageText: r.memberMessageText || '',
-    assigned: Boolean(r.assigned),
-    assignedToPlaza: r.assignedToPlaza || (r.assigned ? r.plazaId : null),
-    adminReason: r.adminRemarks || '',
-    adminRemarks: r.adminRemarks || '',
-    adminRemarksAt: r.adminRemarksAt || '',
+    cbReason: fileReason || '—',
+    memberMessageText: fileReason || '—',
+    assigned: isAssigned,
+    assignedAt: resolvedAssignedAt,
+    assignedToPlaza: r.assignedToPlaza || (isAssigned ? r.plazaId : null),
+    adminReason: resolvedAdminReason,
+    adminRemarks: resolvedAdminReason,
+    adminRemarksAt: r.adminRemarksAt ? formatDisplayDateTime(r.adminRemarksAt) : '',
     plazaAction: (r.plazaAction === true || r.plazaAction === 'Yes' || r.plazaAction === 'Accepted' || r.plazaAction === 'Rejected') ? 'Yes' : 'No',
     plazaActionTime: r.plazaActionTime || '',
     plazaActionAt: r.plazaActionAt || '',
@@ -149,7 +210,25 @@ function mapDbRecordToUi(r, idx = 0) {
     plazaReason: r.plazaRemarks || 'NA',
     plazaRemarks: r.plazaRemarks || 'NA',
     plazaActionBy: r.plazaActionBy || '',
-    plazaEvidence: r.counterEvidenceName ? [{ name: r.counterEvidenceName, url: r.counterEvidenceUrl }] : [],
+    plazaEvidence: (() => {
+      const dispKey = dispId;
+      const acqKey = r.acqTxnId || '';
+      const fromVault = evidenceStorage.getPlazaEvidence(dispKey, acqKey);
+      if (fromVault && fromVault.length > 0) return fromVault;
+      if (r.plazaEvidence && Array.isArray(r.plazaEvidence) && r.plazaEvidence.length > 0) return r.plazaEvidence;
+      if (r.counterEvidenceName) {
+        return evidenceStorage.parseEvidenceString(r.counterEvidenceName, r.counterEvidenceUrl, dispKey, acqKey);
+      }
+      return [];
+    })(),
+    adminEvidence: (() => {
+      const dispKey = dispId;
+      const acqKey = r.acqTxnId || '';
+      const fromVault = evidenceStorage.getAdminEvidence(dispKey, acqKey);
+      if (fromVault && fromVault.length > 0) return fromVault;
+      if (r.adminEvidence && Array.isArray(r.adminEvidence) && r.adminEvidence.length > 0) return r.adminEvidence;
+      return [];
+    })(),
     disputeStatus: dStatus,
     lifecycleStatus,
     closed: Boolean(r.closed),
@@ -479,51 +558,6 @@ class DisputeManagementService {
     };
   }
 
-  /**
-   * Bulk assign selected plazas with persistence to Railway MySQL
-   */
-  async bulkAssignPlazas(selectedPlazaIds, defaultReason = 'Bulk-assigned for plaza review', actor = 'Master Admin') {
-    const rows = this.getStoredDisputes();
-    const normalizedIds = (selectedPlazaIds || []).map((id) => String(id).trim().toLowerCase());
-    const eligible = rows.filter((r) => normalizedIds.includes(String(r.plazaId || '').toLowerCase()) && !r.assigned);
-    const disputeIds = eligible.map((r) => r.disputeId || r.rowId);
-
-    if (disputeIds.length > 0) {
-      try {
-        await httpClient.put('/api/disputes/workflow/bulk-assign', {
-          disputeIds,
-          plazaId: selectedPlazaIds[0],
-          plazaName: PLAZA_MAP[selectedPlazaIds[0]] || 'Plaza',
-          adminRemarks: defaultReason,
-          actor,
-        });
-      } catch (err) {
-        console.warn('[DisputeManagementService] DB bulk-assign notice:', err?.message);
-      }
-    }
-
-    let updatedCount = 0;
-    const newRows = rows.map((r) => {
-      const rId = String(r.plazaId || '').trim().toLowerCase();
-      if (normalizedIds.includes(rId) && !r.assigned) {
-        updatedCount++;
-        return {
-          ...r,
-          assigned: true,
-          lifecycleStatus: 'Assigned to Plaza',
-          assignedBy: actor,
-          assignedAt: new Date().toISOString(),
-          adminRemarks: defaultReason,
-          adminReason: defaultReason,
-        };
-      }
-      return r;
-    });
-
-    this.saveDisputes(newRows);
-    this.logAudit('BULK_ASSIGN', `Assigned ${updatedCount} rows for plazas: ${selectedPlazaIds.join(', ')}`, actor);
-    return { updatedCount };
-  }
 
   /**
    * Assign a single row with persistence to Railway MySQL
@@ -562,6 +596,10 @@ class DisputeManagementService {
       console.warn('[DisputeManagementService] DB assign notice:', err?.message);
     }
 
+    if (evidenceList && evidenceList.length > 0) {
+      evidenceStorage.saveAdminEvidence(cleanId, row.acqTxnId, evidenceList);
+    }
+
     const updated = rows.map((r) => {
       if (String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId) {
         return {
@@ -572,10 +610,11 @@ class DisputeManagementService {
           assigned: true,
           lifecycleStatus: 'Assigned to Plaza',
           assignedBy: actor,
-          assignedAt: new Date().toISOString(),
+          assignedAt: formatIstTimestamp(),
           adminRemarks: adminReason.trim(),
           adminReason: adminReason.trim(),
-          adminEvidence: evidenceList.length > 0 ? evidenceList : r.adminEvidence,
+          adminRemarksAt: formatIstTimestamp(),
+          adminEvidence: evidenceList.length > 0 ? evidenceList : (r.adminEvidence || []),
         };
       }
       return r;
@@ -587,15 +626,136 @@ class DisputeManagementService {
   }
 
   /**
+   * Bulk-assign unassigned disputes across selected plazas
+   */
+  async bulkAssignPlazas(plazaIds = [], actor = 'Master Admin', adminRemarks = 'Bulk-assigned for plaza review') {
+    if (!Array.isArray(plazaIds) || plazaIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+    const setIds = new Set(plazaIds.map((id) => String(id).trim()));
+    const rows = this.getStoredDisputes();
+    let updatedCount = 0;
+    const assignedIds = [];
+
+    const updated = rows.map((r) => {
+      const rowPlazaId = String(r.plazaId || '').trim();
+      if (setIds.has(rowPlazaId) && !r.assigned && !r.closed) {
+        updatedCount++;
+        assignedIds.push(r.disputeId || r.rowId);
+        const rowRemarks = (r.memberMessageText || r.cbReason || adminRemarks || '').trim();
+        return {
+          ...r,
+          assigned: true,
+          assignedToPlaza: rowPlazaId,
+          assignedBy: actor,
+          assignedAt: formatIstTimestamp(),
+          adminRemarks: rowRemarks,
+          adminReason: rowRemarks,
+          adminRemarksAt: formatIstTimestamp(),
+          lifecycleStatus: 'Assigned to Plaza',
+        };
+      }
+      return r;
+    });
+
+    if (updatedCount > 0) {
+      this.saveDisputes(updated);
+      this.logAudit(
+        'BULK_ASSIGN_PLAZAS',
+        `Bulk-assigned ${updatedCount} disputes across ${setIds.size} plaza(s)`,
+        actor
+      );
+
+      // Notify backend
+      if (assignedIds.length > 0) {
+        try {
+          await httpClient.put('/api/disputes/workflow/bulk-assign', {
+            disputeIds: assignedIds,
+            plazaId: plazaIds[0] || '',
+            adminRemarks,
+            actor,
+          });
+        } catch (err) {
+          console.debug('[DisputeManagementService] Backend bulk-assign notice:', err?.message);
+        }
+      }
+    }
+
+    return { updatedCount };
+  }
+
+  /**
+   * Bulk-unassign all open (undecided) disputes across selected plazas
+   */
+  async bulkUnassignPlazas(plazaIds = [], actor = 'Master Admin') {
+    if (!Array.isArray(plazaIds) || plazaIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+    const setIds = new Set(plazaIds.map((id) => String(id).trim()));
+    const rows = this.getStoredDisputes();
+    let updatedCount = 0;
+    const unassignedIds = [];
+
+    const updated = rows.map((r) => {
+      const rowPlazaId = String(r.plazaId || '').trim();
+      const isDecided =
+        r.disputeStatus === 'Approved' ||
+        r.disputeStatus === 'Rejected' ||
+        r.plazaAction === 'Yes';
+      if (setIds.has(rowPlazaId) && r.assigned && !isDecided && !r.closed) {
+        updatedCount++;
+        unassignedIds.push(r.disputeId || r.rowId);
+        return {
+          ...r,
+          assigned: false,
+          assignedToPlaza: null,
+          assignedBy: null,
+          assignedAt: null,
+          adminRemarks: null,
+          adminReason: '',
+          lifecycleStatus: 'Pending Assignment',
+        };
+      }
+      return r;
+    });
+
+    if (updatedCount > 0) {
+      this.saveDisputes(updated);
+      this.logAudit(
+        'BULK_UNASSIGN_PLAZAS',
+        `Bulk-unassigned ${updatedCount} open disputes across ${setIds.size} plaza(s)`,
+        actor
+      );
+
+      // Notify backend
+      if (unassignedIds.length > 0) {
+        try {
+          await httpClient.put('/api/disputes/workflow/bulk-unassign', {
+            disputeIds: unassignedIds,
+            plazaIds: Array.from(setIds),
+            actor,
+          });
+        } catch (err) {
+          console.debug('[DisputeManagementService] Backend bulk-unassign notice:', err?.message);
+        }
+      }
+    }
+
+    return { updatedCount };
+  }
+
+  /**
    * Plaza submits decision with persistence to Railway MySQL
    */
   async submitPlazaDecision(rowId, decision, plazaReason, evidenceList = [], actor = 'Plaza User', actorPlazaId = null) {
-    if (!plazaReason || !plazaReason.trim()) {
-      throw new Error('Plaza remarks / justification are mandatory.');
+    const trimmedReason = (plazaReason || '').trim();
+    if (decision === 'Rejected' && !trimmedReason) {
+      throw new Error('Plaza remarks / justification are mandatory when rejecting a dispute.');
     }
     if (decision === 'Rejected' && (!evidenceList || evidenceList.length === 0)) {
       throw new Error('At least one counter-evidence file is mandatory when rejecting a dispute.');
     }
+    const finalReason = trimmedReason || (decision === 'Approved' ? 'Accepted' : '');
 
     const rows = this.getStoredDisputes();
     const cleanId = String(rowId || '').trim();
@@ -609,15 +769,36 @@ class DisputeManagementService {
     }
 
     const istNow = formatIstTimestamp();
+
+    // Persist full evidence list in vault
+    if (evidenceList && evidenceList.length > 0) {
+      evidenceStorage.savePlazaEvidence(cleanId, row.acqTxnId, evidenceList);
+    }
+
+    // Join multiple file names so all are recorded in backend
+    const evNames =
+      evidenceList && evidenceList.length > 0
+        ? evidenceList
+            .map((f) => (typeof f === 'string' ? f : f.name || 'attachment'))
+            .filter((n) => n && n !== '[object Object]')
+            .join(', ')
+        : null;
+
+    // Only send a valid short URL or null — NEVER send '[object Object]' or huge blobs to TEXT column
     const firstEv = evidenceList && evidenceList[0];
-    const evName = firstEv ? (firstEv.name || String(firstEv)) : null;
-    const evUrl = firstEv ? (firstEv.url || String(firstEv)) : null;
+    let evUrl = null;
+    if (firstEv) {
+      const candidate = typeof firstEv === 'string' ? firstEv : firstEv.dataUrl || firstEv.url;
+      if (isValidMediaUrl(candidate) && candidate.length < 32000) {
+        evUrl = candidate;
+      }
+    }
 
     try {
       await httpClient.put(`/api/disputes/workflow/decision/${cleanId}`, {
         decision,
-        plazaRemarks: plazaReason.trim(),
-        counterEvidenceName: evName,
+        plazaRemarks: finalReason,
+        counterEvidenceName: evNames ? evNames.slice(0, 250) : null,
         counterEvidenceUrl: evUrl,
         actor,
         actorPlazaId,
@@ -634,9 +815,9 @@ class DisputeManagementService {
           plazaAction: 'Yes',
           disputeStatus: decision,
           lifecycleStatus: decision === 'Approved' ? 'Plaza Accepted' : 'Plaza Rejected',
-          plazaRemarks: plazaReason.trim(),
-          plazaReason: plazaReason.trim(),
-          plazaEvidence: evidenceList.length > 0 ? evidenceList : r.plazaEvidence,
+          plazaRemarks: finalReason,
+          plazaReason: finalReason,
+          plazaEvidence: evidenceList.length > 0 ? evidenceList : (r.plazaEvidence || []),
           plazaActionTime: istNow,
           plazaActionBy: actor,
           decidedAt: new Date().toISOString(),
@@ -764,6 +945,23 @@ class DisputeManagementService {
         const plazaId = hit.plazaId || csvPlazaId || '501101';
         const plazaName = hit.plazaName || apiPlazaMap[plazaId] || PLAZA_MAP[plazaId] || 'MUMBAI PLAZA NH-04';
 
+        const rawMemberMsg = (() => {
+          for (const k of ['Member Message Text', 'memberMessageText', 'MemberMessageText', 'CB Reason', 'cbReason', 'CB_Reason', 'Reason', 'Member_Message_Text', 'Member message text']) {
+            if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+              return String(row[k]).trim();
+            }
+          }
+          for (const rk of Object.keys(row)) {
+            const cleanK = rk.toLowerCase().replace(/[\s_-]/g, '');
+            if (cleanK === 'membermessagetext' || cleanK === 'cbreason' || cleanK === 'reason') {
+              const v = row[rk];
+              if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+            }
+          }
+          return '';
+        })();
+        const memberMsgVal = rawMemberMsg || 'Imported from bank file';
+
         results.push({
           rowNumber: rowNum,
           status: alreadyQueued ? 'Duplicate' : 'Matched',
@@ -777,7 +975,8 @@ class DisputeManagementService {
           tatDueDate,
           txnAmount: hit.txnAmount || Number(row['Transaction Amount'] || 0),
           disputeAmount: hit.txnAmount || Number(row['Transaction Amount'] || 0),
-          memberMessageText: row['Member Message Text'] || row['CB Reason'] || 'Imported from bank file',
+          memberMessageText: memberMsgVal,
+          cbReason: memberMsgVal,
           plazaId,
           plazaName,
           vrn: hit.vrn || row['Vehicle Registration Number'] || '—',
@@ -857,6 +1056,8 @@ class DisputeManagementService {
         functionLabel: r.disputeType,
         disputeType: r.disputeType,
         memberMessageText: r.memberMessageText,
+        adminRemarks: r.memberMessageText,
+        adminReason: r.memberMessageText,
       });
     });
 

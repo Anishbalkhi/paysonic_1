@@ -79,8 +79,24 @@ public class DisputeWorkflowService {
             dt.setTagId(String.valueOf(r.getOrDefault("tagId", "—")));
             dt.setTid(String.valueOf(r.getOrDefault("tid", "TID-88401")));
             dt.setFunctionCode(String.valueOf(r.getOrDefault("functionCode", "450")));
-            dt.setFunctionLabel(String.valueOf(r.getOrDefault("disputeType", r.getOrDefault("functionLabel", "Debit Chargeback Raised"))));
-            dt.setMemberMessageText(String.valueOf(r.getOrDefault("memberMessageText", "Imported from file")));
+            String msgText = "";
+            for (Map.Entry<String, Object> entry : r.entrySet()) {
+                String k = entry.getKey().toLowerCase().replaceAll("[\\s_-]", "");
+                if (k.equals("membermessagetext") || k.equals("cbreason") || k.equals("reason") || k.equals("messagetext")) {
+                    if (entry.getValue() != null && !String.valueOf(entry.getValue()).trim().isEmpty()) {
+                        msgText = String.valueOf(entry.getValue()).trim();
+                        break;
+                    }
+                }
+            }
+            if (msgText.isEmpty()) {
+                msgText = String.valueOf(r.getOrDefault("memberMessageText", r.getOrDefault("cbReason", "")));
+            }
+            if (msgText.isEmpty() || "null".equalsIgnoreCase(msgText)) {
+                msgText = "Imported from file";
+            }
+            dt.setMemberMessageText(msgText);
+            dt.setAdminRemarks(msgText);
             dt.setSettlementDate(String.valueOf(r.getOrDefault("settlementDate", "")));
             dt.setTatDueDate(String.valueOf(r.getOrDefault("tatDueDate", "")));
             dt.setCbRaisedDate(String.valueOf(r.getOrDefault("cbRaisedDate", r.getOrDefault("settlementDate", ""))));
@@ -204,7 +220,18 @@ public class DisputeWorkflowService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        return transactionRepository.findAll(spec);
+        List<DisputeTransaction> results = transactionRepository.findAll(spec);
+        for (DisputeTransaction dt : results) {
+            if (Boolean.TRUE.equals(dt.getAssigned()) && dt.getAssignedAt() == null) {
+                dt.setAssignedAt(dt.getAdminRemarksAt() != null ? dt.getAdminRemarksAt() : (dt.getCreatedAt() != null ? dt.getCreatedAt() : LocalDateTime.now()));
+            }
+            if (dt.getAdminRemarks() == null || dt.getAdminRemarks().trim().isEmpty() || "Bulk-assigned for plaza review".equalsIgnoreCase(dt.getAdminRemarks().trim())) {
+                if (dt.getMemberMessageText() != null && !dt.getMemberMessageText().trim().isEmpty() && !"Imported from file".equalsIgnoreCase(dt.getMemberMessageText())) {
+                    dt.setAdminRemarks(dt.getMemberMessageText().trim());
+                }
+            }
+        }
+        return results;
     }
 
     /**
@@ -297,10 +324,16 @@ public class DisputeWorkflowService {
             throw new IllegalStateException("Cannot assign closed dispute: " + disputeId);
         }
         if (adminRemarks == null || adminRemarks.trim().isEmpty()) {
+            if (dt.getMemberMessageText() != null && !dt.getMemberMessageText().trim().isEmpty()) {
+                adminRemarks = dt.getMemberMessageText().trim();
+            }
+        }
+        if (adminRemarks == null || adminRemarks.trim().isEmpty()) {
             throw new IllegalArgumentException("Admin remarks are mandatory for assignment");
         }
 
         dt.setAssigned(true);
+        dt.setAssignedAt(LocalDateTime.now());
         dt.setAssignedToPlaza(plazaId);
         dt.setPlazaId(plazaId);
         if (plazaName != null && !plazaName.trim().isEmpty()) {
@@ -328,15 +361,68 @@ public class DisputeWorkflowService {
             if (opt.isPresent()) {
                 DisputeTransaction dt = opt.get();
                 if (!Boolean.TRUE.equals(dt.getClosed())) {
+                    String rowRemarks = (dt.getMemberMessageText() != null && !dt.getMemberMessageText().trim().isEmpty() && !"Imported from file".equalsIgnoreCase(dt.getMemberMessageText()))
+                            ? dt.getMemberMessageText().trim()
+                            : adminRemarks.trim();
                     dt.setAssigned(true);
+                    dt.setAssignedAt(LocalDateTime.now());
                     dt.setAssignedToPlaza(plazaId);
                     dt.setPlazaId(plazaId);
                     if (plazaName != null && !plazaName.trim().isEmpty()) {
                         dt.setPlazaName(plazaName);
                     }
-                    dt.setAdminRemarks(adminRemarks.trim());
+                    dt.setAdminRemarks(rowRemarks);
                     dt.setAdminRemarksAt(LocalDateTime.now());
                     dt.setLifecycleStatus("Assigned to Plaza");
+                    transactionRepository.save(dt);
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Unassign a dispute
+     */
+    @Transactional
+    public DisputeTransaction unassignDispute(String disputeId, String actor) {
+        DisputeTransaction dt = transactionRepository.findByDisputeId(disputeId)
+                .orElseThrow(() -> new IllegalArgumentException("Dispute not found: " + disputeId));
+
+        if ("Accepted".equalsIgnoreCase(dt.getPlazaAction()) || "Rejected".equalsIgnoreCase(dt.getPlazaAction()) ||
+                "Approved".equalsIgnoreCase(dt.getDisputeStatus()) || "Rejected".equalsIgnoreCase(dt.getDisputeStatus())) {
+            throw new IllegalStateException("Cannot unassign a dispute that has already been decided by the plaza.");
+        }
+
+        dt.setAssigned(false);
+        dt.setAssignedAt(null);
+        dt.setAssignedToPlaza(null);
+        dt.setAdminRemarks(null);
+        dt.setAdminRemarksAt(null);
+        dt.setLifecycleStatus("Pending Assignment");
+        return transactionRepository.save(dt);
+    }
+
+    /**
+     * Bulk unassign disputes
+     */
+    @Transactional
+    public int bulkUnassign(List<String> disputeIds, String actor) {
+        int count = 0;
+        for (String id : disputeIds) {
+            Optional<DisputeTransaction> opt = transactionRepository.findByDisputeId(id);
+            if (opt.isPresent()) {
+                DisputeTransaction dt = opt.get();
+                boolean isDecided = "Accepted".equalsIgnoreCase(dt.getPlazaAction()) || "Rejected".equalsIgnoreCase(dt.getPlazaAction()) ||
+                        "Approved".equalsIgnoreCase(dt.getDisputeStatus()) || "Rejected".equalsIgnoreCase(dt.getDisputeStatus());
+                if (!isDecided && !Boolean.TRUE.equals(dt.getClosed()) && Boolean.TRUE.equals(dt.getAssigned())) {
+                    dt.setAssigned(false);
+                    dt.setAssignedAt(null);
+                    dt.setAssignedToPlaza(null);
+                    dt.setAdminRemarks(null);
+                    dt.setAdminRemarksAt(null);
+                    dt.setLifecycleStatus("Pending Assignment");
                     transactionRepository.save(dt);
                     count++;
                 }
@@ -368,22 +454,30 @@ public class DisputeWorkflowService {
             throw new IllegalStateException("Dispute has already been actioned (" + dt.getPlazaAction() + "). Double-action prevented.");
         }
 
-        // Validate mandatory plaza remarks
-        if (plazaRemarks == null || plazaRemarks.trim().isEmpty()) {
-            throw new IllegalArgumentException("Plaza remarks are mandatory to submit a decision.");
-        }
-
         boolean isReject = "Reject".equalsIgnoreCase(decision) || "Rejected".equalsIgnoreCase(decision);
         if (isReject) {
+            // Remarks is mandatory only when plaza is rejecting the dispute
+            if (plazaRemarks == null || plazaRemarks.trim().isEmpty()) {
+                throw new IllegalArgumentException("Plaza remarks are mandatory when rejecting a dispute.");
+            }
             boolean hasEvidence = (counterEvidenceName != null && !counterEvidenceName.trim().isEmpty()) ||
                     (counterEvidenceUrl != null && !counterEvidenceUrl.trim().isEmpty());
             if (!hasEvidence) {
                 throw new IllegalArgumentException("Counter-evidence is mandatory when rejecting a dispute.");
             }
+        } else {
+            // When accepting, remarks is optional
+            if (plazaRemarks == null || plazaRemarks.trim().isEmpty()) {
+                plazaRemarks = "Accepted";
+            }
         }
 
         LocalDateTime now = LocalDateTime.now();
         String istStr = now.format(IST_DATETIME_FMT);
+
+        if (dt.getAssignedAt() == null) {
+            dt.setAssignedAt(dt.getAdminRemarksAt() != null ? dt.getAdminRemarksAt() : (dt.getCreatedAt() != null ? dt.getCreatedAt() : now));
+        }
 
         dt.setPlazaAction(isReject ? "Rejected" : "Accepted");
         dt.setPlazaActionAt(now);

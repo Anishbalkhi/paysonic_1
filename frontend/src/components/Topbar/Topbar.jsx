@@ -17,6 +17,8 @@ const ROUTE_META = {
   '/dispute-handling/file-status': { title: 'Dispute File Status', crumb: 'Dispute Handling' },
   '/dispute-handling/chargeback-assign': { title: 'Chargeback Assign', crumb: 'Dispute Handling' },
   '/dispute-handling/validate': { title: 'Dispute Validate', crumb: 'Dispute Handling' },
+  '/dispute-handling/closed-disputes': { title: 'Closed Disputes', crumb: 'Dispute Handling' },
+  '/dispute-handling/detail-report': { title: 'Dispute Detail Report', crumb: 'Dispute Handling' },
   '/reports/dispute-details': { title: 'Dispute Detail Report', crumb: 'Reports' },
   '/reports/trs': { title: 'TRS Report', crumb: 'Reports' },
   '/reports/datewise-recon': { title: 'Date-Wise Recon', crumb: 'Reports' },

@@ -63,6 +63,12 @@ export const AuthProvider = ({ children }) => {
           parsed.menuAccess = getRoleMenuDefaults(parsed.role);
           parsed.permissions = parsed.menuAccess;
         }
+        if (parsed.menuAccess && Array.isArray(parsed.menuAccess)) {
+          if (parsed.menuAccess.includes('dispute_handling') && !parsed.menuAccess.includes('dispute_handling_closed_disputes')) {
+            parsed.menuAccess.push('dispute_handling_closed_disputes');
+            parsed.permissions = parsed.menuAccess;
+          }
+        }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         setCurrentUser(parsed);
       } else {

@@ -121,6 +121,47 @@ public class DisputeWorkflowController {
     }
 
     /**
+     * Unassign a single dispute
+     */
+    @PutMapping("/unassign/{disputeId}")
+    @Auditable(module = "Dispute Handling", action = "UNASSIGN_DISPUTE", actionLabel = "Unassigned Dispute from Plaza", target = "Chargeback Assign")
+    public ResponseEntity<?> unassignDispute(
+            @PathVariable String disputeId,
+            @RequestBody(required = false) Map<String, String> body) {
+        try {
+            String actor = body != null ? body.getOrDefault("actor", "Master Admin") : "Master Admin";
+            DisputeTransaction dt = workflowService.unassignDispute(disputeId, actor);
+            return ResponseEntity.ok(dt);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        } catch (Exception ex) {
+            log.error("Error unassigning dispute: {}", ex.getMessage(), ex);
+            return ResponseEntity.internalServerError().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
+     * Bulk unassign disputes
+     */
+    @PutMapping("/bulk-unassign")
+    @Auditable(module = "Dispute Handling", action = "BULK_UNASSIGN_DISPUTES", actionLabel = "Bulk Unassigned Disputes", target = "Chargeback Assign")
+    public ResponseEntity<?> bulkUnassign(@RequestBody Map<String, Object> body) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> disputeIds = (List<String>) body.getOrDefault("disputeIds", Collections.emptyList());
+            String actor = (String) body.getOrDefault("actor", "Master Admin");
+
+            int count = workflowService.bulkUnassign(disputeIds, actor);
+            return ResponseEntity.ok(Map.of("unassignedCount", count, "message", "Bulk unassigned " + count + " disputes."));
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        } catch (Exception ex) {
+            log.error("Error bulk unassigning disputes: {}", ex.getMessage(), ex);
+            return ResponseEntity.internalServerError().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
      * Submit Plaza Decision (Accept or Reject)
      */
     @PutMapping("/decision/{disputeId}")

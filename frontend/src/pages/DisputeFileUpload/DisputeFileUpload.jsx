@@ -230,7 +230,7 @@ export const DisputeFileUpload = () => {
                   <th>Status</th>
                   <th>RRN (Acq Txn ID)</th>
                   <th>Tag ID</th>
-                  <th>Settlement Date</th>
+                  <th>Dispute Raise Date</th>
                   <th>TAT Due Date (T+8)</th>
                   <th>Function Code</th>
                   <th>Dispute Type</th>

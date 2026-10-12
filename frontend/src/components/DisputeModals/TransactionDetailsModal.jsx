@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TRANSACTION_MASTER, PLAZA_MAP } from '../../config/disputeConstants';
+import { formatDisplayDateTime } from '../../services/dispute/DisputeManagementService';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import './DisputeModals.scss';
 
@@ -19,6 +20,25 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     txnAmount: disputeRow.txnAmount || 0,
   };
 
+  const assignedAtDisplay = (() => {
+    if (disputeRow.assignedAt) {
+      const f = formatDisplayDateTime(disputeRow.assignedAt);
+      if (f) return f;
+    }
+    if (disputeRow.adminRemarksAt) {
+      const f = formatDisplayDateTime(disputeRow.adminRemarksAt);
+      if (f) return f;
+    }
+    if (disputeRow.assigned) {
+      const fallback = disputeRow.updatedAt || disputeRow.plazaActionTime || disputeRow.createdAt;
+      if (fallback && fallback !== 'Pending Plaza Decision') {
+        const f = formatDisplayDateTime(fallback);
+        if (f) return f;
+      }
+    }
+    return '—';
+  })();
+
   const rows = [
     { label: 'Acq Txn ID (RRN)', val: acqTxnId, isCode: true },
     { label: 'Toll Txn ID', val: master.tollTxnId, isCode: true },
@@ -28,12 +48,12 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     { label: 'Toll Plaza Name', val: master.plazaName || PLAZA_MAP[master.plazaId] || disputeRow.plazaName },
     { label: 'Txn Date', val: master.txnDate },
     { label: 'Txn Amount', val: `₹ ${Number(master.txnAmount || 0).toFixed(2)}`, isHighlight: true },
-    { label: 'CB Raised Date', val: disputeRow.cbRaisedDate || '—' },
+    { label: 'Dispute Raise Date', val: disputeRow.settlementDate || disputeRow.cbRaisedDate || '—' },
     { label: 'CB Reason', val: disputeRow.cbReason || '—' },
     { label: 'Dispute Amount', val: `₹ ${Number(disputeRow.disputeAmount || 0).toFixed(2)}`, isHighlight: true },
     { label: 'Function Code', val: disputeRow.functionCode || '—', isCode: true },
     { label: 'Dispute Name', val: disputeRow.disputeType || '—' },
-    { label: 'Assigned Date & Time', val: disputeRow.assignedAt || '—' },
+    { label: 'Assigned Date & Time', val: assignedAtDisplay },
     { label: 'TAT Due Date', val: disputeRow.tatDueDate || '—', isHighlight: true },
     { label: 'Plaza Action', val: disputeRow.plazaAction || 'No' },
     { label: 'Plaza Action Date & Time', val: disputeRow.plazaActionTime || '—' },
@@ -89,7 +109,7 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
                       <div
                         key={`acq-${i}`}
                         className="evidence-chip-mini"
-                        onClick={() => setPreviewTarget({ file: f, source: 'Acquirer Evidence' })}
+                        onClick={() => setPreviewTarget({ file: f, source: 'Acquirer Evidence', fileList: adminEvidence })}
                         title="Click to view file"
                       >
                         <span className="badge-acq-mini">Acquirer</span>
@@ -104,7 +124,7 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
                       <div
                         key={`plz-${i}`}
                         className="evidence-chip-mini"
-                        onClick={() => setPreviewTarget({ file: f, source: 'Plaza Evidence' })}
+                        onClick={() => setPreviewTarget({ file: f, source: 'Plaza Evidence', fileList: plazaEvidence })}
                         title="Click to view file"
                       >
                         <span className="badge-plz-mini">Plaza</span>
@@ -130,6 +150,7 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
         isOpen={Boolean(previewTarget)}
         onClose={() => setPreviewTarget(null)}
         file={previewTarget?.file}
+        fileList={previewTarget?.fileList || []}
         source={previewTarget?.source || 'Evidence'}
         disputeRow={disputeRow}
       />

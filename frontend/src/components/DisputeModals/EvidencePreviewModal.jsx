@@ -1,19 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import evidenceStorage, { isValidMediaUrl } from '../../services/dispute/evidenceStorage';
 import './DisputeModals.scss';
 
 export const EvidencePreviewModal = ({
   isOpen,
   onClose,
   file,
+  fileList = [],
   disputeRow = {},
   source = 'Evidence',
 }) => {
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [imageError, setImageError] = useState(false);
 
-  if (!isOpen || !file) return null;
+  // Normalize list of files
+  const items = useMemo(() => {
+    let list = [];
+    if (Array.isArray(fileList) && fileList.length > 0) {
+      list = fileList;
+    } else if (file) {
+      list = [file];
+    }
+    // Filter out corrupted '[object Object]' strings
+    return list.filter((f) => {
+      if (!f) return false;
+      if (typeof f === 'string' && f === '[object Object]') return false;
+      if (typeof f === 'object' && f.name === '[object Object]') return false;
+      return true;
+    });
+  }, [file, fileList]);
 
-  const fileName = typeof file === 'string' ? file : file.name || 'attachment';
-  const fileDataUrl = typeof file === 'object' ? file.dataUrl || file.url : null;
+  // Find initial active index matching `file`
+  const initialIndex = useMemo(() => {
+    if (!file || items.length === 0) return 0;
+    const targetName = (typeof file === 'string' ? file : file.name || '').toLowerCase();
+    const idx = items.findIndex((it) => {
+      const itName = (typeof it === 'string' ? it : it.name || '').toLowerCase();
+      return itName === targetName;
+    });
+    return idx >= 0 ? idx : 0;
+  }, [file, items]);
+
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    setActiveIndex(initialIndex);
+    setZoomLevel(1);
+    setImageError(false);
+  }, [initialIndex, isOpen]);
+
+  useEffect(() => {
+    setZoomLevel(1);
+    setImageError(false);
+  }, [activeIndex]);
+
+  if (!isOpen || items.length === 0) return null;
+
+  const currentItem = items[activeIndex] || items[0];
+  const fileName = typeof currentItem === 'string' ? currentItem : currentItem.name || 'attachment';
+
+  // Resolve valid media data URL:
+  // 1. Check current file object
+  // 2. Check evidence vault
+  // 3. Reject '[object Object]' or invalid strings
+  let rawDataUrl = typeof currentItem === 'object' ? currentItem.dataUrl || currentItem.url : null;
+  if (!isValidMediaUrl(rawDataUrl)) {
+    const fromVault = evidenceStorage.findFile(
+      disputeRow.disputeId || disputeRow.acqTxnId,
+      disputeRow.acqTxnId,
+      fileName
+    );
+    if (fromVault && isValidMediaUrl(fromVault.dataUrl)) {
+      rawDataUrl = fromVault.dataUrl;
+    } else if (fromVault && isValidMediaUrl(fromVault.url)) {
+      rawDataUrl = fromVault.url;
+    } else {
+      rawDataUrl = null;
+    }
+  }
+
+  const fileDataUrl = isValidMediaUrl(rawDataUrl) ? rawDataUrl : null;
   const lowerName = fileName.toLowerCase();
 
   const isImage =
@@ -21,10 +87,18 @@ export const EvidencePreviewModal = ({
     lowerName.endsWith('.jpeg') ||
     lowerName.endsWith('.png') ||
     lowerName.endsWith('.webp') ||
-    lowerName.endsWith('.gif');
+    lowerName.endsWith('.gif') ||
+    (typeof currentItem === 'object' && currentItem.type?.startsWith('image/'));
 
-  const isPdf = lowerName.endsWith('.pdf');
-  const isText = lowerName.endsWith('.txt') || lowerName.endsWith('.log') || lowerName.endsWith('.csv');
+  const isPdf =
+    lowerName.endsWith('.pdf') ||
+    (typeof currentItem === 'object' && currentItem.type === 'application/pdf');
+
+  const isText =
+    lowerName.endsWith('.txt') ||
+    lowerName.endsWith('.log') ||
+    lowerName.endsWith('.csv') ||
+    (typeof currentItem === 'object' && currentItem.type?.startsWith('text/'));
 
   const handleDownload = () => {
     if (fileDataUrl) {
@@ -37,12 +111,11 @@ export const EvidencePreviewModal = ({
       return;
     }
 
-    // Generate fallback mock file for download
+    // Generate fallback file for download
     let mimeType = 'text/plain';
     let content = `Paysonic Evidence Attachment: ${fileName}\nDispute RRN: ${disputeRow.acqTxnId || 'N/A'}\nVRN: ${disputeRow.vrn || 'N/A'}\nPlaza: ${disputeRow.plazaName || 'N/A'}\nTimestamp: ${new Date().toISOString()}`;
 
     if (isImage) {
-      // Create SVG image download
       mimeType = 'image/svg+xml';
       content = `
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
@@ -88,7 +161,11 @@ export const EvidencePreviewModal = ({
             <div className="file-meta-col">
               <div className="file-name-title">{fileName}</div>
               <div className="file-source-sub">
-                <span className={`source-pill ${source.toLowerCase().includes('acquirer') ? 'source-acq' : 'source-plaza'}`}>
+                <span
+                  className={`source-pill ${
+                    source.toLowerCase().includes('acquirer') ? 'source-acq' : 'source-plaza'
+                  }`}
+                >
                   {source}
                 </span>
                 <span>• RRN: {disputeRow.acqTxnId || 'N/A'}</span>
@@ -144,32 +221,107 @@ export const EvidencePreviewModal = ({
           </div>
         </div>
 
+        {/* Multi-Files Carousel / Tab Switcher (Visible when multiple files are attached) */}
+        {items.length > 1 && (
+          <div className="preview-multi-files-bar">
+            <button
+              type="button"
+              className="nav-arrow-btn"
+              disabled={activeIndex === 0}
+              onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
+              title="Previous file"
+            >
+              ◀ Prev
+            </button>
+            <div className="multi-files-tabs-scroll">
+              {items.map((item, idx) => {
+                const itName = typeof item === 'string' ? item : item.name || `File ${idx + 1}`;
+                const itLower = itName.toLowerCase();
+                const itIcon = itLower.endsWith('.pdf')
+                  ? '📄'
+                  : itLower.endsWith('.png') || itLower.endsWith('.jpg') || itLower.endsWith('.jpeg')
+                  ? '📷'
+                  : '📎';
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`file-tab-chip ${idx === activeIndex ? 'active' : ''}`}
+                    onClick={() => setActiveIndex(idx)}
+                    title={itName}
+                  >
+                    <span>{itIcon}</span>
+                    <span className="file-tab-name">{itName}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="nav-arrow-btn"
+              disabled={activeIndex === items.length - 1}
+              onClick={() => setActiveIndex((i) => Math.min(items.length - 1, i + 1))}
+              title="Next file"
+            >
+              Next ▶
+            </button>
+            <span className="files-counter-tag">
+              {activeIndex + 1} of {items.length}
+            </span>
+          </div>
+        )}
+
         {/* Modal Content Body */}
         <div className="preview-body">
-          {fileDataUrl ? (
-            // Uploaded real file with Data URL
+          {fileDataUrl && !imageError ? (
+            // Uploaded real file with valid Data URL / Blob URL
             <div className="real-file-container">
               {isImage ? (
                 <div className="image-scroll-wrapper">
                   <img
                     src={fileDataUrl}
                     alt={fileName}
-                    style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
+                    onError={() => {
+                      console.warn('[EvidencePreviewModal] Image failed to render; switching to fallback view');
+                      setImageError(true);
+                    }}
+                    style={{
+                      transform: `scale(${zoomLevel})`,
+                      transformOrigin: 'top center',
+                      maxWidth: '100%',
+                      maxHeight: '70vh',
+                      objectFit: 'contain',
+                      borderRadius: '8px',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                    }}
                     className="preview-img-real"
                   />
                 </div>
               ) : isPdf ? (
-                <iframe
-                  src={fileDataUrl}
-                  title={fileName}
-                  className="preview-iframe-pdf"
-                />
+                <div style={{ width: '100%', height: '70vh', minHeight: '480px' }}>
+                  <object
+                    data={fileDataUrl}
+                    type="application/pdf"
+                    width="100%"
+                    height="100%"
+                    className="preview-iframe-pdf"
+                    style={{ borderRadius: '8px', border: '1px solid #334155' }}
+                  >
+                    <iframe
+                      src={fileDataUrl}
+                      title={fileName}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 'none' }}
+                    />
+                  </object>
+                </div>
               ) : (
                 <pre className="preview-pre-text">{fileDataUrl}</pre>
               )}
             </div>
           ) : isImage ? (
-            // Simulated CCTV / ANPR Snapshot
+            // Robust Simulated CCTV / ANPR Snapshot when physical binary is stored externally
             <div className="cctv-viewer-card">
               <div className="cctv-screen-overlay" style={{ transform: `scale(${zoomLevel})` }}>
                 <div className="cctv-top-strip">
@@ -233,7 +385,7 @@ export const EvidencePreviewModal = ({
               </div>
             </div>
           ) : isPdf ? (
-            // Simulated NETC Bank Chargeback Scan PDF
+            // Simulated NETC Bank Chargeback Scan PDF Document
             <div className="pdf-doc-viewer">
               <div className="pdf-page-sheet">
                 <div className="pdf-doc-header">
@@ -246,7 +398,9 @@ export const EvidencePreviewModal = ({
                   </div>
                   <div className="doc-meta-right">
                     <div className="doc-badge">OFFICIAL DISPUTE NOTICE</div>
-                    <div className="doc-num">REF: DISP-{disputeRow.acqTxnId ? disputeRow.acqTxnId.slice(-6) : '852471'}</div>
+                    <div className="doc-num">
+                      REF: DISP-{disputeRow.acqTxnId ? disputeRow.acqTxnId.slice(-6) : '852471'}
+                    </div>
                     <div className="doc-date">Date: {disputeRow.cbRaisedDate || '27-09-2026'}</div>
                   </div>
                 </div>
@@ -255,7 +409,10 @@ export const EvidencePreviewModal = ({
 
                 <div className="pdf-doc-title">
                   <h4>NOTICE OF CHARGEBACK DISPUTE &amp; EVIDENCE MEMORANDUM</h4>
-                  <p>Function Code: {disputeRow.functionCode || '450'} — {disputeRow.disputeType || 'Debit Chargeback Raised'}</p>
+                  <p>
+                    Function Code: {disputeRow.functionCode || '450'} —{' '}
+                    {disputeRow.disputeType || 'Debit Chargeback Raised'}
+                  </p>
                 </div>
 
                 <div className="pdf-data-table">
@@ -277,7 +434,9 @@ export const EvidencePreviewModal = ({
                   </div>
                   <div className="data-row">
                     <span className="data-label">Assigned Plaza:</span>
-                    <span className="data-val">{disputeRow.plazaName || 'MUMBAI PLAZA NH-04'} ({disputeRow.plazaId || '501101'})</span>
+                    <span className="data-val">
+                      {disputeRow.plazaName || 'MUMBAI PLAZA NH-04'} ({disputeRow.plazaId || '501101'})
+                    </span>
                   </div>
                   <div className="data-row">
                     <span className="data-label">Original Transaction Date:</span>
@@ -285,13 +444,19 @@ export const EvidencePreviewModal = ({
                   </div>
                   <div className="data-row highlight">
                     <span className="data-label">Disputed Claim Amount:</span>
-                    <span className="data-val currency">₹ {Number(disputeRow.disputeAmount || 80).toFixed(2)}</span>
+                    <span className="data-val currency">
+                      ₹ {Number(disputeRow.disputeAmount || 80).toFixed(2)}
+                    </span>
                   </div>
                 </div>
 
                 <div className="pdf-statement-box">
                   <h5>Acquirer Reason &amp; Submissions:</h5>
-                  <p>{disputeRow.adminReason || disputeRow.cbReason || 'Customer reported debit for toll crossing without vehicle entering toll booth. Forwarded to plaza for lane verification.'}</p>
+                  <p>
+                    {disputeRow.adminReason ||
+                      disputeRow.cbReason ||
+                      'Customer reported debit for toll crossing without vehicle entering toll booth. Forwarded to plaza for lane verification.'}
+                  </p>
                 </div>
 
                 {disputeRow.plazaReason && disputeRow.plazaReason !== 'NA' && (
@@ -299,7 +464,13 @@ export const EvidencePreviewModal = ({
                     <h5>Plaza Response &amp; Justification:</h5>
                     <p>{disputeRow.plazaReason}</p>
                     <div className="decision-stamp-box">
-                      <span className={`decision-stamp ${disputeRow.disputeStatus === 'Approved' ? 'stamp-approved' : 'stamp-rejected'}`}>
+                      <span
+                        className={`decision-stamp ${
+                          disputeRow.disputeStatus === 'Approved'
+                            ? 'stamp-approved'
+                            : 'stamp-rejected'
+                        }`}
+                      >
                         {disputeRow.disputeStatus === 'Approved' ? '✓ APPROVED' : '✕ REJECTED'}
                       </span>
                     </div>

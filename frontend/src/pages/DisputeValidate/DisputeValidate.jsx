@@ -15,6 +15,12 @@ export const DisputeValidate = () => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'Master Admin';
   const { plazas, isPlazaLocked, defaultPlazaId, assignedPlaza } = useOnboardedPlazas();
+  const isPlazaUser = Boolean(
+    isPlazaLocked ||
+    currentUser?.plazaId ||
+    (currentUser?.role && currentUser.role.toLowerCase().includes('plaza')) ||
+    (!isAdmin && currentUser?.role !== 'Bank')
+  );
   const [selectedPlazaId, setSelectedPlazaId] = useState(
     isPlazaLocked ? (defaultPlazaId || 'ALL') : (currentUser?.plazaId || 'ALL')
   );
@@ -48,8 +54,6 @@ export const DisputeValidate = () => {
   const [toDate, setToDate] = useState('2026-10-31');
   const [dateType, setDateType] = useState('Transaction DateTime');
   const [functionCode, setFunctionCode] = useState('');
-  const [plazaAction, setPlazaAction] = useState('');
-  const [disputeStatus, setDisputeStatus] = useState('');
   const [acqTxnId, setAcqTxnId] = useState('');
   const [tollTxnId, setTollTxnId] = useState('');
   const [tagId, setTagId] = useState('');
@@ -65,8 +69,6 @@ export const DisputeValidate = () => {
       const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
       const dType = overrides.dateType !== undefined ? overrides.dateType : dateType;
       const fCode = overrides.functionCode !== undefined ? overrides.functionCode : functionCode;
-      const pAct = overrides.plazaAction !== undefined ? overrides.plazaAction : plazaAction;
-      const dStat = overrides.disputeStatus !== undefined ? overrides.disputeStatus : disputeStatus;
       const aTxn = overrides.acqTxnId !== undefined ? overrides.acqTxnId : acqTxnId;
       const tTxn = overrides.tollTxnId !== undefined ? overrides.tollTxnId : tollTxnId;
       const tId = overrides.tagId !== undefined ? overrides.tagId : tagId;
@@ -77,18 +79,13 @@ export const DisputeValidate = () => {
         toDate: tDate,
         dateType: dType,
         functionCode: fCode,
-        plazaAction: pAct,
-        disputeStatus: dStat,
         acqTxnId: aTxn,
         tollTxnId: tTxn,
         tagId: tId,
       });
       const assignedRows = (fetched || []).filter((r) => {
         if (!r.assigned) return false;
-        if (pAct === 'Yes') return r.plazaAction === 'Yes';
-        if (pAct === 'No') return r.plazaAction !== 'Yes';
-        if (dStat) return r.disputeStatus === dStat;
-        // Spec rule: By default on Validate Dispute, acted disputes drop off this list
+        // Validate Dispute queue: only active/undecided disputes that require plaza review & action
         return r.disputeStatus === 'NA' || !r.disputeStatus || r.disputeStatus === 'Pending';
       });
       const scopedRows = filterRecordsByPlazaScope(assignedRows, plazas, currentUser);
@@ -100,7 +97,7 @@ export const DisputeValidate = () => {
     } finally {
       setLoading(false);
     }
-  }, [activePlazaId, fromDate, toDate, dateType, functionCode, plazaAction, disputeStatus, acqTxnId, tollTxnId, tagId]);
+  }, [activePlazaId, fromDate, toDate, dateType, functionCode, acqTxnId, tollTxnId, tagId]);
 
   useEffect(() => {
     loadData();
@@ -132,8 +129,6 @@ export const DisputeValidate = () => {
     setToDate('2026-10-31');
     setDateType('Transaction DateTime');
     setFunctionCode('');
-    setPlazaAction('');
-    setDisputeStatus('');
     setAcqTxnId('');
     setTollTxnId('');
     setTagId('');
@@ -143,8 +138,6 @@ export const DisputeValidate = () => {
       toDate: '2026-10-31',
       dateType: 'Transaction DateTime',
       functionCode: '',
-      plazaAction: '',
-      disputeStatus: '',
       acqTxnId: '',
       tollTxnId: '',
       tagId: '',
@@ -175,7 +168,7 @@ export const DisputeValidate = () => {
       'Toll Plaza ID',
       'Toll Plaza Name',
       'Txn Date',
-      'Settlement Date',
+      'Dispute Raise Date',
       'TAT Due Date (T+8)',
       'CB Raised Date',
       'CB Reason',
@@ -261,7 +254,7 @@ export const DisputeValidate = () => {
       'Toll Plaza ID',
       'Toll Plaza Name',
       'Txn Date',
-      'Settlement Date',
+      'Dispute Raise Date',
       'TAT Due Date (T+8)',
       'CB Raised Date',
       'CB Reason',
@@ -586,32 +579,6 @@ export const DisputeValidate = () => {
           </div>
 
           <div className="field-box">
-            <label htmlFor="vdPlazaAction">Plaza Action</label>
-            <select
-              id="vdPlazaAction"
-              value={plazaAction}
-              onChange={(e) => setPlazaAction(e.target.value)}
-            >
-              <option value="">Select Plaza Action</option>
-              <option value="No">0 (No)</option>
-              <option value="Yes">1 (Yes)</option>
-            </select>
-          </div>
-
-          <div className="field-box">
-            <label htmlFor="vdDisputeStatus">Dispute Status</label>
-            <select
-              id="vdDisputeStatus"
-              value={disputeStatus}
-              onChange={(e) => setDisputeStatus(e.target.value)}
-            >
-              <option value="">Select Dispute Status</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-          </div>
-
-          <div className="field-box">
             <label htmlFor="vdAcqTxnId">Acq Txn ID</label>
             <input
               id="vdAcqTxnId"
@@ -726,7 +693,7 @@ export const DisputeValidate = () => {
                 <th>Tag ID</th>
                 <th>Toll Plaza</th>
                 <th>Txn Date</th>
-                <th>Settlement Date</th>
+                <th>Dispute Raise Date</th>
                 <th>TAT Due Date</th>
                 <th>CB Reason</th>
                 <th>Function Code</th>

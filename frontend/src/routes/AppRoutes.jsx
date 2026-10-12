@@ -17,6 +17,7 @@ import DisputeFileUpload from '../pages/DisputeFileUpload/DisputeFileUpload';
 import DisputeFileStatus from '../pages/DisputeFileStatus/DisputeFileStatus';
 import ChargebackAssign from '../pages/ChargebackAssign/ChargebackAssign';
 import DisputeValidate from '../pages/DisputeValidate/DisputeValidate';
+import ClosedDisputes from '../pages/ClosedDisputes/ClosedDisputes';
 import TollFareReport from '../pages/TollFareReport/TollFareReport';
 import RejectedTransaction from '../pages/RejectedTransaction/RejectedTransaction';
 import TransactionSearchDispute from '../pages/TransactionSearchDispute/TransactionSearchDispute';
@@ -292,6 +293,21 @@ export const AppRoutes = () => {
             <DisputeValidate />
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/dispute-handling/closed-disputes"
+        element={
+          <ProtectedRoute
+            allowedRoles={['Master Admin', 'Admin', 'Plaza Admin', 'Plaza POS', 'Concessionaire', 'Bank', 'Manager', 'Auditor', 'Operator']}
+            requiredMenu="dispute_handling_closed_disputes"
+          >
+            <ClosedDisputes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dispute-handling/closed"
+        element={<Navigate to="/dispute-handling/closed-disputes" replace />}
       />
       <Route
         path="/dispute-handling/detail-report"

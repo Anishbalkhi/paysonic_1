@@ -29,8 +29,8 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
   const isDecided = disputeRow.disputeStatus !== 'NA';
 
   const handleDecision = async (decision) => {
-    if (!plazaReason.trim()) {
-      setErrorMsg('Plaza remarks / justification are mandatory before submitting a decision.');
+    if (decision === 'Rejected' && !plazaReason.trim()) {
+      setErrorMsg('Plaza remarks / justification are mandatory when rejecting a dispute.');
       return;
     }
     if (decision === 'Rejected' && plazaEvidence.length === 0) {
@@ -43,10 +43,11 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
       setErrorMsg('');
       const actorName = currentUser?.name || currentUser?.role || 'Plaza User';
       const actorPlazaId = currentUser?.assignedPlazaId || currentUser?.plazaId;
+      const finalRemarks = plazaReason.trim() || (decision === 'Approved' ? 'Accepted' : '');
       await DisputeManagementService.submitPlazaDecision(
         disputeRow.rowId || disputeRow.disputeId,
         decision,
-        plazaReason.trim(),
+        finalRemarks,
         plazaEvidence,
         actorName,
         actorPlazaId
@@ -73,11 +74,13 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
     const icon = isImg ? '📷' : isPdf ? '📄' : isLog ? '📝' : '📎';
     const sourceLabel = isPlazaCol ? 'Plaza Evidence' : 'Acquirer Evidence';
 
+    const fileListForSource = isPlazaCol ? plazaEvidence : (disputeRow.adminEvidence || []);
+
     return (
       <div key={index} className="evidence-chip rich-evidence-card">
         <div
           className="file-meta clickable-meta"
-          onClick={() => setPreviewTarget({ file: item, source: sourceLabel })}
+          onClick={() => setPreviewTarget({ file: item, source: sourceLabel, fileList: fileListForSource })}
           title={`Click to view ${fileName}`}
         >
           <span className="file-type-icon">{icon}</span>
@@ -93,7 +96,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
           <button
             type="button"
             className="btn-preview-evidence"
-            onClick={() => setPreviewTarget({ file: item, source: sourceLabel })}
+            onClick={() => setPreviewTarget({ file: item, source: sourceLabel, fileList: fileListForSource })}
             title="View Attachment"
           >
             👁️ View
@@ -161,7 +164,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                 </div>
               </div>
               <div className="meta-box">
-                <label>Settlement Date</label>
+                <label>Dispute Raise Date</label>
                 <div className="meta-display">
                   {disputeRow.settlementDate || disputeRow.cbRaisedDate || '—'}
                 </div>
@@ -218,7 +221,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                 <div className="section-content">
                   <div className="field-block">
                     <label htmlFor="plazaReasonInput">
-                      Plaza Remarks / Justification <span style={{ color: '#ef4444' }}>* (Mandatory)</span>
+                      Plaza Remarks / Justification <span style={{ color: '#ef4444' }}>* (Mandatory for Rejection)</span>
                     </label>
                     <textarea
                       id="plazaReasonInput"
@@ -226,7 +229,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                       placeholder={
                         isDecided
                           ? 'No reason recorded'
-                          : 'Explain your validation decision in detail (mandatory)...'
+                          : 'Optional when accepting, mandatory when rejecting...'
                       }
                       value={plazaReason}
                       onChange={(e) => setPlazaReason(e.target.value)}
@@ -242,7 +245,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                         disabled={isSubmitting}
                         label="Plaza Counter-Evidence"
                         isMandatory={false}
-                        onPreview={(file) => setPreviewTarget({ file, source: 'Plaza Counter-Evidence' })}
+                        onPreview={(file) => setPreviewTarget({ file, source: 'Plaza Counter-Evidence', fileList: plazaEvidence })}
                       />
 
                       <div className="decision-actions-row" style={{ marginTop: '14px', display: 'flex', gap: '10px' }}>
@@ -250,7 +253,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                           type="button"
                           className="btn-approve"
                           onClick={() => handleDecision('Approved')}
-                          disabled={isSubmitting || !plazaReason.trim()}
+                          disabled={isSubmitting}
                           style={{ flex: 1, padding: '10px 16px', fontWeight: 600 }}
                         >
                           {isSubmitting ? 'Submitting...' : '✓ Accept Dispute'}
@@ -261,9 +264,15 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                           onClick={() => handleDecision('Rejected')}
                           disabled={isSubmitting || !plazaReason.trim()}
                           style={{ flex: 1, padding: '10px 16px', fontWeight: 600 }}
-                          title={plazaEvidence.length === 0 ? 'Upload at least 1 counter-evidence file to reject' : 'Reject dispute'}
+                          title={
+                            !plazaReason.trim()
+                              ? 'Plaza remarks are mandatory when rejecting a dispute'
+                              : plazaEvidence.length === 0
+                              ? 'Upload at least 1 counter-evidence file to reject'
+                              : 'Reject dispute'
+                          }
                         >
-                          {isSubmitting ? 'Submitting...' : '✕ Reject Dispute (Requires File)'}
+                          {isSubmitting ? 'Submitting...' : '✕ Reject Dispute (Requires File & Remarks)'}
                         </button>
                       </div>
                     </>
@@ -312,6 +321,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
         isOpen={Boolean(previewTarget)}
         onClose={() => setPreviewTarget(null)}
         file={previewTarget?.file}
+        fileList={previewTarget?.fileList || []}
         source={previewTarget?.source || 'Evidence'}
         disputeRow={disputeRow}
       />
