@@ -66,6 +66,13 @@ export const PLAZA_MAP = DEFAULT_PLAZAS.reduce((acc, p) => {
  * Used for RRN / Acq Txn ID lookup and matching against real onboarded plazas
  */
 export const TRANSACTION_MASTER = {
+  // Canonical Onboarded Plazas Test RRNs (Mumbai, Pune, Nashik, Kolhapur, Solapur)
+  '628101900101': { tollTxnId: 'TXN-MUM01', vrn: 'MH01AB1234', tagId: '34161FA82032876100101001', plazaId: '501101', plazaName: 'MUMBAI PLAZA NH-04', txnDate: '13-10-2026 09:30:00', txnAmount: 85.00 },
+  '628102900201': { tollTxnId: 'TXN-PUN02', vrn: 'MH12CD5678', tagId: '34161FA82032876100202001', plazaId: '502202', plazaName: 'PUNE BYPASS PLAZA', txnDate: '13-10-2026 10:15:00', txnAmount: 120.00 },
+  '628103900301': { tollTxnId: 'TXN-NAS03', vrn: 'MH15EF9012', tagId: '34161FA82032876100303001', plazaId: '503303', plazaName: 'NASHIK TOLL PLAZA', txnDate: '13-10-2026 11:00:00', txnAmount: 95.00 },
+  '628104900401': { tollTxnId: 'TXN-KOL04', vrn: 'MH09GH3456', tagId: '34161FA82032876100404001', plazaId: '504404', plazaName: 'KOLHAPUR PLAZA', txnDate: '13-10-2026 12:20:00', txnAmount: 150.00 },
+  '628105900501': { tollTxnId: 'TXN-SOL05', vrn: 'MH13IJ7890', tagId: '34161FA82032876100505001', plazaId: '505505', plazaName: 'SOLAPUR PLAZA NH-65', txnDate: '13-10-2026 13:45:00', txnAmount: 110.00 },
+
   // New Onboarded Plazas
   '102047735808524901': { tollTxnId: 'LKO09101', vrn: 'AP16TJ1122', tagId: '34161FA820328EB002949010', plazaId: '098767', plazaName: 'LKOIJHBGVHBJNK', txnDate: '09-10-2026 10:15:00', txnAmount: 150.00 },
   '102047735808524902': { tollTxnId: 'OCT10102', vrn: 'MH31AB4455', tagId: '34161FA820328EB002949020', plazaId: '121212', plazaName: 'OCTOBER1234', txnDate: '06-10-2026 11:20:00', txnAmount: 85.00 },
