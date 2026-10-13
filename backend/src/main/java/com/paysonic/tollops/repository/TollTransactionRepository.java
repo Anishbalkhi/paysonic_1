@@ -16,6 +16,8 @@ public interface TollTransactionRepository extends JpaRepository<TollTransaction
 
     Optional<TollTransaction> findByAcqTxnId(String acqTxnId);
 
+    List<TollTransaction> findByAcqTxnIdIn(java.util.Collection<String> acqTxnIds);
+
     long countByTxnDateBetween(LocalDateTime from, LocalDateTime to);
 
     long countByPlazaId(String plazaId);

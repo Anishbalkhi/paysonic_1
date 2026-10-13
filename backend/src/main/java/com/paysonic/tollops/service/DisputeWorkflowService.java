@@ -2,8 +2,10 @@ package com.paysonic.tollops.service;
 
 import com.paysonic.tollops.entity.DisputeBatch;
 import com.paysonic.tollops.entity.DisputeTransaction;
+import com.paysonic.tollops.entity.TollTransaction;
 import com.paysonic.tollops.repository.DisputeBatchRepository;
 import com.paysonic.tollops.repository.DisputeTransactionRepository;
+import com.paysonic.tollops.repository.TollTransactionRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,17 +27,166 @@ public class DisputeWorkflowService {
     private static final DateTimeFormatter IST_DATETIME_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    public static final Set<String> ALLOWED_FUNCTION_CODES = Set.of(
+            "450", "451", "471", "479", "481", "680"
+    );
+
+    public static final Map<String, String> FUNCTION_CODE_MAP = Map.of(
+            "450", "Debit Chargeback Raised",
+            "451", "Credit Chargeback Raised",
+            "471", "Pre-Arbitration Raised",
+            "479", "Arbitration Raised",
+            "481", "Arbitration Continuation",
+            "680", "Good Faith Raised"
+    );
+
     private final DisputeTransactionRepository transactionRepository;
     private final DisputeBatchRepository batchRepository;
+    private final TollTransactionRepository tollTransactionRepository;
 
     public DisputeWorkflowService(DisputeTransactionRepository transactionRepository,
-                                  DisputeBatchRepository batchRepository) {
+                                  DisputeBatchRepository batchRepository,
+                                  TollTransactionRepository tollTransactionRepository) {
         this.transactionRepository = transactionRepository;
         this.batchRepository = batchRepository;
+        this.tollTransactionRepository = tollTransactionRepository;
     }
 
     /**
-     * Upload and persist matched CSV rows into Railway MySQL
+     * Validate and match uploaded CSV rows against the Single Master Transaction Table (toll_transactions)
+     * Rules:
+     * 1. Match RRN with ACQ TXN ID in toll_transactions
+     * 2. Allowed Function Codes strictly: 450, 451, 471, 479, 481, 680
+     * 3. Duplicate check: Same RRN AND Same Function Code in active queue
+     * 4. Disputed Amount: from CSV file
+     * 5. Txn Amount, Plaza ID, Plaza Name, Txn Date: from toll_transactions
+     */
+    public Map<String, Object> validateAndMatchCsv(List<Map<String, Object>> rows) {
+        if (rows == null) rows = Collections.emptyList();
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        List<Map<String, Object>> errorRows = new ArrayList<>();
+        int matchedCount = 0;
+        int mismatchedCount = 0;
+        int duplicateCount = 0;
+        int invalidCodeCount = 0;
+
+        for (int idx = 0; idx < rows.size(); idx++) {
+            Map<String, Object> row = rows.get(idx);
+            int rowNumber = idx + 2; // header offset
+
+            String rrn = extractKey(row, "rrn", "RRN", "acqTxnId", "Acq Txn ID", "acq_txn_id", "Acquirer Reference Number");
+            if (rrn == null || rrn.trim().isEmpty()) {
+                errorRows.add(Map.of(
+                        "rowNumber", rowNumber,
+                        "rrn", "EMPTY",
+                        "functionCode", "—",
+                        "disputeAmount", "0.00",
+                        "reason", "Missing RRN / Acq Txn ID"
+                ));
+                mismatchedCount++;
+                continue;
+            }
+            rrn = rrn.trim();
+
+            String rawFuncCode = extractKey(row, "functionCode", "Function Code", "FunctionCode", "function_code");
+            String functionCode = (rawFuncCode != null && !rawFuncCode.trim().isEmpty()) ? rawFuncCode.trim() : "450";
+
+            BigDecimal disputeAmount = parseDisputeAmount(row);
+
+            // Rule 3.4.b: Whitelist Check
+            if (!ALLOWED_FUNCTION_CODES.contains(functionCode)) {
+                errorRows.add(Map.of(
+                        "rowNumber", rowNumber,
+                        "rrn", rrn,
+                        "functionCode", functionCode,
+                        "disputeAmount", disputeAmount != null ? disputeAmount.toString() : "0.00",
+                        "reason", "Invalid Function Code '" + functionCode + "'. Allowed codes: 450, 451, 471, 479, 481, 680."
+                ));
+                invalidCodeCount++;
+                continue;
+            }
+
+            // Rule 3.1: Match RRN with ACQ TXN ID in toll_transactions
+            Optional<TollTransaction> optToll = tollTransactionRepository.findByAcqTxnId(rrn);
+            if (optToll.isEmpty()) {
+                errorRows.add(Map.of(
+                        "rowNumber", rowNumber,
+                        "rrn", rrn,
+                        "functionCode", functionCode,
+                        "disputeAmount", disputeAmount != null ? disputeAmount.toString() : "0.00",
+                        "reason", "Mismatched: RRN '" + rrn + "' not found in Master Transaction Table"
+                ));
+                mismatchedCount++;
+                continue;
+            }
+
+            TollTransaction toll = optToll.get();
+            if (disputeAmount == null) {
+                disputeAmount = toll.getTxnAmount();
+            }
+
+            // Rule 3.4.a: Duplicate Check (Same RRN AND Same Function Code in active queue)
+            boolean isDuplicate = transactionRepository.existsByAcqTxnIdAndFunctionCodeAndClosedFalse(rrn, functionCode);
+            if (isDuplicate) {
+                errorRows.add(Map.of(
+                        "rowNumber", rowNumber,
+                        "rrn", rrn,
+                        "functionCode", functionCode,
+                        "disputeAmount", disputeAmount.toString(),
+                        "reason", "Duplicate row: Transaction RRN '" + rrn + "' with Function Code " + functionCode + " already has an active open dispute in queue"
+                ));
+                duplicateCount++;
+                continue;
+            }
+
+            // Hydrate Matched Record
+            String rawSettlement = extractKey(row, "settlementDate", "Settlement Date", "Settlement_Date", "settlement_date");
+            String settlementDate = (rawSettlement != null && !rawSettlement.trim().isEmpty()) ? rawSettlement.trim() : LocalDate.now().format(DATE_FMT);
+            String tatDueDate = computeTatDueDate(settlementDate);
+            String memberMsg = extractMemberMessage(row);
+
+            Map<String, Object> matched = new LinkedHashMap<>();
+            matched.put("rowNumber", rowNumber);
+            matched.put("status", "Matched");
+            matched.put("isMatched", true);
+            matched.put("rrn", rrn);
+            matched.put("acqTxnId", rrn);
+            matched.put("tollTxnId", toll.getTollTxnId() != null ? toll.getTollTxnId() : "—");
+            matched.put("laneId", toll.getLaneId() != null ? toll.getLaneId() : "Lane-01");
+            matched.put("plazaId", toll.getPlazaId());
+            matched.put("plazaName", toll.getPlazaName());
+            matched.put("vrn", toll.getVrn() != null ? toll.getVrn() : "—");
+            matched.put("tagId", toll.getTagId() != null ? toll.getTagId() : "—");
+            matched.put("txnDate", toll.getTxnDate() != null ? toll.getTxnDate().format(IST_DATETIME_FMT) : "—");
+            matched.put("txnDateTime", toll.getTxnDate());
+            matched.put("txnAmount", toll.getTxnAmount()); // Authoritative Transaction Amount from DB
+            matched.put("disputeAmount", disputeAmount);   // Disputed Amount from CSV
+            matched.put("functionCode", functionCode);
+            matched.put("disputeType", FUNCTION_CODE_MAP.getOrDefault(functionCode, "Code " + functionCode));
+            matched.put("settlementDate", settlementDate);
+            matched.put("tatDueDate", tatDueDate);
+            matched.put("cbRaisedDate", settlementDate);
+            matched.put("memberMessageText", memberMsg);
+            matched.put("cbReason", memberMsg);
+
+            results.add(matched);
+            matchedCount++;
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("totalRows", rows.size());
+        response.put("matchedCount", matchedCount);
+        response.put("mismatchedCount", mismatchedCount);
+        response.put("duplicateCount", duplicateCount);
+        response.put("invalidCodeCount", invalidCodeCount);
+        response.put("results", results);
+        response.put("errorRows", errorRows);
+        return response;
+    }
+
+    /**
+     * Upload and persist matched CSV rows into MySQL
      */
     @Transactional
     public Map<String, Object> uploadBatch(Map<String, Object> payload) {
@@ -52,18 +203,40 @@ public class DisputeWorkflowService {
         List<DisputeTransaction> toInsert = new ArrayList<>();
         int duplicateCount = 0;
         int insertedCount = 0;
+        int mismatchedCount = 0;
 
         for (Map<String, Object> r : rows) {
-            String rrn = String.valueOf(r.getOrDefault("rrn", r.getOrDefault("acqTxnId", ""))).trim();
-            if (rrn.isEmpty()) {
+            String rrn = extractKey(r, "rrn", "RRN", "acqTxnId", "Acq Txn ID", "acq_txn_id");
+            if (rrn == null || rrn.trim().isEmpty()) {
+                mismatchedCount++;
+                continue;
+            }
+            rrn = rrn.trim();
+
+            String rawFuncCode = extractKey(r, "functionCode", "Function Code", "FunctionCode", "function_code");
+            String functionCode = (rawFuncCode != null && !rawFuncCode.trim().isEmpty()) ? rawFuncCode.trim() : "450";
+            if (!ALLOWED_FUNCTION_CODES.contains(functionCode)) {
                 continue;
             }
 
-            // NPCI rule: Only one active open dispute allowed per transaction
-            boolean hasOpen = transactionRepository.existsByAcqTxnIdAndClosedFalse(rrn);
-            if (hasOpen) {
+            // Must match against Single Master Transaction Table
+            Optional<TollTransaction> optToll = tollTransactionRepository.findByAcqTxnId(rrn);
+            if (optToll.isEmpty()) {
+                mismatchedCount++;
+                continue; // Do NOT insert mismatched rows into Dispute Assign queue
+            }
+            TollTransaction toll = optToll.get();
+
+            // Duplicate Rule: Same RRN AND Same Function Code in active queue
+            boolean isDuplicate = transactionRepository.existsByAcqTxnIdAndFunctionCodeAndClosedFalse(rrn, functionCode);
+            if (isDuplicate) {
                 duplicateCount++;
                 continue;
+            }
+
+            BigDecimal disputeAmount = parseDisputeAmount(r);
+            if (disputeAmount == null) {
+                disputeAmount = toll.getTxnAmount();
             }
 
             DisputeTransaction dt = new DisputeTransaction();
@@ -71,46 +244,31 @@ public class DisputeWorkflowService {
             dt.setDisputeId(dispId);
             dt.setBatchId(batchId);
             dt.setAcqTxnId(rrn);
-            dt.setTollTxnId(String.valueOf(r.getOrDefault("tollTxnId", "—")));
-            dt.setLaneId(String.valueOf(r.getOrDefault("laneId", "Lane-01")));
-            dt.setPlazaId(String.valueOf(r.getOrDefault("plazaId", "501101")));
-            dt.setPlazaName(String.valueOf(r.getOrDefault("plazaName", "MUMBAI PLAZA NH-04")));
-            dt.setVehicleNo(String.valueOf(r.getOrDefault("vrn", r.getOrDefault("vehicleNo", "—"))));
-            dt.setTagId(String.valueOf(r.getOrDefault("tagId", "—")));
+            dt.setTollTxnId(toll.getTollTxnId() != null ? toll.getTollTxnId() : "—");
+            dt.setLaneId(toll.getLaneId() != null ? toll.getLaneId() : "Lane-01");
+            dt.setPlazaId(toll.getPlazaId());
+            dt.setPlazaName(toll.getPlazaName());
+            dt.setVehicleNo(toll.getVrn() != null ? toll.getVrn() : "—");
+            dt.setTagId(toll.getTagId() != null ? toll.getTagId() : "—");
             dt.setTid(String.valueOf(r.getOrDefault("tid", "TID-88401")));
-            dt.setFunctionCode(String.valueOf(r.getOrDefault("functionCode", "450")));
-            String msgText = "";
-            for (Map.Entry<String, Object> entry : r.entrySet()) {
-                String k = entry.getKey().toLowerCase().replaceAll("[\\s_-]", "");
-                if (k.equals("membermessagetext") || k.equals("cbreason") || k.equals("reason") || k.equals("messagetext")) {
-                    if (entry.getValue() != null && !String.valueOf(entry.getValue()).trim().isEmpty()) {
-                        msgText = String.valueOf(entry.getValue()).trim();
-                        break;
-                    }
-                }
-            }
-            if (msgText.isEmpty()) {
-                msgText = String.valueOf(r.getOrDefault("memberMessageText", r.getOrDefault("cbReason", "")));
-            }
-            if (msgText.isEmpty() || "null".equalsIgnoreCase(msgText)) {
-                msgText = "Imported from file";
-            }
+            dt.setFunctionCode(functionCode);
+            dt.setFunctionLabel(FUNCTION_CODE_MAP.getOrDefault(functionCode, "Code " + functionCode));
+
+            String msgText = extractMemberMessage(r);
             dt.setMemberMessageText(msgText);
             dt.setAdminRemarks(msgText);
-            dt.setSettlementDate(String.valueOf(r.getOrDefault("settlementDate", "")));
-            dt.setTatDueDate(String.valueOf(r.getOrDefault("tatDueDate", "")));
-            dt.setCbRaisedDate(String.valueOf(r.getOrDefault("cbRaisedDate", r.getOrDefault("settlementDate", ""))));
 
-            Object amtObj = r.get("txnAmount");
-            if (amtObj != null) {
-                dt.setTxnAmount(new BigDecimal(String.valueOf(amtObj)));
-                dt.setDisputeAmount(new BigDecimal(String.valueOf(amtObj)));
-            } else {
-                dt.setTxnAmount(BigDecimal.ZERO);
-                dt.setDisputeAmount(BigDecimal.ZERO);
-            }
+            String rawSettlement = extractKey(r, "settlementDate", "Settlement Date", "Settlement_Date", "settlement_date");
+            String settlementDate = (rawSettlement != null && !rawSettlement.trim().isEmpty()) ? rawSettlement.trim() : LocalDate.now().format(DATE_FMT);
+            dt.setSettlementDate(settlementDate);
+            dt.setTatDueDate(computeTatDueDate(settlementDate));
+            dt.setCbRaisedDate(settlementDate);
 
-            dt.setTxnDateTime(LocalDateTime.now().minusDays(2));
+            // Hydrate amounts: Txn Amount from DB, Dispute Amount from CSV
+            dt.setTxnAmount(toll.getTxnAmount());
+            dt.setDisputeAmount(disputeAmount);
+
+            dt.setTxnDateTime(toll.getTxnDate() != null ? toll.getTxnDate() : LocalDateTime.now().minusDays(2));
             dt.setSettlementIndicator("Dr");
             dt.setAssigned(false);
             dt.setDisputeStatus("NA");
@@ -126,7 +284,7 @@ public class DisputeWorkflowService {
         }
 
         int totalInFile = ((Number) payload.getOrDefault("totalRows", rows.size())).intValue();
-        int unmatchedInFile = ((Number) payload.getOrDefault("unmatchedRows", 0)).intValue();
+        int unmatchedInFile = ((Number) payload.getOrDefault("unmatchedRows", mismatchedCount)).intValue();
 
         DisputeBatch batch = new DisputeBatch(
                 batchId,
@@ -530,6 +688,59 @@ public class DisputeWorkflowService {
             return (int) java.time.temporal.ChronoUnit.DAYS.between(now, due);
         } catch (Exception e) {
             return 7;
+        }
+    }
+
+    private String extractKey(Map<String, Object> map, String... keys) {
+        if (map == null) return null;
+        for (String k : keys) {
+            if (map.containsKey(k) && map.get(k) != null) {
+                String val = String.valueOf(map.get(k)).trim();
+                if (!val.isEmpty() && !"null".equalsIgnoreCase(val)) {
+                    return val;
+                }
+            }
+        }
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String cleanKey = entry.getKey().toLowerCase().replaceAll("[\\s_-]", "");
+            for (String k : keys) {
+                if (cleanKey.equals(k.toLowerCase().replaceAll("[\\s_-]", ""))) {
+                    if (entry.getValue() != null) {
+                        String val = String.valueOf(entry.getValue()).trim();
+                        if (!val.isEmpty() && !"null".equalsIgnoreCase(val)) {
+                            return val;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal parseDisputeAmount(Map<String, Object> row) {
+        String raw = extractKey(row, "disputeAmount", "Dispute Amount", "Disputed Amount", "disputedAmount", "amount", "Amount", "Dispute Amt", "txnAmount", "Transaction Amount");
+        if (raw != null && !raw.trim().isEmpty()) {
+            try {
+                return new BigDecimal(raw.trim().replace(",", ""));
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    private String extractMemberMessage(Map<String, Object> r) {
+        String msg = extractKey(r, "memberMessageText", "Member Message Text", "cbReason", "CB Reason", "reason", "Reason", "messageText");
+        return (msg != null && !msg.isEmpty()) ? msg : "Imported from file";
+    }
+
+    private String computeTatDueDate(String settlementDateStr) {
+        if (settlementDateStr == null || settlementDateStr.trim().isEmpty()) {
+            return LocalDate.now().plusDays(8).format(DATE_FMT);
+        }
+        try {
+            LocalDate dt = LocalDate.parse(settlementDateStr.trim(), DATE_FMT);
+            return dt.plusDays(8).format(DATE_FMT);
+        } catch (Exception e) {
+            return LocalDate.now().plusDays(8).format(DATE_FMT);
         }
     }
 }

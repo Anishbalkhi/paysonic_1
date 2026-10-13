@@ -26,6 +26,22 @@ public class DisputeWorkflowController {
     }
 
     /**
+     * Validate and match uploaded CSV dispute rows against single transaction master table
+     */
+    @PostMapping("/batches/validate-and-match")
+    public ResponseEntity<?> validateAndMatch(@RequestBody Map<String, Object> payload) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) payload.get("rows");
+            Map<String, Object> res = workflowService.validateAndMatchCsv(rows);
+            return ResponseEntity.ok(res);
+        } catch (Exception ex) {
+            log.error("Error validating dispute CSV rows: {}", ex.getMessage(), ex);
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
      * Upload and stage CSV dispute rows into Railway MySQL
      */
     @PostMapping("/batches/upload")

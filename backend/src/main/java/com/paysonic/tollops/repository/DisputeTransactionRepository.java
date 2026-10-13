@@ -14,6 +14,9 @@ public interface DisputeTransactionRepository extends JpaRepository<DisputeTrans
     Optional<DisputeTransaction> findByDisputeId(String disputeId);
     Optional<DisputeTransaction> findByAcqTxnIdAndClosedFalse(String acqTxnId);
     boolean existsByAcqTxnIdAndClosedFalse(String acqTxnId);
+    boolean existsByAcqTxnIdAndFunctionCodeAndClosedFalse(String acqTxnId, String functionCode);
+    Optional<DisputeTransaction> findByAcqTxnIdAndFunctionCodeAndClosedFalse(String acqTxnId, String functionCode);
+    List<DisputeTransaction> findByAcqTxnIdInAndClosedFalse(java.util.Collection<String> acqTxnIds);
     List<DisputeTransaction> findByAcqTxnId(String acqTxnId);
     List<DisputeTransaction> findByBatchId(String batchId);
 }

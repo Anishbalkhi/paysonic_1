@@ -52,7 +52,7 @@ export const DisputeFileUpload = () => {
     reader.readAsText(file);
   };
 
-  const handleRunMatching = () => {
+  const handleRunMatching = async () => {
     if (parsedRows.length === 0) {
       setAlertMsg('Please choose a valid CSV file first.');
       return;
@@ -60,11 +60,15 @@ export const DisputeFileUpload = () => {
 
     setIsMatching(true);
     setCurrentPage(1);
-    setTimeout(() => {
-      const res = DisputeManagementService.matchCsvRows(parsedRows);
+    setAlertMsg('');
+    try {
+      const res = await DisputeManagementService.matchCsvRows(parsedRows);
       setMatchResult(res);
+    } catch (err) {
+      setAlertMsg('Error during matching: ' + (err.message || String(err)));
+    } finally {
       setIsMatching(false);
-    }, 400);
+    }
   };
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,9 +98,15 @@ export const DisputeFileUpload = () => {
     };
 
     const fetchTimeStr = formatFetchTime(new Date());
-    const headers = ['Row Number', 'RRN', 'Reason'];
+    const headers = ['Row Number', 'RRN', 'Function Code', 'Disputed Amount', 'Failure Reason'];
     const rows = matchResult.errorRows.map((err) =>
-      [err.rowNumber, err.rrn, err.reason].map(escapeCsv).join(',')
+      [
+        err.rowNumber,
+        err.rrn,
+        err.functionCode || '—',
+        err.disputeAmount !== undefined && err.disputeAmount !== null ? String(err.disputeAmount) : '—',
+        err.reason
+      ].map(escapeCsv).join(',')
     );
 
     const bannerRows = [
@@ -218,8 +228,12 @@ export const DisputeFileUpload = () => {
               <strong>{matchResult.matchedCount}</strong>
             </div>
             <div className="stat-pill-box danger">
-              <span>Unmatched / Duplicates</span>
-              <strong>{matchResult.unmatchedCount + (matchResult.duplicateCount || 0)}</strong>
+              <span>Mismatched (Not in Master)</span>
+              <strong>{matchResult.mismatchedCount || 0}</strong>
+            </div>
+            <div className="stat-pill-box warning">
+              <span>Duplicates / Invalid Codes</span>
+              <strong>{(matchResult.duplicateCount || 0) + (matchResult.invalidCodeCount || 0)}</strong>
             </div>
           </div>
 
@@ -229,14 +243,14 @@ export const DisputeFileUpload = () => {
                 <tr>
                   <th>Status</th>
                   <th>RRN (Acq Txn ID)</th>
-                  <th>Tag ID</th>
-                  <th>Dispute Raise Date</th>
-                  <th>TAT Due Date (T+8)</th>
                   <th>Function Code</th>
                   <th>Dispute Type</th>
-                  <th>Txn Amount</th>
-                  <th>Member Message Text</th>
+                  <th>Txn Date</th>
                   <th>Toll Plaza</th>
+                  <th style={{ textAlign: 'right' }}>Txn Amount</th>
+                  <th style={{ textAlign: 'right' }}>Disputed Amount</th>
+                  <th>Member Message Text</th>
+                  <th>TAT Due Date (T+8)</th>
                 </tr>
               </thead>
               <tbody>
@@ -250,18 +264,22 @@ export const DisputeFileUpload = () => {
                           <span className="badge badge-green">✓ Matched</span>
                         )
                       ) : (
-                        <span className="badge badge-red">✕ Unmatched</span>
+                        <span className="badge badge-red">✕ Mismatched</span>
                       )}
                     </td>
                     <td className="code">{r.rrn}</td>
-                    <td className="code">{r.tagId}</td>
-                    <td>{r.settlementDate || '—'}</td>
-                    <td style={{ fontWeight: 600, color: '#0369a1' }}>{r.tatDueDate || '—'}</td>
-                    <td>{r.functionCode}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600 }}>{r.functionCode}</td>
                     <td>{r.disputeType}</td>
-                    <td>₹ {Number(r.txnAmount || 0).toFixed(2)}</td>
-                    <td>{r.memberMessageText}</td>
+                    <td>{r.txnDate || '—'}</td>
                     <td>{r.plazaName} ({r.plazaId})</td>
+                    <td style={{ textAlign: 'right' }}>₹ {Number(r.txnAmount || 0).toFixed(2)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>
+                      ₹ {Number(r.disputeAmount !== undefined && r.disputeAmount !== null ? r.disputeAmount : (r.txnAmount || 0)).toFixed(2)}
+                    </td>
+                    <td style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.memberMessageText || '—'}
+                    </td>
+                    <td style={{ fontWeight: 600, color: '#0369a1' }}>{r.tatDueDate || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -290,7 +308,7 @@ export const DisputeFileUpload = () => {
               onClick={handleCommit}
               disabled={isCommitting || matchResult.matchedCount === 0}
             >
-              {isCommitting ? 'Adding to Queue...' : 'Add Matched Rows to Chargeback Assign'}
+              {isCommitting ? 'Adding to Queue...' : `Add ${matchResult.matchedCount} Matched Rows to Chargeback Assign`}
             </button>
           </div>
         </div>

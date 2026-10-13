@@ -3,29 +3,31 @@
  * as specified in Paysonic Dispute & Chargeback Management Specification v1.0
  */
 
+export const ALLOWED_FUNCTION_CODES = ['450', '451', '471', '479', '481', '680'];
+
 export const FUNCTION_CODES = [
+  { code: 450, label: 'Debit Chargeback Raised', desc: 'Debit Chargeback Raised' },
+  { code: 451, label: 'Credit Chargeback Raised', desc: 'Credit Chargeback Raised' },
+  { code: 471, label: 'Pre-Arbitration Raised', desc: 'Pre-Arbitration Raised' },
+  { code: 479, label: 'Arbitration Raised', desc: 'Arbitration Raised' },
+  { code: 481, label: 'Arbitration Continuation', desc: 'Arbitration Continuation' },
+  { code: 680, label: 'Good Faith Raised', desc: 'Good Faith Raised' },
   { code: 762, label: 'Credit Adjustment', desc: 'Credit Adjustment' },
   { code: 763, label: 'Debit Adjustment', desc: 'Debit Adjustment' },
-  { code: 450, label: 'Debit Chargeback Raised', desc: 'Debit Chargeback Raised' },
   { code: 470, label: 'Debit Chargeback Acceptance', desc: 'Debit Chargeback Acceptance' },
   { code: 500, label: 'Chargeback Deemed Acceptance', desc: 'Chargeback Deemed Acceptance' },
   { code: 205, label: 'Re-presentment Raised (CB Decline)', desc: 'Re-presentment Raised (CB Decline)' },
   { code: 261, label: 'Re-presentment Acceptance', desc: 'Re-presentment Acceptance' },
   { code: 262, label: 'Re-presentment Deemed Acceptance', desc: 'Re-presentment Deemed Acceptance' },
-  { code: 451, label: 'Credit Chargeback Raised', desc: 'Credit Chargeback Raised' },
   { code: 452, label: 'Credit Chargeback Acceptance', desc: 'Credit Chargeback Acceptance' },
   { code: 502, label: 'Credit Chargeback Deemed Acceptance', desc: 'Credit Chargeback Deemed Acceptance' },
-  { code: 471, label: 'Pre-Arbitration Raised', desc: 'Pre-Arbitration Raised' },
   { code: 473, label: 'Pre-Arbitration Declined', desc: 'Pre-Arbitration Declined' },
   { code: 474, label: 'Pre-Arbitration Acceptance', desc: 'Pre-Arbitration Acceptance' },
   { code: 509, label: 'Pre-Arbitration Deemed Acceptance', desc: 'Pre-Arbitration Deemed Acceptance' },
-  { code: 479, label: 'Arbitration Raised', desc: 'Arbitration Raised' },
   { code: 480, label: 'Arbitration Acceptance', desc: 'Arbitration Acceptance' },
-  { code: 481, label: 'Arbitration Continuation', desc: 'Arbitration Continuation' },
   { code: 482, label: 'Arbitration Withdrawal', desc: 'Arbitration Withdrawal' },
   { code: 483, label: 'Arbitration Verdict', desc: 'Arbitration Verdict' },
   { code: 504, label: 'Arbitration Deemed Continuation', desc: 'Arbitration Deemed Continuation' },
-  { code: 680, label: 'Goodfaith Raised', desc: 'Goodfaith Raised' },
   { code: 681, label: 'Goodfaith Raise Acceptance', desc: 'Goodfaith Raise Acceptance' },
   { code: 682, label: 'Goodfaith Raise Decline', desc: 'Goodfaith Raise Decline' },
   { code: 505, label: 'Goodfaith Deemed Decline', desc: 'Goodfaith Deemed Decline' },

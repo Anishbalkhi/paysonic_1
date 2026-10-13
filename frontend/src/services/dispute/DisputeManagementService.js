@@ -1,5 +1,7 @@
 import {
   FUNCTION_CODE_MAP,
+  FUNCTION_CODES,
+  ALLOWED_FUNCTION_CODES,
   PLAZA_MAP,
   DEFAULT_PLAZAS,
   TRANSACTION_MASTER,
@@ -866,17 +868,35 @@ class DisputeManagementService {
   }
 
   /**
-   * Match CSV rows against Transaction Master and Railway DB open records
+   * Match CSV rows against Single Master Transaction Table and check Dispute validations:
+   * 1. Backend API matching against toll_transactions (/api/disputes/workflow/batches/validate-and-match)
+   * 2. Strict Whitelist of Allowed Function Codes (450, 451, 471, 479, 481, 680)
+   * 3. Dual-key duplicate rule: Same RRN AND Same Function Code in active queue
+   * 4. Disputed Amount: from CSV file
+   * 5. Txn Amount, Plaza ID, Plaza Name, Txn Date: from single transaction table
+   * 6. Mismatched records: marked and excluded from Dispute Assign
    */
-  matchCsvRows(parsedRows) {
+  async matchCsvRows(parsedRows) {
+    try {
+      const resp = await httpClient.post('/api/disputes/workflow/batches/validate-and-match', {
+        rows: parsedRows,
+      });
+      if (resp && resp.data && Array.isArray(resp.data.results)) {
+        return resp.data;
+      }
+    } catch (err) {
+      console.warn('[DisputeManagementService] Server validate-and-match notice:', err?.message);
+    }
+
+    // Client-side fallback adhering to exact validation rules
     const existing = this.getStoredDisputes();
     const results = [];
     const errorRows = [];
     let matchedCount = 0;
-    let unmatchedCount = 0;
+    let mismatchedCount = 0;
     let duplicateCount = 0;
+    let invalidCodeCount = 0;
 
-    // Integrate live onboarded plazas from OnboardingService API
     const cachedPlazas = OnboardingService.getCachedPlazas() || [];
     const apiPlazaMap = {};
     cachedPlazas.forEach((p) => {
@@ -889,43 +909,44 @@ class DisputeManagementService {
     parsedRows.forEach((row, idx) => {
       const rowNum = idx + 2; // 1-based header offset
       const rrn = (row['RRN'] || row['rrn'] || row['Acq Txn ID'] || row['Acquirer Reference Number'] || '').trim();
-      const funcCodeNum = Number(row['Function Code'] || row['functionCode'] || row['FunctionCode'] || 450);
+      const rawFuncCode = String(row['Function Code'] || row['functionCode'] || row['FunctionCode'] || '450').trim();
       const rawSettlement = row['Settlement Date'] || row['settlementDate'] || row['Settlement_Date'] || '';
       const { formatted: settlementDate } = parseSettlementDate(rawSettlement);
       const tatDueDate = computeTatDueDate(settlementDate);
+
+      // Extract Disputed Amount from CSV (Rule 3.3)
+      const rawDisputeAmt = row['Dispute Amount'] || row['Disputed Amount'] || row['disputeAmount'] || row['Amount'] || row['Dispute Amt'];
+      const parsedDisputeAmt = rawDisputeAmt !== undefined && rawDisputeAmt !== null && String(rawDisputeAmt).trim() !== ''
+        ? Number(String(rawDisputeAmt).replace(/,/g, '').trim())
+        : null;
 
       if (!rrn) {
         errorRows.push({
           rowNumber: rowNum,
           rrn: 'EMPTY',
+          functionCode: rawFuncCode || '—',
+          disputeAmount: parsedDisputeAmt || 0,
           reason: 'Missing RRN / Acq Txn ID',
         });
-        unmatchedCount++;
+        mismatchedCount++;
         return;
       }
 
-      const masterHit = TRANSACTION_MASTER[rrn];
-
-      // A transaction can have only one open dispute at a time
-      const hasOpenDispute = existing.some(
-        (e) => e.acqTxnId === rrn && !e.closed
-      );
-      const isExactDuplicate = existing.some(
-        (e) => e.acqTxnId === rrn && Number(e.functionCode) === funcCodeNum
-      );
-      const alreadyQueued = hasOpenDispute || isExactDuplicate;
-
-      if (alreadyQueued) {
-        duplicateCount++;
+      // Rule 3.4.b: Whitelist Check
+      if (!ALLOWED_FUNCTION_CODES.includes(rawFuncCode)) {
+        invalidCodeCount++;
         errorRows.push({
           rowNumber: rowNum,
           rrn,
-          reason: hasOpenDispute
-            ? `Duplicate row: Transaction RRN ${rrn} already has an active open dispute in queue`
-            : `Duplicate row: RRN ${rrn} with function code ${funcCodeNum} already exists in queue`,
+          functionCode: rawFuncCode,
+          disputeAmount: parsedDisputeAmt || 0,
+          reason: `Invalid Function Code '${rawFuncCode}'. Allowed codes are: 450, 451, 471, 479, 481, 680.`,
         });
+        return;
       }
 
+      // Rule 3.1: Match RRN with Single Master Transaction Table
+      const masterHit = TRANSACTION_MASTER[rrn];
       const csvPlazaId = (row['Plaza ID'] || row['Merchant ID'] || row['plazaId'] || row['Toll Plaza ID'] || '').trim();
       const resolvedPlazaName = apiPlazaMap[csvPlazaId] || PLAZA_MAP[csvPlazaId];
       const directPlazaHit = (csvPlazaId && resolvedPlazaName) ? {
@@ -935,89 +956,94 @@ class DisputeManagementService {
         plazaId: csvPlazaId,
         plazaName: resolvedPlazaName,
         txnDate: row['Txn Date'] || row['txnDate'] || '—',
-        txnAmount: Number(row['Transaction Amount'] || row['txnAmount'] || row['Dispute Amount'] || 0),
+        txnAmount: Number(row['Transaction Amount'] || row['txnAmount'] || 85.00),
       } : null;
 
       const hit = masterHit || directPlazaHit;
 
-      if (hit) {
-        matchedCount++;
-        const plazaId = hit.plazaId || csvPlazaId || '501101';
-        const plazaName = hit.plazaName || apiPlazaMap[plazaId] || PLAZA_MAP[plazaId] || 'MUMBAI PLAZA NH-04';
-
-        const rawMemberMsg = (() => {
-          for (const k of ['Member Message Text', 'memberMessageText', 'MemberMessageText', 'CB Reason', 'cbReason', 'CB_Reason', 'Reason', 'Member_Message_Text', 'Member message text']) {
-            if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
-              return String(row[k]).trim();
-            }
-          }
-          for (const rk of Object.keys(row)) {
-            const cleanK = rk.toLowerCase().replace(/[\s_-]/g, '');
-            if (cleanK === 'membermessagetext' || cleanK === 'cbreason' || cleanK === 'reason') {
-              const v = row[rk];
-              if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
-            }
-          }
-          return '';
-        })();
-        const memberMsgVal = rawMemberMsg || 'Imported from bank file';
-
-        results.push({
-          rowNumber: rowNum,
-          status: alreadyQueued ? 'Duplicate' : 'Matched',
-          isMatched: true,
-          alreadyQueued,
-          rrn,
-          tagId: hit.tagId || row['Tag ID'] || '—',
-          functionCode: funcCodeNum,
-          disputeType: FUNCTION_CODE_MAP[funcCodeNum] || `Code ${funcCodeNum}`,
-          settlementDate,
-          tatDueDate,
-          txnAmount: hit.txnAmount || Number(row['Transaction Amount'] || 0),
-          disputeAmount: hit.txnAmount || Number(row['Transaction Amount'] || 0),
-          memberMessageText: memberMsgVal,
-          cbReason: memberMsgVal,
-          plazaId,
-          plazaName,
-          vrn: hit.vrn || row['Vehicle Registration Number'] || '—',
-          tollTxnId: hit.tollTxnId || '—',
-          txnDate: hit.txnDate || '—',
-        });
-      } else {
-        unmatchedCount++;
+      if (!hit) {
+        // Rule 3.1.4: Mismatched - not found in master transaction table
+        mismatchedCount++;
         errorRows.push({
           rowNumber: rowNum,
           rrn,
-          reason: `Unmatched: RRN ${rrn} not found in authoritative Transaction Master`,
+          functionCode: rawFuncCode,
+          disputeAmount: parsedDisputeAmt || 0,
+          reason: `Mismatched: RRN ${rrn} not found in Master Transaction Table`,
         });
-        results.push({
-          rowNumber: rowNum,
-          status: 'Unmatched',
-          isMatched: false,
-          alreadyQueued: false,
-          rrn,
-          tagId: row['Tag ID'] || '—',
-          functionCode: funcCodeNum,
-          disputeType: FUNCTION_CODE_MAP[funcCodeNum] || `Code ${funcCodeNum}`,
-          settlementDate,
-          tatDueDate,
-          txnAmount: Number(row['Transaction Amount'] || 0),
-          disputeAmount: Number(row['Transaction Amount'] || 0),
-          memberMessageText: row['Member Message Text'] || '—',
-          plazaId: row['Merchant ID'] || '—',
-          plazaName: 'Unmapped',
-          vrn: row['Vehicle Registration Number'] || '—',
-          tollTxnId: '—',
-          txnDate: '—',
-        });
+        return; // Exclude from results so it NEVER enters Dispute Assign
       }
+
+      // Rule 3.4.a: Duplicate Check (Same RRN AND Same Function Code in active queue)
+      const isExactDuplicate = existing.some(
+        (e) => e.acqTxnId === rrn && String(e.functionCode) === String(rawFuncCode) && !e.closed
+      );
+
+      if (isExactDuplicate) {
+        duplicateCount++;
+        errorRows.push({
+          rowNumber: rowNum,
+          rrn,
+          functionCode: rawFuncCode,
+          disputeAmount: parsedDisputeAmt !== null ? parsedDisputeAmt : hit.txnAmount,
+          reason: `Duplicate row: Transaction RRN ${rrn} with function code ${rawFuncCode} already has an active open dispute in queue`,
+        });
+        return;
+      }
+
+      // Matched and Valid!
+      matchedCount++;
+      const plazaId = hit.plazaId || csvPlazaId || '501101';
+      const plazaName = hit.plazaName || apiPlazaMap[plazaId] || PLAZA_MAP[plazaId] || 'MUMBAI PLAZA NH-04';
+
+      const rawMemberMsg = (() => {
+        for (const k of ['Member Message Text', 'memberMessageText', 'MemberMessageText', 'CB Reason', 'cbReason', 'CB_Reason', 'Reason', 'Member_Message_Text', 'Member message text']) {
+          if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+            return String(row[k]).trim();
+          }
+        }
+        for (const rk of Object.keys(row)) {
+          const cleanK = rk.toLowerCase().replace(/[\s_-]/g, '');
+          if (cleanK === 'membermessagetext' || cleanK === 'cbreason' || cleanK === 'reason') {
+            const v = row[rk];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+          }
+        }
+        return '';
+      })();
+      const memberMsgVal = rawMemberMsg || 'Imported from bank file';
+
+      const finalDisputeAmt = parsedDisputeAmt !== null ? parsedDisputeAmt : hit.txnAmount;
+
+      results.push({
+        rowNumber: rowNum,
+        status: 'Matched',
+        isMatched: true,
+        alreadyQueued: false,
+        rrn,
+        tagId: hit.tagId || row['Tag ID'] || '—',
+        functionCode: rawFuncCode,
+        disputeType: FUNCTION_CODE_MAP[rawFuncCode] || `Code ${rawFuncCode}`,
+        settlementDate,
+        tatDueDate,
+        txnAmount: hit.txnAmount, // Authoritative Transaction Amount from master
+        disputeAmount: finalDisputeAmt, // Disputed Amount from CSV
+        memberMessageText: memberMsgVal,
+        cbReason: memberMsgVal,
+        plazaId,
+        plazaName,
+        vrn: hit.vrn || row['Vehicle Registration Number'] || '—',
+        tollTxnId: hit.tollTxnId || '—',
+        txnDate: hit.txnDate || '—',
+      });
     });
 
     return {
       totalRows: parsedRows.length,
       matchedCount,
-      unmatchedCount,
+      mismatchedCount,
       duplicateCount,
+      invalidCodeCount,
       results,
       errorRows,
     };
@@ -1033,7 +1059,7 @@ class DisputeManagementService {
     matchedResults.forEach((r) => {
       if (!r.isMatched || r.alreadyQueued) return;
       const exists = existing.some(
-        (e) => e.acqTxnId === r.rrn && Number(e.functionCode) === Number(r.functionCode)
+        (e) => e.acqTxnId === r.rrn && String(e.functionCode) === String(r.functionCode) && !e.closed
       );
       if (exists) return;
 

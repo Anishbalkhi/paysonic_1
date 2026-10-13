@@ -100,6 +100,7 @@ public class DataLoader implements CommandLineRunner {
             seedAuditLogs();
             seedTollTransactions();
             seedCycleWiseTransactions();
+            seedTransactionsForAllOnboardedPlazas();
             seedViolationTransactions();
             seedViolationRawRecords();
             seedViolationSettlementRecords();
@@ -990,6 +991,132 @@ public class DataLoader implements CommandLineRunner {
 
         tollTransactionRepository.saveAll(list);
         log.info("Seeded {} Cycle Wise Reconciliation transactions for Plazas 501101 & 502202.", list.size());
+    }
+
+    private void seedTransactionsForAllOnboardedPlazas() {
+        log.info("Ensuring Single Master Transaction Table has transactions for all onboarded plazas...");
+        List<TollTransaction> toAdd = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. Authoritative Master Transactions matching standard test RRNs (Netc/NPCI)
+        String[][] masterRecords = {
+            {"102047735808524901", "LKO09101", "AP16TJ1122", "34161FA820328EB002949010", "098767", "LKOIJHBGVHBJNK", "150.00", "2026-10-09T10:15:00"},
+            {"102047735808524902", "OCT10102", "MH31AB4455", "34161FA820328EB002949020", "121212", "OCTOBER1234", "85.00", "2026-10-06T11:20:00"},
+            {"102047735808524903", "ARC09283", "MH01CD7890", "34161FA820328EB002949030", "161616", "ARCON", "110.00", "2026-09-28T09:45:00"},
+            {"102047735808524904", "KOT10064", "RJ20EF3344", "34161FA820328EB002949040", "356734", "KOTA", "70.00", "2026-10-06T14:30:00"},
+            {"102047735808524905", "PUN09055", "MH12GH5566", "34161FA820328EB002949050", "502202", "PUNE BYPASS PLAZA", "95.00", "2026-09-05T08:10:00"},
+            {"102047735808524906", "NAS09106", "MH15IJ7788", "34161FA820328EB002949060", "503303", "NASHIK TOLL PLAZA", "60.00", "2026-09-10T13:00:00"},
+            {"102047735808524907", "KOL09127", "MH09KL9900", "34161FA820328EB002949070", "504404", "KOLHAPUR PLAZA", "130.00", "2026-09-12T16:25:00"},
+            {"102047735808524908", "SOL09158", "MH13MN1212", "34161FA820328EB002949080", "505505", "SOLAPUR PLAZA NH-65", "140.00", "2026-09-15T17:40:00"},
+            {"102047735808524909", "SPA10099", "BR02OP3434", "34161FA820328EB002949090", "656565", "SPACE", "200.00", "2026-10-09T18:15:00"},
+            {"102047735808524910", "RTP10080", "AP31QR5656", "34161FA820328EB002949100", "667788", "RTP12", "75.00", "2026-10-08T12:50:00"},
+            {"102047735808524718", "AM020905", "MH12VL3467", "34161FA820328EB002947820", "501101", "MUMBAI PLAZA NH-04", "85.00", "2026-09-02T05:30:00"},
+            {"102047735808524720", "AM020906", "MH12VL3467", "34161FA820328EB002947820", "502202", "PUNE BYPASS PLAZA", "120.00", "2026-09-02T06:30:00"},
+            {"102047735808524714", "AM020903", "MH12VL3467", "34161FA820328EB002947820", "503303", "NASHIK TOLL PLAZA", "60.00", "2026-09-02T03:30:00"},
+            {"102047735808524716", "AM020904", "MH12VL3467", "34161FA820328EB002947820", "504404", "KOLHAPUR PLAZA", "130.00", "2026-09-02T04:30:00"},
+            {"102047735808524712", "AM020902", "MH12VL3467", "34161FA820328EB002947820", "505505", "SOLAPUR PLAZA NH-65", "140.00", "2026-09-02T02:30:00"},
+            {"102047735808524722", "AM020907", "MH12VL3467", "34161FA820328EB002947820", "908895", "JAIPUR", "95.00", "2026-09-02T07:30:00"},
+            {"102047735808524706", "SK030902", "34MH51FA820", "34161FA82032866C03B7B640", "501101", "MUMBAI PLAZA NH-04", "125.00", "2026-09-03T10:00:00"},
+            {"102047735808524702", "ZP030902", "GH92DD6152", "34161FA82033E8260213B680", "503303", "NASHIK TOLL PLAZA", "75.00", "2026-09-02T02:00:00"},
+            {"102047735808524700", "ZP030901", "GH92DD6152", "34161FA82033E8260213B680", "121212", "OCTOBER1234", "85.00", "2026-09-02T01:00:00"},
+            {"102047735808524698", "ZP020929", "GH92DD6152", "34161FA82032866C020F7D20", "111111", "PAY PAY 1", "80.00", "2026-09-02T11:00:00"},
+            {"102047735808524696", "ZP020928", "GH92DD6152", "34161FA82032866C020F7D20", "161616", "ARCON", "80.00", "2026-09-02T10:00:00"},
+            {"102047735808524451", "IBKL-350", "GH92DD6152", "34161FA82032866C03B7B640", "745643", "ERHSHR", "50.00", "2026-08-30T12:00:00"},
+            {"102047735808524453", "IBKL-351", "GH92DD6152", "34161FA82032866C03B7B640", "501101", "MUMBAI PLAZA NH-04", "120.00", "2026-08-30T13:00:00"},
+            {"102047735808524455", "IBKL-352", "GH92DD6152", "34161FA82032866C03B7B640", "502202", "PUNE BYPASS PLAZA", "95.00", "2026-08-30T14:00:00"},
+            {"102047735808524457", "IBKL-353", "GH92DD6152", "34161FA82032866C03B7B640", "503303", "NASHIK TOLL PLAZA", "65.00", "2026-08-30T15:00:00"},
+            {"102047735808524459", "IBKL-354", "GH92DD6152", "34161FA82032866C03B7B640", "504404", "KOLHAPUR PLAZA", "130.00", "2026-08-30T16:00:00"},
+            {"102047735808524801", "SOL09101", "MH13AZ1234", "34161FA820328EB002948010", "505505", "SOLAPUR PLAZA NH-65", "120.00", "2026-10-05T11:30:00"},
+            {"102047735808524802", "SOL09102", "MH13BZ5678", "34161FA820328EB002948020", "505505", "SOLAPUR PLAZA NH-65", "65.00", "2026-10-06T14:15:00"},
+            {"102047735808524803", "PUN09103", "MH12CD9012", "34161FA820328EB002948030", "502202", "PUNE BYPASS PLAZA", "95.00", "2026-10-07T16:45:00"}
+        };
+
+        for (String[] m : masterRecords) {
+            String rrn = m[0];
+            if (tollTransactionRepository.findByAcqTxnId(rrn).isEmpty()) {
+                TollTransaction t = new TollTransaction();
+                t.setAcqTxnId(rrn);
+                t.setTollTxnId(m[1]);
+                t.setTollMessageId("MSG-" + m[1]);
+                t.setVrn(m[2]);
+                t.setTagId(m[3]);
+                t.setPlazaId(m[4]);
+                t.setPlazaName(m[5]);
+                t.setTxnAmount(new BigDecimal(m[6]));
+                t.setSettledAmount(new BigDecimal(m[6]));
+                t.setTxnDate(LocalDateTime.parse(m[7]));
+                t.setLaneId("L01");
+                t.setMvc("VC4");
+                t.setTagVc("4");
+                t.setAvc("VC4");
+                t.setStatus("Settled");
+                t.setReason("ACCEPTED");
+                t.setClearingCycle("C1");
+                t.setNpciSettledDate(LocalDateTime.parse(m[7]).plusHours(2));
+                t.setPlazaSettleDate(LocalDateTime.parse(m[7]).plusHours(4));
+                t.setTollFileName("ONLINE");
+                t.setPlazaType("Toll");
+                t.setIsViolation("No");
+                t.setIsDisputeAdd("No");
+                t.setIsDisputeSub("No");
+                toAdd.add(t);
+            }
+        }
+
+        // 2. Ensure every onboarded plaza has at least 15 settled transactions
+        List<Plaza> onboarded = plazaRepository.findAll();
+        String[] vehicleClasses = {"VC4", "VC5", "VC7", "VC10", "VC20"};
+        BigDecimal[] classFares = {new BigDecimal("85.00"), new BigDecimal("130.00"), new BigDecimal("175.00"), new BigDecimal("240.00"), new BigDecimal("410.00")};
+
+        for (Plaza p : onboarded) {
+            String pId = p.getId();
+            String pName = p.getName();
+            long existingCount = tollTransactionRepository.countByPlazaId(pId);
+            if (existingCount < 15) {
+                int needed = (int) (18 - existingCount);
+                for (int i = 1; i <= needed; i++) {
+                    String rrn = "428800" + pId + String.format("%04d", i);
+                    if (tollTransactionRepository.findByAcqTxnId(rrn).isEmpty()) {
+                        TollTransaction t = new TollTransaction();
+                        int classIdx = (i - 1) % vehicleClasses.length;
+                        String vc = vehicleClasses[classIdx];
+                        BigDecimal fare = classFares[classIdx];
+                        t.setAcqTxnId(rrn);
+                        t.setTollTxnId("TXN-" + pId + "-" + String.format("%03d", i));
+                        t.setTollMessageId("MSG-" + pId + "-" + String.format("%03d", i));
+                        t.setPlazaId(pId);
+                        t.setPlazaName(pName);
+                        t.setLaneId("L" + String.format("%02d", (i % 6) + 1));
+                        t.setVrn("MH" + (10 + (i % 40)) + "AB" + String.format("%04d", 1000 + i));
+                        t.setTagId("34161FA82032" + pId + String.format("%06d", i));
+                        t.setMvc(vc);
+                        t.setTagVc(vc.replace("VC", ""));
+                        t.setAvc(vc);
+                        t.setStatus("Settled");
+                        t.setReason("ACCEPTED");
+                        t.setTxnAmount(fare);
+                        t.setSettledAmount(fare);
+                        t.setTxnDate(now.minusDays(i % 15).minusHours(i % 12));
+                        t.setPlazaPostDate(t.getTxnDate().plusMinutes(5));
+                        t.setNpciRespDate(t.getTxnDate().plusMinutes(10));
+                        t.setNpciSettledDate(t.getTxnDate().plusHours(2));
+                        t.setPlazaSettleDate(t.getTxnDate().plusHours(4));
+                        t.setClearingCycle(i % 2 == 0 ? "C1" : "C2");
+                        t.setTollFileName("ONLINE");
+                        t.setPlazaType("Toll");
+                        t.setIsViolation("No");
+                        t.setIsDisputeAdd("No");
+                        t.setIsDisputeSub("No");
+                        toAdd.add(t);
+                    }
+                }
+            }
+        }
+
+        if (!toAdd.isEmpty()) {
+            tollTransactionRepository.saveAll(toAdd);
+            log.info("Saved {} additional dummy transactions across all onboarded plazas.", toAdd.size());
+        }
     }
 
     private void clearDisputeTransactions() {

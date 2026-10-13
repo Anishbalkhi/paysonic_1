@@ -10,14 +10,15 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
   if (!isOpen || !disputeRow) return null;
 
   const acqTxnId = disputeRow.acqTxnId;
-  const master = TRANSACTION_MASTER[acqTxnId] || {
-    tollTxnId: disputeRow.tollTxnId || '—',
-    vrn: disputeRow.vrn || '—',
-    tagId: disputeRow.tagId || '—',
-    plazaId: disputeRow.plazaId || '—',
-    plazaName: disputeRow.plazaName || '—',
-    txnDate: disputeRow.txnDate || '—',
-    txnAmount: disputeRow.txnAmount || 0,
+  const staticTxn = TRANSACTION_MASTER[acqTxnId] || {};
+  const master = {
+    tollTxnId: disputeRow.tollTxnId && disputeRow.tollTxnId !== '—' ? disputeRow.tollTxnId : (staticTxn.tollTxnId || '—'),
+    vrn: disputeRow.vrn && disputeRow.vrn !== '—' ? disputeRow.vrn : (staticTxn.vrn || '—'),
+    tagId: disputeRow.tagId && disputeRow.tagId !== '—' ? disputeRow.tagId : (staticTxn.tagId || '—'),
+    plazaId: disputeRow.plazaId || staticTxn.plazaId || '—',
+    plazaName: disputeRow.plazaName || staticTxn.plazaName || PLAZA_MAP[disputeRow.plazaId] || '—',
+    txnDate: disputeRow.txnDate || staticTxn.txnDate || '—',
+    txnAmount: disputeRow.txnAmount !== undefined && disputeRow.txnAmount !== null ? disputeRow.txnAmount : (staticTxn.txnAmount || 0),
   };
 
   const assignedAtDisplay = (() => {
