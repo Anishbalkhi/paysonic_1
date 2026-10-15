@@ -176,21 +176,6 @@ export const UserActivity = () => {
             <span className="live-label">LIVE SYNC ACTIVE</span>
           </div>
 
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => {
-              setExportContext({ count: auditEvents.length, filters: {}, initialScope: 'full', title: 'Export Audit' });
-              setIsExportOpen(true);
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Export Audit
-          </button>
           <button type="button" className="btn btn-primary" onClick={() => loadData(false)}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2">
               <path d="M23 4v6h-6" />
