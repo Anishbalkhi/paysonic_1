@@ -96,6 +96,11 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
+
+    .record-count-text {
+      font-size: 0.82rem;
+      color: #64748b;
+    }
   }
 
   .table-wrapper {
@@ -187,6 +192,10 @@
     .page-header-block {
       h1 { color: #60a5fa; }
       .subtitle { color: var(--text-soft, #9AA5B4); }
+    }
+
+    .table-toolbar-row .record-count-text {
+      color: var(--text-soft, #9AA5B4) !important;
     }
 
     .search-criteria-card,

@@ -1840,6 +1840,8 @@ button.btn-orange:disabled,
 }
 
 [data-theme="dark"] .table-top-bar .record-count,
+[data-theme="dark"] .table-top-bar .record-count-text,
+[data-theme="dark"] .table-top-bar .table-title,
 [data-theme="dark"] .table-top-bar strong {
   color: var(--ink, #E7ECF3) !important;
 }
@@ -1863,6 +1865,9 @@ button.btn-orange:disabled,
 :root:not([data-theme="dark"]) .transaction-search-normal-page thead th,
 :root:not([data-theme="dark"]) .search-dispute-page thead th,
 :root:not([data-theme="dark"]) .dispute-report-page thead th,
+:root:not([data-theme="dark"]) .closed-disputes-page thead th,
+:root:not([data-theme="dark"]) .chargeback-assign-page thead th,
+:root:not([data-theme="dark"]) .dispute-validate-page thead th,
 :root:not([data-theme="dark"]) .violation-bulk-action-page thead th,
 :root:not([data-theme="dark"]) .violation-raw-file-page thead th,
 :root:not([data-theme="dark"]) .violation-settlement-page thead th,
@@ -1901,6 +1906,9 @@ button.btn-orange:disabled,
 [data-theme="dark"] .transaction-search-normal-page thead th,
 [data-theme="dark"] .search-dispute-page thead th,
 [data-theme="dark"] .dispute-report-page thead th,
+[data-theme="dark"] .closed-disputes-page thead th,
+[data-theme="dark"] .chargeback-assign-page thead th,
+[data-theme="dark"] .dispute-validate-page thead th,
 [data-theme="dark"] .violation-bulk-action-page thead th,
 [data-theme="dark"] .violation-raw-file-page thead th,
 [data-theme="dark"] .violation-settlement-page thead th,

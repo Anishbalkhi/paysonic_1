@@ -675,7 +675,7 @@ export const DisputeValidate = () => {
             Export Excel
           </button>
         </div>
-        <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+        <div className="record-count-text">
           Showing {rows.length} assigned disputes
         </div>
       </div>

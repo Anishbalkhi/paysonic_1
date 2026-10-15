@@ -32,6 +32,8 @@ export const StateCitySelect = ({
   onStateBlur,
   onCityBlur,
   required = true,
+  statePlaceholder = 'Select State',
+  cityPlaceholder = 'Select City',
 }) => {
   const [stateSearch, setStateSearch] = useState(stateValue || '');
   const [stateOpen, setStateOpen] = useState(false);
@@ -124,9 +126,9 @@ export const StateCitySelect = ({
         const idx = filteredStates.findIndex(
           (s) => s.toUpperCase() === stateValue.toUpperCase()
         );
-        setStateHighlightedIndex(idx >= 0 ? idx : 0);
-      } else if (stateHighlightedIndex < 0 && filteredStates.length > 0) {
-        setStateHighlightedIndex(0);
+        setStateHighlightedIndex(idx >= 0 ? idx : -1);
+      } else {
+        setStateHighlightedIndex(-1);
       }
     } else {
       setStateHighlightedIndex(-1);
@@ -140,9 +142,9 @@ export const StateCitySelect = ({
         const idx = cityOptions.findIndex(
           (c) => c.value.toUpperCase() === cityValue.toUpperCase()
         );
-        setCityHighlightedIndex(idx >= 0 ? idx : 0);
-      } else if (cityHighlightedIndex < 0 && cityOptions.length > 0) {
-        setCityHighlightedIndex(0);
+        setCityHighlightedIndex(idx >= 0 ? idx : -1);
+      } else {
+        setCityHighlightedIndex(-1);
       }
     } else {
       setCityHighlightedIndex(-1);
@@ -196,7 +198,7 @@ export const StateCitySelect = ({
     setStateSearch(val);
     setIsStateSearching(true);
     setStateOpen(true);
-    setStateHighlightedIndex(0);
+    setStateHighlightedIndex(val ? 0 : -1);
     if (!val) {
       onStateChange('');
       onCityChange('');
@@ -210,7 +212,7 @@ export const StateCitySelect = ({
     setIsCitySearching(true);
     onCityChange(val);
     setCityOpen(true);
-    setStateHighlightedIndex(0);
+    setCityHighlightedIndex(val ? 0 : -1);
   };
 
   const handleStateKeyDown = (e) => {
@@ -246,7 +248,7 @@ export const StateCitySelect = ({
       if (stateOpen) {
         if (stateHighlightedIndex >= 0 && stateHighlightedIndex < filteredStates.length) {
           handleStateSelect(filteredStates[stateHighlightedIndex]);
-        } else if (filteredStates.length > 0) {
+        } else if (isStateSearching && filteredStates.length > 0) {
           handleStateSelect(filteredStates[0]);
         }
       } else {
@@ -303,7 +305,7 @@ export const StateCitySelect = ({
       if (cityOpen) {
         if (cityHighlightedIndex >= 0 && cityHighlightedIndex < cityOptions.length) {
           handleCitySelect(cityOptions[cityHighlightedIndex].value);
-        } else if (cityOptions.length > 0) {
+        } else if (isCitySearching && cityOptions.length > 0) {
           handleCitySelect(cityOptions[0].value);
         } else if (citySearch.trim()) {
           handleCitySelect(citySearch.trim().toUpperCase());
@@ -378,17 +380,8 @@ export const StateCitySelect = ({
   };
 
   // Compute live value displayed inside inputs
-  const displayStateValue = isStateSearching
-    ? stateSearch
-    : stateOpen && stateHighlightedIndex >= 0 && filteredStates[stateHighlightedIndex]
-    ? filteredStates[stateHighlightedIndex]
-    : (stateValue || '');
-
-  const displayCityValue = isCitySearching
-    ? citySearch
-    : cityOpen && cityHighlightedIndex >= 0 && cityOptions[cityHighlightedIndex]?.value
-    ? cityOptions[cityHighlightedIndex].value
-    : (cityValue || '');
+  const displayStateValue = isStateSearching ? stateSearch : (stateValue || '');
+  const displayCityValue = isCitySearching ? citySearch : (cityValue || '');
 
   return (
     <>
@@ -402,7 +395,7 @@ export const StateCitySelect = ({
             ref={stateInputRef}
             type="text"
             className="scs-input"
-            placeholder="Type or press ↓ to select state…"
+            placeholder={statePlaceholder}
             value={displayStateValue}
             onFocus={() => {
               setIsStateSearching(false);
@@ -478,7 +471,7 @@ export const StateCitySelect = ({
             ref={cityInputRef}
             type="text"
             className="scs-input"
-            placeholder={stateValue ? 'Type or press ↓ to select city…' : 'Select state first'}
+            placeholder={stateValue ? cityPlaceholder : 'Select state first'}
             value={displayCityValue}
             disabled={!stateValue}
             onFocus={() => {

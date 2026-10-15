@@ -47,6 +47,13 @@ public class Concessionaire {
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("concessionaireId")
+    public void setConcessionaireId(String cid) {
+        if (this.id == null || this.id.trim().isEmpty()) {
+            this.id = cid;
+        }
+    }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

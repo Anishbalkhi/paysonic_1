@@ -98,8 +98,15 @@ class OnboardingService {
             bankGst: p.bankGst || p.bank_gst || '18',
             npciGst: p.npciGst || p.npci_gst || '18',
           },
+          createdAt: p.createdAt || p.created_at || '',
+          updatedAt: p.updatedAt || p.updated_at || '',
           _fromRailway: true,
         }));
+        normalised.sort((a, b) => {
+          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tB - tA;
+        });
         try {
           localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(normalised));
         } catch {}
@@ -388,6 +395,7 @@ class OnboardingService {
     const local = getLocalStore() || {};
 
     const payload = {
+      id: concessionaire.id,
       concessionaireId: concessionaire.id,
       name: concessionaire.name,
       address: concessionaire.address,
@@ -396,41 +404,52 @@ class OnboardingService {
     };
 
     let savedOnRailway = false;
-    try {
-      if (isEdit) {
-        try {
-          await httpClient.put(`/api/concessionaires/${concessionaire.id}`, payload, {
-            headers: { 'X-Actor-ID': actor.id },
-          });
-          savedOnRailway = true;
-        } catch (putErr) {
-          // If live Railway container doesn't have PUT endpoint yet, fall back to POST (JPA upsert)
-          if (putErr?.response?.status === 404 || putErr?.response?.status === 405) {
-            await httpClient.post('/api/concessionaires', payload, {
-              headers: { 'X-Actor-ID': actor.id },
-            });
-            savedOnRailway = true;
-          } else {
-            throw putErr;
-          }
-        }
-      } else {
-        await httpClient.post('/api/concessionaires', payload, {
+    let actualSaved = { ...concessionaire };
+
+    if (isEdit) {
+      try {
+        const res = await httpClient.put(`/api/concessionaires/${concessionaire.id}`, payload, {
           headers: { 'X-Actor-ID': actor.id },
         });
+        if (res && res.data) {
+          actualSaved = { ...actualSaved, ...res.data };
+        }
         savedOnRailway = true;
+      } catch (putErr) {
+        // If live Railway container doesn't have PUT endpoint yet, fall back to POST (JPA upsert)
+        if (putErr?.response?.status === 404 || putErr?.response?.status === 405) {
+          const res = await httpClient.post('/api/concessionaires', payload, {
+            headers: { 'X-Actor-ID': actor.id },
+          });
+          if (res && res.data) {
+            actualSaved = { ...actualSaved, ...res.data };
+          }
+          savedOnRailway = true;
+        } else {
+          throw putErr;
+        }
       }
-    } catch (err) {
-      console.warn('[OnboardingService] Concessionaire save network/API note:', err?.message);
+    } else {
+      const res = await httpClient.post('/api/concessionaires', payload, {
+        headers: { 'X-Actor-ID': actor.id },
+      });
+      if (res && res.data) {
+        actualSaved = { ...actualSaved, ...res.data };
+      }
+      savedOnRailway = true;
     }
 
+    const targetId = actualSaved.id || concessionaire.id;
     const existingConcess = local.concessionaires || [];
-    const alreadyExists = existingConcess.some((c) => c.id === concessionaire.id);
+    const alreadyExists = existingConcess.some((c) => c.id === targetId || c.id === concessionaire.id);
     const updatedConcess = alreadyExists
-      ? existingConcess.map((c) => (c.id === concessionaire.id ? concessionaire : c))
-      : [...existingConcess, concessionaire];
+      ? existingConcess.map((c) => (c.id === targetId || c.id === concessionaire.id ? actualSaved : c))
+      : [...existingConcess, actualSaved];
 
     saveLocalStore({ ...local, concessionaires: updatedConcess });
+    try {
+      localStorage.setItem(CACHE_KEY_CONCESSIONAIRES, JSON.stringify(updatedConcess));
+    } catch {}
 
     // Audit trail
     UserActivityService.recordAuditEvent({
@@ -438,13 +457,13 @@ class OnboardingService {
       action: isEdit ? 'UPDATE_CONCESSIONAIRE' : 'CREATE_CONCESSIONAIRE',
       actionLabel: isEdit ? 'Updated Concessionaire Details' : 'Registered Concessionaire',
       status: 'SUCCESS',
-      target: `${concessionaire.name} (${concessionaire.id})`,
-      details: `Concessionaire ${concessionaire.name} (ID: ${concessionaire.id}) ${isEdit ? 'updated' : 'registered'} in ${savedOnRailway ? 'Railway MySQL.' : 'memory store.'} Mail: ${concessionaire.mail}.`,
+      target: `${actualSaved.name} (${targetId})`,
+      details: `Concessionaire ${actualSaved.name} (ID: ${targetId}) ${isEdit ? 'updated' : 'registered'} in Railway MySQL. Mail: ${actualSaved.mail}.`,
       actor,
-      after: { id: concessionaire.id, name: concessionaire.name },
+      after: { id: targetId, name: actualSaved.name },
     });
 
-    return { ...concessionaire, _savedOnRailway: savedOnRailway };
+    return { ...actualSaved, _savedOnRailway: savedOnRailway };
   }
 
   async updateConcessionaire(concessionaire, options = {}) {
@@ -800,8 +819,16 @@ class OnboardingService {
             bankGst: p.bankGst || p.bank_gst || '18',
             npciGst: p.npciGst || p.npci_gst || '18',
           },
+          createdAt: p.createdAt || p.created_at || '',
+          updatedAt: p.updatedAt || p.updated_at || '',
           _fromRailway: true,
         }));
+
+        normalisedPlazas.sort((a, b) => {
+          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tB - tA;
+        });
 
         const backendStore = {
           concessionaires: (res.data.concessionaires || []).map((c) => ({

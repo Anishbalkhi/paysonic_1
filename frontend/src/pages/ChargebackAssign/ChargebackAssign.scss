@@ -290,8 +290,8 @@
           z-index: 5;
 
           th {
-            background-color: #0d47a1;
-            color: #ffffff;
+            background-color: #0d47a1 !important;
+            color: #ffffff !important;
             font-weight: 700;
             padding: 10px 14px;
             border: 1px solid #1557bf;
@@ -440,7 +440,11 @@
 
       .card-title,
       .table-title {
-        color: var(--text, #E7ECF3);
+        color: var(--text, #E7ECF3) !important;
+      }
+
+      .record-count-text {
+        color: var(--text-soft, #9AA5B4) !important;
       }
 
       .filters-grid .field-box {

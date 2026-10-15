@@ -198,7 +198,7 @@ export const Onboarding = () => {
   };
 
   const filteredPlazas = useMemo(() => {
-    return scopedPlazas.filter((p) => {
+    const list = scopedPlazas.filter((p) => {
       const matchesSearch =
         !plazaSearch ||
         (p.id + p.name + p.orgId + p.agencyId + getConcessionaireName(p.concessionaireId) + p.city + p.state)
@@ -208,6 +208,16 @@ export const Onboarding = () => {
       const matchesStatus = !plazaStatusFilter || p.status === plazaStatusFilter;
       const matchesCategory = !plazaCategoryFilter || p.category === plazaCategoryFilter;
       return matchesSearch && matchesConcess && matchesStatus && matchesCategory;
+    });
+
+    // Explicitly sort latest created first (newest timestamp first, fallback to original unshift order)
+    return [...list].sort((a, b) => {
+      const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (tA && tB && tA !== tB) {
+        return tB - tA;
+      }
+      return 0;
     });
   }, [scopedPlazas, plazaSearch, plazaConcessFilter, plazaStatusFilter, plazaCategoryFilter, store.concessionaires]);
 
@@ -476,10 +486,11 @@ export const Onboarding = () => {
   const [concessErrors, setConcessErrors] = useState({});
   const [isEditingConcess, setIsEditingConcess] = useState(false);
   const [editingConcessId, setEditingConcessId] = useState('');
+  const [isSavingConcess, setIsSavingConcess] = useState(false);
 
   const nextConcessionaireId = useMemo(() => {
-    const maxNum = store.concessionaires.reduce((acc, c) => {
-      const match = c.id.match(/^CON-(\d+)$/);
+    const maxNum = (store.concessionaires || []).reduce((acc, c) => {
+      const match = String(c?.id || '').trim().match(/^CON-(\d+)$/i);
       if (match) {
         const num = parseInt(match[1], 10);
         return num > acc ? num : acc;
@@ -607,8 +618,10 @@ export const Onboarding = () => {
     }
   };
 
-  const handleSaveConcessionaire = (e) => {
+  const handleSaveConcessionaire = async (e) => {
     e.preventDefault();
+    if (isSavingConcess) return;
+
     const fields = ['name', 'address', 'mail', 'contact'];
     const errors = {};
     fields.forEach((f) => {
@@ -638,43 +651,49 @@ export const Onboarding = () => {
     const wasEditing = isEditingConcess;
     const targetId = concessRecord.id;
 
-    // Optimistic update
-    setStore((prev) => {
-      if (wasEditing) {
+    setIsSavingConcess(true);
+
+    try {
+      // Direct Railway MySQL API write — wait for server commit to guarantee referential integrity
+      const savedResult = await OnboardingService.saveConcessionaire(concessRecord, {
+        isEdit: wasEditing,
+        actor: currentUser
+          ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
+          : undefined,
+      });
+
+      const confirmedId = savedResult?.id || targetId;
+      const finalRecord = { ...concessRecord, id: confirmedId };
+
+      setStore((prev) => {
+        if (wasEditing) {
+          return {
+            ...prev,
+            concessionaires: prev.concessionaires.map((c) =>
+              c.id === targetId ? finalRecord : c
+            ),
+          };
+        }
         return {
           ...prev,
-          concessionaires: prev.concessionaires.map((c) =>
-            c.id === targetId ? concessRecord : c
-          ),
+          concessionaires: [...prev.concessionaires, finalRecord],
         };
-      }
-      return {
-        ...prev,
-        concessionaires: [...prev.concessionaires, concessRecord],
-      };
-    });
-
-    setIsEditingConcess(false);
-    setEditingConcessId('');
-    setConcessForm({ name: '', address: '', mail: '', contact: '' });
-    setConcessErrors({});
-
-    // Direct Railway MySQL API write
-    OnboardingService.saveConcessionaire(concessRecord, {
-      isEdit: wasEditing,
-      actor: currentUser
-        ? { id: currentUser.id, name: currentUser.name, role: currentUser.role, ipAddress: '127.0.0.1' }
-        : undefined,
-    })
-      .then(() => {
-        showToast(
-          `Concessionaire ${concessRecord.name} (${targetId}) ${wasEditing ? 'updated' : 'saved'} successfully!`,
-          'success'
-        );
-      })
-      .catch((err) => {
-        showToast(`⚠ Database Error: ${err?.response?.data?.error || err.message}`, 'error');
       });
+
+      setIsEditingConcess(false);
+      setEditingConcessId('');
+      setConcessForm({ name: '', address: '', mail: '', contact: '' });
+      setConcessErrors({});
+
+      showToast(
+        `Concessionaire ${concessRecord.name} (${confirmedId}) ${wasEditing ? 'updated' : 'saved'} successfully!`,
+        'success'
+      );
+    } catch (err) {
+      showToast(`⚠ Database Error: ${err?.response?.data?.error || err.message}`, 'error');
+    } finally {
+      setIsSavingConcess(false);
+    }
   };
 
   // =========================================================================
@@ -819,8 +838,8 @@ export const Onboarding = () => {
         const raw = (val !== undefined ? val : currentForm.geoCode) || '';
         const v = raw.trim();
         if (!v) return 'Plaza Geo Code is required';
-        if (!/^\d{1,50}$/.test(v)) {
-          return 'Geo Code must contain only numeric digits (up to 50 digits)';
+        if (!/^[0-9.,]{1,50}$/.test(v)) {
+          return 'Geo Code must contain only digits, (.) and (,) (up to 50 characters)';
         }
         if (store.plazas.some((p) => (p.geoCode || '').trim() === v && String(p.id).trim().toUpperCase() !== String(editingPlazaOriginalId || '').trim().toUpperCase())) {
           return 'Geo Code already exists! Each plaza must have a unique Geo Code.';
@@ -926,8 +945,8 @@ export const Onboarding = () => {
     const cleanGeo = geoCode.replace(/\s+/g, '');
     if (!cleanGeo) {
       errors.geoCode = 'Plaza Geo Code is required';
-    } else if (!/^\d{1,50}$/.test(cleanGeo)) {
-      errors.geoCode = 'Geo Code must contain only numeric digits (up to 50 digits)';
+    } else if (!/^[0-9.,]{1,50}$/.test(cleanGeo)) {
+      errors.geoCode = 'Geo Code must contain only digits, (.) and (,) (up to 50 characters)';
     } else if (!errors.geoCode && store.plazas.some((p) => (p.geoCode || '').trim() === cleanGeo && String(p.id).trim().toUpperCase() !== targetOriginalId)) {
       errors.geoCode = 'Geo Code already exists! Each plaza must have a unique Geo Code.';
     }
@@ -952,6 +971,8 @@ export const Onboarding = () => {
       contactAddress: (plazaForm.contactAddress || '').toUpperCase(),
       contactNo,
       contactMail,
+      createdAt: plazaForm.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     try {
@@ -1024,6 +1045,11 @@ export const Onboarding = () => {
 
       showToast(`✓ Plaza ${savedPlaza.name} (${savedPlaza.id}) saved successfully!`, 'success');
       handleResetPlazaForm();
+      setPlazaSearch('');
+      setPlazaConcessFilter('');
+      setPlazaStatusFilter('');
+      setPlazaCategoryFilter('');
+      setPlazaPage(1);
       setTab('view');
     } catch (err) {
       const errorMsg = err?.response?.data?.error || err.message || 'Database Save Failed';
@@ -2270,8 +2296,8 @@ export const Onboarding = () => {
                   >
                     {isEditingConcess ? 'Reset' : 'Clear Form'}
                   </button>
-                  <button type="submit" className="btn-primary">
-                    {isEditingConcess ? 'Update Concessionaire' : 'Save Concessionaire'}
+                  <button type="submit" className="btn-primary" disabled={isSavingConcess}>
+                    {isSavingConcess ? 'Saving...' : (isEditingConcess ? 'Update Concessionaire' : 'Save Concessionaire')}
                   </button>
                 </div>
               </form>
@@ -2656,16 +2682,16 @@ export const Onboarding = () => {
                   <input
                     type="text"
                     maxLength={50}
-                    placeholder="Enter numeric Geo Code (up to 50 digits)"
+                    placeholder="Enter Geo Code (e.g. 19.1726,72.9565)"
                     value={plazaForm.geoCode}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 50);
+                      const val = e.target.value.replace(/[^0-9.,]/g, '').slice(0, 50);
                       handlePlazaChange('geoCode', val);
                     }}
                     onBlur={() => handlePlazaBlur('geoCode')}
                     className={plazaErrors.geoCode ? 'invalid' : ''}
                   />
-                  <div className="field-hint">Numeric digits only · Max 50 digits</div>
+                  <div className="field-hint">Digits, (.) and (,) allowed · Max 50 characters</div>
                   {plazaErrors.geoCode && <div className="field-error">{plazaErrors.geoCode}</div>}
                 </div>
               </div>

@@ -691,7 +691,7 @@ export const ClosedDisputes = () => {
         <div className="table-top-bar">
           <div className="table-title">Closed Disputes Working Queue</div>
           <div className="top-bar-right-actions">
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+            <span className="record-count-text">
               Showing {rows.length} records {fetchTime && `(Fetched: ${fetchTime})`}
             </span>
             <button
@@ -763,10 +763,10 @@ export const ClosedDisputes = () => {
               ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan="17" className="text-center py-5 empty-cell">
-                    <div style={{ padding: '24px 0' }}>
-                      <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📂</div>
-                      <div style={{ fontWeight: 600, color: '#334155' }}>No Closed / Action-Taken Disputes Found</div>
-                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
+                    <div className="empty-state-box">
+                      <div className="empty-state-icon">📂</div>
+                      <div className="empty-state-title">No Closed / Action-Taken Disputes Found</div>
+                      <div className="empty-state-sub">
                         Disputes will appear here immediately once a plaza validates and submits their decision (Accept or Reject).
                       </div>
                     </div>
@@ -796,14 +796,14 @@ export const ClosedDisputes = () => {
                       </td>
                       <td className="text-center">{r.txnDate}</td>
                       <td className="text-right">₹ {Number(r.txnAmount || 0).toFixed(2)}</td>
-                      <td className="text-right font-bold" style={{ color: '#002060' }}>
+                      <td className="text-right font-bold dispute-amt-cell">
                         ₹ {Number(r.disputeAmount || 0).toFixed(2)}
                       </td>
                       <td className="text-center">
                         <span className="code-pill">{r.functionCode}</span>
                       </td>
                       <td>{r.disputeType}</td>
-                      <td className="text-center" style={{ fontSize: '0.8rem', color: '#334155', whiteSpace: 'nowrap' }}>
+                      <td className="text-center action-date-cell">
                         {r.decidedAt ? new Date(r.decidedAt).toLocaleString('en-IN') : (r.plazaActionTime || '—')}
                       </td>
                       <td className="reason-cell" title={r.plazaReason || '—'}>
@@ -823,7 +823,7 @@ export const ClosedDisputes = () => {
                             📎 View ({counterEv.length})
                           </button>
                         ) : (
-                          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>None</span>
+                          <span className="empty-evidence-text">None</span>
                         )}
                       </td>
                       <td className="text-center">
@@ -837,7 +837,7 @@ export const ClosedDisputes = () => {
                             📎 View ({adminEv.length})
                           </button>
                         ) : (
-                          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>None</span>
+                          <span className="empty-evidence-text">None</span>
                         )}
                       </td>
                       <td className="text-center">

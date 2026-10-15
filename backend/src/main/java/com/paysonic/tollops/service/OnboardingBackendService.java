@@ -49,7 +49,11 @@ public class OnboardingBackendService {
     }
 
     public boolean concessionaireExists(String id) {
-        return id != null && concessionaireRepo.existsById(id);
+        if (id == null || id.trim().isEmpty()) return false;
+        String cleanId = id.trim().toUpperCase();
+        if (concessionaireRepo.existsById(cleanId)) return true;
+        return concessionaireRepo.findAll().stream()
+                .anyMatch(c -> c.getId() != null && cleanId.equalsIgnoreCase(c.getId().trim()));
     }
 
     public Optional<Concessionaire> getConcessionaire(String id) {
@@ -61,8 +65,21 @@ public class OnboardingBackendService {
     }
 
     public Concessionaire saveConcessionaire(Concessionaire c) {
-        if (c.getId() == null || c.getId().trim().isEmpty()) {
-            c.setId("CON-" + (1000 + concessionaireRepo.count() + 1));
+        int maxSeq = concessionaireRepo.findAll().stream()
+                .map(Concessionaire::getId)
+                .filter(id -> id != null && id.trim().toUpperCase().startsWith("CON-"))
+                .map(id -> {
+                    try {
+                        return Integer.parseInt(id.trim().substring(4));
+                    } catch (Exception e) {
+                        return 1000;
+                    }
+                })
+                .max(Integer::compareTo)
+                .orElse(1000);
+
+        if (c.getId() == null || c.getId().trim().isEmpty() || concessionaireRepo.existsById(c.getId().trim().toUpperCase())) {
+            c.setId("CON-" + (maxSeq + 1));
         } else {
             c.setId(c.getId().trim().toUpperCase());
         }
@@ -94,7 +111,7 @@ public class OnboardingBackendService {
     // ─── Plazas ──────────────────────────────────────────────────────────────────
 
     public List<Plaza> getAllPlazas() {
-        return plazaRepo.findAll();
+        return plazaRepo.findAllByOrderByCreatedAtDesc();
     }
 
     public boolean plazaExists(String id) {
@@ -268,8 +285,8 @@ public class OnboardingBackendService {
         List<Concessionaire> concessionaires = concessionaireRepo.findAll();
         store.put("concessionaires", concessionaires);
 
-        // 2. Plazas (with MDR unpacked)
-        List<Plaza> plazas = plazaRepo.findAll();
+        // 2. Plazas (with MDR unpacked, ordered latest created first)
+        List<Plaza> plazas = plazaRepo.findAllByOrderByCreatedAtDesc();
         List<Map<String, Object>> plazaList = new ArrayList<>();
         for (Plaza p : plazas) {
             Map<String, Object> map = new LinkedHashMap<>();
@@ -295,6 +312,8 @@ public class OnboardingBackendService {
             map.put("contactNo", p.getContactNo());
             map.put("contactMail", p.getContactMail());
             map.put("mdr", parseJsonMap(p.getMdrJson()));
+            map.put("createdAt", p.getCreatedAt() != null ? p.getCreatedAt().toString() : "");
+            map.put("updatedAt", p.getUpdatedAt() != null ? p.getUpdatedAt().toString() : "");
             map.put("_source", "REAL_DATABASE");
             plazaList.add(map);
         }

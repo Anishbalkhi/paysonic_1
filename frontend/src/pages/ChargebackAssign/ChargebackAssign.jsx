@@ -658,7 +658,7 @@ export const ChargebackAssign = () => {
           </div>
           <div className="stat-box">
             <span>Total Dispute Value</span>
-            <strong style={{ color: '#0f172a' }}>
+            <strong>
               ₹ {Number(miniStats.totalDisputeValue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
             </strong>
             <small>Across active disputes</small>
@@ -907,7 +907,7 @@ export const ChargebackAssign = () => {
         <div className="table-top-bar">
           <div className="table-title">Chargeback Working Queue</div>
           <div className="top-bar-right-actions">
-            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+            <span className="record-count-text">
               Showing {rows.length} records
             </span>
             <button
@@ -1044,7 +1044,7 @@ export const ChargebackAssign = () => {
                           {r.plazaAction === 'Yes' ? 'Yes' : 'No'}
                         </span>
                       </td>
-                      <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap', color: '#0f172a' }}>
+                      <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
                         {r.plazaActionTime || '—'}
                       </td>
                       <td>
