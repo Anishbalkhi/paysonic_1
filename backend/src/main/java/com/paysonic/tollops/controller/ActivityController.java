@@ -104,7 +104,7 @@ public class ActivityController {
 
     @GetMapping("/export")
     public ResponseEntity<ExportResponseDTO> exportAudit(
-            @RequestParam(value = "format", defaultValue = "csv") String format,
+            @RequestParam(value = "format", defaultValue = "excel") String format,
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "module", required = false) String module,
             @RequestParam(value = "status", required = false) String status,

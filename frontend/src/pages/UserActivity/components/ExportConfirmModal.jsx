@@ -51,15 +51,7 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
         format,
         scope === 'filtered' ? 'filter_ledger' : 'audit'
       );
-      const blob = new Blob([result.data], { type: result.mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = result.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      UserActivityService.downloadFile(result);
       if (onExportComplete) onExportComplete();
       onClose();
     } catch (err) {
@@ -90,17 +82,45 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
           <div className="field">
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Export File Format</label>
             <div className="format-options">
-              <label className="format-pill selected">
+              <label className={`format-pill ${format === 'excel' ? 'selected' : ''}`}>
                 <input
                   type="radio"
                   name="format"
                   value="excel"
-                  checked={true}
-                  readOnly
+                  checked={format === 'excel'}
+                  onChange={() => setFormat('excel')}
                 />
                 <div>
                   <strong>Export Excel (.xls)</strong>
-                  <span>Formatted Microsoft Excel workbook with styled headers, Sr No sequence &amp; audit metadata</span>
+                  <span>Formatted Excel workbook with styled headers, Sr No sequence &amp; audit metadata</span>
+                </div>
+              </label>
+
+              <label className={`format-pill ${format === 'csv' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="format"
+                  value="csv"
+                  checked={format === 'csv'}
+                  onChange={() => setFormat('csv')}
+                />
+                <div>
+                  <strong>CSV File (.csv)</strong>
+                  <span>Standard comma-separated spreadsheet data</span>
+                </div>
+              </label>
+
+              <label className={`format-pill ${format === 'json' ? 'selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="format"
+                  value="json"
+                  checked={format === 'json'}
+                  onChange={() => setFormat('json')}
+                />
+                <div>
+                  <strong>Structured JSON (.json)</strong>
+                  <span>Raw payload with before/after deltas for SIEM</span>
                 </div>
               </label>
             </div>
@@ -141,6 +161,9 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
             </div>
             <div>
               Record Count: <strong>{countToExport} matching event{countToExport === 1 ? '' : 's'}</strong>
+            </div>
+            <div style={{ marginTop: '3px' }}>
+              File Format: <strong>{format === 'excel' ? 'Formatted Excel (.xls)' : format === 'csv' ? 'CSV File (.csv)' : 'Structured JSON (.json)'}</strong>
             </div>
             <div style={{ marginTop: '3px', fontSize: '12px', color: '#035388' }}>
               Filters Applied:{' '}

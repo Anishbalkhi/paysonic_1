@@ -381,36 +381,237 @@ public class ActivityService {
         );
         auditLogRepository.save(exportEvent);
 
-        String filename = "paysonic_audit_export_" + LocalDate.now().toString() + "." + format;
-
         if ("csv".equalsIgnoreCase(format)) {
+            String filename = "paysonic_audit_export_" + LocalDate.now().toString() + ".csv";
             StringBuilder sb = new StringBuilder();
-            sb.append("Event ID,Timestamp,Actor Name,Actor Role,Module,Action,Reference ID,Correlation ID,Target,Plaza Scope,Outcome,IP Address\n");
+            sb.append("Sr No,Event ID,Timestamp,Actor Name,Actor Role,Module,Action,Reference ID,Correlation ID,Target,Plaza Scope,Outcome,IP Address,Details\n");
+            int idx = 1;
             for (AuditLogResponseDTO r : records) {
-                sb.append(String.format("%s,%s,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%s,%s\n",
+                sb.append(String.format("%d,%s,%s,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%s,%s,\"%s\"\n",
+                        idx++,
                         r.getId(),
                         r.getTimestamp() != null ? r.getTimestamp().toString() : "",
-                        r.getActor() != null ? r.getActor().getName() : "",
-                        r.getActor() != null ? r.getActor().getRole() : "",
-                        r.getModule() != null ? r.getModule() : "",
-                        r.getActionLabel() != null ? r.getActionLabel() : r.getAction(),
-                        r.getReferenceId() != null ? r.getReferenceId() : "",
-                        r.getCorrelationId() != null ? r.getCorrelationId() : "",
-                        r.getTarget() != null ? r.getTarget().replace("\"", "\"\"") : "",
-                        r.getPlaza() != null ? r.getPlaza() : "",
+                        r.getActor() != null ? escapeCsv(r.getActor().getName()) : "",
+                        r.getActor() != null ? escapeCsv(r.getActor().getRole()) : "",
+                        r.getModule() != null ? escapeCsv(r.getModule()) : "",
+                        r.getActionLabel() != null ? escapeCsv(r.getActionLabel()) : escapeCsv(r.getAction()),
+                        r.getReferenceId() != null ? escapeCsv(r.getReferenceId()) : "",
+                        r.getCorrelationId() != null ? escapeCsv(r.getCorrelationId()) : "",
+                        r.getTarget() != null ? escapeCsv(r.getTarget()) : "",
+                        r.getPlaza() != null ? escapeCsv(r.getPlaza()) : "",
                         r.getStatus() != null ? r.getStatus() : "SUCCESS",
-                        r.getActor() != null ? r.getActor().getIpAddress() : "127.0.0.1"
+                        r.getActor() != null ? escapeCsv(r.getActor().getIpAddress()) : "127.0.0.1",
+                        r.getDetails() != null ? escapeCsv(r.getDetails()) : ""
                 ));
             }
             return new ExportResponseDTO(sb.toString(), filename, "text/csv", records.size());
         }
 
+        if ("excel".equalsIgnoreCase(format) || "xls".equalsIgnoreCase(format)) {
+            String filename = "paysonic_audit_export_" + LocalDate.now().toString() + ".xls";
+            String xml = buildExcelXml(records);
+            return new ExportResponseDTO(xml, filename, "application/vnd.ms-excel;charset=utf-8", records.size());
+        }
+
         try {
+            String filename = "paysonic_audit_export_" + LocalDate.now().toString() + ".json";
             String jsonContent = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(records);
             return new ExportResponseDTO(jsonContent, filename, "application/json", records.size());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "JSON serialization failed", e);
         }
+    }
+
+    private String escapeXml(String value) {
+        if (value == null) return "";
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        return value.replace("\"", "\"\"");
+    }
+
+    private String buildExcelXml(List<AuditLogResponseDTO> records) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        String fetchTimeStr = LocalDateTime.now().format(dtf);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<?mso-application progid=\"Excel.Sheet\"?>\n");
+        sb.append("<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"\n");
+        sb.append(" xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n");
+        sb.append(" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"\n");
+        sb.append(" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"\n");
+        sb.append(" xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n");
+        sb.append(" <DocumentProperties xmlns=\"urn:schemas-microsoft-com:office:office\">\n");
+        sb.append("  <Author>Paysonic Operations</Author>\n");
+        sb.append("  <Created>").append(LocalDateTime.now().toString()).append("</Created>\n");
+        sb.append(" </DocumentProperties>\n");
+        sb.append(" <Styles>\n");
+        sb.append("  <Style ss:ID=\"Default\" ss:Name=\"Normal\">\n");
+        sb.append("   <Alignment ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Borders/>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"10\" ss:Color=\"#1E293B\"/>\n");
+        sb.append("   <Interior/>\n");
+        sb.append("   <NumberFormat/>\n");
+        sb.append("   <Protection/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sTitle\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"14\" ss:Color=\"#0F2F6B\" ss:Bold=\"1\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sSubtitle\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"10\" ss:Color=\"#475569\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sGreenBar\">\n");
+        sb.append("   <Interior ss:Color=\"#10B981\" ss:Pattern=\"Solid\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sHeader\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"1\"/>\n");
+        sb.append("   <Borders>\n");
+        sb.append("    <Border ss:Position=\"Bottom\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#CBD5E1\"/>\n");
+        sb.append("    <Border ss:Position=\"Left\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#CBD5E1\"/>\n");
+        sb.append("    <Border ss:Position=\"Right\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#CBD5E1\"/>\n");
+        sb.append("    <Border ss:Position=\"Top\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#CBD5E1\"/>\n");
+        sb.append("   </Borders>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"10.5\" ss:Color=\"#FFFFFF\" ss:Bold=\"1\"/>\n");
+        sb.append("   <Interior ss:Color=\"#0F2F6B\" ss:Pattern=\"Solid\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sDataCenter\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Borders>\n");
+        sb.append("    <Border ss:Position=\"Bottom\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Left\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Right\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Top\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("   </Borders>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"9.5\" ss:Color=\"#1E293B\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sDataText\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Borders>\n");
+        sb.append("    <Border ss:Position=\"Bottom\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Left\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Right\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Top\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("   </Borders>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"9.5\" ss:Color=\"#1E293B\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sSuccess\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Borders>\n");
+        sb.append("    <Border ss:Position=\"Bottom\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Left\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Right\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Top\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("   </Borders>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"9.5\" ss:Color=\"#047857\" ss:Bold=\"1\"/>\n");
+        sb.append("   <Interior ss:Color=\"#D1FAE5\" ss:Pattern=\"Solid\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sWarning\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Borders>\n");
+        sb.append("    <Border ss:Position=\"Bottom\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Left\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Right\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Top\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("   </Borders>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"9.5\" ss:Color=\"#B45309\" ss:Bold=\"1\"/>\n");
+        sb.append("   <Interior ss:Color=\"#FEF3C7\" ss:Pattern=\"Solid\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append("  <Style ss:ID=\"sFailure\">\n");
+        sb.append("   <Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\"/>\n");
+        sb.append("   <Borders>\n");
+        sb.append("    <Border ss:Position=\"Bottom\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Left\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Right\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("    <Border ss:Position=\"Top\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" ss:Color=\"#E2E8F0\"/>\n");
+        sb.append("   </Borders>\n");
+        sb.append("   <Font ss:FontName=\"Calibri\" ss:Size=\"9.5\" ss:Color=\"#B91C1C\" ss:Bold=\"1\"/>\n");
+        sb.append("   <Interior ss:Color=\"#FEE2E2\" ss:Pattern=\"Solid\"/>\n");
+        sb.append("  </Style>\n");
+        sb.append(" </Styles>\n");
+        sb.append(" <Worksheet ss:Name=\"Audit Ledger\">\n");
+        sb.append("  <Table ss:DefaultRowHeight=\"20\">\n");
+        sb.append("   <Column ss:Width=\"45\"/>\n");
+        sb.append("   <Column ss:Width=\"110\"/>\n");
+        sb.append("   <Column ss:Width=\"140\"/>\n");
+        sb.append("   <Column ss:Width=\"135\"/>\n");
+        sb.append("   <Column ss:Width=\"120\"/>\n");
+        sb.append("   <Column ss:Width=\"130\"/>\n");
+        sb.append("   <Column ss:Width=\"160\"/>\n");
+        sb.append("   <Column ss:Width=\"120\"/>\n");
+        sb.append("   <Column ss:Width=\"130\"/>\n");
+        sb.append("   <Column ss:Width=\"160\"/>\n");
+        sb.append("   <Column ss:Width=\"120\"/>\n");
+        sb.append("   <Column ss:Width=\"90\"/>\n");
+        sb.append("   <Column ss:Width=\"110\"/>\n");
+        sb.append("   <Column ss:Width=\"260\"/>\n");
+        sb.append("   <Row ss:Height=\"28\">\n");
+        sb.append("    <Cell ss:MergeAcross=\"13\" ss:StyleID=\"sTitle\"><Data ss:Type=\"String\">PAYSONIC AUDIT TRAIL &amp; COMPLIANCE LEDGER</Data></Cell>\n");
+        sb.append("   </Row>\n");
+        sb.append("   <Row ss:Height=\"18\">\n");
+        sb.append("    <Cell ss:MergeAcross=\"13\" ss:StyleID=\"sSubtitle\"><Data ss:Type=\"String\">Total Events: ").append(records.size()).append("   |   Export Time: ").append(escapeXml(fetchTimeStr)).append("</Data></Cell>\n");
+        sb.append("   </Row>\n");
+        sb.append("   <Row ss:Height=\"4\">\n");
+        for (int i = 0; i < 14; i++) {
+            sb.append("    <Cell ss:StyleID=\"sGreenBar\"><Data ss:Type=\"String\"></Data></Cell>\n");
+        }
+        sb.append("   </Row>\n");
+        sb.append("   <Row ss:Height=\"26\">\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Sr No</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Event ID</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Timestamp</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Actor Name</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Actor Role</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Module</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Action</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Reference ID</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Correlation ID</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Target</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Plaza Scope</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Outcome</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">IP Address</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Details</Data></Cell>\n");
+        sb.append("   </Row>\n");
+
+        int idx = 1;
+        for (AuditLogResponseDTO r : records) {
+            String status = r.getStatus() != null ? r.getStatus().toUpperCase() : "SUCCESS";
+            String statusStyle = "FAILURE".equals(status) ? "sFailure" : "WARNING".equals(status) ? "sWarning" : "sSuccess";
+            String tsStr = r.getTimestamp() != null ? r.getTimestamp().format(dtf) : "—";
+            String actorName = r.getActor() != null ? r.getActor().getName() : "";
+            String actorRole = r.getActor() != null ? r.getActor().getRole() : "";
+            String actorIp = r.getActor() != null ? r.getActor().getIpAddress() : "127.0.0.1";
+
+            sb.append("   <Row ss:Height=\"20\">\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"Number\">").append(idx++).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(r.getId())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(tsStr)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(actorName)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(actorRole)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getModule())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getActionLabel() != null ? r.getActionLabel() : r.getAction())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(r.getReferenceId())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(r.getCorrelationId())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getTarget())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getPlaza())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"").append(statusStyle).append("\"><Data ss:Type=\"String\">").append(escapeXml(status)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(actorIp)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getDetails())).append("</Data></Cell>\n");
+            sb.append("   </Row>\n");
+        }
+
+        sb.append("  </Table>\n");
+        sb.append(" </Worksheet>\n");
+        sb.append("</Workbook>");
+        return sb.toString();
     }
 
     @Transactional

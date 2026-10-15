@@ -1034,22 +1034,46 @@ class UserActivityService {
         headers: { 'X-Actor-ID': actorId },
       });
 
-      // If Railway returned the compiled export directly, use it
-      if (res && res.data && res.data.data) {
+      // If Railway returned a valid pre-compiled Excel XML file
+      if (
+        (format === 'excel' || format === 'xls') &&
+        res?.data?.data &&
+        typeof res.data.data === 'string' &&
+        res.data.data.trim().startsWith('<?xml') &&
+        res.data.data.includes('<Workbook')
+      ) {
+        return {
+          ...res.data,
+          filename: res.data.filename?.endsWith('.xls')
+            ? res.data.filename
+            : `${exportType === 'filter_ledger' ? 'Audit_Filter_Ledger' : 'Audit_Log_Report'}_${new Date().toISOString().slice(0, 10)}.xls`,
+          mimeType: 'application/vnd.ms-excel;charset=utf-8',
+        };
+      }
+
+      // If Railway returned CSV directly
+      if (format === 'csv' && res?.data?.data && res.data.mimeType === 'text/csv') {
         return res.data;
       }
 
-      // If Railway returned raw records array instead of compiled export
-      if (res && res.data && Array.isArray(res.data)) {
+      // If Railway returned JSON payload in res.data.data (as raw records string)
+      if (res?.data?.data && typeof res.data.data === 'string' && res.data.data.trim().startsWith('[')) {
+        try {
+          records = JSON.parse(res.data.data);
+        } catch {
+          records = [];
+        }
+      } else if (Array.isArray(res?.data?.content)) {
+        records = res.data.content;
+      } else if (Array.isArray(res?.data)) {
         records = res.data;
       }
     } catch (err) {
       console.warn('[UserActivityService] Railway export unreachable, building locally:', err?.message);
-      records = await this.getAuditLog(filters);
     }
 
-    // If no records yet (e.g. Railway returned empty), fall back to local
-    if (!records.length) {
+    // If no records extracted yet, fetch from getAuditLog
+    if (!records || !records.length) {
       records = await this.getAuditLog(filters);
     }
 
@@ -1085,6 +1109,7 @@ class UserActivityService {
     const pad = (n) => String(n).padStart(2, '0');
     const now = new Date();
     const fetchTimeStr = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = now.toISOString().slice(0, 10);
 
     // Helper for XML escaping
     const escapeXml = (unsafe) => {
@@ -1097,22 +1122,41 @@ class UserActivityService {
         .replace(/'/g, '&apos;');
     };
 
+    const formatTimestamp = (ts) => {
+      if (!ts) return '—';
+      try {
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return String(ts);
+        return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      } catch {
+        return String(ts);
+      }
+    };
+
     if (format === 'excel' || format === 'xlsx' || format === 'xls') {
-      const xml = `<?xml version="1.0"?>
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:office"
  xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Paysonic Operations</Author>
+  <Created>${now.toISOString()}</Created>
+ </DocumentProperties>
  <Styles>
   <Style ss:ID="Default" ss:Name="Normal">
    <Alignment ss:Vertical="Center"/>
+   <Borders/>
    <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
   </Style>
   <Style ss:ID="sTitle">
    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Font ss:FontName="Calibri" ss:Size="15" ss:Color="#0F2F6B" ss:Bold="1"/>
+   <Font ss:FontName="Calibri" ss:Size="14" ss:Color="#0F2F6B" ss:Bold="1"/>
   </Style>
   <Style ss:ID="sSubtitle">
    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
@@ -1122,7 +1166,7 @@ class UserActivityService {
    <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
   </Style>
   <Style ss:ID="sHeader">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
@@ -1140,6 +1184,7 @@ class UserActivityService {
     <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
    </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Color="#1E293B"/>
   </Style>
   <Style ss:ID="sDataText">
    <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
@@ -1149,6 +1194,7 @@ class UserActivityService {
     <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
    </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Color="#1E293B"/>
   </Style>
   <Style ss:ID="sSuccess">
    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
@@ -1158,8 +1204,19 @@ class UserActivityService {
     <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
    </Borders>
-   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#047857" ss:Bold="1"/>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Color="#047857" ss:Bold="1"/>
    <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sWarning">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Color="#B45309" ss:Bold="1"/>
+   <Interior ss:Color="#FEF3C7" ss:Pattern="Solid"/>
   </Style>
   <Style ss:ID="sFailure">
    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
@@ -1169,7 +1226,7 @@ class UserActivityService {
     <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
    </Borders>
-   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#B91C1C" ss:Bold="1"/>
+   <Font ss:FontName="Calibri" ss:Size="9.5" ss:Color="#B91C1C" ss:Bold="1"/>
    <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
   </Style>
  </Styles>
@@ -1177,18 +1234,18 @@ class UserActivityService {
   <Table ss:DefaultRowHeight="20">
    <Column ss:Width="45"/>
    <Column ss:Width="110"/>
+   <Column ss:Width="140"/>
    <Column ss:Width="135"/>
    <Column ss:Width="120"/>
-   <Column ss:Width="100"/>
    <Column ss:Width="130"/>
-   <Column ss:Width="150"/>
+   <Column ss:Width="160"/>
    <Column ss:Width="120"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="160"/>
    <Column ss:Width="120"/>
-   <Column ss:Width="150"/>
+   <Column ss:Width="90"/>
    <Column ss:Width="110"/>
-   <Column ss:Width="80"/>
-   <Column ss:Width="100"/>
-   <Column ss:Width="220"/>
+   <Column ss:Width="260"/>
    <Row ss:Height="28">
     <Cell ss:MergeAcross="13" ss:StyleID="sTitle"><Data ss:Type="String">${escapeXml(reportTitle)}</Data></Cell>
    </Row>
@@ -1196,9 +1253,9 @@ class UserActivityService {
     <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Events: ${sortedRecords.length}   |   Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
-    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>').join('')}
    </Row>
-   <Row ss:Height="24">
+   <Row ss:Height="26">
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Event ID</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Timestamp</Data></Cell>
@@ -1214,31 +1271,39 @@ class UserActivityService {
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">IP Address</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Details</Data></Cell>
    </Row>
-   ${sortedRecords.map((r, idx) => `
-   <Row ss:Height="19">
+   ${sortedRecords.map((r, idx) => {
+     const status = String(r.status || 'SUCCESS').toUpperCase();
+     const statusStyle = status === 'FAILURE' ? 'sFailure' : status === 'WARNING' ? 'sWarning' : 'sSuccess';
+     const actorName = (r.actor && r.actor.name) || r.actorName || '';
+     const actorRole = (r.actor && r.actor.role) || r.actorRole || '';
+     const actorIp = (r.actor && r.actor.ipAddress) || r.ipAddress || r.actorIp || '127.0.0.1';
+     const timeStr = r.timestamp ? formatTimestamp(r.timestamp) : '';
+     return `
+   <Row ss:Height="20">
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.id || '')}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.timestamp || '')}</Data></Cell>
-    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml((r.actor && r.actor.name) || '')}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml((r.actor && r.actor.role) || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(timeStr)}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(actorName)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(actorRole)}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.module || '')}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.actionLabel || r.action || '')}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.referenceId || '')}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.correlationId || '')}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.target || '')}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.plaza || '')}</Data></Cell>
-    <Cell ss:StyleID="${r.status === 'FAILURE' ? 'sFailure' : 'sSuccess'}"><Data ss:Type="String">${escapeXml(r.status || 'SUCCESS')}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml((r.actor && r.actor.ipAddress) || '127.0.0.1')}</Data></Cell>
+    <Cell ss:StyleID="${statusStyle}"><Data ss:Type="String">${escapeXml(status)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(actorIp)}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.details || '')}</Data></Cell>
-   </Row>`).join('')}
+   </Row>`;
+   }).join('')}
   </Table>
  </Worksheet>
 </Workbook>`;
 
       return {
         data: xml,
-        filename: `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.xls`,
-        mimeType: 'application/vnd.ms-excel',
+        filename: `${filenamePrefix}_${dateStr}.xls`,
+        mimeType: 'application/vnd.ms-excel;charset=utf-8',
         recordCount: sortedRecords.length,
       };
     }
@@ -1356,7 +1421,7 @@ class UserActivityService {
       { name: 'Exports Performed', value: stats.exportsPerformed ?? 40, desc: 'Compliance downloads logged' },
     ];
 
-    const xml = `<?xml version="1.0"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -1462,7 +1527,7 @@ class UserActivityService {
     <Cell ss:MergeAcross="10" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${escapeXml(fetchTimeStr)}   |   Status: Live Synchronization Active</Data></Cell>
    </Row>
    <Row ss:Height="4">
-    ${Array(11).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+    ${Array(11).fill('<Cell ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>').join('')}
    </Row>
    <Row ss:Height="12"></Row>
 
@@ -1546,7 +1611,7 @@ class UserActivityService {
     return {
       data: xml,
       filename: `Overview_Telemetry_Report_${dateStr}.xls`,
-      mimeType: 'application/vnd.ms-excel',
+      mimeType: 'application/vnd.ms-excel;charset=utf-8',
       recordCount: recentEvents.length,
     };
   }
@@ -1583,7 +1648,7 @@ class UserActivityService {
         .replace(/'/g, '&apos;');
     };
 
-    const xml = `<?xml version="1.0"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -1670,7 +1735,7 @@ class UserActivityService {
     <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Live Sessions: ${sessions.length}   |   Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
-    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>').join('')}
    </Row>
    <Row ss:Height="24">
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
@@ -1712,7 +1777,7 @@ class UserActivityService {
     return {
       data: xml,
       filename: `Active_Sessions_Report_${dateStr}.xls`,
-      mimeType: 'application/vnd.ms-excel',
+      mimeType: 'application/vnd.ms-excel;charset=utf-8',
       recordCount: sessions.length,
     };
   }
@@ -1749,7 +1814,7 @@ class UserActivityService {
         .replace(/'/g, '&apos;');
     };
 
-    const xml = `<?xml version="1.0"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -1847,7 +1912,7 @@ class UserActivityService {
     <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Authentication Records: ${history.length}   |   Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
-    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>').join('')}
    </Row>
    <Row ss:Height="24">
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
@@ -1889,7 +1954,7 @@ class UserActivityService {
     return {
       data: xml,
       filename: `Login_History_Report_${dateStr}.xls`,
-      mimeType: 'application/vnd.ms-excel',
+      mimeType: 'application/vnd.ms-excel;charset=utf-8',
       recordCount: history.length,
     };
   }
