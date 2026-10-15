@@ -112,7 +112,7 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
                 />
                 <div>
                   <strong>Export Excel (.xls)</strong>
-                  <span>Formatted Excel workbook with styled headers, Sr No sequence &amp; audit metadata</span>
+                  <span>Formatted Excel workbook matching table columns and status</span>
                 </div>
               </label>
 

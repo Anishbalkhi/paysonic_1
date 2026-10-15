@@ -1,6 +1,7 @@
 import httpClient from '../api/httpClient';
 import UserService from '../user/UserService';
-import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime, sortRecordsLatestFirst, getRecordTimestampMs } from '../../utils/dateUtils';
+import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime, sortRecordsLatestFirst, getRecordTimestampMs, formatAuditTimestamp } from '../../utils/dateUtils';
+import { referenceFor } from '../../utils/auditReference';
 
 const LOGIN_HISTORY_STORAGE_KEY = 'paysonic_login_history';
 const ACTIVE_SESSIONS_STORAGE_KEY = 'paysonic_active_sessions';
@@ -1250,68 +1251,60 @@ class UserActivityService {
  </Styles>
  <Worksheet ss:Name="Audit Ledger">
   <Table ss:DefaultRowHeight="20">
-   <Column ss:Width="45"/>
    <Column ss:Width="110"/>
-   <Column ss:Width="140"/>
    <Column ss:Width="135"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="130"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="190"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="140"/>
    <Column ss:Width="160"/>
    <Column ss:Width="120"/>
-   <Column ss:Width="130"/>
-   <Column ss:Width="160"/>
-   <Column ss:Width="120"/>
-   <Column ss:Width="90"/>
-   <Column ss:Width="110"/>
-   <Column ss:Width="260"/>
+   <Column ss:Width="95"/>
    <Row ss:Height="28">
-    <Cell ss:MergeAcross="13" ss:StyleID="sTitle"><Data ss:Type="String">${escapeXml(reportTitle)}</Data></Cell>
+    <Cell ss:MergeAcross="8" ss:StyleID="sTitle"><Data ss:Type="String">${escapeXml(reportTitle)}</Data></Cell>
    </Row>
    <Row ss:Height="18">
-    <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Events: ${sortedRecords.length}   |   Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
+    <Cell ss:MergeAcross="8" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Events: ${sortedRecords.length}   |   Export Time: ${escapeXml(fetchTimeStr)}${rangeDesc ? `   |   Date Range: ${escapeXml(rangeDesc)}` : ''}</Data></Cell>
    </Row>
    <Row ss:Height="4">
-    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>').join('')}
+    ${Array(9).fill('<Cell ss:StyleID="sGreenBar"><Data ss:Type="String"></Data></Cell>').join('')}
    </Row>
    <Row ss:Height="26">
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Event ID</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Timestamp</Data></Cell>
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Actor Name</Data></Cell>
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Actor Role</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Actor Identity</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Action Performed</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Module</Data></Cell>
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Action</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Reference ID</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">Correlation ID</Data></Cell>
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Target</Data></Cell>
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Plaza Scope</Data></Cell>
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Outcome</Data></Cell>
     <Cell ss:StyleID="sHeader"><Data ss:Type="String">IP Address</Data></Cell>
-    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Details</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Status</Data></Cell>
    </Row>
-   ${sortedRecords.map((r, idx) => {
-     const status = String(r.status || 'SUCCESS').toUpperCase();
-     const statusStyle = status === 'FAILURE' ? 'sFailure' : status === 'WARNING' ? 'sWarning' : 'sSuccess';
+   ${sortedRecords.map((r) => {
+     const rawStatus = String(r.status || 'SUCCESS').toUpperCase();
+     const statusStyle = rawStatus === 'FAILURE' ? 'sFailure' : rawStatus === 'WARNING' ? 'sWarning' : 'sSuccess';
+     const statusText = rawStatus === 'SUCCESS' ? 'Success' : rawStatus === 'WARNING' ? 'Warning' : rawStatus === 'FAILURE' ? 'Failure' : (r.status || 'Success');
      const actorName = (r.actor && r.actor.name) || r.actorName || '';
      const actorRole = (r.actor && r.actor.role) || r.actorRole || '';
+     const actorIdentity = actorRole && actorRole !== actorName ? `${actorName} (${actorRole})` : (actorName || actorRole || 'System');
      const actorIp = (r.actor && r.actor.ipAddress) || r.ipAddress || r.actorIp || '127.0.0.1';
-     const timeStr = r.timestamp ? formatTimestamp(r.timestamp) : '';
+     const timeStr = r.timestamp ? formatAuditTimestamp(r.timestamp) : '—';
+     const ref = referenceFor(r);
+     const refId = ref.refId || r.referenceId || '';
+     const refUser = ref.user?.name && ref.user.name !== 'User Profile' ? ` (${ref.user.name})` : '';
+     const referenceDisplay = `${refId}${refUser}`;
+
      return `
-   <Row ss:Height="20">
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+   <Row ss:Height="22">
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.id || '')}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(timeStr)}</Data></Cell>
-    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(actorName)}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(actorRole)}</Data></Cell>
-    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.module || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(actorIdentity)}</Data></Cell>
     <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.actionLabel || r.action || '')}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.referenceId || '')}</Data></Cell>
-    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.correlationId || '')}</Data></Cell>
-    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.target || '')}</Data></Cell>
-    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.plaza || '')}</Data></Cell>
-    <Cell ss:StyleID="${statusStyle}"><Data ss:Type="String">${escapeXml(status)}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.module || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(referenceDisplay)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.correlationId || 'CORR-GEN-001')}</Data></Cell>
     <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(actorIp)}</Data></Cell>
-    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.details || '')}</Data></Cell>
+    <Cell ss:StyleID="${statusStyle}"><Data ss:Type="String">${escapeXml(statusText)}</Data></Cell>
    </Row>`;
    }).join('')}
   </Table>
@@ -1326,49 +1319,47 @@ class UserActivityService {
       };
     }
 
-    // Build CSV payload client-side in proper sequence
+    // Build CSV payload client-side in proper sequence matching table
     if (format === 'csv') {
       const headers = [
-        'Sr No',
         'Event ID',
         'Timestamp',
-        'Actor Name',
-        'Actor Role',
+        'Actor Identity',
+        'Action Performed',
         'Module',
-        'Action',
         'Reference ID',
         'Correlation ID',
-        'Target',
-        'Plaza Scope',
-        'Outcome',
         'IP Address',
-        'Details'
+        'Status'
       ];
-      const rows = sortedRecords.map((r, idx) => {
-        const timeStr = r.timestamp ? formatTimestamp(r.timestamp) : '';
+      const rows = sortedRecords.map((r) => {
+        const timeStr = r.timestamp ? formatAuditTimestamp(r.timestamp) : '—';
         const actorName = (r.actor && r.actor.name) || r.actorName || '';
         const actorRole = (r.actor && r.actor.role) || r.actorRole || '';
+        const actorIdentity = actorRole && actorRole !== actorName ? `${actorName} (${actorRole})` : (actorName || actorRole || 'System');
+        const ref = referenceFor(r);
+        const refId = ref.refId || r.referenceId || '';
+        const refUser = ref.user?.name && ref.user.name !== 'User Profile' ? ` (${ref.user.name})` : '';
+        const referenceDisplay = `${refId}${refUser}`;
         const actorIp = (r.actor && r.actor.ipAddress) || r.ipAddress || r.actorIp || '127.0.0.1';
+        const rawStatus = String(r.status || 'SUCCESS').toUpperCase();
+        const statusText = rawStatus === 'SUCCESS' ? 'Success' : rawStatus === 'WARNING' ? 'Warning' : rawStatus === 'FAILURE' ? 'Failure' : (r.status || 'Success');
+
         return [
-          idx + 1,
-          `"${r.id || ''}"`,
-          `"${timeStr}"`,
-          `"${actorName.replace(/"/g, '""')}"`,
-          `"${actorRole.replace(/"/g, '""')}"`,
-          `"${(r.module || '').replace(/"/g, '""')}"`,
+          `"${(r.id || '').replace(/"/g, '""')}"`,
+          `"${timeStr.replace(/"/g, '""')}"`,
+          `"${actorIdentity.replace(/"/g, '""')}"`,
           `"${(r.actionLabel || r.action || '').replace(/"/g, '""')}"`,
-          `"${(r.referenceId || '').replace(/"/g, '""')}"`,
-          `"${(r.correlationId || '').replace(/"/g, '""')}"`,
-          `"${(r.target || '').replace(/"/g, '""')}"`,
-          `"${(r.plaza || '').replace(/"/g, '""')}"`,
-          `"${r.status || 'SUCCESS'}"`,
-          `"${actorIp}"`,
-          `"${(r.details || '').replace(/"/g, '""')}"`
+          `"${(r.module || '').replace(/"/g, '""')}"`,
+          `"${referenceDisplay.replace(/"/g, '""')}"`,
+          `"${(r.correlationId || 'CORR-GEN-001').replace(/"/g, '""')}"`,
+          `"${actorIp.replace(/"/g, '""')}"`,
+          `"${statusText.replace(/"/g, '""')}"`
         ];
       });
       const csvContent = '\uFEFF' + [
         `# ${reportTitle}`,
-        `# Total Events: ${sortedRecords.length} | Export Time: ${fetchTimeStr}`,
+        `# Total Events: ${sortedRecords.length} | Export Time: ${fetchTimeStr}${rangeDesc ? ` | Date Range: ${rangeDesc}` : ''}`,
         headers.join(','),
         ...rows.map((e) => e.join(','))
       ].join('\n');
@@ -1381,8 +1372,35 @@ class UserActivityService {
       };
     }
 
+    const jsonRecords = sortedRecords.map((r) => {
+      const timeStr = r.timestamp ? formatAuditTimestamp(r.timestamp) : '—';
+      const actorName = (r.actor && r.actor.name) || r.actorName || '';
+      const actorRole = (r.actor && r.actor.role) || r.actorRole || '';
+      const actorIdentity = actorRole && actorRole !== actorName ? `${actorName} (${actorRole})` : (actorName || actorRole || 'System');
+      const ref = referenceFor(r);
+      const refId = ref.refId || r.referenceId || '';
+      const refUser = ref.user?.name && ref.user.name !== 'User Profile' ? ` (${ref.user.name})` : '';
+      const referenceDisplay = `${refId}${refUser}`;
+      const actorIp = (r.actor && r.actor.ipAddress) || r.ipAddress || r.actorIp || '127.0.0.1';
+      const rawStatus = String(r.status || 'SUCCESS').toUpperCase();
+      const statusText = rawStatus === 'SUCCESS' ? 'Success' : rawStatus === 'WARNING' ? 'Warning' : rawStatus === 'FAILURE' ? 'Failure' : (r.status || 'Success');
+
+      return {
+        eventId: r.id || '',
+        timestamp: timeStr,
+        rawTimestamp: r.timestamp || '',
+        actorIdentity,
+        actionPerformed: r.actionLabel || r.action || '',
+        module: r.module || '',
+        referenceId: referenceDisplay,
+        correlationId: r.correlationId || 'CORR-GEN-001',
+        ipAddress: actorIp,
+        status: statusText,
+      };
+    });
+
     return {
-      data: JSON.stringify(sortedRecords, null, 2),
+      data: JSON.stringify(jsonRecords, null, 2),
       filename: `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.json`,
       mimeType: 'application/json',
       recordCount: sortedRecords.length,

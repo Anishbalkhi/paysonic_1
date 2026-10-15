@@ -435,24 +435,32 @@ public class ActivityService {
         if ("csv".equalsIgnoreCase(format)) {
             String filename = "paysonic_audit_export_" + LocalDate.now().toString() + ".csv";
             StringBuilder sb = new StringBuilder();
-            sb.append("Sr No,Event ID,Timestamp,Actor Name,Actor Role,Module,Action,Reference ID,Correlation ID,Target,Plaza Scope,Outcome,IP Address,Details\n");
-            int idx = 1;
+            sb.append("Event ID,Timestamp,Actor Identity,Action Performed,Module,Reference ID,Correlation ID,IP Address,Status\n");
+            DateTimeFormatter displayDtf = DateTimeFormatter.ofPattern("MMM dd, hh:mm a");
             for (AuditLogResponseDTO r : records) {
-                sb.append(String.format("%d,%s,%s,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%s,%s,\"%s\"\n",
-                        idx++,
-                        r.getId(),
-                        r.getTimestamp() != null ? r.getTimestamp().toString() : "",
-                        r.getActor() != null ? escapeCsv(r.getActor().getName()) : "",
-                        r.getActor() != null ? escapeCsv(r.getActor().getRole()) : "",
-                        r.getModule() != null ? escapeCsv(r.getModule()) : "",
-                        r.getActionLabel() != null ? escapeCsv(r.getActionLabel()) : escapeCsv(r.getAction()),
-                        r.getReferenceId() != null ? escapeCsv(r.getReferenceId()) : "",
-                        r.getCorrelationId() != null ? escapeCsv(r.getCorrelationId()) : "",
-                        r.getTarget() != null ? escapeCsv(r.getTarget()) : "",
-                        r.getPlaza() != null ? escapeCsv(r.getPlaza()) : "",
-                        r.getStatus() != null ? r.getStatus() : "SUCCESS",
-                        r.getActor() != null ? escapeCsv(r.getActor().getIpAddress()) : "127.0.0.1",
-                        r.getDetails() != null ? escapeCsv(r.getDetails()) : ""
+                String actorName = r.getActor() != null && r.getActor().getName() != null ? r.getActor().getName() : "";
+                String actorRole = r.getActor() != null && r.getActor().getRole() != null ? r.getActor().getRole() : "";
+                String actorIdentity = (!actorRole.isBlank() && !actorRole.equalsIgnoreCase(actorName))
+                        ? actorName + " (" + actorRole + ")"
+                        : (!actorName.isBlank() ? actorName : (!actorRole.isBlank() ? actorRole : "System"));
+                String timeStr = r.getTimestamp() != null ? r.getTimestamp().format(displayDtf) : "—";
+                String actionStr = r.getActionLabel() != null && !r.getActionLabel().isBlank() ? r.getActionLabel() : (r.getAction() != null ? r.getAction() : "");
+                String refStr = r.getReferenceId() != null ? r.getReferenceId() : "";
+                String corrStr = r.getCorrelationId() != null ? r.getCorrelationId() : "CORR-GEN-001";
+                String ipStr = r.getActor() != null && r.getActor().getIpAddress() != null ? r.getActor().getIpAddress() : "127.0.0.1";
+                String status = r.getStatus() != null ? r.getStatus() : "SUCCESS";
+                String statusLabel = "SUCCESS".equalsIgnoreCase(status) ? "Success" : "WARNING".equalsIgnoreCase(status) ? "Warning" : "FAILURE".equalsIgnoreCase(status) ? "Failure" : status;
+
+                sb.append(String.format("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+                        escapeCsv(r.getId()),
+                        escapeCsv(timeStr),
+                        escapeCsv(actorIdentity),
+                        escapeCsv(actionStr),
+                        escapeCsv(r.getModule() != null ? r.getModule() : ""),
+                        escapeCsv(refStr),
+                        escapeCsv(corrStr),
+                        escapeCsv(ipStr),
+                        escapeCsv(statusLabel)
                 ));
             }
             return new ExportResponseDTO(sb.toString(), filename, "text/csv", records.size());
@@ -590,72 +598,64 @@ public class ActivityService {
         sb.append(" </Styles>\n");
         sb.append(" <Worksheet ss:Name=\"Audit Ledger\">\n");
         sb.append("  <Table ss:DefaultRowHeight=\"20\">\n");
-        sb.append("   <Column ss:Width=\"45\"/>\n");
         sb.append("   <Column ss:Width=\"110\"/>\n");
-        sb.append("   <Column ss:Width=\"140\"/>\n");
         sb.append("   <Column ss:Width=\"135\"/>\n");
-        sb.append("   <Column ss:Width=\"120\"/>\n");
-        sb.append("   <Column ss:Width=\"130\"/>\n");
+        sb.append("   <Column ss:Width=\"180\"/>\n");
+        sb.append("   <Column ss:Width=\"190\"/>\n");
+        sb.append("   <Column ss:Width=\"150\"/>\n");
+        sb.append("   <Column ss:Width=\"140\"/>\n");
         sb.append("   <Column ss:Width=\"160\"/>\n");
         sb.append("   <Column ss:Width=\"120\"/>\n");
-        sb.append("   <Column ss:Width=\"130\"/>\n");
-        sb.append("   <Column ss:Width=\"160\"/>\n");
-        sb.append("   <Column ss:Width=\"120\"/>\n");
-        sb.append("   <Column ss:Width=\"90\"/>\n");
-        sb.append("   <Column ss:Width=\"110\"/>\n");
-        sb.append("   <Column ss:Width=\"260\"/>\n");
+        sb.append("   <Column ss:Width=\"95\"/>\n");
         sb.append("   <Row ss:Height=\"28\">\n");
-        sb.append("    <Cell ss:MergeAcross=\"13\" ss:StyleID=\"sTitle\"><Data ss:Type=\"String\">PAYSONIC AUDIT TRAIL &amp; COMPLIANCE LEDGER</Data></Cell>\n");
+        sb.append("    <Cell ss:MergeAcross=\"8\" ss:StyleID=\"sTitle\"><Data ss:Type=\"String\">PAYSONIC AUDIT TRAIL &amp; COMPLIANCE LEDGER</Data></Cell>\n");
         sb.append("   </Row>\n");
         sb.append("   <Row ss:Height=\"18\">\n");
-        sb.append("    <Cell ss:MergeAcross=\"13\" ss:StyleID=\"sSubtitle\"><Data ss:Type=\"String\">Total Events: ").append(records.size()).append("   |   Export Time: ").append(escapeXml(fetchTimeStr)).append("</Data></Cell>\n");
+        sb.append("    <Cell ss:MergeAcross=\"8\" ss:StyleID=\"sSubtitle\"><Data ss:Type=\"String\">Total Events: ").append(records.size()).append("   |   Export Time: ").append(escapeXml(fetchTimeStr)).append("</Data></Cell>\n");
         sb.append("   </Row>\n");
         sb.append("   <Row ss:Height=\"4\">\n");
-        for (int i = 0; i < 14; i++) {
+        for (int i = 0; i < 9; i++) {
             sb.append("    <Cell ss:StyleID=\"sGreenBar\"><Data ss:Type=\"String\"></Data></Cell>\n");
         }
         sb.append("   </Row>\n");
         sb.append("   <Row ss:Height=\"26\">\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Sr No</Data></Cell>\n");
         sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Event ID</Data></Cell>\n");
         sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Timestamp</Data></Cell>\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Actor Name</Data></Cell>\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Actor Role</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Actor Identity</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Action Performed</Data></Cell>\n");
         sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Module</Data></Cell>\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Action</Data></Cell>\n");
         sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Reference ID</Data></Cell>\n");
         sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Correlation ID</Data></Cell>\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Target</Data></Cell>\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Plaza Scope</Data></Cell>\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Outcome</Data></Cell>\n");
         sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">IP Address</Data></Cell>\n");
-        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Details</Data></Cell>\n");
+        sb.append("    <Cell ss:StyleID=\"sHeader\"><Data ss:Type=\"String\">Status</Data></Cell>\n");
         sb.append("   </Row>\n");
 
-        int idx = 1;
+        DateTimeFormatter displayDtf = DateTimeFormatter.ofPattern("MMM dd, hh:mm a");
         for (AuditLogResponseDTO r : records) {
             String status = r.getStatus() != null ? r.getStatus().toUpperCase() : "SUCCESS";
             String statusStyle = "FAILURE".equals(status) ? "sFailure" : "WARNING".equals(status) ? "sWarning" : "sSuccess";
-            String tsStr = r.getTimestamp() != null ? r.getTimestamp().format(dtf) : "—";
-            String actorName = r.getActor() != null ? r.getActor().getName() : "";
-            String actorRole = r.getActor() != null ? r.getActor().getRole() : "";
-            String actorIp = r.getActor() != null ? r.getActor().getIpAddress() : "127.0.0.1";
+            String statusText = "FAILURE".equals(status) ? "Failure" : "WARNING".equals(status) ? "Warning" : "Success";
+            String tsStr = r.getTimestamp() != null ? r.getTimestamp().format(displayDtf) : "—";
+            String actorName = r.getActor() != null && r.getActor().getName() != null ? r.getActor().getName() : "";
+            String actorRole = r.getActor() != null && r.getActor().getRole() != null ? r.getActor().getRole() : "";
+            String actorIdentity = (!actorRole.isBlank() && !actorRole.equalsIgnoreCase(actorName))
+                    ? actorName + " (" + actorRole + ")"
+                    : (!actorName.isBlank() ? actorName : (!actorRole.isBlank() ? actorRole : "System"));
+            String actionStr = r.getActionLabel() != null && !r.getActionLabel().isBlank() ? r.getActionLabel() : (r.getAction() != null ? r.getAction() : "");
+            String refStr = r.getReferenceId() != null ? r.getReferenceId() : "";
+            String corrStr = r.getCorrelationId() != null ? r.getCorrelationId() : "CORR-GEN-001";
+            String actorIp = r.getActor() != null && r.getActor().getIpAddress() != null ? r.getActor().getIpAddress() : "127.0.0.1";
 
-            sb.append("   <Row ss:Height=\"20\">\n");
-            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"Number\">").append(idx++).append("</Data></Cell>\n");
+            sb.append("   <Row ss:Height=\"22\">\n");
             sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(r.getId())).append("</Data></Cell>\n");
             sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(tsStr)).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(actorName)).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(actorRole)).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getModule())).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getActionLabel() != null ? r.getActionLabel() : r.getAction())).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(r.getReferenceId())).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(r.getCorrelationId())).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getTarget())).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getPlaza())).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"").append(statusStyle).append("\"><Data ss:Type=\"String\">").append(escapeXml(status)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(actorIdentity)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(actionStr)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getModule() != null ? r.getModule() : "")).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(refStr)).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(corrStr)).append("</Data></Cell>\n");
             sb.append("    <Cell ss:StyleID=\"sDataCenter\"><Data ss:Type=\"String\">").append(escapeXml(actorIp)).append("</Data></Cell>\n");
-            sb.append("    <Cell ss:StyleID=\"sDataText\"><Data ss:Type=\"String\">").append(escapeXml(r.getDetails())).append("</Data></Cell>\n");
+            sb.append("    <Cell ss:StyleID=\"").append(statusStyle).append("\"><Data ss:Type=\"String\">").append(escapeXml(statusText)).append("</Data></Cell>\n");
             sb.append("   </Row>\n");
         }
 
