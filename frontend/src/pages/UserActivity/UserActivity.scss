@@ -893,6 +893,12 @@
     }
   }
 
+  .filters-right-action {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+  }
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
@@ -903,6 +909,16 @@
 
     .filter-select {
       width: 100%;
+    }
+
+    .filters-right-action {
+      margin-left: 0;
+      width: 100%;
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
   }
 }

@@ -104,24 +104,8 @@ export const LoginHistoryTable = ({ history = [], onExportComplete }) => {
           <h2>Authentication Audit &amp; History</h2>
           <p>Complete historical log of authorized and rejected login attempts per user account</p>
         </div>
-        <div className="head-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <div className="active-counter-pill" style={{ background: '#F8FAFC', color: 'var(--ink)', borderColor: '#E2E8F0' }}>
-            {filtered.length} of {history.length} Records
-          </div>
-          <button
-            type="button"
-            className="btn btn-secondary btn-export-xls"
-            onClick={handleExportLogins}
-            disabled={exporting || filtered.length === 0}
-            title="Download Authentication Login History in Excel (.xls) format"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            {exporting ? 'Exporting...' : 'Export (.xls)'}
-          </button>
+        <div className="active-counter-pill" style={{ background: '#F8FAFC', color: 'var(--ink)', borderColor: '#E2E8F0' }}>
+          {filtered.length} of {history.length} Records
         </div>
       </div>
 
@@ -172,6 +156,23 @@ export const LoginHistoryTable = ({ history = [], onExportComplete }) => {
             Reset Filters
           </button>
         )}
+
+        <div className="filters-right-action">
+          <button
+            type="button"
+            className="btn btn-secondary btn-export-xls"
+            onClick={handleExportLogins}
+            disabled={exporting || filtered.length === 0}
+            title="Download Authentication Login History in Excel (.xls) format"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {exporting ? 'Exporting...' : 'Export (.xls)'}
+          </button>
+        </div>
       </div>
 
       <div className="table-card">
