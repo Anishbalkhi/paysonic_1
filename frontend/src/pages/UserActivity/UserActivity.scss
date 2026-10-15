@@ -893,6 +893,90 @@
     }
   }
 
+  .custom-date-filter-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid #D0D5DD;
+    border-radius: 8px;
+    padding: 5px 12px;
+    min-height: 38px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:focus-within {
+      border-color: #039855;
+      box-shadow: 0 0 0 3px rgba(3, 152, 85, 0.12);
+    }
+
+    .date-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+
+      .date-label {
+        font-size: 11.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: var(--muted, #667085);
+        user-select: none;
+      }
+
+      .custom-date-input {
+        border: none;
+        background: transparent;
+        font-size: 13px;
+        color: var(--body-text);
+        padding: 3px 2px;
+        outline: none;
+        font-family: inherit;
+        cursor: pointer;
+
+        &::-webkit-calendar-picker-indicator {
+          cursor: pointer;
+          opacity: 0.65;
+          transition: opacity 0.15s ease;
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
+    }
+
+    .date-input-sep {
+      font-size: 12px;
+      color: #98A2B3;
+      font-weight: 500;
+      user-select: none;
+      padding: 0 2px;
+    }
+
+    .clear-date-btn {
+      background: #F2F4F7;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #667085;
+      cursor: pointer;
+      margin-left: 2px;
+      padding: 0;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #FEE4E2;
+        color: #D92D20;
+      }
+    }
+  }
+
   .filters-right-action {
     margin-left: auto;
     display: flex;
@@ -911,6 +995,12 @@
       width: 100%;
     }
 
+    .custom-date-filter-group {
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
     .filters-right-action {
       margin-left: 0;
       width: 100%;
@@ -918,6 +1008,39 @@
       .btn {
         width: 100%;
         justify-content: center;
+      }
+    }
+  }
+}
+
+[data-theme="dark"] {
+  .filters-bar .custom-date-filter-group {
+    background: var(--surface-raised, #1C2430);
+    border-color: var(--stroke, #262F3B);
+
+    .date-input-wrap {
+      .date-label {
+        color: #94A3B8;
+      }
+      .custom-date-input {
+        color: var(--ink, #E7ECF3);
+        &::-webkit-calendar-picker-indicator {
+          filter: invert(0.85);
+        }
+      }
+    }
+
+    .date-input-sep {
+      color: #64748B;
+    }
+
+    .clear-date-btn {
+      background: #262F3B;
+      color: #94A3B8;
+
+      &:hover {
+        background: rgba(239, 68, 68, 0.25);
+        color: #F87171;
       }
     }
   }

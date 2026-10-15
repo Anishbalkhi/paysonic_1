@@ -641,6 +641,8 @@ class UserActivityService {
       if (filters.plaza && filters.plaza !== 'All plazas') params.plaza = filters.plaza;
       if (filters.actorId) params.actorId = filters.actorId;
       if (filters.dateRange) params.dateRange = filters.dateRange;
+      if (filters.fromDate) params.fromDate = filters.fromDate;
+      if (filters.toDate) params.toDate = filters.toDate;
 
       const res = await httpClient.get('/api/activity/audit-log', { params });
       if (res && res.data && Array.isArray(res.data)) {
@@ -687,14 +689,31 @@ class UserActivityService {
     if (filters.plaza && filters.plaza !== 'All plazas') {
       combined = combined.filter((item) => item.plaza === filters.plaza);
     }
-    if (filters.date && filters.date !== 'all') {
+    if (filters.fromDate || filters.toDate) {
+      let fromMs = null;
+      let toMs = null;
+      if (filters.fromDate) {
+        const [y, m, d] = filters.fromDate.split('-').map(Number);
+        fromMs = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+      }
+      if (filters.toDate) {
+        const [y, m, d] = filters.toDate.split('-').map(Number);
+        toMs = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+      }
+      combined = combined.filter((item) => {
+        const itemTime = parseUtcTimestamp(item.timestamp)?.getTime() || getRecordTimestampMs(item) || 0;
+        if (fromMs !== null && itemTime < fromMs) return false;
+        if (toMs !== null && itemTime > toMs) return false;
+        return true;
+      });
+    } else if (filters.date && filters.date !== 'all' && filters.date !== 'custom') {
       const now = Date.now();
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       const startOfTodayMs = startOfToday.getTime();
 
       combined = combined.filter((item) => {
-        const itemTime = getRecordTimestampMs(item);
+        const itemTime = parseUtcTimestamp(item.timestamp)?.getTime() || getRecordTimestampMs(item) || 0;
         if (filters.date === 'today') return itemTime >= startOfTodayMs;
         if (filters.date === '7d') return itemTime >= now - 7 * 24 * 60 * 60 * 1000;
         if (filters.date === '30d') return itemTime >= now - 30 * 24 * 60 * 60 * 1000;
@@ -1062,6 +1081,8 @@ class UserActivityService {
       if (filters.module && filters.module !== 'All modules') params.module = filters.module;
       if (filters.status && filters.status !== 'All statuses') params.status = filters.status;
       if (filters.plaza && filters.plaza !== 'All plazas') params.plaza = filters.plaza;
+      if (filters.fromDate) params.fromDate = filters.fromDate;
+      if (filters.toDate) params.toDate = filters.toDate;
 
       httpClient.get('/api/activity/export', {
         params,
@@ -1080,6 +1101,15 @@ class UserActivityService {
     const reportTitle = isFilterLedger ? 'PAYSONIC AUDIT TRAIL - FILTER LEDGER EXPORT' : 'PAYSONIC AUDIT TRAIL & COMPLIANCE LEDGER';
     const filenamePrefix = isFilterLedger ? 'Audit_Filter_Ledger' : 'Audit_Log_Report';
 
+    let rangeDesc = '';
+    if (filters.fromDate && filters.toDate) {
+      rangeDesc = ` [${filters.fromDate} to ${filters.toDate}]`;
+    } else if (filters.fromDate) {
+      rangeDesc = ` [From: ${filters.fromDate}]`;
+    } else if (filters.toDate) {
+      rangeDesc = ` [To: ${filters.toDate}]`;
+    }
+
     this.recordAuditEvent({
       module: 'Transactional Report',
       action: 'EXPORT_AUDIT_LOG',
@@ -1087,8 +1117,8 @@ class UserActivityService {
       status: 'SUCCESS',
       actor: { id: actor.id, name: actor.name, role: actor.role, ipAddress: '127.0.0.1' },
       plaza: 'All plazas',
-      target: `${isFilterLedger ? 'Filter Ledger Export' : 'Audit Export'} (${records.length} records, ${format.toUpperCase()})`,
-      details: `Compliance export compiled for ${records.length} records in ${format.toUpperCase()} format`,
+      target: `${isFilterLedger ? 'Filter Ledger Export' : 'Audit Export'} (${records.length} records, ${format.toUpperCase()}${rangeDesc})`,
+      details: `Compliance export compiled for ${records.length} records in ${format.toUpperCase()} format${rangeDesc}`,
     });
 
     // Sort records in proper sequence (strictly newest first by timestamp)

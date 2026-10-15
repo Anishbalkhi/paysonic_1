@@ -7,6 +7,8 @@ public class AuditFilterRequest {
     private String plaza;
     private String actorId;
     private String dateRange;
+    private String fromDate;
+    private String toDate;
     private String format = "csv";
 
     public AuditFilterRequest() {}
@@ -28,6 +30,12 @@ public class AuditFilterRequest {
 
     public String getDateRange() { return dateRange; }
     public void setDateRange(String dateRange) { this.dateRange = dateRange; }
+
+    public String getFromDate() { return fromDate; }
+    public void setFromDate(String fromDate) { this.fromDate = fromDate; }
+
+    public String getToDate() { return toDate; }
+    public void setToDate(String toDate) { this.toDate = toDate; }
 
     public String getFormat() { return format; }
     public void setFormat(String format) { this.format = format; }

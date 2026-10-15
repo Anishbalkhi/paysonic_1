@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import TablePagination from '../../../components/common/TablePagination';
 import UserActivityService from '../../../services/userActivity/UserActivityService';
 import { referenceFor } from '../../../utils/auditReference';
-import { formatAuditTimestamp, parseUtcTimestamp, sortRecordsLatestFirst } from '../../../utils/dateUtils';
+import { formatAuditTimestamp, parseUtcTimestamp, sortRecordsLatestFirst, getRecordTimestampMs } from '../../../utils/dateUtils';
 
 const MODULE_OPTIONS = [
   'All modules',
@@ -21,6 +21,7 @@ const DATE_OPTIONS = [
   { label: 'Today', value: 'today' },
   { label: 'Past 7 Days', value: '7d' },
   { label: 'Past 30 Days', value: '30d' },
+  { label: 'Custom Range', value: 'custom' },
 ];
 
 export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, onExportComplete }) => {
@@ -30,6 +31,8 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
   const [actionFilter, setActionFilter] = useState('All actions');
   const [statusFilter, setStatusFilter] = useState('All statuses');
   const [dateFilter, setDateFilter] = useState('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -48,8 +51,21 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
       if (actionFilter !== 'All actions' && item.actionLabel !== actionFilter) return false;
       if (statusFilter !== 'All statuses' && item.status !== statusFilter) return false;
 
-      if (dateFilter !== 'all') {
-        const itemTime = parseUtcTimestamp(item.timestamp)?.getTime() || 0;
+      // Custom date range filter or preset
+      if (fromDate || toDate) {
+        const itemTime = parseUtcTimestamp(item.timestamp)?.getTime() || getRecordTimestampMs(item) || 0;
+        if (fromDate) {
+          const [fy, fm, fd] = fromDate.split('-').map(Number);
+          const fromMs = new Date(fy, fm - 1, fd, 0, 0, 0, 0).getTime();
+          if (itemTime < fromMs) return false;
+        }
+        if (toDate) {
+          const [ty, tm, td] = toDate.split('-').map(Number);
+          const toMs = new Date(ty, tm - 1, td, 23, 59, 59, 999).getTime();
+          if (itemTime > toMs) return false;
+        }
+      } else if (dateFilter !== 'all' && dateFilter !== 'custom') {
+        const itemTime = parseUtcTimestamp(item.timestamp)?.getTime() || getRecordTimestampMs(item) || 0;
         const now = Date.now();
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -80,12 +96,40 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
       return true;
     });
     return sortRecordsLatestFirst(list);
-  }, [auditEvents, search, moduleFilter, actionFilter, statusFilter, dateFilter]);
+  }, [auditEvents, search, moduleFilter, actionFilter, statusFilter, dateFilter, fromDate, toDate]);
 
   const paginatedEvents = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredEvents.slice(start, start + pageSize);
   }, [filteredEvents, currentPage, pageSize]);
+
+  const handleDatePresetChange = (val) => {
+    setDateFilter(val);
+    if (val !== 'custom') {
+      setFromDate('');
+      setToDate('');
+    }
+    setCurrentPage(1);
+  };
+
+  const handleFromDateChange = (val) => {
+    setFromDate(val);
+    setDateFilter('custom');
+    setCurrentPage(1);
+  };
+
+  const handleToDateChange = (val) => {
+    setToDate(val);
+    setDateFilter('custom');
+    setCurrentPage(1);
+  };
+
+  const handleClearCustomDates = () => {
+    setFromDate('');
+    setToDate('');
+    setDateFilter('all');
+    setCurrentPage(1);
+  };
 
   const handleResetFilters = () => {
     setSearch('');
@@ -93,6 +137,8 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
     setActionFilter('All actions');
     setStatusFilter('All statuses');
     setDateFilter('all');
+    setFromDate('');
+    setToDate('');
     setCurrentPage(1);
   };
 
@@ -101,7 +147,9 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
     moduleFilter !== 'All modules' ||
     actionFilter !== 'All actions' ||
     statusFilter !== 'All statuses' ||
-    dateFilter !== 'all';
+    dateFilter !== 'all' ||
+    Boolean(fromDate) ||
+    Boolean(toDate);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -122,6 +170,8 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
       action: actionFilter !== 'All actions' ? actionFilter : undefined,
       status: statusFilter !== 'All statuses' ? statusFilter : undefined,
       date: dateFilter !== 'all' ? dateFilter : undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
       search: search.trim() || undefined,
     };
     if (onOpenExport) {
@@ -146,6 +196,8 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
         action: actionFilter !== 'All actions' ? actionFilter : undefined,
         status: statusFilter !== 'All statuses' ? statusFilter : undefined,
         date: dateFilter !== 'all' ? dateFilter : undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
         search: search.trim() || undefined,
       };
       const result = await UserActivityService.exportAudit(
@@ -253,10 +305,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
 
         <select
           value={dateFilter}
-          onChange={(e) => {
-            setDateFilter(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={(e) => handleDatePresetChange(e.target.value)}
           className="filter-select"
         >
           {DATE_OPTIONS.map((d) => (
@@ -265,6 +314,43 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
             </option>
           ))}
         </select>
+
+        <div className="custom-date-filter-group" title="Custom Date Range Filter">
+          <div className="date-input-wrap">
+            <span className="date-label">From</span>
+            <input
+              type="date"
+              className="custom-date-input"
+              value={fromDate}
+              onChange={(e) => handleFromDateChange(e.target.value)}
+              title="Select From Date"
+              aria-label="From Date"
+            />
+          </div>
+          <span className="date-input-sep">to</span>
+          <div className="date-input-wrap">
+            <span className="date-label">To</span>
+            <input
+              type="date"
+              className="custom-date-input"
+              value={toDate}
+              onChange={(e) => handleToDateChange(e.target.value)}
+              title="Select To Date"
+              aria-label="To Date"
+            />
+          </div>
+          {(fromDate || toDate) && (
+            <button
+              type="button"
+              className="clear-date-btn"
+              onClick={handleClearCustomDates}
+              title="Clear custom dates"
+              aria-label="Clear custom dates"
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
         {hasActiveFilters && (
           <button

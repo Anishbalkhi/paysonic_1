@@ -39,7 +39,15 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
   if (activeFilters.status && activeFilters.status !== 'All statuses') {
     activeFilterList.push(`Status: ${activeFilters.status}`);
   }
-  if (activeFilters.date && activeFilters.date !== 'all') {
+  if (activeFilters.fromDate || activeFilters.toDate) {
+    if (activeFilters.fromDate && activeFilters.toDate) {
+      activeFilterList.push(`Date Range: ${activeFilters.fromDate} to ${activeFilters.toDate}`);
+    } else if (activeFilters.fromDate) {
+      activeFilterList.push(`From Date: ${activeFilters.fromDate}`);
+    } else if (activeFilters.toDate) {
+      activeFilterList.push(`To Date: ${activeFilters.toDate}`);
+    }
+  } else if (activeFilters.date && activeFilters.date !== 'all' && activeFilters.date !== 'custom') {
     activeFilterList.push(`Date: ${activeFilters.date}`);
   }
   if (activeFilters.search) {

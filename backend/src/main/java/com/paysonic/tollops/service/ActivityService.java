@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -342,6 +343,33 @@ public class ActivityService {
 
             if (filters.getPlaza() != null && !"All plazas".equalsIgnoreCase(filters.getPlaza())) {
                 predicates.add(cb.equal(root.get("plaza"), filters.getPlaza()));
+            }
+
+            if (filters.getFromDate() != null && !filters.getFromDate().isBlank()) {
+                try {
+                    LocalDate from = LocalDate.parse(filters.getFromDate().trim());
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), from.atStartOfDay()));
+                } catch (Exception ignored) {}
+            }
+
+            if (filters.getToDate() != null && !filters.getToDate().isBlank()) {
+                try {
+                    LocalDate to = LocalDate.parse(filters.getToDate().trim());
+                    predicates.add(cb.lessThanOrEqualTo(root.get("timestamp"), to.atTime(LocalTime.MAX)));
+                } catch (Exception ignored) {}
+            }
+
+            if ((filters.getFromDate() == null || filters.getFromDate().isBlank()) &&
+                (filters.getToDate() == null || filters.getToDate().isBlank()) &&
+                filters.getDateRange() != null && !filters.getDateRange().isBlank() && !"all".equalsIgnoreCase(filters.getDateRange())) {
+                LocalDateTime now = LocalDateTime.now();
+                if ("today".equalsIgnoreCase(filters.getDateRange())) {
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), LocalDate.now().atStartOfDay()));
+                } else if ("7d".equalsIgnoreCase(filters.getDateRange())) {
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), now.minusDays(7)));
+                } else if ("30d".equalsIgnoreCase(filters.getDateRange())) {
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("timestamp"), now.minusDays(30)));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

@@ -90,7 +90,9 @@ public class ActivityController {
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "plaza", required = false) String plaza,
             @RequestParam(value = "actorId", required = false) String actorId,
-            @RequestParam(value = "dateRange", required = false) String dateRange) {
+            @RequestParam(value = "dateRange", required = false) String dateRange,
+            @RequestParam(value = "fromDate", required = false) String fromDate,
+            @RequestParam(value = "toDate", required = false) String toDate) {
         AuditFilterRequest filters = new AuditFilterRequest();
         filters.setSearch(search);
         filters.setModule(module);
@@ -98,6 +100,8 @@ public class ActivityController {
         filters.setPlaza(plaza);
         filters.setActorId(actorId);
         filters.setDateRange(dateRange);
+        filters.setFromDate(fromDate);
+        filters.setToDate(toDate);
 
         return ResponseEntity.ok(activityService.getAuditLog(filters));
     }
@@ -109,6 +113,8 @@ public class ActivityController {
             @RequestParam(value = "module", required = false) String module,
             @RequestParam(value = "status", required = false) String status,
             @RequestParam(value = "plaza", required = false) String plaza,
+            @RequestParam(value = "fromDate", required = false) String fromDate,
+            @RequestParam(value = "toDate", required = false) String toDate,
             @RequestHeader(value = "X-Actor-ID", required = false, defaultValue = "PSN0005") String actorId,
             HttpServletRequest httpRequest) {
         AuditFilterRequest filters = new AuditFilterRequest();
@@ -117,6 +123,8 @@ public class ActivityController {
         filters.setModule(module);
         filters.setStatus(status);
         filters.setPlaza(plaza);
+        filters.setFromDate(fromDate);
+        filters.setToDate(toDate);
 
         String ip = httpRequest != null ? httpRequest.getRemoteAddr() : "127.0.0.1";
         ExportResponseDTO export = activityService.exportAudit(filters, actorId, ip);
