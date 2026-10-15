@@ -12,7 +12,7 @@ import AuditDetailDrawer from './components/AuditDetailDrawer';
 import ExportConfirmModal from './components/ExportConfirmModal';
 import Loader from '../../components/Loader/Loader';
 import httpClient from '../../services/api/httpClient';
-import { formatFetchTime } from '../../utils/dateUtils';
+import { formatFetchTime, sortRecordsLatestFirst } from '../../utils/dateUtils';
 import './UserActivity.scss';
 
 export const UserActivity = () => {
@@ -49,7 +49,7 @@ export const UserActivity = () => {
       ]);
       setStats(s);
       setBreakdown(b);
-      setAuditEvents(a);
+      setAuditEvents(sortRecordsLatestFirst(a));
       setRecentEvents(r);
       setActiveUsers(u);
       setLoginHistory(l);
@@ -142,7 +142,7 @@ export const UserActivity = () => {
       UserActivityService.getRecentActivity(8),
       UserActivityService.getDashboardStats(),
     ]);
-    setAuditEvents(a);
+    setAuditEvents(sortRecordsLatestFirst(a));
     setRecentEvents(r);
     setStats(s);
   };
@@ -175,7 +175,7 @@ export const UserActivity = () => {
       UserActivityService.getDashboardStats(),
     ]);
     setActiveUsers(u);
-    setAuditEvents(a);
+    setAuditEvents(sortRecordsLatestFirst(a));
     setRecentEvents(r);
     setStats(s);
   };

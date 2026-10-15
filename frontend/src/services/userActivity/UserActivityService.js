@@ -710,15 +710,20 @@ class UserActivityService {
    * Fetched from Railway /api/activity/recent.
    */
   async getRecentActivity(limit = 10) {
+    let list = [];
     try {
       const res = await httpClient.get('/api/activity/recent', { params: { limit } });
       if (res && res.data && Array.isArray(res.data)) {
-        return res.data;
+        list = res.data;
       }
     } catch (err) {
       console.warn('[UserActivityService] Railway recent-activity unreachable, using localStorage:', err?.message);
     }
-    return getStoredAuditLog().slice(0, limit);
+    const localLogs = getStoredAuditLog();
+    const existingIds = new Set(list.map((e) => e.id));
+    const localOnly = localLogs.filter((e) => !existingIds.has(e.id));
+    const combined = [...localOnly, ...list];
+    return sortRecordsLatestFirst(combined).slice(0, limit);
   }
 
   /**

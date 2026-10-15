@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import TablePagination from '../../../components/common/TablePagination';
 import UserActivityService from '../../../services/userActivity/UserActivityService';
 import { referenceFor } from '../../../utils/auditReference';
-import { formatAuditTimestamp, parseUtcTimestamp } from '../../../utils/dateUtils';
+import { formatAuditTimestamp, parseUtcTimestamp, sortRecordsLatestFirst } from '../../../utils/dateUtils';
 
 const MODULE_OPTIONS = [
   'All modules',
@@ -43,7 +43,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
   }, [auditEvents]);
 
   const filteredEvents = useMemo(() => {
-    return auditEvents.filter((item) => {
+    const list = auditEvents.filter((item) => {
       if (moduleFilter !== 'All modules' && item.module !== moduleFilter) return false;
       if (actionFilter !== 'All actions' && item.actionLabel !== actionFilter) return false;
       if (statusFilter !== 'All statuses' && item.status !== statusFilter) return false;
@@ -79,6 +79,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
       }
       return true;
     });
+    return sortRecordsLatestFirst(list);
   }, [auditEvents, search, moduleFilter, actionFilter, statusFilter, dateFilter]);
 
   const paginatedEvents = useMemo(() => {

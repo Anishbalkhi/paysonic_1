@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { referenceFor } from '../../../utils/auditReference';
-import { formatAuditTimestamp } from '../../../utils/dateUtils';
+import { formatAuditTimestamp, sortRecordsLatestFirst } from '../../../utils/dateUtils';
 
 export const RecentActivityTable = ({ events = [], onSelectEvent, onViewAll }) => {
   const formatTime = (ts) => formatAuditTimestamp(ts);
+
+  const sortedEvents = useMemo(() => {
+    return sortRecordsLatestFirst(events);
+  }, [events]);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -46,7 +50,7 @@ export const RecentActivityTable = ({ events = [], onSelectEvent, onViewAll }) =
             </tr>
           </thead>
           <tbody>
-            {events.slice(0, 8).map((evt) => {
+            {sortedEvents.slice(0, 8).map((evt) => {
               const ref = referenceFor(evt);
               return (
                 <tr key={evt.id} onClick={() => { if (onSelectEvent) onSelectEvent(evt); }}>
