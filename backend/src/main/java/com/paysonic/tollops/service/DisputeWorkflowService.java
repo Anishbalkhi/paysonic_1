@@ -680,6 +680,16 @@ public class DisputeWorkflowService {
         return Map.of("transactionsCleared", txnDeleted, "batchesCleared", batchDeleted);
     }
 
+    /**
+     * Delete a single dispute batch and its associated dispute transactions
+     */
+    @Transactional
+    public void deleteBatch(String batchId) {
+        batchRepository.findByBatchId(batchId).ifPresent(batchRepository::delete);
+        transactionRepository.deleteByBatchId(batchId);
+        log.info("Deleted batch {} and associated transactions.", batchId);
+    }
+
     private int computeDaysLeft(String tatDueDateStr) {
         if (tatDueDateStr == null || tatDueDateStr.trim().isEmpty()) return 7;
         try {

@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface DisputeBatchRepository extends JpaRepository<DisputeBatch, Long> {
     Optional<DisputeBatch> findByBatchId(String batchId);
     List<DisputeBatch> findAllByOrderByUploadTimestampDesc();
+    void deleteByBatchId(String batchId);
 }

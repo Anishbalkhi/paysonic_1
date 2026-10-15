@@ -15,10 +15,27 @@ export const DisputeFileStatus = () => {
   const handleClearAll = async () => {
     try {
       await DisputeManagementService.clearAllDisputes();
-      setBatches([]);
     } catch (e) {
       console.error('Failed to clear batches:', e);
     }
+    setBatches([]);
+    localStorage.removeItem('paysonic_dispute_batches_db_cache_v1');
+    localStorage.removeItem('paysonic_dispute_batches_v1');
+    localStorage.removeItem('paysonic_dispute_batches_v2');
+    localStorage.removeItem('paysonic_dispute_batches_live_v1');
+  };
+
+  const handleDeleteBatch = async (batchId) => {
+    try {
+      await DisputeManagementService.deleteBatch(batchId);
+    } catch (e) {
+      console.debug('Batch delete notice:', e);
+    }
+    setBatches((prev) => {
+      const updated = prev.filter((b) => b.batchId !== batchId);
+      localStorage.setItem('paysonic_dispute_batches_db_cache_v1', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   useEffect(() => {
@@ -27,13 +44,18 @@ export const DisputeFileStatus = () => {
         const live = await DisputeManagementService.fetchBatches();
         if (Array.isArray(live)) {
           setBatches(live);
+          if (live.length === 0) {
+            localStorage.removeItem('paysonic_dispute_batches_db_cache_v1');
+            localStorage.removeItem('paysonic_dispute_batches_v1');
+            localStorage.removeItem('paysonic_dispute_batches_v2');
+            localStorage.removeItem('paysonic_dispute_batches_live_v1');
+          }
+        } else {
+          setBatches([]);
         }
       } catch (e) {
         console.debug('Batches fetch notice:', e);
-        const initial = DisputeManagementService.getBatches();
-        if (Array.isArray(initial)) {
-          setBatches(initial);
-        }
+        setBatches([]);
       }
       setFetchTime(formatFetchTime(new Date()));
     };
@@ -117,13 +139,24 @@ export const DisputeFileStatus = () => {
                       <span className="badge badge-green">{b.status}</span>
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => navigate('/dispute-handling/chargeback-assign')}
-                      >
-                        View Queue
-                      </button>
+                      <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => navigate('/dispute-handling/chargeback-assign')}
+                        >
+                          View Queue
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger btn-sm"
+                          title="Delete this batch"
+                          style={{ padding: '3px 8px', fontSize: '0.78rem' }}
+                          onClick={() => handleDeleteBatch(b.batchId)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

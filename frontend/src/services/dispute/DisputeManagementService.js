@@ -369,6 +369,17 @@ class DisputeManagementService {
     return this.getBatches();
   }
 
+  async deleteBatch(batchId) {
+    try {
+      await httpClient.delete(`/api/disputes/workflow/batches/${batchId}`);
+    } catch (e) {
+      console.debug('[DisputeManagementService] Delete batch API notice:', e?.message);
+    }
+    const current = this.getBatches().filter((b) => b.batchId !== batchId);
+    localStorage.setItem(STORAGE_KEY_BATCHES, JSON.stringify(current));
+    return current;
+  }
+
 
   saveBatch(batch) {
     try {

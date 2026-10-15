@@ -19,4 +19,5 @@ public interface DisputeTransactionRepository extends JpaRepository<DisputeTrans
     List<DisputeTransaction> findByAcqTxnIdInAndClosedFalse(java.util.Collection<String> acqTxnIds);
     List<DisputeTransaction> findByAcqTxnId(String acqTxnId);
     List<DisputeTransaction> findByBatchId(String batchId);
+    void deleteByBatchId(String batchId);
 }

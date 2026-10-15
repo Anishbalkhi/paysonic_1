@@ -243,4 +243,19 @@ public class DisputeWorkflowController {
             return ResponseEntity.internalServerError().body(Map.of("error", ex.getMessage()));
         }
     }
+
+    /**
+     * Delete a single batch by batch ID
+     */
+    @DeleteMapping("/batches/{batchId}")
+    @Auditable(module = "Dispute Handling", action = "DELETE_DISPUTE_BATCH", actionLabel = "Deleted Dispute Batch", target = "Dispute File Status")
+    public ResponseEntity<?> deleteBatch(@PathVariable String batchId) {
+        try {
+            workflowService.deleteBatch(batchId);
+            return ResponseEntity.ok(Map.of("message", "Batch " + batchId + " deleted successfully."));
+        } catch (Exception ex) {
+            log.error("Error deleting batch {}: {}", batchId, ex.getMessage(), ex);
+            return ResponseEntity.internalServerError().body(Map.of("error", ex.getMessage()));
+        }
+    }
 }
