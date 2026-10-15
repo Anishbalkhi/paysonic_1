@@ -12,12 +12,17 @@ export const DisputeFileStatus = () => {
   const [pageSize, setPageSize] = useState(10);
   const [fetchTime, setFetchTime] = useState('');
 
+  const handleClearAll = async () => {
+    try {
+      await DisputeManagementService.clearAllDisputes();
+      setBatches([]);
+    } catch (e) {
+      console.error('Failed to clear batches:', e);
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
-      const initial = DisputeManagementService.getBatches();
-      if (Array.isArray(initial)) {
-        setBatches(initial);
-      }
       try {
         const live = await DisputeManagementService.fetchBatches();
         if (Array.isArray(live)) {
@@ -25,6 +30,10 @@ export const DisputeFileStatus = () => {
         }
       } catch (e) {
         console.debug('Batches fetch notice:', e);
+        const initial = DisputeManagementService.getBatches();
+        if (Array.isArray(initial)) {
+          setBatches(initial);
+        }
       }
       setFetchTime(formatFetchTime(new Date()));
     };
@@ -47,6 +56,16 @@ export const DisputeFileStatus = () => {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {batches.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+              onClick={handleClearAll}
+            >
+              Clear All Batches
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-primary"

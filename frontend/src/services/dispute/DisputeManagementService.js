@@ -255,6 +255,9 @@ class DisputeManagementService {
       localStorage.removeItem('paysonic_dispute_batches_v2');
       localStorage.removeItem('paysonic_disputes_live_v1');
       localStorage.removeItem('paysonic_dispute_batches_live_v1');
+      localStorage.removeItem(STORAGE_KEY_DISPUTES);
+      localStorage.removeItem(STORAGE_KEY_BATCHES);
+      localStorage.removeItem('paysonic_evidence_vault_v1');
 
       // Fetch live records from Railway backend database in background
       this.syncFromBackend().catch((e) => {
@@ -346,7 +349,7 @@ class DisputeManagementService {
   async fetchBatches() {
     try {
       const res = await httpClient.get('/api/disputes/workflow/batches');
-      if (Array.isArray(res.data) && res.data.length > 0) {
+      if (Array.isArray(res.data)) {
         const mapped = res.data.map((b) => ({
           batchId: b.batchId,
           fileName: b.fileName,

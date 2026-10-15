@@ -14,7 +14,7 @@ export const TransactionSearchDispute = () => {
   const getDefaultDateRange = () => {
     return {
       from: '2026-09-01T00:00:00',
-      to: '2026-09-30T23:59:59'
+      to: '2026-10-31T23:59:59'
     };
   };
 
