@@ -1062,7 +1062,7 @@ class UserActivityService {
 
     const isFilterLedger = exportType === 'filter_ledger';
     const reportTitle = isFilterLedger ? 'PAYSONIC AUDIT TRAIL - FILTER LEDGER EXPORT' : 'PAYSONIC AUDIT TRAIL & COMPLIANCE LEDGER';
-    const filenamePrefix = isFilterLedger ? 'paysonic_filter_ledger_export' : 'paysonic_audit_export';
+    const filenamePrefix = isFilterLedger ? 'Audit_Filter_Ledger' : 'Audit_Log_Report';
 
     this.recordAuditEvent({
       module: 'Transactional Report',

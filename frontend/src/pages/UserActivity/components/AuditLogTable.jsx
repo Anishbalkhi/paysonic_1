@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import TablePagination from '../../../components/common/TablePagination';
+import UserActivityService from '../../../services/userActivity/UserActivityService';
 import { referenceFor } from '../../../utils/auditReference';
 import { formatAuditTimestamp, parseUtcTimestamp } from '../../../utils/dateUtils';
 
@@ -22,8 +23,9 @@ const DATE_OPTIONS = [
   { label: 'Past 30 Days', value: '30d' },
 ];
 
-export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport }) => {
+export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, onExportComplete }) => {
   const [search, setSearch] = useState('');
+  const [exporting, setExporting] = useState(false);
   const [moduleFilter, setModuleFilter] = useState('All modules');
   const [actionFilter, setActionFilter] = useState('All actions');
   const [statusFilter, setStatusFilter] = useState('All statuses');
@@ -113,6 +115,30 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
     }
   };
 
+  const handleExportAudit = async () => {
+    setExporting(true);
+    try {
+      const activeFilters = {
+        module: moduleFilter !== 'All modules' ? moduleFilter : undefined,
+        action: actionFilter !== 'All actions' ? actionFilter : undefined,
+        status: statusFilter !== 'All statuses' ? statusFilter : undefined,
+        date: dateFilter !== 'all' ? dateFilter : undefined,
+        search: search.trim() || undefined,
+      };
+      const result = await UserActivityService.exportAudit(
+        activeFilters,
+        'excel',
+        hasActiveFilters ? 'filter_ledger' : 'audit'
+      );
+      UserActivityService.downloadFile(result);
+      if (onExportComplete) onExportComplete();
+    } catch (err) {
+      console.error('Failed to export audit log:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="audit-log-view">
       <div className="view-head">
@@ -120,30 +146,20 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
           <h2>Consolidated Audit Repository</h2>
           <p>Immutable record of state changes, compliance operations, and user actions across modules</p>
         </div>
-        <div className="head-actions">
+        <div className="head-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button
             type="button"
             className="btn btn-secondary btn-export-xls"
-            onClick={() => onOpenExport({
-              count: filteredEvents.length,
-              initialScope: 'filtered',
-              title: 'Export Filter Ledger',
-              filters: {
-                module: moduleFilter,
-                action: actionFilter,
-                status: statusFilter,
-                date: dateFilter,
-                search,
-              },
-            })}
-            title="Export Audit Ledger in Excel (.xls) format"
+            onClick={handleExportAudit}
+            disabled={exporting || filteredEvents.length === 0}
+            title="Download Audit Log in Excel (.xls) format"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Export (.xls) ({filteredEvents.length})
+            {exporting ? 'Exporting...' : 'Export (.xls)'}
           </button>
         </div>
       </div>

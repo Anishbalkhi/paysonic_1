@@ -316,6 +316,7 @@ export const UserActivity = () => {
             auditEvents={auditEvents}
             onSelectEvent={setSelectedEvent}
             onOpenExport={handleOpenExport}
+            onExportComplete={handleExportComplete}
           />
         )}
 
