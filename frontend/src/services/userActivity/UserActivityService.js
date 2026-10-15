@@ -1017,7 +1017,7 @@ class UserActivityService {
    * downloadable file client-side from the returned records.
    * Falls back to local getAuditLog() if Railway is unreachable.
    */
-  async exportAudit(filters = {}, format = 'csv', exportType = 'audit') {
+  async exportAudit(filters = {}, format = 'excel', exportType = 'audit') {
     let records = [];
 
     // Try Railway export endpoint first
@@ -1297,6 +1297,600 @@ class UserActivityService {
       filename: `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.json`,
       mimeType: 'application/json',
       recordCount: sortedRecords.length,
+    };
+  }
+
+  downloadFile(result) {
+    if (!result || !result.data) return;
+    const blob = new Blob([result.data], { type: result.mimeType || 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = result.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async exportOverviewTelemetry({ stats = {}, breakdown = [], recentEvents = [] }) {
+    let actor = { id: 'PSN0001', name: 'Sanjay Kulkarni', role: 'Master Admin' };
+    try {
+      const activeUser = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+      if (activeUser.name) actor = activeUser;
+    } catch {}
+
+    this.recordAuditEvent({
+      module: 'Transactional Report',
+      action: 'EXPORT_OVERVIEW_TELEMETRY',
+      actionLabel: 'Exported Overview & Telemetry',
+      status: 'SUCCESS',
+      actor: { id: actor.id, name: actor.name, role: actor.role, ipAddress: '127.0.0.1' },
+      plaza: 'All plazas',
+      target: 'Overview & Telemetry Snapshot (EXCEL .XLS)',
+      details: `Platform overview telemetry snapshot exported in EXCEL (.XLS) format with ${breakdown.length} modules and ${recentEvents.length} recent activity streams`,
+    });
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const now = new Date();
+    const fetchTimeStr = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = now.toISOString().slice(0, 10);
+    const escapeXml = (unsafe) => {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const kpiRows = [
+      { name: 'Total Users', value: stats.totalUsers ?? 47, desc: 'All platform accounts registered' },
+      { name: 'Active / Logged-in Users', value: stats.activeUsers ?? 4, desc: 'Concurrent live sessions active' },
+      { name: 'Inactive Users', value: stats.inactiveUsers ?? 1, desc: 'Dormant or unverified accounts' },
+      { name: 'Locked / Disabled Users', value: stats.lockedUsers ?? 23, desc: 'Administrative security locks' },
+      { name: 'Failed Login Attempts (Today)', value: stats.failedLoginsToday ?? 4, desc: 'Rejected authentication events' },
+      { name: 'Total Activities Today', value: stats.totalActivitiesToday ?? 96, desc: 'Audit operations processed' },
+      { name: 'Critical Security Events', value: stats.criticalSecurityEvents ?? 139, desc: 'Flagged for compliance review' },
+      { name: 'Exports Performed', value: stats.exportsPerformed ?? 40, desc: 'Compliance downloads logged' },
+    ];
+
+    const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="sTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="15" ss:Color="#0F2F6B" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="sSubtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#475569"/>
+  </Style>
+  <Style ss:ID="sGreenBar">
+   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sSectionHeader">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10.5" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#0F2F6B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sDataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sDataText">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sSuccess">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#047857" ss:Bold="1"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sFailure">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#B91C1C" ss:Bold="1"/>
+   <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Overview &amp; Telemetry">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="45"/>
+   <Column ss:Width="220"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="250"/>
+   <Row ss:Height="28">
+    <Cell ss:MergeAcross="10" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC PLATFORM OVERVIEW &amp; TELEMETRY REPORT</Data></Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="10" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${escapeXml(fetchTimeStr)}   |   Status: Live Synchronization Active</Data></Cell>
+   </Row>
+   <Row ss:Height="4">
+    ${Array(11).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+   </Row>
+   <Row ss:Height="12"></Row>
+
+   <!-- 1. Executive KPIs -->
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="10" ss:StyleID="sSectionHeader"><Data ss:Type="String">1. EXECUTIVE KPI METRICS SUMMARY</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="sHeader"><Data ss:Type="String">Metric Description</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Current Value</Data></Cell>
+    <Cell ss:MergeAcross="6" ss:StyleID="sHeader"><Data ss:Type="String">Operational Context</Data></Cell>
+   </Row>
+   ${kpiRows.map((kpi, idx) => `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:MergeAcross="1" ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(kpi.name)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${kpi.value}</Data></Cell>
+    <Cell ss:MergeAcross="6" ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(kpi.desc)}</Data></Cell>
+   </Row>`).join('')}
+
+   <Row ss:Height="12"></Row>
+
+   <!-- 2. Module Activity Distribution -->
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="10" ss:StyleID="sSectionHeader"><Data ss:Type="String">2. MODULE ACTIVITY DISTRIBUTION</Data></Cell>
+   </Row>
+   <Row ss:Height="22">
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
+    <Cell ss:MergeAcross="2" ss:StyleID="sHeader"><Data ss:Type="String">Platform Module</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Events Count</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Proportion</Data></Cell>
+    <Cell ss:MergeAcross="4" ss:StyleID="sHeader"><Data ss:Type="String">Audit Coverage</Data></Cell>
+   </Row>
+   ${breakdown.map((m, idx) => `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:MergeAcross="2" ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(m.module)}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${m.count || 0}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${m.percentage || 0}%</Data></Cell>
+    <Cell ss:MergeAcross="4" ss:StyleID="sDataText"><Data ss:Type="String">Monitored</Data></Cell>
+   </Row>`).join('')}
+
+   <Row ss:Height="12"></Row>
+
+   <!-- 3. Recent Activity Stream -->
+   <Row ss:Height="22">
+    <Cell ss:MergeAcross="10" ss:StyleID="sSectionHeader"><Data ss:Type="String">3. RECENT ACTIVITY STREAM &amp; TELEMETRY FEED</Data></Cell>
+   </Row>
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Event ID</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Timestamp</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Actor Name</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Actor Role</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Module</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Action</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Reference Target</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Outcome</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">IP Address</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Details</Data></Cell>
+   </Row>
+   ${recentEvents.map((r, idx) => `
+   <Row ss:Height="19">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.id || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(r.timestamp || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml((r.actor && r.actor.name) || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml((r.actor && r.actor.role) || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.module || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.actionLabel || r.action || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.target || '')}</Data></Cell>
+    <Cell ss:StyleID="${r.status === 'FAILURE' ? 'sFailure' : 'sSuccess'}"><Data ss:Type="String">${escapeXml(r.status || 'SUCCESS')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml((r.actor && r.actor.ipAddress) || '127.0.0.1')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(r.details || '')}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    return {
+      data: xml,
+      filename: `Overview_Telemetry_Report_${dateStr}.xls`,
+      mimeType: 'application/vnd.ms-excel',
+      recordCount: recentEvents.length,
+    };
+  }
+
+  async exportActiveSessions(sessions = []) {
+    let actor = { id: 'PSN0001', name: 'Sanjay Kulkarni', role: 'Master Admin' };
+    try {
+      const activeUser = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+      if (activeUser.name) actor = activeUser;
+    } catch {}
+
+    this.recordAuditEvent({
+      module: 'Session Security',
+      action: 'EXPORT_ACTIVE_SESSIONS',
+      actionLabel: 'Exported Active Sessions',
+      status: 'SUCCESS',
+      actor: { id: actor.id, name: actor.name, role: actor.role, ipAddress: '127.0.0.1' },
+      plaza: 'All plazas',
+      target: `Active Sessions (${sessions.length} records, EXCEL .XLS)`,
+      details: `Active session telemetry snapshot exported in EXCEL (.XLS) format for ${sessions.length} concurrent connections`,
+    });
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const now = new Date();
+    const fetchTimeStr = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = now.toISOString().slice(0, 10);
+    const escapeXml = (unsafe) => {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="sTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="15" ss:Color="#0F2F6B" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="sSubtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#475569"/>
+  </Style>
+  <Style ss:ID="sGreenBar">
+   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10.5" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#0F2F6B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sDataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sDataText">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sSuccess">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#047857" ss:Bold="1"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Active Sessions">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="45"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="150"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="80"/>
+   <Row ss:Height="28">
+    <Cell ss:MergeAcross="13" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC ACTIVE SESSIONS &amp; LIVE CONNECTIONS</Data></Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Live Sessions: ${sessions.length}   |   Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
+   </Row>
+   <Row ss:Height="4">
+    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+   </Row>
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Session ID</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">User ID</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Full Name</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Username / Email</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Assigned Role</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Toll Plaza Scope</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Department</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">IP Address</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Geolocation</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Device &amp; Browser</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Session Start</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Duration</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Status</Data></Cell>
+   </Row>
+   ${sessions.map((s, idx) => `
+   <Row ss:Height="19">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(s.sessionId || s.id || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(s.userId || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(s.name || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(s.username || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(s.role || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(s.plaza || 'All plazas')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(s.department || 'Security &amp; Access Control')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(s.ipAddress || '127.0.0.1')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(s.location || '-')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(s.device || '-')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(s.loginTime || s.timestamp || '-')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(s.sessionDuration || '-')}</Data></Cell>
+    <Cell ss:StyleID="sSuccess"><Data ss:Type="String">${escapeXml(s.status || 'Active')}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    return {
+      data: xml,
+      filename: `Active_Sessions_Report_${dateStr}.xls`,
+      mimeType: 'application/vnd.ms-excel',
+      recordCount: sessions.length,
+    };
+  }
+
+  async exportLoginHistory(history = []) {
+    let actor = { id: 'PSN0001', name: 'Sanjay Kulkarni', role: 'Master Admin' };
+    try {
+      const activeUser = JSON.parse(localStorage.getItem('paysonic_auth_session') || '{}');
+      if (activeUser.name) actor = activeUser;
+    } catch {}
+
+    this.recordAuditEvent({
+      module: 'Session Security',
+      action: 'EXPORT_LOGIN_HISTORY',
+      actionLabel: 'Exported Authentication & Login History',
+      status: 'SUCCESS',
+      actor: { id: actor.id, name: actor.name, role: actor.role, ipAddress: '127.0.0.1' },
+      plaza: 'All plazas',
+      target: `Authentication History (${history.length} records, EXCEL .XLS)`,
+      details: `Authentication log exported in EXCEL (.XLS) format for ${history.length} login attempt records`,
+    });
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const now = new Date();
+    const fetchTimeStr = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = now.toISOString().slice(0, 10);
+    const escapeXml = (unsafe) => {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+  </Style>
+  <Style ss:ID="sTitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="15" ss:Color="#0F2F6B" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="sSubtitle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#475569"/>
+  </Style>
+  <Style ss:ID="sGreenBar">
+   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sHeader">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10.5" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#0F2F6B" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sDataCenter">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sDataText">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="sSuccess">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#047857" ss:Bold="1"/>
+   <Interior ss:Color="#D1FAE5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="sFailure">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#B91C1C" ss:Bold="1"/>
+   <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Login History">
+  <Table ss:DefaultRowHeight="20">
+   <Column ss:Width="45"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="180"/>
+   <Row ss:Height="28">
+    <Cell ss:MergeAcross="13" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC AUTHENTICATION AUDIT &amp; LOGIN HISTORY</Data></Cell>
+   </Row>
+   <Row ss:Height="18">
+    <Cell ss:MergeAcross="13" ss:StyleID="sSubtitle"><Data ss:Type="String">Total Authentication Records: ${history.length}   |   Export Time: ${escapeXml(fetchTimeStr)}</Data></Cell>
+   </Row>
+   <Row ss:Height="4">
+    ${Array(14).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
+   </Row>
+   <Row ss:Height="24">
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Sr No</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Last Login Timestamp</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">User ID</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">User Name</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Assigned Role</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Logins Count</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Failed Attempts</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Last Logout</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">IP Address</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Location</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Device &amp; OS</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Account Status</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Attempt Result</Data></Cell>
+    <Cell ss:StyleID="sHeader"><Data ss:Type="String">Failure Reason</Data></Cell>
+   </Row>
+   ${history.map((h, idx) => `
+   <Row ss:Height="19">
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${idx + 1}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(h.lastLogin || h.timestamp || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(h.userId || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(h.name || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(h.role || '')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${h.loginCount ?? 1}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${h.failedLoginCount ?? 0}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(h.lastLogout || 'Active session')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(h.lastIp || h.ipAddress || '127.0.0.1')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(h.location || '-')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(h.device || '-')}</Data></Cell>
+    <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${escapeXml(h.accountStatus || 'Active')}</Data></Cell>
+    <Cell ss:StyleID="${h.status === 'Failed' ? 'sFailure' : 'sSuccess'}"><Data ss:Type="String">${escapeXml(h.status || 'Success')}</Data></Cell>
+    <Cell ss:StyleID="sDataText"><Data ss:Type="String">${escapeXml(h.reason || '-')}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    return {
+      data: xml,
+      filename: `Login_History_Report_${dateStr}.xls`,
+      mimeType: 'application/vnd.ms-excel',
+      recordCount: history.length,
     };
   }
 }

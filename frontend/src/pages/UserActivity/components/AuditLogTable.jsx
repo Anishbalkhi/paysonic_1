@@ -123,7 +123,7 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
         <div className="head-actions">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary btn-export-xls"
             onClick={() => onOpenExport({
               count: filteredEvents.length,
               initialScope: 'filtered',
@@ -136,13 +136,14 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport })
                 search,
               },
             })}
+            title="Export Audit Ledger in Excel (.xls) format"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#344054" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            Export Filter Ledger ({filteredEvents.length})
+            Export (.xls) ({filteredEvents.length})
           </button>
         </div>
       </div>

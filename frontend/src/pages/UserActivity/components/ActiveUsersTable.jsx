@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import TablePagination from '../../../components/common/TablePagination';
+import UserActivityService from '../../../services/userActivity/UserActivityService';
 import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime } from '../../../utils/dateUtils';
 
 const ROLE_OPTIONS = [
@@ -14,8 +15,9 @@ const ROLE_OPTIONS = [
   'Bank',
 ];
 
-export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
+export const ActiveUsersTable = ({ activeUsers = [], onForceLogout, onExportComplete }) => {
   const [search, setSearch] = useState('');
+  const [exporting, setExporting] = useState(false);
   const [roleFilter, setRoleFilter] = useState('All Roles');
   const [selectedSession, setSelectedSession] = useState(null);
   const [logoutReason, setLogoutReason] = useState('Administrative revocation');
@@ -86,6 +88,19 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
     }
   };
 
+  const handleExportSessions = async () => {
+    setExporting(true);
+    try {
+      const result = await UserActivityService.exportActiveSessions(filteredUsers);
+      UserActivityService.downloadFile(result);
+      if (onExportComplete) onExportComplete();
+    } catch (err) {
+      console.error('Failed to export Active Sessions:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="active-users-view">
       <div className="view-head">
@@ -93,9 +108,25 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout }) => {
           <h2>Active Sessions &amp; Live Connections</h2>
           <p>Real-time telemetry of authenticated personnel across plaza points and console</p>
         </div>
-        <div className="active-counter-pill">
-          <span className="pulse-dot" />
-          {filteredUsers.length} of {activeUsers.length} Live Sessions
+        <div className="head-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="active-counter-pill">
+            <span className="pulse-dot" />
+            {filteredUsers.length} of {activeUsers.length} Live Sessions
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary btn-export-xls"
+            onClick={handleExportSessions}
+            disabled={exporting || filteredUsers.length === 0}
+            title="Download Active Sessions in Excel (.xls) format"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            {exporting ? 'Exporting...' : 'Export (.xls)'}
+          </button>
         </div>
       </div>
 

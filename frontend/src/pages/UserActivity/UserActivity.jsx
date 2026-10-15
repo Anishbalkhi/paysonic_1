@@ -141,6 +141,25 @@ export const UserActivity = () => {
     setStats(s);
   };
 
+  const [exportingOverview, setExportingOverview] = useState(false);
+
+  const handleExportOverview = async () => {
+    setExportingOverview(true);
+    try {
+      const result = await UserActivityService.exportOverviewTelemetry({
+        stats: stats || {},
+        breakdown: breakdown || [],
+        recentEvents: recentEvents || [],
+      });
+      UserActivityService.downloadFile(result);
+      await handleExportComplete();
+    } catch (err) {
+      console.error('Failed to export Overview & Telemetry:', err);
+    } finally {
+      setExportingOverview(false);
+    }
+  };
+
   const handleForceLogout = async (sessionId, reason) => {
     await UserActivityService.forceLogout(sessionId, reason);
     const [u, a, r, s] = await Promise.all([
@@ -251,6 +270,29 @@ export const UserActivity = () => {
       <div className="activity-tab-content">
         {activeTab === 'overview' && (
           <div className="overview-view">
+            <div className="view-head overview-head">
+              <div>
+                <h2>Overview &amp; Telemetry</h2>
+                <p>Real-time platform metrics, authentication trends, and live audit telemetry</p>
+              </div>
+              <div className="head-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-export-xls"
+                  onClick={handleExportOverview}
+                  disabled={exportingOverview}
+                  title="Download Overview & Telemetry Report in Excel (.xls) format"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  {exportingOverview ? 'Exporting...' : 'Export (.xls)'}
+                </button>
+              </div>
+            </div>
+
             {/* 8 KPI Cards */}
             <KpiGrid stats={stats} />
 
@@ -281,11 +323,15 @@ export const UserActivity = () => {
           <ActiveUsersTable
             activeUsers={activeUsers}
             onForceLogout={handleForceLogout}
+            onExportComplete={handleExportComplete}
           />
         )}
 
         {activeTab === 'logins' && (
-          <LoginHistoryTable history={loginHistory} />
+          <LoginHistoryTable
+            history={loginHistory}
+            onExportComplete={handleExportComplete}
+          />
         )}
       </div>
 

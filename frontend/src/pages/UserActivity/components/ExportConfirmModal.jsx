@@ -90,45 +90,17 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
           <div className="field">
             <label style={{ fontSize: '13px', fontWeight: 600 }}>Export File Format</label>
             <div className="format-options">
-              <label className={`format-pill ${format === 'excel' ? 'selected' : ''}`}>
+              <label className="format-pill selected">
                 <input
                   type="radio"
                   name="format"
                   value="excel"
-                  checked={format === 'excel'}
-                  onChange={() => setFormat('excel')}
+                  checked={true}
+                  readOnly
                 />
                 <div>
                   <strong>Export Excel (.xls)</strong>
-                  <span>Formatted Excel workbook with styled headers, Sr No sequence &amp; audit metadata</span>
-                </div>
-              </label>
-
-              <label className={`format-pill ${format === 'csv' ? 'selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="format"
-                  value="csv"
-                  checked={format === 'csv'}
-                  onChange={() => setFormat('csv')}
-                />
-                <div>
-                  <strong>CSV File (.csv)</strong>
-                  <span>Standard comma-separated spreadsheet data</span>
-                </div>
-              </label>
-
-              <label className={`format-pill ${format === 'json' ? 'selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="format"
-                  value="json"
-                  checked={format === 'json'}
-                  onChange={() => setFormat('json')}
-                />
-                <div>
-                  <strong>Structured JSON (.json)</strong>
-                  <span>Raw payload with before/after deltas for SIEM</span>
+                  <span>Formatted Microsoft Excel workbook with styled headers, Sr No sequence &amp; audit metadata</span>
                 </div>
               </label>
             </div>
