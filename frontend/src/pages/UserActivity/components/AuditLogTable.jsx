@@ -115,6 +115,28 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
     }
   };
 
+  const handleExportClick = () => {
+    const activeFilters = {
+      module: moduleFilter !== 'All modules' ? moduleFilter : undefined,
+      action: actionFilter !== 'All actions' ? actionFilter : undefined,
+      status: statusFilter !== 'All statuses' ? statusFilter : undefined,
+      date: dateFilter !== 'all' ? dateFilter : undefined,
+      search: search.trim() || undefined,
+    };
+    if (onOpenExport) {
+      onOpenExport({
+        count: filteredEvents.length,
+        initialScope: hasActiveFilters ? 'filtered' : 'full',
+        title: 'Export Audit',
+        filters: activeFilters,
+        filteredRecords: filteredEvents,
+        allRecords: auditEvents,
+      });
+    } else {
+      handleExportAudit();
+    }
+  };
+
   const handleExportAudit = async () => {
     setExporting(true);
     try {
@@ -128,7 +150,8 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
       const result = await UserActivityService.exportAudit(
         activeFilters,
         'excel',
-        hasActiveFilters ? 'filter_ledger' : 'audit'
+        hasActiveFilters ? 'filter_ledger' : 'audit',
+        hasActiveFilters ? filteredEvents : auditEvents
       );
       UserActivityService.downloadFile(result);
       if (onExportComplete) onExportComplete();
@@ -150,16 +173,16 @@ export const AuditLogTable = ({ auditEvents = [], onSelectEvent, onOpenExport, o
           <button
             type="button"
             className="btn btn-secondary btn-export-xls"
-            onClick={handleExportAudit}
-            disabled={exporting || filteredEvents.length === 0}
-            title="Download Audit Log in Excel (.xls) format"
+            onClick={handleExportClick}
+            disabled={exporting || (filteredEvents.length === 0 && auditEvents.length === 0)}
+            title="Download Audit Log in Excel, CSV, or Structured JSON format"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            {exporting ? 'Exporting...' : 'Export (.xls)'}
+            {exporting ? 'Exporting...' : 'Export'}
           </button>
         </div>
       </div>

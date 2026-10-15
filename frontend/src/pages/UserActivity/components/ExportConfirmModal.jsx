@@ -14,10 +14,19 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
 
   if (!isOpen) return null;
 
-  const countToExport =
-    scope === 'filtered' && exportContext?.count !== undefined
+  const countFiltered =
+    exportContext?.filteredRecords && Array.isArray(exportContext.filteredRecords)
+      ? exportContext.filteredRecords.length
+      : exportContext?.count !== undefined
       ? exportContext.count
       : totalRecords;
+
+  const countFull =
+    exportContext?.allRecords && Array.isArray(exportContext.allRecords)
+      ? exportContext.allRecords.length
+      : totalRecords;
+
+  const countToExport = scope === 'filtered' ? countFiltered : countFull;
 
   const activeFilters = exportContext?.filters || {};
   const activeFilterList = [];
@@ -37,19 +46,22 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
     activeFilterList.push(`Query: "${activeFilters.search}"`);
   }
 
-  const isFilterLedger = scope === 'filtered';
-  const modalHeading = isFilterLedger ? 'Export Filter Ledger' : 'Export Audit';
-  const actionButtonText = isFilterLedger
-    ? `Export Filter Ledger (${countToExport})`
-    : `Export Audit (${countToExport})`;
+  const modalHeading = exportContext?.title || 'Export Audit';
+  const actionButtonText = `Export Audit (${countToExport})`;
 
   const handleDownload = async () => {
     setIsExporting(true);
     try {
+      const recordsToExport =
+        scope === 'filtered'
+          ? exportContext?.filteredRecords
+          : exportContext?.allRecords;
+
       const result = await UserActivityService.exportAudit(
         scope === 'filtered' ? activeFilters : {},
         format,
-        scope === 'filtered' ? 'filter_ledger' : 'audit'
+        scope === 'filtered' ? 'filter_ledger' : 'audit',
+        recordsToExport
       );
       UserActivityService.downloadFile(result);
       if (onExportComplete) onExportComplete();
@@ -139,9 +151,9 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
               }}
             >
               <option value="filtered">
-                Current Filtered View ({countToExport} records)
+                Current Filtered View ({countFiltered} records)
               </option>
-              <option value="full">Full Ledger Database ({totalRecords} records)</option>
+              <option value="full">Full Ledger Database ({countFull} records)</option>
             </select>
           </div>
 
@@ -167,7 +179,7 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
             </div>
             <div style={{ marginTop: '3px', fontSize: '12px', color: '#035388' }}>
               Filters Applied:{' '}
-              {activeFilterList.length > 0 ? (
+              {scope === 'filtered' && activeFilterList.length > 0 ? (
                 <strong>{activeFilterList.join(' · ')}</strong>
               ) : (
                 <em>None (All records included)</em>

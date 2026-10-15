@@ -124,7 +124,13 @@ export const UserActivity = () => {
   }, []);
 
   const handleOpenExport = (ctx) => {
-    setExportContext(ctx || { count: auditEvents.length, filters: {} });
+    setExportContext({
+      count: auditEvents.length,
+      filters: {},
+      allRecords: auditEvents,
+      filteredRecords: auditEvents,
+      ...ctx,
+    });
     setIsExportOpen(true);
   };
 

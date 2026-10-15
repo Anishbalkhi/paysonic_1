@@ -1,6 +1,6 @@
 import httpClient from '../api/httpClient';
 import UserService from '../user/UserService';
-import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime } from '../../utils/dateUtils';
+import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime, sortRecordsLatestFirst, getRecordTimestampMs } from '../../utils/dateUtils';
 
 const LOGIN_HISTORY_STORAGE_KEY = 'paysonic_login_history';
 const ACTIVE_SESSIONS_STORAGE_KEY = 'paysonic_active_sessions';
@@ -632,6 +632,7 @@ class UserActivityService {
    * Falls back to localStorage entirely if Railway is unreachable.
    */
   async getAuditLog(filters = {}) {
+    let baseRecords = [];
     try {
       const params = {};
       if (filters.search && filters.search.trim()) params.search = filters.search.trim();
@@ -643,44 +644,65 @@ class UserActivityService {
 
       const res = await httpClient.get('/api/activity/audit-log', { params });
       if (res && res.data && Array.isArray(res.data)) {
-        // Prepend any local events recorded after the last Railway sync
-        const localLogs = getStoredAuditLog();
-        const railwayIds = new Set(res.data.map((e) => e.id));
-        const localOnly = localLogs.filter((e) => !railwayIds.has(e.id));
-
-        // If no filters are active, prepend local-only events
-        const hasFilters = Object.keys(params).length > 0;
-        const merged = hasFilters ? res.data : [...localOnly, ...res.data];
-        return merged;
+        baseRecords = res.data;
       }
     } catch (err) {
       console.warn('[UserActivityService] Railway audit-log unreachable, using localStorage:', err?.message);
     }
 
-    // ── Local fallback ──
-    let filtered = getStoredAuditLog();
+    // Merge any local session events recorded after the last Railway sync
+    const localLogs = getStoredAuditLog();
+    const existingIds = new Set(baseRecords.map((e) => e.id));
+    const localOnly = localLogs.filter((e) => !existingIds.has(e.id));
+
+    let combined = baseRecords.length > 0 ? [...localOnly, ...baseRecords] : localLogs;
+
+    // Apply client-side filters
     if (filters.search && filters.search.trim()) {
       const q = filters.search.toLowerCase().trim();
-      filtered = filtered.filter(
+      combined = combined.filter(
         (item) =>
           item.id?.toLowerCase().includes(q) ||
+          item.correlationId?.toLowerCase().includes(q) ||
+          item.referenceId?.toLowerCase().includes(q) ||
           item.target?.toLowerCase().includes(q) ||
           item.actionLabel?.toLowerCase().includes(q) ||
+          item.action?.toLowerCase().includes(q) ||
           item.actor?.name?.toLowerCase().includes(q) ||
           item.actor?.role?.toLowerCase().includes(q) ||
+          item.actor?.ipAddress?.toLowerCase().includes(q) ||
+          item.plaza?.toLowerCase().includes(q) ||
           item.details?.toLowerCase().includes(q)
       );
     }
     if (filters.module && filters.module !== 'All modules') {
-      filtered = filtered.filter((item) => item.module === filters.module);
+      combined = combined.filter((item) => item.module === filters.module);
+    }
+    if (filters.action && filters.action !== 'All actions') {
+      combined = combined.filter((item) => item.actionLabel === filters.action || item.action === filters.action);
     }
     if (filters.status && filters.status !== 'All statuses') {
-      filtered = filtered.filter((item) => item.status === filters.status);
+      combined = combined.filter((item) => item.status === filters.status);
     }
     if (filters.plaza && filters.plaza !== 'All plazas') {
-      filtered = filtered.filter((item) => item.plaza === filters.plaza);
+      combined = combined.filter((item) => item.plaza === filters.plaza);
     }
-    return filtered;
+    if (filters.date && filters.date !== 'all') {
+      const now = Date.now();
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const startOfTodayMs = startOfToday.getTime();
+
+      combined = combined.filter((item) => {
+        const itemTime = getRecordTimestampMs(item);
+        if (filters.date === 'today') return itemTime >= startOfTodayMs;
+        if (filters.date === '7d') return itemTime >= now - 7 * 24 * 60 * 60 * 1000;
+        if (filters.date === '30d') return itemTime >= now - 30 * 24 * 60 * 60 * 1000;
+        return true;
+      });
+    }
+
+    return sortRecordsLatestFirst(combined);
   }
 
   /**
@@ -1017,10 +1039,17 @@ class UserActivityService {
    * downloadable file client-side from the returned records.
    * Falls back to local getAuditLog() if Railway is unreachable.
    */
-  async exportAudit(filters = {}, format = 'excel', exportType = 'audit') {
+  async exportAudit(filters = {}, format = 'excel', exportType = 'audit', providedRecords = null) {
     let records = [];
 
-    // Try Railway export endpoint first
+    // If records were provided directly (from Current Filtered View or Full Ledger state)
+    if (Array.isArray(providedRecords) && providedRecords.length > 0) {
+      records = [...providedRecords];
+    } else {
+      records = await this.getAuditLog(filters);
+    }
+
+    // Inform Railway backend to log the export in the database
     try {
       const actorId = localStorage.getItem('actorId') || 'PSN0005';
       const params = { format };
@@ -1029,53 +1058,11 @@ class UserActivityService {
       if (filters.status && filters.status !== 'All statuses') params.status = filters.status;
       if (filters.plaza && filters.plaza !== 'All plazas') params.plaza = filters.plaza;
 
-      const res = await httpClient.get('/api/activity/export', {
+      httpClient.get('/api/activity/export', {
         params,
         headers: { 'X-Actor-ID': actorId },
-      });
-
-      // If Railway returned a valid pre-compiled Excel XML file
-      if (
-        (format === 'excel' || format === 'xls') &&
-        res?.data?.data &&
-        typeof res.data.data === 'string' &&
-        res.data.data.trim().startsWith('<?xml') &&
-        res.data.data.includes('<Workbook')
-      ) {
-        return {
-          ...res.data,
-          filename: res.data.filename?.endsWith('.xls')
-            ? res.data.filename
-            : `${exportType === 'filter_ledger' ? 'Audit_Filter_Ledger' : 'Audit_Log_Report'}_${new Date().toISOString().slice(0, 10)}.xls`,
-          mimeType: 'application/vnd.ms-excel;charset=utf-8',
-        };
-      }
-
-      // If Railway returned CSV directly
-      if (format === 'csv' && res?.data?.data && res.data.mimeType === 'text/csv') {
-        return res.data;
-      }
-
-      // If Railway returned JSON payload in res.data.data (as raw records string)
-      if (res?.data?.data && typeof res.data.data === 'string' && res.data.data.trim().startsWith('[')) {
-        try {
-          records = JSON.parse(res.data.data);
-        } catch {
-          records = [];
-        }
-      } else if (Array.isArray(res?.data?.content)) {
-        records = res.data.content;
-      } else if (Array.isArray(res?.data)) {
-        records = res.data;
-      }
-    } catch (err) {
-      console.warn('[UserActivityService] Railway export unreachable, building locally:', err?.message);
-    }
-
-    // If no records extracted yet, fetch from getAuditLog
-    if (!records || !records.length) {
-      records = await this.getAuditLog(filters);
-    }
+      }).catch(() => {});
+    } catch {}
 
     // Record the export event locally so it shows up in the audit trail
     let actor = { id: 'PSN0001', name: 'Sanjay Kulkarni', role: 'Master Admin' };
@@ -1099,12 +1086,8 @@ class UserActivityService {
       details: `Compliance export compiled for ${records.length} records in ${format.toUpperCase()} format`,
     });
 
-    // Sort records in proper sequence (newest first by timestamp)
-    const sortedRecords = [...records].sort((a, b) => {
-      const timeA = new Date(a.timestamp || 0).getTime();
-      const timeB = new Date(b.timestamp || 0).getTime();
-      return timeB - timeA;
-    });
+    // Sort records in proper sequence (strictly newest first by timestamp)
+    const sortedRecords = sortRecordsLatestFirst(records);
 
     const pad = (n) => String(n).padStart(2, '0');
     const now = new Date();
@@ -1125,8 +1108,8 @@ class UserActivityService {
     const formatTimestamp = (ts) => {
       if (!ts) return '—';
       try {
-        const d = new Date(ts);
-        if (isNaN(d.getTime())) return String(ts);
+        const d = parseUtcTimestamp(ts);
+        if (!d || isNaN(d.getTime())) return String(ts);
         return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       } catch {
         return String(ts);
@@ -1326,22 +1309,28 @@ class UserActivityService {
         'IP Address',
         'Details'
       ];
-      const rows = sortedRecords.map((r, idx) => [
-        idx + 1,
-        `"${r.id || ''}"`,
-        `"${r.timestamp || ''}"`,
-        `"${(r.actor && r.actor.name) || ''}"`,
-        `"${(r.actor && r.actor.role) || ''}"`,
-        `"${r.module || ''}"`,
-        `"${r.actionLabel || r.action || ''}"`,
-        `"${r.referenceId || ''}"`,
-        `"${r.correlationId || ''}"`,
-        `"${r.target || ''}"`,
-        `"${r.plaza || ''}"`,
-        `"${r.status || 'SUCCESS'}"`,
-        `"${(r.actor && r.actor.ipAddress) || '127.0.0.1'}"`,
-        `"${(r.details || '').replace(/"/g, '""')}"`
-      ]);
+      const rows = sortedRecords.map((r, idx) => {
+        const timeStr = r.timestamp ? formatTimestamp(r.timestamp) : '';
+        const actorName = (r.actor && r.actor.name) || r.actorName || '';
+        const actorRole = (r.actor && r.actor.role) || r.actorRole || '';
+        const actorIp = (r.actor && r.actor.ipAddress) || r.ipAddress || r.actorIp || '127.0.0.1';
+        return [
+          idx + 1,
+          `"${r.id || ''}"`,
+          `"${timeStr}"`,
+          `"${actorName.replace(/"/g, '""')}"`,
+          `"${actorRole.replace(/"/g, '""')}"`,
+          `"${(r.module || '').replace(/"/g, '""')}"`,
+          `"${(r.actionLabel || r.action || '').replace(/"/g, '""')}"`,
+          `"${(r.referenceId || '').replace(/"/g, '""')}"`,
+          `"${(r.correlationId || '').replace(/"/g, '""')}"`,
+          `"${(r.target || '').replace(/"/g, '""')}"`,
+          `"${(r.plaza || '').replace(/"/g, '""')}"`,
+          `"${r.status || 'SUCCESS'}"`,
+          `"${actorIp}"`,
+          `"${(r.details || '').replace(/"/g, '""')}"`
+        ];
+      });
       const csvContent = '\uFEFF' + [
         `# ${reportTitle}`,
         `# Total Events: ${sortedRecords.length} | Export Time: ${fetchTimeStr}`,

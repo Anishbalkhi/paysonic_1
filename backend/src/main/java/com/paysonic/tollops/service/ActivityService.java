@@ -347,15 +347,38 @@ public class ActivityService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        return auditLogRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "timestamp"))
+        List<AuditLogResponseDTO> list = auditLogRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "timestamp"))
                 .stream()
                 .map(log -> AuditLogResponseDTO.fromEntity(log, objectMapper))
                 .collect(Collectors.toList());
+
+        list.sort((a, b) -> {
+            if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
+            if (a.getTimestamp() == null) return 1;
+            if (b.getTimestamp() == null) return -1;
+            int cmp = b.getTimestamp().compareTo(a.getTimestamp());
+            if (cmp != 0) return cmp;
+            String idA = a.getId() != null ? a.getId() : "";
+            String idB = b.getId() != null ? b.getId() : "";
+            return idB.compareTo(idA);
+        });
+
+        return list;
     }
 
     @Transactional
     public ExportResponseDTO exportAudit(AuditFilterRequest filters, String actorId, String ipAddress) {
         List<AuditLogResponseDTO> records = getAuditLog(filters);
+        records.sort((a, b) -> {
+            if (a.getTimestamp() == null && b.getTimestamp() == null) return 0;
+            if (a.getTimestamp() == null) return 1;
+            if (b.getTimestamp() == null) return -1;
+            int cmp = b.getTimestamp().compareTo(a.getTimestamp());
+            if (cmp != 0) return cmp;
+            String idA = a.getId() != null ? a.getId() : "";
+            String idB = b.getId() != null ? b.getId() : "";
+            return idB.compareTo(idA);
+        });
         String format = (filters.getFormat() != null) ? filters.getFormat().toLowerCase() : "csv";
 
         // UAM-FR-014: Log the export event itself into the audit trail
