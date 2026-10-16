@@ -16,11 +16,8 @@ export const Sidebar = ({
   const { currentUser } = useAuth();
   const [activeOp, setActiveOp] = useState(null);
 
-  // Initialize open menus with active section open
-  const [openMenus, setOpenMenus] = useState(() => {
-    const initial = { 'user_management': true, 'tag_details': true, 'recon_management': true };
-    return initial;
-  });
+  // Initialize open menus: all collapsed by default
+  const [openMenus, setOpenMenus] = useState({});
 
   const toggleMenu = (menuId) => {
     setOpenMenus((prev) => ({
