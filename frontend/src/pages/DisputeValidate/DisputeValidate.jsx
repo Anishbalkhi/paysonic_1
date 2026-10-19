@@ -756,7 +756,7 @@ export const DisputeValidate = () => {
                       </td>
                       <td className="code-cell">{r.tollTxnId}</td>
                       <td style={{ fontWeight: 600 }}>{r.vrn}</td>
-                      <td className="code-cell">{r.tagId ? `${r.tagId.slice(0, 10)}…` : '—'}</td>
+                      <td className="code-cell" style={{ whiteSpace: 'nowrap' }} title={r.tagId}>{r.tagId || '—'}</td>
                       <td>{r.plazaName ? `${r.plazaName} (${r.plazaId})` : `${activePlaza.name} (${r.plazaId})`}</td>
                       <td>{r.txnDate}</td>
                       <td>{r.settlementDate || r.cbRaisedDate || '—'}</td>

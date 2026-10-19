@@ -883,8 +883,8 @@ export const DisputeDetailReport = () => {
                       <td className="code-font">{item.acqTxnId}</td>
                       <td className="code-font text-center">{item.tollTxnId}</td>
                       <td className="code-font text-center font-semibold">{item.vehicleNo || item.vrn || '—'}</td>
-                      <td className="code-font tag-cell" title={item.tagId}>
-                        {item.tagId ? `${item.tagId.slice(0, 10)}…` : '—'}
+                      <td className="code-font tag-cell" style={{ whiteSpace: 'nowrap' }} title={item.tagId}>
+                        {item.tagId || '—'}
                       </td>
                       <td className="font-semibold">{item.plazaName} ({item.plazaId})</td>
                       <td className="text-center">{formatDateTime(item.txnDateTime)}</td>
