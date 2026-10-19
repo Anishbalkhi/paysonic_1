@@ -137,7 +137,8 @@ export const NhaiTrafficReport = () => {
       try {
         const dt = new Date(d);
         if (isNaN(dt.getTime())) return d;
-        return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${pad(dt.getDate())}-${pad(dt.getMonth() + 1)}-${dt.getFullYear()}`;
       } catch {
         return d;
       }

@@ -12,6 +12,20 @@ export const ExportConfirmModal = ({ isOpen, onClose, totalRecords = 0, exportCo
     }
   }, [exportContext, isOpen]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const countFiltered =

@@ -1,8 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import httpClient from '../../services/api/httpClient';
+import { formatDateTime } from '../../utils/dateUtils';
 import './OperationsModal.scss';
 
 export const OperationsModal = ({ operation, onClose }) => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && operation) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [operation, onClose]);
+
   if (!operation) return null;
 
   const [tagQuery, setTagQuery] = useState('34161FA82032849');
@@ -48,7 +59,7 @@ export const OperationsModal = ({ operation, onClose }) => {
       status: 'ACTIVE / NORMAL',
       blacklistReason: 'None (Clear)',
       balanceStatus: 'Adequate Balance (₹1,450.00)',
-      npciLastSync: new Date().toLocaleTimeString(),
+      npciLastSync: formatDateTime(new Date()),
     });
   };
 

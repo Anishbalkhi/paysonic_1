@@ -48,6 +48,20 @@ export const ViolationValidateReport = () => {
   // Selected row for detail modal
   const [selectedRecord, setSelectedRecord] = useState(null);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && selectedRecord) {
+        setSelectedRecord(null);
+      }
+    };
+    if (selectedRecord) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedRecord]);
+
   const validateDates = (start, end) => {
     if (!start || !end) {
       setErrorMsg('Both From Date and To Date are required.');

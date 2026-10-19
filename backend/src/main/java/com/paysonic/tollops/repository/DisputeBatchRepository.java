@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface DisputeBatchRepository extends JpaRepository<DisputeBatch, Long> {
     Optional<DisputeBatch> findByBatchId(String batchId);
+    boolean existsByFileNameIgnoreCase(String fileName);
     List<DisputeBatch> findAllByOrderByUploadTimestampDesc();
     void deleteByBatchId(String batchId);
 }

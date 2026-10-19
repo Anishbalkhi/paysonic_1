@@ -28,10 +28,8 @@ export const ChargebackAssign = () => {
   const [toDate, setToDate] = useState('');
   const [dateType, setDateType] = useState('');
   const [functionCode, setFunctionCode] = useState('');
-  const [plazaAction, setPlazaAction] = useState('');
-  const [assignStatus, setAssignStatus] = useState('');
-  const [disputeStatus, setDisputeStatus] = useState('');
   const [tollPlazaId, setTollPlazaId] = useState(isPlazaLocked ? (defaultPlazaId || '') : '');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (isPlazaLocked && defaultPlazaId && tollPlazaId !== defaultPlazaId) {
@@ -54,10 +52,8 @@ export const ChargebackAssign = () => {
       const tDate = overrides.toDate !== undefined ? overrides.toDate : toDate;
       const dType = overrides.dateType !== undefined ? overrides.dateType : dateType;
       const fCode = overrides.functionCode !== undefined ? overrides.functionCode : functionCode;
-      const pAct = overrides.plazaAction !== undefined ? overrides.plazaAction : plazaAction;
-      const aStat = overrides.assignStatus !== undefined ? overrides.assignStatus : assignStatus;
-      const dStat = overrides.disputeStatus !== undefined ? overrides.disputeStatus : disputeStatus;
       const pId = overrides.tollPlazaId !== undefined ? overrides.tollPlazaId : tollPlazaId;
+      const search = overrides.search !== undefined ? overrides.search : searchQuery;
 
       const [fetchedRows, stats] = await Promise.all([
         DisputeManagementService.searchDisputes({
@@ -65,10 +61,8 @@ export const ChargebackAssign = () => {
           toDate: tDate,
           dateType: dType,
           functionCode: fCode,
-          plazaAction: pAct,
-          assignStatus: aStat,
-          disputeStatus: dStat,
           plazaId: pId,
+          search: search ? search.trim() : undefined,
         }),
         DisputeManagementService.getAdminMiniDashboardStats(),
       ]);
@@ -91,7 +85,7 @@ export const ChargebackAssign = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, dateType, functionCode, plazaAction, assignStatus, disputeStatus, tollPlazaId]);
+  }, [fromDate, toDate, dateType, functionCode, tollPlazaId, searchQuery, plazas, currentUser]);
 
   useEffect(() => {
     loadData();
@@ -176,9 +170,29 @@ export const ChargebackAssign = () => {
     };
   }, [loadData]);
 
+  // Live filtering on Tag ID, RRN (Acq Txn ID), Plaza Txn ID, or VRN
+  const filteredRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    const q = (searchQuery || '').trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) => {
+      const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(q);
+      const rrnMatch =
+        (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
+        (r.rrn && String(r.rrn).toLowerCase().includes(q));
+      const plazaTxnMatch =
+        (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
+        (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(q));
+      const vrnMatch =
+        (r.vrn && String(r.vrn).toLowerCase().includes(q)) ||
+        (r.vehicleNo && String(r.vehicleNo).toLowerCase().includes(q));
+      return tagMatch || rrnMatch || plazaTxnMatch || vrnMatch;
+    });
+  }, [rows, searchQuery]);
+
   // Export CSV directly matching current filtered records with Paysonic theme
   const handleExportCsv = () => {
-    if (!rows || rows.length === 0) return;
+    if (!filteredRows || filteredRows.length === 0) return;
     const fetchTimeStr = formatFetchTime(new Date());
     setDownloadTime(fetchTimeStr);
 
@@ -212,7 +226,7 @@ export const ChargebackAssign = () => {
       return `"${str}"`;
     };
 
-    const csvRows = rows.map((r) => {
+    const csvRows = filteredRows.map((r) => {
       const tat = DisputeManagementService.getTatBadge(r);
       return [
         r.lifecycleStatus || (r.assigned ? 'Assigned' : 'Unassigned'),
@@ -225,7 +239,7 @@ export const ChargebackAssign = () => {
         r.txnDate,
         r.settlementDate || '—',
         r.tatDueDate || '—',
-        r.cbRaisedDate,
+        r.settlementDate || r.cbRaisedDate || '—',
         r.cbReason,
         r.functionCode,
         r.disputeType,
@@ -239,8 +253,8 @@ export const ChargebackAssign = () => {
       ].map(escapeCsv).join(',');
     });
 
-    const totTxn = rows.reduce((s, r) => s + Number(r.txnAmount || 0), 0).toFixed(2);
-    const totDispute = rows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
+    const totTxn = filteredRows.reduce((s, r) => s + Number(r.txnAmount || 0), 0).toFixed(2);
+    const totDispute = filteredRows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
 
     const totalRow = Array(headers.length).fill('""');
     totalRow[0] = '"TOTAL"';
@@ -249,7 +263,7 @@ export const ChargebackAssign = () => {
 
     const bannerRows = [
       `"PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — WORKING QUEUE"`,
-      `"Export Time: ${fetchTimeStr}   |   Total Queue Disputes: ${rows.length}   |   Cumulative Dispute Value: ₹ ${totDispute}"`,
+      `"Export Time: ${fetchTimeStr}   |   Total Queue Disputes: ${filteredRows.length}   |   Cumulative Dispute Value: ₹ ${totDispute}"`,
       ''
     ];
 
@@ -273,7 +287,7 @@ export const ChargebackAssign = () => {
 
   // Export Excel directly matching current filtered records with Paysonic branded theme
   const handleExportExcel = () => {
-    if (!rows || rows.length === 0) return;
+    if (!filteredRows || filteredRows.length === 0) return;
     const fetchTimeStr = formatFetchTime(new Date());
     setDownloadTime(fetchTimeStr);
 
@@ -296,7 +310,7 @@ export const ChargebackAssign = () => {
     let totalTxnAmt = 0;
     let totalDisputeAmt = 0;
 
-    rows.forEach((r) => {
+    filteredRows.forEach((r) => {
       const tat = DisputeManagementService.getTatBadge(r);
       const isAssigned = Boolean(r.assigned);
       const isAccepted = r.disputeStatus === 'Approved';
@@ -322,7 +336,7 @@ export const ChargebackAssign = () => {
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
-        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.cbRaisedDate)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || r.cbRaisedDate || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.disputeType)}</Data></Cell>
@@ -344,7 +358,7 @@ export const ChargebackAssign = () => {
     const totalXml = `
       <Row ss:Height="24">
         <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>
-        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Disputes: ${rows.length}</Data></Cell>
+        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Disputes: ${filteredRows.length}</Data></Cell>
         ${Array(16).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>').join('')}
         <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalTxnAmt.toFixed(2)}</Data></Cell>
         <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt.toFixed(2)}</Data></Cell>
@@ -520,7 +534,7 @@ export const ChargebackAssign = () => {
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE &amp; CHARGEBACK OPERATIONS — WORKING QUEUE</Data></Cell>
    </Row>
    <Row ss:Height="20">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Queue Records: ${rows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Queue Records: ${filteredRows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
    </Row>
    <Row ss:Height="4">
     ${Array(headers.length).fill('<Cell ss:StyleID="sGreenBar"/>').join('')}
@@ -591,9 +605,9 @@ export const ChargebackAssign = () => {
   };
 
   const sortedRows = useMemo(() => {
-    if (!Array.isArray(rows)) return [];
-    if (!sortConfig.field) return rows;
-    return [...rows].sort((a, b) => {
+    if (!Array.isArray(filteredRows)) return [];
+    if (!sortConfig.field) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
       if (sortConfig.field === 'plazaActionDate') {
         const timeA = a.decidedAt ? new Date(a.decidedAt).getTime() : (a.plazaActionTime ? 1 : 0);
         const timeB = b.decidedAt ? new Date(b.decidedAt).getTime() : (b.plazaActionTime ? 1 : 0);
@@ -601,7 +615,7 @@ export const ChargebackAssign = () => {
       }
       return 0;
     });
-  }, [rows, sortConfig]);
+  }, [filteredRows, sortConfig]);
 
   const paginatedRows = useMemo(() => {
     if (!Array.isArray(sortedRows)) return [];
@@ -723,45 +737,6 @@ export const ChargebackAssign = () => {
           </div>
 
           <div className="field-box">
-            <label htmlFor="assignPlazaAction">Plaza Action</label>
-            <select
-              id="assignPlazaAction"
-              value={plazaAction}
-              onChange={(e) => setPlazaAction(e.target.value)}
-            >
-              <option value="">Select Plaza Action</option>
-              <option value="No">0 (No)</option>
-              <option value="Yes">1 (Yes)</option>
-            </select>
-          </div>
-
-          <div className="field-box">
-            <label htmlFor="assignStatusSelect">Assign Status</label>
-            <select
-              id="assignStatusSelect"
-              value={assignStatus}
-              onChange={(e) => setAssignStatus(e.target.value)}
-            >
-              <option value="">Select Assign Status</option>
-              <option value="Assigned">Assigned</option>
-              <option value="Unassigned">UnAssigned</option>
-            </select>
-          </div>
-
-          <div className="field-box">
-            <label htmlFor="assignDisputeStatus">Dispute Status</label>
-            <select
-              id="assignDisputeStatus"
-              value={disputeStatus}
-              onChange={(e) => setDisputeStatus(e.target.value)}
-            >
-              <option value="">Select Dispute Status</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-          </div>
-
-          <div className="field-box">
             <label htmlFor="assignPlazaSelect">Toll Plaza ID</label>
             <select
               id="assignPlazaSelect"
@@ -778,6 +753,43 @@ export const ChargebackAssign = () => {
               ))}
             </select>
           </div>
+
+          <div className="field-box search-field-box">
+            <label htmlFor="assignSearch">Search (Tag ID, RRN, Plaza Txn ID)</label>
+            <div className="search-input-wrapper">
+              <span className="search-icon">🔍</span>
+              <input
+                id="assignSearch"
+                type="text"
+                placeholder="Search Tag ID, RRN, Plaza Txn ID..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    loadData({ search: searchQuery });
+                  }
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                    loadData({ search: '' });
+                  }}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="filter-actions-row">
@@ -790,19 +802,15 @@ export const ChargebackAssign = () => {
               setToDate('');
               setDateType('');
               setFunctionCode('');
-              setPlazaAction('');
-              setAssignStatus('');
-              setDisputeStatus('');
               setTollPlazaId(targetPlaza);
+              setSearchQuery('');
               loadData({
                 fromDate: '',
                 toDate: '',
                 dateType: '',
                 functionCode: '',
-                plazaAction: '',
-                assignStatus: '',
-                disputeStatus: '',
                 tollPlazaId: targetPlaza,
+                search: '',
               });
             }}
           >
@@ -811,7 +819,7 @@ export const ChargebackAssign = () => {
           <button
             type="button"
             className="btn btn-primary btn-sm"
-            onClick={() => loadData()}
+            onClick={() => loadData({ search: searchQuery })}
           >
             Search
           </button>
@@ -907,14 +915,39 @@ export const ChargebackAssign = () => {
         <div className="table-top-bar">
           <div className="table-title">Chargeback Working Queue</div>
           <div className="top-bar-right-actions">
+            <div className="table-quick-search">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                placeholder="Quick search Tag ID, RRN, Plaza Txn ID..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                  }}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <span className="record-count-text">
-              Showing {rows.length} records
+              Showing {filteredRows.length}{filteredRows.length !== rows.length ? ` of ${rows.length}` : ''} records
             </span>
             <button
               type="button"
               className="btn btn-outline-success btn-sm"
               onClick={handleExportExcel}
-              disabled={rows.length === 0}
+              disabled={filteredRows.length === 0}
               id="cbaExportExcelBtn"
               title="Export chargeback queue to Excel (.xls)"
             >
@@ -924,7 +957,7 @@ export const ChargebackAssign = () => {
               type="button"
               className="btn btn-outline-primary btn-sm"
               onClick={handleExportCsv}
-              disabled={rows.length === 0}
+              disabled={filteredRows.length === 0}
               id="cbaExportCsvBtn"
               title="Export chargeback queue to CSV"
             >
@@ -972,10 +1005,10 @@ export const ChargebackAssign = () => {
                     Loading dispute queue...
                   </td>
                 </tr>
-              ) : rows.length === 0 ? (
+              ) : filteredRows.length === 0 ? (
                 <tr>
                   <td colSpan="20" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
-                    No disputes found for the selected criteria.
+                    {searchQuery ? `No disputes match "${searchQuery}".` : 'No disputes found for the selected criteria.'}
                   </td>
                 </tr>
               ) : (
@@ -1074,7 +1107,7 @@ export const ChargebackAssign = () => {
 
         {/* Table Pagination Bar */}
         <TablePagination
-          totalItems={rows.length}
+          totalItems={filteredRows.length}
           currentPage={currentPage}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
@@ -1087,7 +1120,12 @@ export const ChargebackAssign = () => {
 
         <div className="table-footer-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            Total disputes in working queue: <strong>{rows.length}</strong>
+            Total disputes in working queue: <strong>{filteredRows.length}</strong>
+            {filteredRows.length !== rows.length && (
+              <span style={{ color: '#64748b', marginLeft: '6px' }}>
+                (filtered from {rows.length})
+              </span>
+            )}
           </div>
           <div style={{ color: '#0369a1', fontWeight: 600 }}>
             <span>📥 Export Download Time: </span>

@@ -426,6 +426,25 @@ export const UserList = () => {
   const [editingId, setEditingId] = useState(null);
   const [viewingUser, setViewingUser] = useState(null); // (i) Hierarchy Protected View-Only Modal
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        if (deleteConfirm) {
+          setDeleteConfirm(null);
+          setDeleteError('');
+        } else if (viewingUser) {
+          setViewingUser(null);
+        } else if (isBulkOpen) {
+          setIsBulkOpen(false);
+        } else if (isModalOpen) {
+          setIsModalOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [deleteConfirm, viewingUser, isBulkOpen, isModalOpen]);
+
   // Form State
   const [formValues, setFormValues] = useState({
     username: '',

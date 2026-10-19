@@ -193,6 +193,12 @@ public class DisputeWorkflowService {
         String batchId = (String) payload.getOrDefault("batchId", "BATCH-" + System.currentTimeMillis());
         String fileName = (String) payload.getOrDefault("fileName", "disputes.csv");
         String uploadedBy = (String) payload.getOrDefault("uploadedBy", "Master Admin");
+        String disputeFileDate = (String) payload.get("disputeFileDate");
+
+        // Rule: Duplicate 01 files (file with same name) should be rejected
+        if (fileName != null && batchRepository.existsByFileNameIgnoreCase(fileName.trim())) {
+            throw new IllegalArgumentException("Duplicate File Error: A dispute file with name '" + fileName + "' has already been uploaded previously. The system requires a unique file name every time.");
+        }
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> rows = (List<Map<String, Object>>) payload.get("rows");
@@ -297,6 +303,9 @@ public class DisputeWorkflowService {
                 duplicateCount,
                 "Processed"
         );
+        if (disputeFileDate != null && !disputeFileDate.trim().isEmpty()) {
+            batch.setDisputeFileDate(disputeFileDate.trim());
+        }
         batchRepository.save(batch);
 
         Map<String, Object> result = new HashMap<>();

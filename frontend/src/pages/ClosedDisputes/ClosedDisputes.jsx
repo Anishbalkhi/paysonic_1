@@ -643,22 +643,22 @@ export const ClosedDisputes = () => {
           </div>
 
           <div className="field-box">
-            <label htmlFor="cdAcqTxnId">Acq Txn ID</label>
+            <label htmlFor="cdAcqTxnId">RRN / Acq Txn ID</label>
             <input
               id="cdAcqTxnId"
               type="text"
-              placeholder="Enter Acq Txn ID"
+              placeholder="Enter RRN or Acq Txn ID"
               value={acqTxnId}
               onChange={(e) => setAcqTxnId(e.target.value)}
             />
           </div>
 
           <div className="field-box">
-            <label htmlFor="cdTollTxnId">Toll Txn ID</label>
+            <label htmlFor="cdTollTxnId">Plaza Txn ID / Toll Txn ID</label>
             <input
               id="cdTollTxnId"
               type="text"
-              placeholder="Enter Toll Txn ID"
+              placeholder="Enter Plaza Txn ID"
               value={tollTxnId}
               onChange={(e) => setTollTxnId(e.target.value)}
             />

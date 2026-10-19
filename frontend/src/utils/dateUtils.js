@@ -32,7 +32,8 @@ export const parseUtcTimestamp = (ts) => {
   const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
   if (dmyMatch) {
     const [, day, month, year, hours = 0, minutes = 0, seconds = 0] = dmyMatch;
-    return new Date(Date.UTC(+year, +month - 1, +day, +hours, +minutes, +seconds));
+    // Local representation: do NOT use Date.UTC to prevent double-offsetting local time
+    return new Date(+year, +month - 1, +day, +hours, +minutes, +seconds);
   }
 
   // If the timestamp string from Railway / Spring Boot has no timezone designator:
@@ -88,34 +89,75 @@ export const sortRecordsLatestFirst = (records) => {
 };
 
 /**
- * Formats a timestamp into a standard human-readable format:
- * e.g., "Oct 6, 06:45 AM" or with timeZone support
+ * Helper to zero-pad numbers to 2 digits
  */
-export const formatAuditTimestamp = (ts, options = {}) => {
+const pad2 = (n) => String(n).padStart(2, '0');
+
+/**
+ * Formats a date/timestamp to DD-MM-YYYY HH:mm:ss
+ */
+export const formatDateTime = (ts) => {
+  if (!ts || ts === '—' || ts === 'null' || ts === 'undefined') return '—';
+  const str = String(ts).trim();
+  if (!str) return '—';
+
+  // Already in DD-MM-YYYY HH:mm:ss
+  if (/^\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}:\d{2}$/.test(str)) {
+    return str;
+  }
+  // DD-MM-YYYY HH:mm
+  if (/^\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}$/.test(str)) {
+    return `${str}:00`;
+  }
+  // DD-MM-YYYY date only
+  if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+    return `${str} 00:00:00`;
+  }
+
   const d = parseUtcTimestamp(ts);
-  if (!d) return '—';
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-    ...options,
-  });
+  if (!d || isNaN(d.getTime())) return String(ts);
+  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 };
 
 /**
- * Formats full timestamp with date and time:
- * e.g., "Monday, October 6, 2026, 6:45:00 AM"
+ * Formats a date/timestamp to DD-MM-YYYY (date only)
  */
-export const formatFullTimestamp = (ts, options = {}) => {
+export const formatDateOnly = (ts) => {
+  if (!ts || ts === '—' || ts === 'null' || ts === 'undefined') return '—';
+  const str = String(ts).trim();
+  if (!str) return '—';
+
+  // Already in DD-MM-YYYY
+  if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+    return str;
+  }
+  // Starts with DD-MM-YYYY
+  if (/^\d{2}-\d{2}-\d{4}\s+/.test(str)) {
+    return str.split(/\s+/)[0];
+  }
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('-');
+    return `${d}-${m}-${y}`;
+  }
+
   const d = parseUtcTimestamp(ts);
-  if (!d) return '—';
-  return d.toLocaleString('en-US', {
-    dateStyle: 'full',
-    timeStyle: 'medium',
-    ...options,
-  });
+  if (!d || isNaN(d.getTime())) return String(ts);
+  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
+};
+
+/**
+ * Formats a timestamp into standard DD-MM-YYYY HH:mm:ss
+ */
+export const formatAuditTimestamp = (ts) => {
+  return formatDateTime(ts);
+};
+
+/**
+ * Formats full timestamp with date and time: DD-MM-YYYY HH:mm:ss
+ */
+export const formatFullTimestamp = (ts) => {
+  return formatDateTime(ts);
 };
 
 /**
@@ -141,7 +183,7 @@ export const calculateSessionDuration = (ts) => {
 
 /**
  * Formats a relative timestamp:
- * e.g., "Just now", "2 mins ago", "1 hr ago"
+ * e.g., "Just now", "2 mins ago", "1 hr ago", or DD-MM-YYYY
  */
 export const formatRelativeTime = (ts) => {
   if (!ts) return 'Just now';
@@ -157,7 +199,7 @@ export const formatRelativeTime = (ts) => {
   if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return formatDateOnly(d);
 };
 
 /**
@@ -166,8 +208,8 @@ export const formatRelativeTime = (ts) => {
 export const formatFetchTime = (date = new Date()) => {
   const d = date instanceof Date ? date : new Date(date);
   if (isNaN(d.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 };
+
 
 

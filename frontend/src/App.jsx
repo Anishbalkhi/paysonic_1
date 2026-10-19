@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { getRoleSlug } from './config/roleMenus';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
+import GlobalEscapeHandler from './components/common/GlobalEscapeHandler';
 
 const AppLayout = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -45,6 +46,7 @@ const AppLayout = () => {
 export const App = () => {
   return (
     <ThemeProvider>
+      <GlobalEscapeHandler />
       <AuthProvider>
         <BrowserRouter>
           <ErrorBoundary>

@@ -40,6 +40,9 @@ public class DisputeBatch {
     @Column(name = "status", length = 32, nullable = false)
     private String status = "Processed";
 
+    @Column(name = "dispute_file_date", length = 32)
+    private String disputeFileDate;
+
     @PrePersist
     public void prePersist() {
         if (uploadTimestamp == null) {
@@ -97,4 +100,7 @@ public class DisputeBatch {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDisputeFileDate() { return disputeFileDate; }
+    public void setDisputeFileDate(String disputeFileDate) { this.disputeFileDate = disputeFileDate; }
 }

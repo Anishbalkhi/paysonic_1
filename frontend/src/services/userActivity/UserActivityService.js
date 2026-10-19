@@ -579,7 +579,8 @@ class UserActivityService {
       const targetMonth = d.getMonth();
       const targetDay = d.getDate();
 
-      labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      const pad = (n) => String(n).padStart(2, '0');
+      labels.push(`${pad(targetDay)}-${pad(targetMonth + 1)}-${targetYear}`);
 
       const matchesDay = (ts) => {
         if (!ts) return false;

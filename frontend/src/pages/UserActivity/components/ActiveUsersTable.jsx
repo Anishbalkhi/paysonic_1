@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import TablePagination from '../../../components/common/TablePagination';
 import UserActivityService from '../../../services/userActivity/UserActivityService';
-import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime } from '../../../utils/dateUtils';
+import { parseUtcTimestamp, calculateSessionDuration, formatRelativeTime, formatAuditTimestamp } from '../../../utils/dateUtils';
 
 const ROLE_OPTIONS = [
   'All Roles',
@@ -198,7 +198,7 @@ export const ActiveUsersTable = ({ activeUsers = [], onForceLogout, onExportComp
                 paginatedUsers.map((u) => {
                   const loginTimeParsed = parseUtcTimestamp(u.loginTime);
                   const connectedSince = loginTimeParsed
-                    ? loginTimeParsed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    ? formatAuditTimestamp(u.loginTime)
                     : '—';
                   const duration = calculateSessionDuration(u.loginTime);
 

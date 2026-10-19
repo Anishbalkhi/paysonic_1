@@ -1292,6 +1292,22 @@ export const Onboarding = () => {
   const [urlSpacePopup, setUrlSpacePopup] = useState({ show: false, api: '', rawVal: '' });
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        if (urlSpacePopup.show) {
+          setUrlSpacePopup({ show: false, api: '', rawVal: '' });
+        } else if (viewPlazaDetail) {
+          setViewPlazaDetail(null);
+        } else if (laneModalOpen) {
+          setLaneModalOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [urlSpacePopup.show, viewPlazaDetail, laneModalOpen]);
+
+  useEffect(() => {
     if (selectedPlazaId && store.callbacks[selectedPlazaId]) {
       setCallbackUrls({ ...store.callbacks[selectedPlazaId] });
       setTestResults({});

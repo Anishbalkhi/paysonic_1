@@ -23,18 +23,25 @@ export const PlazaMultiSelect = ({
     }
   }, [isPlazaLocked, plazas, selectedPlazas, onChange]);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or Escape key
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setIsOpen(false);
       }
     };
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
+        setIsOpen(false);
+      }
+    };
     document.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [isOpen]);
 
   // Filter plazas based on inner search
   const filteredPlazas = useMemo(() => {

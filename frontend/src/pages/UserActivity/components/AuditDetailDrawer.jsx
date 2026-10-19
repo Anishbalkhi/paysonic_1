@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { buildDiff } from '../../../utils/auditDiff';
 import { referenceFor } from '../../../utils/auditReference';
 import { formatFullTimestamp } from '../../../utils/dateUtils';
@@ -18,6 +18,20 @@ const maskSensitive = (val) => {
 
 export const AuditDetailDrawer = ({ event, onClose }) => {
   const [showRaw, setShowRaw] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && event) {
+        onClose();
+      }
+    };
+    if (event) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [event, onClose]);
 
   if (!event) return null;
 

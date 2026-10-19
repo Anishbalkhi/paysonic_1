@@ -192,7 +192,7 @@ export const DisputeValidate = () => {
         r.txnDate,
         r.settlementDate || '—',
         r.tatDueDate || '—',
-        r.cbRaisedDate,
+        r.settlementDate || r.cbRaisedDate || '—',
         r.cbReason,
         r.functionCode,
         r.plazaAction,
@@ -292,7 +292,7 @@ export const DisputeValidate = () => {
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
-        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.cbRaisedDate)}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || r.cbRaisedDate || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
         <Cell ss:StyleID="${actionStyle}"><Data ss:Type="String">${xmlEsc(r.plazaAction)}</Data></Cell>
@@ -579,22 +579,22 @@ export const DisputeValidate = () => {
           </div>
 
           <div className="field-box">
-            <label htmlFor="vdAcqTxnId">Acq Txn ID</label>
+            <label htmlFor="vdAcqTxnId">RRN / Acq Txn ID</label>
             <input
               id="vdAcqTxnId"
               type="text"
-              placeholder="Enter Acq Txn ID (partial match)"
+              placeholder="Enter RRN or Acq Txn ID"
               value={acqTxnId}
               onChange={(e) => setAcqTxnId(e.target.value)}
             />
           </div>
 
           <div className="field-box">
-            <label htmlFor="vdTollTxnId">Toll Txn ID</label>
+            <label htmlFor="vdTollTxnId">Plaza Txn ID / Toll Txn ID</label>
             <input
               id="vdTollTxnId"
               type="text"
-              placeholder="Enter Toll Txn ID"
+              placeholder="Enter Plaza Txn ID"
               value={tollTxnId}
               onChange={(e) => setTollTxnId(e.target.value)}
             />

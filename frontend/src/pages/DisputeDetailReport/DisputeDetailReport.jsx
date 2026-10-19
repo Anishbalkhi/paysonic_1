@@ -234,6 +234,31 @@ export const DisputeDetailReport = () => {
     };
   }, [filteredRecords]);
 
+  // Standard Date & DateTime formatters: DD-MM-YYYY HH:MM:SS / DD-MM-YYYY
+  const formatDateTime = (val) => {
+    if (!val || val === '—' || val === '--') return '—';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    } catch {
+      return String(val);
+    }
+  };
+
+  const formatDate = (val) => {
+    if (!val || val === '—' || val === '--') return '—';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+    } catch {
+      return String(val);
+    }
+  };
+
   // Client-side Export handlers with full lifecycle data
   const handleExportCsv = () => {
     if (filteredRecords.length === 0) return;
@@ -276,19 +301,19 @@ export const DisputeDetailReport = () => {
         r.tagId || '—',
         r.plazaName || '—',
         r.plazaId || '—',
-        r.txnDateTime || '—',
-        r.settlementDate || '—',
-        r.tatDueDate || '—',
+        formatDateTime(r.txnDateTime),
+        formatDate(r.settlementDate),
+        formatDate(r.tatDueDate),
         Number(r.disputeAmount || 0).toFixed(2),
         r.functionCode || '—',
         r.adminReason || '—',
-        r.assignedAt || '—',
+        formatDateTime(r.assignedAt),
         r.disputeStatus === 'Approved' ? 'Accepted' : r.disputeStatus === 'Rejected' ? 'Rejected' : 'Pending',
-        r.plazaActionTime || '—',
+        formatDateTime(r.plazaActionTime),
         r.plazaReason || '—',
         r.plazaActionBy || '—',
         r.lifecycleStatus || 'Pending Assignment',
-        r.closureDate || '—'
+        formatDate(r.closureDate)
       ]);
 
       const totDispute = filteredRecords.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
@@ -384,19 +409,19 @@ export const DisputeDetailReport = () => {
           <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tagId || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaName || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaId || '—')}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.txnDateTime || '—')}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDateTime(r.txnDateTime))}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDate(r.settlementDate))}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDate(r.tatDueDate))}</Data></Cell>
           <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${dAmt}</Data></Cell>
           <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.functionCode || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.adminReason || '—')}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.assignedAt || '—')}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDateTime(r.assignedAt))}</Data></Cell>
           <Cell ss:StyleID="${statusStyle}"><Data ss:Type="String">${xmlEsc(isAccepted ? 'Accepted' : isRejected ? 'Rejected' : 'Pending')}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaActionTime || '—')}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDateTime(r.plazaActionTime))}</Data></Cell>
           <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaReason || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaActionBy || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.lifecycleStatus || 'Pending Assignment')}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.closureDate || '—')}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDate(r.closureDate))}</Data></Cell>
         </Row>`;
       });
 
@@ -606,18 +631,6 @@ export const DisputeDetailReport = () => {
       alert('Failed to export Excel. Please try again.');
     } finally {
       setExportingExcel(false);
-    }
-  };
-
-  const formatDateTime = (val) => {
-    if (!val) return '--';
-    try {
-      const d = new Date(val);
-      if (isNaN(d.getTime())) return val;
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    } catch {
-      return val;
     }
   };
 
@@ -875,9 +888,9 @@ export const DisputeDetailReport = () => {
                       </td>
                       <td className="font-semibold">{item.plazaName} ({item.plazaId})</td>
                       <td className="text-center">{formatDateTime(item.txnDateTime)}</td>
-                      <td className="text-center">{item.settlementDate || '—'}</td>
+                      <td className="text-center">{formatDate(item.settlementDate)}</td>
                       <td className="text-center" style={{ fontWeight: 600, color: '#0369a1' }}>
-                        {item.tatDueDate || '—'}
+                        {formatDate(item.tatDueDate)}
                       </td>
                       <td className="num-col font-bold">₹ {Number(item.disputeAmount || 0).toFixed(2)}</td>
                       <td style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.adminReason}>
@@ -889,7 +902,7 @@ export const DisputeDetailReport = () => {
                         </span>
                       </td>
                       <td className="text-center" style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
-                        {item.plazaActionTime || '—'}
+                        {formatDateTime(item.plazaActionTime)}
                       </td>
                       <td style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.plazaReason}>
                         {item.plazaReason || '—'}
@@ -900,7 +913,7 @@ export const DisputeDetailReport = () => {
                           {item.lifecycleStatus || 'Pending Assignment'}
                         </span>
                       </td>
-                      <td className="text-center">{item.closureDate || '—'}</td>
+                      <td className="text-center">{formatDate(item.closureDate)}</td>
                     </tr>
                   );
                 })

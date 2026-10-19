@@ -108,7 +108,8 @@ export const PassSummaryReport = () => {
     try {
       const d = new Date(dStr);
       if (isNaN(d.getTime())) return dStr;
-      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
     } catch {
       return dStr;
     }

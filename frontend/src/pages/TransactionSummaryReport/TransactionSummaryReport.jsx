@@ -177,7 +177,16 @@ export const TransactionSummaryReport = () => {
 
   const dateSubtitle = useMemo(() => {
     if (!fromDate || !toDate) return '';
-    const f = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const f = (d) => {
+      try {
+        const dt = new Date(d);
+        if (isNaN(dt.getTime())) return d;
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${pad(dt.getDate())}-${pad(dt.getMonth() + 1)}-${dt.getFullYear()}`;
+      } catch {
+        return d;
+      }
+    };
     return `Report Period: ${f(fromDate)} — ${f(toDate)}`;
   }, [fromDate, toDate]);
 

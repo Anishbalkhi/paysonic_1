@@ -29,6 +29,24 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
     }
   }, [disputeRow]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
+        if (previewTarget) {
+          setPreviewTarget(null);
+        } else {
+          onClose();
+        }
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, previewTarget, onClose]);
+
   if (!isOpen || !disputeRow) return null;
 
   const isAssigned = Boolean(disputeRow.assigned);

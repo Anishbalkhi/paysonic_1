@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TRANSACTION_MASTER, PLAZA_MAP } from '../../config/disputeConstants';
 import { formatDisplayDateTime } from '../../services/dispute/DisputeManagementService';
 import EvidencePreviewModal from './EvidencePreviewModal';
@@ -6,6 +6,20 @@ import './DisputeModals.scss';
 
 export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
   const [previewTarget, setPreviewTarget] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen || !disputeRow) return null;
 

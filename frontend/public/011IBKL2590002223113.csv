@@ -1,0 +1,4 @@
+RRN,Function Code,Settlement Date,Dispute Amount,Member Message Text,Tag ID,Vehicle Registration Number
+102047735808524801,450,19-08-2022,120.00,Multiple Debit for Same Transit Transaction (NPCI 01 File #13 Julian 231),34161FA820328EB002948010,MH13AZ1234
+102047735808524802,471,19-08-2022,65.00,Pre-Arbitration Claim for Technical Glitch,34161FA820328EB002948020,MH13BZ5678
+102047735808524712,450,19-08-2022,85.00,Chargeback raised by Issuer Bank for toll plaza,34161FA820328EB002947820,MH12VL3467

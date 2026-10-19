@@ -18,16 +18,21 @@ export const formatNumber = (num) => {
 };
 
 export const formatDate = (dateStr, includeTime = false) => {
-  if (!dateStr) return 'N/A';
-  const date = new Date(dateStr);
-  const options = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    ...(includeTime && { hour: '2-digit', minute: '2-digit' }),
-  };
-  return date.toLocaleDateString('en-US', options);
+  if (!dateStr || dateStr === '—' || dateStr === '-') return '—';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return String(dateStr);
+    const pad = (n) => String(n).padStart(2, '0');
+    const dmy = `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()}`;
+    if (includeTime) {
+      return `${dmy} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+    return dmy;
+  } catch {
+    return String(dateStr);
+  }
 };
+
 
 export const getStatusBadgeClass = (status) => {
   switch (status?.toLowerCase()) {

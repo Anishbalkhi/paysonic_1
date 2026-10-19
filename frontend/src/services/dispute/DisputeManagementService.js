@@ -14,12 +14,24 @@ import evidenceStorage, { isValidMediaUrl } from './evidenceStorage';
 const STORAGE_KEY_DISPUTES = 'paysonic_disputes_db_cache_v1';
 const STORAGE_KEY_BATCHES = 'paysonic_dispute_batches_db_cache_v1';
 const STORAGE_KEY_AUDIT = 'paysonic_dispute_audit_db_v1';
+const STORAGE_KEY_BATCH_DATES = 'paysonic_batch_dates_map_v1';
 
 /**
  * Parses YYMMDD (e.g. '261008' -> '08-10-2026') or DD-MM-YYYY / YYYY-MM-DD
  */
-export function parseSettlementDate(raw) {
+export function parseSettlementDate(raw, fallbackDate = null) {
   if (!raw) {
+    if (fallbackDate) {
+      const fbStr = String(fallbackDate).trim();
+      if (/^\d{2}-\d{2}-\d{4}$/.test(fbStr)) {
+        const [dd, mm, yyyy] = fbStr.split('-').map((v) => parseInt(v, 10));
+        return { formatted: fbStr, dateObj: new Date(yyyy, mm - 1, dd) };
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(fbStr)) {
+        const [yyyy, mm, dd] = fbStr.split('-').map((v) => parseInt(v, 10));
+        return { formatted: `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`, dateObj: new Date(yyyy, mm - 1, dd) };
+      }
+    }
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -196,7 +208,7 @@ function mapDbRecordToUi(r, idx = 0) {
     txnDateTime: txnDateStr,
     settlementDate: settlement,
     tatDueDate: tatDue,
-    cbRaisedDate: r.cbRaisedDate || settlement,
+    cbRaisedDate: settlement || r.cbRaisedDate || '',
     cbReason: fileReason || '—',
     memberMessageText: fileReason || '—',
     assigned: isAssigned,
@@ -255,9 +267,6 @@ class DisputeManagementService {
       localStorage.removeItem('paysonic_dispute_batches_v2');
       localStorage.removeItem('paysonic_disputes_live_v1');
       localStorage.removeItem('paysonic_dispute_batches_live_v1');
-      localStorage.removeItem(STORAGE_KEY_DISPUTES);
-      localStorage.removeItem(STORAGE_KEY_BATCHES);
-      localStorage.removeItem('paysonic_evidence_vault_v1');
 
       // Fetch live records from Railway backend database in background
       this.syncFromBackend().catch((e) => {
@@ -337,29 +346,64 @@ class DisputeManagementService {
     }
   }
 
+  getBatchDateMap() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_BATCH_DATES);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  setBatchDate(batchId, fileName, date) {
+    if (!date) return;
+    try {
+      const map = this.getBatchDateMap();
+      if (batchId) map[batchId] = date;
+      if (fileName) map[fileName.trim().toLowerCase()] = date;
+      localStorage.setItem(STORAGE_KEY_BATCH_DATES, JSON.stringify(map));
+    } catch (e) {
+      console.warn('[DisputeManagementService] Failed to cache batch date:', e);
+    }
+  }
+
   getBatches() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_BATCHES);
-      return raw ? JSON.parse(raw) : [];
+      const batches = raw ? JSON.parse(raw) : [];
+      const dateMap = this.getBatchDateMap();
+      return batches.map((b) => {
+        const fnKey = (b.fileName || '').trim().toLowerCase();
+        return {
+          ...b,
+          disputeFileDate: b.disputeFileDate || dateMap[b.batchId] || dateMap[fnKey] || '',
+        };
+      });
     } catch {
       return [];
     }
   }
 
   async fetchBatches() {
+    const dateMap = this.getBatchDateMap();
     try {
       const res = await httpClient.get('/api/disputes/workflow/batches');
       if (Array.isArray(res.data)) {
-        const mapped = res.data.map((b) => ({
-          batchId: b.batchId,
-          fileName: b.fileName,
-          uploadedAt: b.uploadTimestamp ? String(b.uploadTimestamp).replace('T', ' ').slice(0, 19) : '',
-          uploadedBy: b.uploadedBy || 'Master Admin',
-          totalRows: b.totalRows || 0,
-          matchedRows: b.matchedRows || 0,
-          unmatchedRows: b.unmatchedRows || 0,
-          status: b.status || 'Processed',
-        }));
+        const mapped = res.data.map((b) => {
+          const fnKey = (b.fileName || '').trim().toLowerCase();
+          const resolvedDate = b.disputeFileDate || dateMap[b.batchId] || dateMap[fnKey] || '';
+          return {
+            batchId: b.batchId,
+            fileName: b.fileName,
+            disputeFileDate: resolvedDate,
+            uploadedAt: b.uploadTimestamp ? String(b.uploadTimestamp).replace('T', ' ').slice(0, 19) : '',
+            uploadedBy: b.uploadedBy || 'Master Admin',
+            totalRows: b.totalRows || 0,
+            matchedRows: b.matchedRows || 0,
+            unmatchedRows: b.unmatchedRows || 0,
+            status: b.status || 'Processed',
+          };
+        });
         localStorage.setItem(STORAGE_KEY_BATCHES, JSON.stringify(mapped));
         return mapped;
       }
@@ -493,6 +537,22 @@ class DisputeManagementService {
     }
     if (filters.plazaId && filters.plazaId !== 'ALL') {
       rows = rows.filter((r) => String(r.plazaId) === String(filters.plazaId));
+    }
+    if (filters.search && filters.search.trim()) {
+      const q = filters.search.trim().toLowerCase();
+      rows = rows.filter((r) => {
+        const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(q);
+        const rrnMatch =
+          (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
+          (r.rrn && String(r.rrn).toLowerCase().includes(q));
+        const plazaTxnMatch =
+          (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
+          (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(q));
+        const vrnMatch =
+          (r.vrn && String(r.vrn).toLowerCase().includes(q)) ||
+          (r.vehicleNo && String(r.vehicleNo).toLowerCase().includes(q));
+        return tagMatch || rrnMatch || plazaTxnMatch || vrnMatch;
+      });
     }
 
     return rows;
@@ -890,10 +950,11 @@ class DisputeManagementService {
    * 5. Txn Amount, Plaza ID, Plaza Name, Txn Date: from single transaction table
    * 6. Mismatched records: marked and excluded from Dispute Assign
    */
-  async matchCsvRows(parsedRows) {
+  async matchCsvRows(parsedRows, fallbackDisputeFileDate = '') {
     try {
       const resp = await httpClient.post('/api/disputes/workflow/batches/validate-and-match', {
         rows: parsedRows,
+        disputeFileDate: fallbackDisputeFileDate,
       });
       if (resp && resp.data && Array.isArray(resp.data.results)) {
         return resp.data;
@@ -924,8 +985,30 @@ class DisputeManagementService {
       const rowNum = idx + 2; // 1-based header offset
       const rrn = (row['RRN'] || row['rrn'] || row['Acq Txn ID'] || row['Acquirer Reference Number'] || '').trim();
       const rawFuncCode = String(row['Function Code'] || row['functionCode'] || row['FunctionCode'] || '450').trim();
-      const rawSettlement = row['Settlement Date'] || row['settlementDate'] || row['Settlement_Date'] || '';
-      const { formatted: settlementDate } = parseSettlementDate(rawSettlement);
+
+      // Robust extraction of settlement date from CSV file (case-insensitive & whitespace tolerant)
+      let rawSettlement = '';
+      for (const k of ['Settlement Date', 'settlementDate', 'Settlement_Date', 'Settlement date', 'SETTLEMENT DATE', 'SettlementDate', 'Settlement', 'Date Settlement', 'Dispute Date', 'Dispute Raise Date']) {
+        if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+          rawSettlement = String(row[k]).trim();
+          break;
+        }
+      }
+      if (!rawSettlement) {
+        for (const rk of Object.keys(row)) {
+          const cleanK = rk.toLowerCase().replace(/[\s_-]/g, '');
+          if (cleanK === 'settlementdate' || cleanK === 'datesettlement' || cleanK === 'settlement' || cleanK === 'disputeraisedate') {
+            const v = row[rk];
+            if (v !== undefined && v !== null && String(v).trim() !== '') {
+              rawSettlement = String(v).trim();
+              break;
+            }
+          }
+        }
+      }
+
+      // User requirement: Dispute Raise Date MUST use settlement date from file, or selected file date
+      const { formatted: settlementDate } = parseSettlementDate(rawSettlement, fallbackDisputeFileDate);
       const tatDueDate = computeTatDueDate(settlementDate);
 
       // Extract Disputed Amount from CSV (Rule 3.3)
@@ -1066,7 +1149,20 @@ class DisputeManagementService {
   /**
    * Commit matched rows directly to Railway MySQL database
    */
-  async commitMatchedRows(fileName, matchedResults, actor = 'Master Admin') {
+  async commitMatchedRows(fileName, matchedResults, actor = 'Master Admin', npciMeta = null, disputeFileDate = '') {
+    // 1. Strict Duplicate File Name Check: User requirement: "Duplicate 01 files (file with same name) are getting uploaded this should accept unique name every time"
+    const liveBatches = await this.fetchBatches();
+    const localBatches = this.getBatches();
+    const existingBatches = [...(Array.isArray(liveBatches) ? liveBatches : []), ...(Array.isArray(localBatches) ? localBatches : [])];
+    const cleanFileName = String(fileName || '').trim();
+    const isDuplicate = existingBatches.some(
+      (b) => b.fileName && b.fileName.trim().toLowerCase() === cleanFileName.toLowerCase()
+    );
+    if (isDuplicate) {
+      throw new Error(`Duplicate File Error: A dispute file with name "${cleanFileName}" has already been uploaded previously. The system accepts unique file names only.`);
+    }
+
+    const resolvedFileDate = disputeFileDate || npciMeta?.releaseDate || '';
     const existing = this.getStoredDisputes();
     const toInsert = [];
 
@@ -1076,6 +1172,9 @@ class DisputeManagementService {
         (e) => e.acqTxnId === r.rrn && String(e.functionCode) === String(r.functionCode) && !e.closed
       );
       if (exists) return;
+
+      // User requirement: "Currently dispute raised date showing the date when file is uploaded rather than it should show date settlement from file as dispute raise date"
+      const effectiveCbRaisedDate = r.settlementDate || resolvedFileDate || (npciMeta?.releaseDate) || '';
 
       toInsert.push({
         disputeId: `DISP-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -1090,7 +1189,7 @@ class DisputeManagementService {
         tatDueDate: r.tatDueDate,
         txnAmount: r.txnAmount,
         disputeAmount: r.disputeAmount,
-        cbRaisedDate: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
+        cbRaisedDate: effectiveCbRaisedDate,
         cbReason: r.memberMessageText,
         functionCode: String(r.functionCode),
         functionLabel: r.disputeType,
@@ -1103,11 +1202,29 @@ class DisputeManagementService {
 
     const batchId = `BATCH-${Date.now().toString().slice(-6)}`;
 
-    // 1. Persist directly to Railway MySQL database
+    // Cache batch date locally for instant UI reflection
+    if (resolvedFileDate) {
+      this.setBatchDate(batchId, cleanFileName, resolvedFileDate);
+    }
+
+    this.saveBatch({
+      batchId,
+      fileName: cleanFileName,
+      disputeFileDate: resolvedFileDate,
+      uploadedAt: formatIstTimestamp(),
+      uploadedBy: actor,
+      totalRows: matchedResults.length,
+      matchedRows: toInsert.length,
+      unmatchedRows: matchedResults.length - toInsert.length,
+      status: 'Processed',
+    });
+
+    // 2. Persist directly to Railway MySQL database
     try {
       await httpClient.post('/api/disputes/workflow/batches/upload', {
         batchId,
-        fileName,
+        fileName: cleanFileName,
+        disputeFileDate: resolvedFileDate,
         uploadedBy: actor,
         totalRows: matchedResults.length,
         unmatchedRows: matchedResults.length - toInsert.length,
@@ -1117,7 +1234,7 @@ class DisputeManagementService {
       console.warn('[DisputeManagementService] DB batch upload notice:', err?.message);
     }
 
-    // 2. Re-sync from Railway MySQL to get fresh DB records
+    // 3. Re-sync from Railway MySQL to get fresh DB records
     await this.syncFromBackend();
 
     this.logAudit('FILE_UPLOAD', `Uploaded ${fileName}: added ${toInsert.length} disputes to Railway DB`, actor);

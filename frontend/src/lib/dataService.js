@@ -60,7 +60,16 @@ async function getApiData(endpoint) {
                   ?? raw.totalTransactions
                   ?? 0;
     const normalized = {
-      date               : raw.date ?? new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      date               : (() => {
+        try {
+          const dt = raw.date ? new Date(raw.date) : new Date();
+          if (!isNaN(dt.getTime())) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${pad(dt.getDate())}-${pad(dt.getMonth() + 1)}-${dt.getFullYear()}`;
+          }
+        } catch {}
+        return raw.date || '';
+      })(),
       netRevenue         : raw.summary.totalRevenue ?? raw.netRevenue ?? 0,
       deltaVsYesterday   : raw.deltaVsYesterday     ?? 0,
       successRate        : raw.successRate           ?? raw.summary.successRate ?? 0,

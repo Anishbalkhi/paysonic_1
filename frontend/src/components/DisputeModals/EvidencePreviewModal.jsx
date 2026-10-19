@@ -54,6 +54,20 @@ export const EvidencePreviewModal = ({
     setImageError(false);
   }, [activeIndex]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || items.length === 0) return null;
 
   const currentItem = items[activeIndex] || items[0];
