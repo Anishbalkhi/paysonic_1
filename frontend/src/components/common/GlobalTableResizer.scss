@@ -1,0 +1,240 @@
+/* ==========================================================================
+   Global Table Resizer & Column Stretch Styles
+   ========================================================================== */
+
+/* Resizer handle on each table header (TH) */
+th.col-resizable {
+  position: relative !important;
+  overflow: visible !important;
+  user-select: none;
+
+  .col-resizer {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    bottom: 0;
+    width: 8px;
+    cursor: col-resize !important;
+    user-select: none;
+    z-index: 15;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+
+    &::after {
+      content: '';
+      display: block;
+      width: 2px;
+      height: 60%;
+      background-color: rgba(255, 255, 255, 0.35);
+      border-radius: 1px;
+      transition: all 0.15s ease;
+    }
+
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.15);
+
+      &::after {
+        width: 3px;
+        height: 100%;
+        background-color: #60a5fa;
+        box-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
+      }
+    }
+  }
+
+  /* Light headers (non-blue) */
+  &:not([style*="background-color: #0d47a1"]):not([style*="background: #0d47a1"]) {
+    .col-resizer::after {
+      background-color: rgba(148, 163, 184, 0.45);
+    }
+
+    .col-resizer:hover::after {
+      background-color: #2563eb;
+    }
+  }
+}
+
+/* Active dragging state on document */
+body.table-is-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+
+  * {
+    cursor: col-resize !important;
+    user-select: none !important;
+  }
+
+  th.col-resizable .col-resizer::after {
+    width: 3px !important;
+    height: 100% !important;
+    background-color: #38bdf8 !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.9) !important;
+  }
+}
+
+/* Table Stretch & Size Toolbar Controls */
+.table-stretch-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--stroke, #e2e8f0);
+  border-radius: 8px;
+  padding: 3px 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink, #334155);
+  user-select: none;
+  margin-left: 6px;
+
+  .stretch-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--ink-muted, #64748b);
+    margin-right: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    svg {
+      width: 13px;
+      height: 13px;
+      opacity: 0.75;
+    }
+  }
+
+  .stretch-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 5px;
+    border: 1px solid var(--stroke, #cbd5e1);
+    background: var(--card, #f8fafc);
+    color: var(--ink, #1e293b);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: var(--primary-light, #eff6ff);
+      border-color: var(--primary, #3b82f6);
+      color: var(--primary, #1d4ed8);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &.stretch-reset {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0 7px;
+      background: transparent;
+      border-color: transparent;
+      color: var(--ink-muted, #64748b);
+
+      &:hover {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #b91c1c;
+      }
+    }
+  }
+
+  .stretch-val {
+    min-width: 38px;
+    text-align: center;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--primary, #2563eb);
+    padding: 0 2px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Stretched and Scaled Table Styles */
+table[data-table-scale] {
+  transition: font-size 0.15s ease;
+
+  &[data-table-scale="compact"] {
+    font-size: 0.74rem !important;
+
+    th, td {
+      padding: 5px 8px !important;
+    }
+  }
+
+  &[data-table-scale="normal"] {
+    /* default size */
+  }
+
+  &[data-table-scale="stretched-1"] {
+    font-size: 0.88rem !important;
+
+    th, td {
+      padding: 11px 18px !important;
+    }
+  }
+
+  &[data-table-scale="stretched-2"] {
+    font-size: 0.94rem !important;
+
+    th, td {
+      padding: 13px 22px !important;
+    }
+  }
+
+  &[data-table-scale="stretched-3"] {
+    font-size: 1rem !important;
+
+    th, td {
+      padding: 15px 26px !important;
+    }
+  }
+}
+
+/* Dark mode theme overrides */
+[data-theme="dark"] {
+  .table-stretch-toolbar {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+
+    .stretch-badge {
+      color: #94a3b8;
+    }
+
+    .stretch-btn {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f1f5f9;
+
+      &:hover {
+        background: #1e3a8a;
+        border-color: #3b82f6;
+        color: #93c5fd;
+      }
+
+      &.stretch-reset:hover {
+        background: #7f1d1d;
+        border-color: #ef4444;
+        color: #fca5a5;
+      }
+    }
+
+    .stretch-val {
+      color: #60a5fa;
+    }
+  }
+}

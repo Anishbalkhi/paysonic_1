@@ -1,0 +1,283 @@
+import React, { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import './GlobalTableResizer.scss';
+
+const STORAGE_PREFIX = 'paysonic_tbl_widths_v2_';
+const STORAGE_SCALE_PREFIX = 'paysonic_tbl_scale_v2_';
+
+const SCALE_LEVELS = [
+  { key: 'compact', label: '80%', percent: 80 },
+  { key: 'normal', label: '100%', percent: 100 },
+  { key: 'stretched-1', label: '110%', percent: 110 },
+  { key: 'stretched-2', label: '120%', percent: 120 },
+  { key: 'stretched-3', label: '130%', percent: 130 },
+];
+
+/**
+ * GlobalTableResizer
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Enables interactive column width stretching & shrinking on each table across
+ * the application, plus a toolbar option to increase/decrease table density.
+ */
+export const GlobalTableResizer = () => {
+  const location = useLocation();
+  const initTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    const attachToTables = () => {
+      const tables = document.querySelectorAll('table');
+      if (!tables || tables.length === 0) return;
+
+      tables.forEach((table, tblIdx) => {
+        // Skip hidden, calendar, or date-picker tables
+        if (
+          table.closest('.react-calendar') ||
+          table.closest('.date-picker') ||
+          table.offsetParent === null
+        ) {
+          return;
+        }
+
+        const tableKey = `${location.pathname}_tbl_${tblIdx}`;
+        setupColumnResizers(table, tableKey);
+        setupTableStretchToolbar(table, tableKey);
+      });
+    };
+
+    const setupColumnResizers = (table, tableKey) => {
+      const thead = table.querySelector('thead');
+      if (!thead) return;
+
+      const thList = thead.querySelectorAll('th');
+      if (!thList || thList.length === 0) return;
+
+      // Load saved column widths from localStorage
+      let savedWidths = {};
+      try {
+        const raw = localStorage.getItem(STORAGE_PREFIX + tableKey);
+        if (raw) savedWidths = JSON.parse(raw);
+      } catch {}
+
+      thList.forEach((th, colIdx) => {
+        th.classList.add('col-resizable');
+
+        // Apply saved width if available
+        if (savedWidths[colIdx]) {
+          const w = savedWidths[colIdx];
+          th.style.width = `${w}px`;
+          th.style.minWidth = `${w}px`;
+        }
+
+        // Avoid adding duplicate resizers
+        if (th.querySelector('.col-resizer')) return;
+
+        const resizer = document.createElement('div');
+        resizer.className = 'col-resizer';
+        resizer.title = 'Drag to stretch or decrease column size • Double-click to auto-fit';
+        resizer.setAttribute('role', 'separator');
+        resizer.setAttribute('aria-orientation', 'vertical');
+
+        let startX = 0;
+        let startWidth = 0;
+
+        const onMouseMove = (e) => {
+          const diff = e.pageX - startX;
+          const newWidth = Math.max(50, Math.round(startWidth + diff));
+
+          th.style.width = `${newWidth}px`;
+          th.style.minWidth = `${newWidth}px`;
+          th.style.maxWidth = `${newWidth}px`;
+
+          // Ensure table container allows horizontal expansion without clipping
+          if (table.parentElement) {
+            table.parentElement.style.overflowX = 'auto';
+          }
+        };
+
+        const onMouseUp = (e) => {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          document.body.classList.remove('table-is-resizing');
+
+          // Save new width to localStorage
+          try {
+            const currentWidth = Math.round(th.getBoundingClientRect().width);
+            let map = {};
+            const raw = localStorage.getItem(STORAGE_PREFIX + tableKey);
+            if (raw) map = JSON.parse(raw);
+            map[colIdx] = currentWidth;
+            localStorage.setItem(STORAGE_PREFIX + tableKey, JSON.stringify(map));
+          } catch {}
+        };
+
+        resizer.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          startX = e.pageX;
+          startWidth = th.getBoundingClientRect().width;
+
+          document.body.classList.add('table-is-resizing');
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Double-click to reset this column to default
+        resizer.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          th.style.width = '';
+          th.style.minWidth = '';
+          th.style.maxWidth = '';
+
+          try {
+            let map = {};
+            const raw = localStorage.getItem(STORAGE_PREFIX + tableKey);
+            if (raw) map = JSON.parse(raw);
+            delete map[colIdx];
+            localStorage.setItem(STORAGE_PREFIX + tableKey, JSON.stringify(map));
+          } catch {}
+        });
+
+        th.appendChild(resizer);
+      });
+    };
+
+    const setupTableStretchToolbar = (table, tableKey) => {
+      // Find parent container or toolbar to mount scale controls
+      const wrapper = table.closest('.table-wrapper') ||
+                      table.closest('.table-responsive') ||
+                      table.closest('.status-table-card') ||
+                      table.closest('.table-container') ||
+                      table.parentElement;
+
+      if (!wrapper) return;
+
+      // Find best toolbar anchor
+      let targetToolbar =
+        wrapper.querySelector('.top-bar-right-actions') ||
+        wrapper.querySelector('.table-top-bar') ||
+        wrapper.querySelector('.page-header-block') ||
+        wrapper.parentElement?.querySelector('.top-bar-right-actions') ||
+        wrapper.parentElement?.querySelector('.table-top-bar');
+
+      // Check if toolbar control already exists
+      const existingToolbar = (targetToolbar || wrapper).querySelector(`.table-stretch-toolbar[data-for="${tableKey}"]`);
+      if (existingToolbar) return;
+
+      // Restore saved table scale
+      let savedScaleKey = 'normal';
+      try {
+        const raw = localStorage.getItem(STORAGE_SCALE_PREFIX + tableKey);
+        if (raw && SCALE_LEVELS.some((l) => l.key === raw)) {
+          savedScaleKey = raw;
+        }
+      } catch {}
+
+      table.setAttribute('data-table-scale', savedScaleKey);
+
+      // Create Stretch / Size Toolbar
+      const toolbar = document.createElement('div');
+      toolbar.className = 'table-stretch-toolbar';
+      toolbar.setAttribute('data-for', tableKey);
+      toolbar.title = 'Increase size by stretching or decrease column & table size';
+
+      const currentIdx = Math.max(0, SCALE_LEVELS.findIndex((l) => l.key === savedScaleKey));
+
+      toolbar.innerHTML = `
+        <span class="stretch-badge" title="Table size and column stretch controls">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line>
+            <line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          Size:
+        </span>
+        <button type="button" class="stretch-btn stretch-dec" title="Decrease size (Compact)" aria-label="Decrease table size">−</button>
+        <span class="stretch-val">${SCALE_LEVELS[currentIdx]?.label || '100%'}</span>
+        <button type="button" class="stretch-btn stretch-inc" title="Increase size by stretching (Expand)" aria-label="Increase table size">+</button>
+        <button type="button" class="stretch-btn stretch-reset" title="Reset table size and column widths back to default" aria-label="Reset table size">↺</button>
+      `;
+
+      const btnDec = toolbar.querySelector('.stretch-dec');
+      const btnInc = toolbar.querySelector('.stretch-inc');
+      const btnReset = toolbar.querySelector('.stretch-reset');
+      const valSpan = toolbar.querySelector('.stretch-val');
+
+      const updateScale = (newIdx) => {
+        const clampedIdx = Math.max(0, Math.min(SCALE_LEVELS.length - 1, newIdx));
+        const item = SCALE_LEVELS[clampedIdx];
+        table.setAttribute('data-table-scale', item.key);
+        if (valSpan) valSpan.textContent = item.label;
+        try {
+          localStorage.setItem(STORAGE_SCALE_PREFIX + tableKey, item.key);
+        } catch {}
+      };
+
+      btnDec.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentKey = table.getAttribute('data-table-scale') || 'normal';
+        const curIdx = SCALE_LEVELS.findIndex((l) => l.key === currentKey);
+        updateScale(curIdx > 0 ? curIdx - 1 : 0);
+      });
+
+      btnInc.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const currentKey = table.getAttribute('data-table-scale') || 'normal';
+        const curIdx = SCALE_LEVELS.findIndex((l) => l.key === currentKey);
+        updateScale(curIdx < SCALE_LEVELS.length - 1 ? curIdx + 1 : SCALE_LEVELS.length - 1);
+      });
+
+      btnReset.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Reset scale
+        updateScale(1); // 'normal' 100%
+
+        // Reset all custom column widths on this table
+        const thList = table.querySelectorAll('thead th');
+        thList.forEach((th) => {
+          th.style.width = '';
+          th.style.minWidth = '';
+          th.style.maxWidth = '';
+        });
+
+        try {
+          localStorage.removeItem(STORAGE_PREFIX + tableKey);
+          localStorage.removeItem(STORAGE_SCALE_PREFIX + tableKey);
+        } catch {}
+      });
+
+      if (targetToolbar) {
+        targetToolbar.appendChild(toolbar);
+      } else {
+        // Fallback: insert before table
+        table.parentElement.insertBefore(toolbar, table);
+      }
+    };
+
+    // Attach immediately and monitor for dynamic table updates
+    attachToTables();
+    initTimeoutRef.current = setTimeout(attachToTables, 300);
+
+    const observer = new MutationObserver(() => {
+      attachToTables();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
+      observer.disconnect();
+    };
+  }, [location.pathname]);
+
+  return null;
+};
+
+export default GlobalTableResizer;

@@ -8,6 +8,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { getRoleSlug } from './config/roleMenus';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import GlobalEscapeHandler from './components/common/GlobalEscapeHandler';
+import GlobalTableResizer from './components/common/GlobalTableResizer';
 
 const AppLayout = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -27,6 +28,7 @@ const AppLayout = () => {
 
   return (
     <div className="app paysonic-app" data-role={roleSlug}>
+      <GlobalTableResizer />
       <Sidebar
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
