@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import evidenceStorage, { isValidMediaUrl } from '../../services/dispute/evidenceStorage';
+import {
+  downloadSingleEvidence,
+  downloadAllEvidenceAsZip,
+  getEvidenceDownloadName,
+  toRoman,
+} from '../../utils/evidenceDownloader';
 import './DisputeModals.scss';
 
 export const EvidencePreviewModal = ({
@@ -12,6 +18,8 @@ export const EvidencePreviewModal = ({
 }) => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [imageError, setImageError] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
 
   // Normalize list of files
   const items = useMemo(() => {
@@ -114,48 +122,32 @@ export const EvidencePreviewModal = ({
     lowerName.endsWith('.csv') ||
     (typeof currentItem === 'object' && currentItem.type?.startsWith('text/'));
 
-  const handleDownload = () => {
-    if (fileDataUrl) {
-      const a = document.createElement('a');
-      a.href = fileDataUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      return;
+  const currentDownloadName = useMemo(() => {
+    return getEvidenceDownloadName(currentItem, activeIndex, items.length, disputeRow);
+  }, [currentItem, activeIndex, items.length, disputeRow]);
+
+  const handleDownload = async () => {
+    try {
+      setIsDownloading(true);
+      await downloadSingleEvidence(currentItem, activeIndex, items.length, disputeRow);
+    } catch (err) {
+      console.error('[EvidencePreviewModal] Download single error:', err);
+      alert('Failed to download evidence file: ' + err.message);
+    } finally {
+      setIsDownloading(false);
     }
+  };
 
-    // Generate fallback file for download
-    let mimeType = 'text/plain';
-    let content = `Paysonic Evidence Attachment: ${fileName}\nDispute RRN: ${disputeRow.acqTxnId || 'N/A'}\nVRN: ${disputeRow.vrn || 'N/A'}\nPlaza: ${disputeRow.plazaName || 'N/A'}\nTimestamp: ${new Date().toISOString()}`;
-
-    if (isImage) {
-      mimeType = 'image/svg+xml';
-      content = `
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
-  <rect width="100%" height="100%" fill="#0f172a"/>
-  <text x="30" y="50" fill="#38bdf8" font-family="monospace" font-size="20" font-weight="bold">TOLL PLAZA SURVEILLANCE FEED - CAM #02</text>
-  <text x="30" y="85" fill="#94a3b8" font-family="monospace" font-size="14">RECORDED: ${disputeRow.txnDate || '2026-09-02 03:30:00'}</text>
-  <rect x="150" y="140" width="500" height="250" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
-  <text x="250" y="240" fill="#f8fafc" font-family="sans-serif" font-size="28" font-weight="bold">VRN: ${disputeRow.vrn || 'MH12VL3467'}</text>
-  <text x="250" y="280" fill="#94a3b8" font-family="monospace" font-size="16">LANE #02 · CLASS 4 (CAR/VAN)</text>
-  <text x="250" y="315" fill="#4ade80" font-family="monospace" font-size="14">STATUS: TOLL BARRIER PASSED</text>
-  <text x="30" y="470" fill="#64748b" font-family="monospace" font-size="12">ACQ TXN ID: ${disputeRow.acqTxnId || '102047735808524714'} · VERIFIED EVIDENCE</text>
-</svg>`;
-    } else if (isPdf) {
-      mimeType = 'text/plain';
-      content = `=== NETC DISPUTE CHARGEBACK PROOF ===\nDocument: ${fileName}\nAcq Txn ID: ${disputeRow.acqTxnId || ''}\nToll Txn ID: ${disputeRow.tollTxnId || ''}\nVRN: ${disputeRow.vrn || ''}\nPlaza: ${disputeRow.plazaName || ''} (${disputeRow.plazaId || ''})\nAmount: ₹ ${disputeRow.disputeAmount || ''}\nReason: ${disputeRow.cbReason || disputeRow.adminReason || 'Chargeback verification'}\nIssued: ${disputeRow.cbRaisedDate || '2026-09-02'}\nStatus: Verified Netc Clearance\n=====================================`;
+  const handleDownloadZip = async () => {
+    try {
+      setIsZipping(true);
+      await downloadAllEvidenceAsZip(items, disputeRow);
+    } catch (err) {
+      console.error('[EvidencePreviewModal] Download zip error:', err);
+      alert('Failed to download evidence ZIP: ' + err.message);
+    } finally {
+      setIsZipping(false);
     }
-
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = isImage && !fileName.endsWith('.svg') ? `${fileName}.svg` : fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -173,7 +165,24 @@ export const EvidencePreviewModal = ({
               {isImage ? '📷' : isPdf ? '📄' : isText ? '📝' : '📎'}
             </span>
             <div className="file-meta-col">
-              <div className="file-name-title">{fileName}</div>
+              <div className="file-name-title">
+                {fileName}
+                {items.length > 1 && (
+                  <span
+                    style={{
+                      marginLeft: '8px',
+                      fontSize: '0.74rem',
+                      background: '#0284c7',
+                      color: '#ffffff',
+                      padding: '2px 7px',
+                      borderRadius: '4px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    Evidence {toRoman(activeIndex + 1)} of {items.length}
+                  </span>
+                )}
+              </div>
               <div className="file-source-sub">
                 <span
                   className={`source-pill ${
@@ -182,8 +191,10 @@ export const EvidencePreviewModal = ({
                 >
                   {source}
                 </span>
-                <span>• RRN: {disputeRow.acqTxnId || 'N/A'}</span>
-                <span>• Plaza: {disputeRow.plazaName || disputeRow.plazaId || 'N/A'}</span>
+                <span>• RRN: {disputeRow.acqTxnId || disputeRow.rrn || 'N/A'}</span>
+                <span>
+                  • Download Format: <strong style={{ color: '#38bdf8' }}>{currentDownloadName}</strong>
+                </span>
               </div>
             </div>
           </div>
@@ -221,9 +232,24 @@ export const EvidencePreviewModal = ({
               type="button"
               className="btn btn-outline-light btn-sm"
               onClick={handleDownload}
+              disabled={isDownloading}
+              title={`Download as ${currentDownloadName}`}
             >
-              ⬇️ Download
+              {isDownloading ? '⏳ Downloading...' : `⬇️ Download (${currentDownloadName})`}
             </button>
+
+            {items.length > 1 && (
+              <button
+                type="button"
+                className="btn-download-zip"
+                onClick={handleDownloadZip}
+                disabled={isZipping}
+                title={`Download all ${items.length} files as ${(disputeRow.acqTxnId || disputeRow.rrn || 'EVIDENCE')}.zip`}
+              >
+                {isZipping ? '⏳ Zipping...' : '📦 Download ZIP'}
+              </button>
+            )}
+
             <button
               type="button"
               className="btn-close-preview"
@@ -256,16 +282,19 @@ export const EvidencePreviewModal = ({
                   : itLower.endsWith('.png') || itLower.endsWith('.jpg') || itLower.endsWith('.jpeg')
                   ? '📷'
                   : '📎';
+                const itDownloadName = getEvidenceDownloadName(item, idx, items.length, disputeRow);
                 return (
                   <button
                     key={idx}
                     type="button"
                     className={`file-tab-chip ${idx === activeIndex ? 'active' : ''}`}
                     onClick={() => setActiveIndex(idx)}
-                    title={itName}
+                    title={`Download Name: ${itDownloadName}`}
                   >
                     <span>{itIcon}</span>
-                    <span className="file-tab-name">{itName}</span>
+                    <span className="file-tab-name">
+                      {toRoman(idx + 1)}. {itName}
+                    </span>
                   </button>
                 );
               })}

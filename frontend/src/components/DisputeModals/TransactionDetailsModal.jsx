@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { TRANSACTION_MASTER, PLAZA_MAP } from '../../config/disputeConstants';
 import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
+import { downloadAllEvidenceAsZip } from '../../utils/evidenceDownloader';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import './DisputeModals.scss';
 
 export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
   const [previewTarget, setPreviewTarget] = useState(null);
   const [copiedRemark, setCopiedRemark] = useState(false);
+  const [isZippingPlaza, setIsZippingPlaza] = useState(false);
 
   const handleCopy = async (text) => {
     if (!text) return;
@@ -25,6 +27,19 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
       setTimeout(() => setCopiedRemark(false), 2000);
     } catch (err) {
       console.error('Failed to copy remark:', err);
+    }
+  };
+
+  const handleDownloadPlazaZip = async () => {
+    const list = disputeRow?.plazaEvidence || [];
+    if (list.length === 0) return;
+    try {
+      setIsZippingPlaza(true);
+      await downloadAllEvidenceAsZip(list, disputeRow);
+    } catch (err) {
+      alert('Failed to download Plaza Evidence ZIP: ' + err.message);
+    } finally {
+      setIsZippingPlaza(false);
     }
   };
 
@@ -155,8 +170,20 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
 
             {hasEvidence && (
               <div className="txn-modal-evidence-section">
-                <div className="evidence-section-title">
+                <div className="evidence-section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span>📎 Attached Evidence Files</span>
+                  {plazaEvidence.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn-download-zip"
+                      onClick={handleDownloadPlazaZip}
+                      disabled={isZippingPlaza}
+                      title="Download Plaza evidence as ZIP"
+                      style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                    >
+                      {isZippingPlaza ? '⏳ Zipping...' : '📦 Plaza Evidence (ZIP)'}
+                    </button>
+                  )}
                   <small>Visible to both Admin &amp; Plaza</small>
                 </div>
                 <div className="evidence-chips-list">

@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
+import {
+  downloadSingleEvidence,
+  downloadAllEvidenceAsZip,
+  getEvidenceDownloadName,
+} from '../../utils/evidenceDownloader';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import EvidenceUploader from './EvidenceUploader';
 import './DisputeModals.scss';
@@ -14,6 +19,8 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
   const [errorMsg, setErrorMsg] = useState('');
   const [previewTarget, setPreviewTarget] = useState(null);
   const [copiedPlazaRemark, setCopiedPlazaRemark] = useState(false);
+  const [isZippingPlaza, setIsZippingPlaza] = useState(false);
+  const [isZippingAdmin, setIsZippingAdmin] = useState(false);
 
   const handleCopyPlazaRemarks = async () => {
     const textToCopy = (disputeRow?.plazaReason || disputeRow?.plazaRemarks || 'NA').trim();
@@ -33,6 +40,40 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
       setTimeout(() => setCopiedPlazaRemark(false), 2000);
     } catch (err) {
       console.error('Failed to copy plaza remark:', err);
+    }
+  };
+
+  const handleDownloadSingle = async (item, index, list) => {
+    try {
+      await downloadSingleEvidence(item, index, list.length, disputeRow);
+    } catch (err) {
+      alert('Failed to download evidence file: ' + err.message);
+    }
+  };
+
+  const handleDownloadPlazaZip = async () => {
+    const list = disputeRow?.plazaEvidence || [];
+    if (list.length === 0) return;
+    try {
+      setIsZippingPlaza(true);
+      await downloadAllEvidenceAsZip(list, disputeRow);
+    } catch (err) {
+      alert('Failed to download Plaza Evidence ZIP: ' + err.message);
+    } finally {
+      setIsZippingPlaza(false);
+    }
+  };
+
+  const handleDownloadAdminZip = async () => {
+    const list = adminEvidence || [];
+    if (list.length === 0) return;
+    try {
+      setIsZippingAdmin(true);
+      await downloadAllEvidenceAsZip(list, disputeRow);
+    } catch (err) {
+      alert('Failed to download Admin Evidence ZIP: ' + err.message);
+    } finally {
+      setIsZippingAdmin(false);
     }
   };
 
@@ -159,6 +200,14 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
           >
             👁️ View
           </button>
+          <button
+            type="button"
+            className="btn-download-evidence"
+            onClick={() => handleDownloadSingle(item, index, fileListForSource)}
+            title="Download Evidence File (Named by RRN)"
+          >
+            ⬇️ Download
+          </button>
           <span className="locked-tag">
             {isAdminCol ? (isAssigned ? 'Locked' : 'Attached') : 'View Only'}
           </span>
@@ -274,6 +323,17 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                     <>
                       <div className="attachment-section-label" style={{ marginTop: '10px' }}>
                         <span>Admin Attachments ({adminEvidence.length})</span>
+                        {adminEvidence.length > 0 && (
+                          <button
+                            type="button"
+                            className="btn-download-zip"
+                            onClick={handleDownloadAdminZip}
+                            disabled={isZippingAdmin}
+                            title="Download all Admin evidence as ZIP"
+                          >
+                            {isZippingAdmin ? '⏳ Zipping...' : '📦 Download ZIP'}
+                          </button>
+                        )}
                         <span className="sub-tag">Visible to Admin &amp; Plaza</span>
                       </div>
                       <div className="files-container">
@@ -300,6 +360,17 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                 <div className="section-content">
                   <div className="attachment-section-label">
                     <span>Plaza Attachments ({(disputeRow.plazaEvidence || []).length})</span>
+                    {(disputeRow.plazaEvidence || []).length > 0 && (
+                      <button
+                        type="button"
+                        className="btn-download-zip"
+                        onClick={handleDownloadPlazaZip}
+                        disabled={isZippingPlaza}
+                        title="Download all Plaza counter-evidence as ZIP"
+                      >
+                        {isZippingPlaza ? '⏳ Zipping...' : '📦 Download ZIP'}
+                      </button>
+                    )}
                     <span className="sub-tag">Visible to Admin &amp; Plaza</span>
                   </div>
 
