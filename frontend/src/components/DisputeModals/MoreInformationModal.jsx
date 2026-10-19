@@ -13,6 +13,28 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [previewTarget, setPreviewTarget] = useState(null);
+  const [copiedPlazaRemark, setCopiedPlazaRemark] = useState(false);
+
+  const handleCopyPlazaRemarks = async () => {
+    const textToCopy = (disputeRow?.plazaReason || disputeRow?.plazaRemarks || 'NA').trim();
+    if (!textToCopy) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = textToCopy;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopiedPlazaRemark(true);
+      setTimeout(() => setCopiedPlazaRemark(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy plaza remark:', err);
+    }
+  };
 
   useEffect(() => {
     if (disputeRow) {
@@ -292,9 +314,31 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   </div>
 
                   <div className="field-block">
-                    <label>Plaza Reason / Remarks</label>
-                    <div className="readonly-value-box">
-                      {disputeRow.plazaReason || 'NA'}
+                    <div className="field-label-row">
+                      <label>Plaza Reason / Remarks</label>
+                      <button
+                        type="button"
+                        className={`btn-copy-tag ${copiedPlazaRemark ? 'copied' : ''}`}
+                        onClick={handleCopyPlazaRemarks}
+                        title="Copy Plaza remarks to clipboard"
+                        id="copyPlazaRemarkBtn"
+                      >
+                        {copiedPlazaRemark ? '✓ Copied' : '📋 Copy'}
+                      </button>
+                    </div>
+                    <div className="readonly-value-box readonly-with-action">
+                      <span className="remark-text">
+                        {disputeRow.plazaReason || disputeRow.plazaRemarks || 'NA'}
+                      </span>
+                      <button
+                        type="button"
+                        className={`btn-copy-inline ${copiedPlazaRemark ? 'copied' : ''}`}
+                        onClick={handleCopyPlazaRemarks}
+                        title="Copy Plaza remarks to clipboard"
+                        aria-label="Copy Plaza remarks"
+                      >
+                        {copiedPlazaRemark ? '✓ Copied' : '📋 Copy'}
+                      </button>
                     </div>
                   </div>
 

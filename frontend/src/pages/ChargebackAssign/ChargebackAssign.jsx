@@ -1089,8 +1089,35 @@ export const ChargebackAssign = () => {
                           <span className="badge badge-gray">NA</span>
                         )}
                       </td>
-                      <td style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {r.plazaReason}
+                      <td style={{ maxWidth: '200px' }} title={r.plazaReason || 'NA'}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {r.plazaReason || 'NA'}
+                          </span>
+                          {r.plazaReason && r.plazaReason !== 'NA' && r.plazaReason !== '—' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (navigator?.clipboard?.writeText) {
+                                  navigator.clipboard.writeText(r.plazaReason);
+                                }
+                              }}
+                              title="Copy Plaza Remarks to clipboard"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '1px 4px',
+                                fontSize: '0.8rem',
+                                opacity: 0.7,
+                                flexShrink: 0,
+                              }}
+                            >
+                              📋
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="amt-cell">₹ {Number(r.txnAmount || 0).toFixed(2)}</td>
                       <td className="bold-amt">₹ {Number(r.disputeAmount || 0).toFixed(2)}</td>

@@ -6,6 +6,27 @@ import './DisputeModals.scss';
 
 export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
   const [previewTarget, setPreviewTarget] = useState(null);
+  const [copiedRemark, setCopiedRemark] = useState(false);
+
+  const handleCopy = async (text) => {
+    if (!text) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopiedRemark(true);
+      setTimeout(() => setCopiedRemark(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy remark:', err);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -73,6 +94,7 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     { label: 'Plaza Action', val: disputeRow.plazaAction || 'No' },
     { label: 'Plaza Action Date & Time', val: disputeRow.plazaActionTime ? (disputeRow.plazaActionTime === 'Pending Plaza Decision' ? '—' : formatDateTime(disputeRow.plazaActionTime)) : (disputeRow.plazaActionAt ? formatDateTime(disputeRow.plazaActionAt) : '—') },
     { label: 'CB Plaza Status', val: disputeRow.disputeStatus || 'NA' },
+    { label: 'Plaza Reason / Remarks', val: disputeRow.plazaReason || disputeRow.plazaRemarks || 'NA', isCopyable: true },
   ];
 
   const adminEvidence = disputeRow.adminEvidence || [];
@@ -104,8 +126,28 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
                     className={`kv-val ${r.isCode ? 'code' : ''} ${
                       r.isHighlight ? 'highlight' : ''
                     }`}
+                    style={r.isCopyable ? { display: 'inline-flex', alignItems: 'center', gap: '8px' } : {}}
                   >
-                    {r.val}
+                    <span>{r.val}</span>
+                    {r.isCopyable && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(r.val)}
+                        title="Copy Plaza Remarks"
+                        style={{
+                          background: copiedRemark ? '#dcfce7' : '#eff6ff',
+                          color: copiedRemark ? '#15803d' : '#1d4ed8',
+                          border: `1px solid ${copiedRemark ? '#86efac' : '#bfdbfe'}`,
+                          borderRadius: '4px',
+                          padding: '1px 6px',
+                          fontSize: '0.72rem',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {copiedRemark ? '✓ Copied' : '📋 Copy'}
+                      </button>
+                    )}
                   </span>
                 </div>
               ))}

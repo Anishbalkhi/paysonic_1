@@ -296,6 +296,45 @@
           }
         }
 
+        .field-label-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 2px;
+
+          label {
+            margin: 0;
+          }
+        }
+
+        .btn-copy-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          background: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+          border-radius: 6px;
+          padding: 3px 8px;
+          font-size: 0.74rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          &:hover {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #93c5fd;
+          }
+
+          &.copied {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #86efac;
+          }
+        }
+
         .readonly-value-box {
           background: #f8fafc;
           border: 1px solid #e2e8f0;
@@ -304,6 +343,49 @@
           font-size: 0.85rem;
           color: #334155;
           min-height: 42px;
+
+          &.readonly-with-action {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+
+            .remark-text {
+              flex: 1;
+              word-break: break-word;
+              white-space: pre-wrap;
+              line-height: 1.45;
+            }
+
+            .btn-copy-inline {
+              flex-shrink: 0;
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              background: #ffffff;
+              color: #0369a1;
+              border: 1px solid #bae6fd;
+              border-radius: 6px;
+              padding: 4px 8px;
+              font-size: 0.74rem;
+              font-weight: 600;
+              cursor: pointer;
+              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+              transition: all 0.15s ease;
+
+              &:hover {
+                background: #f0f9ff;
+                border-color: #7dd3fc;
+                color: #0284c7;
+              }
+
+              &.copied {
+                background: #dcfce7;
+                color: #15803d;
+                border-color: #86efac;
+              }
+            }
+          }
         }
       }
 
