@@ -28,6 +28,26 @@ export const parseUtcTimestamp = (ts) => {
     if (!isNaN(d.getTime())) return d;
   }
 
+  // Handle 6-digit YYMMDD format (e.g. 261013 -> 13-10-2026)
+  if (/^\d{6}$/.test(s)) {
+    const yy = parseInt(s.slice(0, 2), 10);
+    const mm = parseInt(s.slice(2, 4), 10);
+    const dd = parseInt(s.slice(4, 6), 10);
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      return new Date(Date.UTC(2000 + yy, mm - 1, dd, 0, 0, 0));
+    }
+  }
+
+  // Handle 8-digit YYYYMMDD format (e.g. 20261013)
+  if (/^\d{8}$/.test(s)) {
+    const yyyy = parseInt(s.slice(0, 4), 10);
+    const mm = parseInt(s.slice(4, 6), 10);
+    const dd = parseInt(s.slice(6, 8), 10);
+    if (yyyy >= 2000 && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      return new Date(Date.UTC(yyyy, mm - 1, dd, 0, 0, 0));
+    }
+  }
+
   // Handle DD-MM-YYYY or DD/MM/YYYY with optional time
   const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
   if (dmyMatch) {
@@ -37,10 +57,10 @@ export const parseUtcTimestamp = (ts) => {
   }
 
   // If the timestamp string from Railway / Spring Boot has no timezone designator:
-  // e.g. "2026-10-06T01:15:00" or "2026-10-06 01:15:00"
+  // e.g. "2026-10-06T01:15:00" or "2026-10-06 01:15:00" or "2026-10-19T06:22:20.335498"
   // It was generated in UTC on the Railway server.
   // We append 'Z' so that the JavaScript Date parser knows it is UTC,
-  // allowing it to correctly convert to the user's local timezone (e.g. IST +05:30).
+  // allowing it to correctly convert to Indian Standard Time (IST, +05:30).
   if (!s.endsWith('Z') && !/[+-]\d{2}(:?\d{2})?$/.test(s)) {
     s = s.replace(' ', 'T') + 'Z';
   }
@@ -94,7 +114,51 @@ export const sortRecordsLatestFirst = (records) => {
 const pad2 = (n) => String(n).padStart(2, '0');
 
 /**
- * Formats a date/timestamp to DD-MM-YYYY HH:mm:ss
+ * Internal helper to format Date object into DD-MM-YYYY HH:mm:ss in Asia/Kolkata (IST)
+ */
+export const formatInIst = (d) => {
+  if (!d || !(d instanceof Date) || isNaN(d.getTime())) return '—';
+  try {
+    const parts = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(d);
+    const get = (type) => parts.find((p) => p.type === type)?.value || '00';
+    let hour = get('hour');
+    if (hour === '24') hour = '00';
+    return `${get('day')}-${get('month')}-${get('year')} ${hour}:${get('minute')}:${get('second')}`;
+  } catch {
+    return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  }
+};
+
+/**
+ * Internal helper to format Date object into DD-MM-YYYY in Asia/Kolkata (IST)
+ */
+export const formatDateOnlyInIst = (d) => {
+  if (!d || !(d instanceof Date) || isNaN(d.getTime())) return '—';
+  try {
+    const parts = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).formatToParts(d);
+    const get = (type) => parts.find((p) => p.type === type)?.value || '00';
+    return `${get('day')}-${get('month')}-${get('year')}`;
+  } catch {
+    return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
+  }
+};
+
+/**
+ * Formats a date/timestamp to DD-MM-YYYY HH:mm:ss in IST
  */
 export const formatDateTime = (ts) => {
   if (!ts || ts === '—' || ts === 'null' || ts === 'undefined') return '—';
@@ -116,11 +180,11 @@ export const formatDateTime = (ts) => {
 
   const d = parseUtcTimestamp(ts);
   if (!d || isNaN(d.getTime())) return String(ts);
-  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  return formatInIst(d);
 };
 
 /**
- * Formats a date/timestamp to DD-MM-YYYY (date only)
+ * Formats a date/timestamp to DD-MM-YYYY (date only) in IST
  */
 export const formatDateOnly = (ts) => {
   if (!ts || ts === '—' || ts === 'null' || ts === 'undefined') return '—';
@@ -135,6 +199,13 @@ export const formatDateOnly = (ts) => {
   if (/^\d{2}-\d{2}-\d{4}\s+/.test(str)) {
     return str.split(/\s+/)[0];
   }
+  // 6-digit YYMMDD format: e.g. 261013 -> 13-10-2026
+  if (/^\d{6}$/.test(str)) {
+    const yy = str.slice(0, 2);
+    const mm = str.slice(2, 4);
+    const dd = str.slice(4, 6);
+    return `${dd}-${mm}-20${yy}`;
+  }
   // YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
     const [y, m, d] = str.split('-');
@@ -143,7 +214,7 @@ export const formatDateOnly = (ts) => {
 
   const d = parseUtcTimestamp(ts);
   if (!d || isNaN(d.getTime())) return String(ts);
-  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
+  return formatDateOnlyInIst(d);
 };
 
 /**
@@ -208,7 +279,7 @@ export const formatRelativeTime = (ts) => {
 export const formatFetchTime = (date = new Date()) => {
   const d = date instanceof Date ? date : new Date(date);
   if (isNaN(d.getTime())) return '';
-  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  return formatInIst(d);
 };
 
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import DisputeManagementService, { formatDisplayDateTime } from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import EvidenceUploader from './EvidenceUploader';
 import './DisputeModals.scss';
@@ -53,18 +54,18 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
 
   const assignedAtDisplay = (() => {
     if (disputeRow.assignedAt) {
-      const f = formatDisplayDateTime(disputeRow.assignedAt);
-      if (f) return f;
+      const f = formatDateTime(disputeRow.assignedAt);
+      if (f && f !== '—') return f;
     }
     if (disputeRow.adminRemarksAt) {
-      const f = formatDisplayDateTime(disputeRow.adminRemarksAt);
-      if (f) return f;
+      const f = formatDateTime(disputeRow.adminRemarksAt);
+      if (f && f !== '—') return f;
     }
     if (isAssigned) {
       const fallback = disputeRow.updatedAt || disputeRow.plazaActionTime || disputeRow.createdAt;
       if (fallback && fallback !== 'Pending Plaza Decision') {
-        const f = formatDisplayDateTime(fallback);
-        if (f) return f;
+        const f = formatDateTime(fallback);
+        if (f && f !== '—') return f;
       }
     }
     return '—';
@@ -184,12 +185,12 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
               </div>
               <div className="meta-box">
                 <label>Dispute Raise Date</label>
-                <div className="meta-display">{disputeRow.settlementDate || disputeRow.cbRaisedDate || '—'}</div>
+                <div className="meta-display">{formatDateOnly(disputeRow.settlementDate || disputeRow.cbRaisedDate) || '—'}</div>
               </div>
               <div className="meta-box">
                 <label>TAT Due Date</label>
                 <div className="meta-display" style={{ color: '#0369a1', fontWeight: 600 }}>
-                  {disputeRow.tatDueDate || '—'}
+                  {formatDateOnly(disputeRow.tatDueDate) || disputeRow.tatDueDate || '—'}
                 </div>
               </div>
               <div className="meta-box">
@@ -199,7 +200,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
               <div className="meta-box">
                 <label>Plaza Action Date &amp; Time</label>
                 <div className="meta-display" style={{ fontWeight: 600 }}>
-                  {disputeRow.plazaActionTime || '—'}
+                  {disputeRow.plazaActionTime ? (disputeRow.plazaActionTime === 'Pending Plaza Decision' ? '—' : formatDateTime(disputeRow.plazaActionTime)) : '—'}
                 </div>
               </div>
             </div>
@@ -300,7 +301,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   <div className="field-block">
                     <label>Plaza Action Date &amp; Time (IST)</label>
                     <div className="readonly-value-box" style={{ fontWeight: 600, color: '#0369a1' }}>
-                      {disputeRow.plazaActionTime || 'Pending Plaza Decision'}
+                      {disputeRow.plazaActionTime ? (disputeRow.plazaActionTime === 'Pending Plaza Decision' ? 'Pending Plaza Decision' : formatDateTime(disputeRow.plazaActionTime)) : 'Pending Plaza Decision'}
                     </div>
                   </div>
 

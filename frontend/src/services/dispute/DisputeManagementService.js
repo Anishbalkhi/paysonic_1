@@ -10,6 +10,7 @@ import {
 import httpClient from '../api/httpClient';
 import OnboardingService from '../onboarding/OnboardingService';
 import evidenceStorage, { isValidMediaUrl } from './evidenceStorage';
+import { formatDateTime, formatDateOnly, parseUtcTimestamp } from '../../utils/dateUtils';
 
 const STORAGE_KEY_DISPUTES = 'paysonic_disputes_db_cache_v1';
 const STORAGE_KEY_BATCHES = 'paysonic_dispute_batches_db_cache_v1';
@@ -96,52 +97,14 @@ export function computeTatDueDate(settlementDateStr) {
  * Format current timestamp in IST: DD-MM-YYYY HH:mm:ss
  */
 export function formatIstTimestamp(date = new Date()) {
-  const d = new Date(date);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
+  return formatDateTime(date);
 }
 
 /**
  * Format any date/timestamp into standard DD-MM-YYYY HH:mm:ss IST format
  */
 export function formatDisplayDateTime(val) {
-  if (!val || val === '—' || val === 'null' || val === 'undefined') return '';
-  const str = String(val).trim();
-  if (!str) return '';
-
-  // If already in DD-MM-YYYY HH:mm:ss format
-  if (/^\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}:\d{2}$/.test(str)) {
-    return str;
-  }
-  // If DD-MM-YYYY HH:mm format
-  if (/^\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2}$/.test(str)) {
-    return `${str}:00`;
-  }
-  // If DD-MM-YYYY only
-  if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
-    return `${str} 00:00:00`;
-  }
-
-  // Handle ISO strings, e.g. 2026-10-10T09:54:52 or timestamps
-  try {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      const hh = String(d.getHours()).padStart(2, '0');
-      const min = String(d.getMinutes()).padStart(2, '0');
-      const ss = String(d.getSeconds()).padStart(2, '0');
-      return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
-    }
-  } catch {}
-
-  return str;
+  return formatDateTime(val);
 }
 
 /**
@@ -149,9 +112,11 @@ export function formatDisplayDateTime(val) {
  */
 function mapDbRecordToUi(r, idx = 0) {
   const dispId = r.disputeId || (r.id ? `DISP-${r.id}` : `ROW-${idx + 1}`);
-  const settlement = r.settlementDate || (r.npciSettlementDate ? String(r.npciSettlementDate) : '');
-  const tatDue = r.tatDueDate || (settlement ? computeTatDueDate(settlement) : '');
-  const txnDateStr = r.txnDate || (r.txnDateTime ? String(r.txnDateTime).replace('T', ' ').slice(0, 19) : '');
+  const rawSettlement = r.settlementDate || (r.npciSettlementDate ? String(r.npciSettlementDate) : '');
+  const parsedSettlement = parseSettlementDate(rawSettlement);
+  const formattedSettlement = parsedSettlement?.formatted || (rawSettlement ? formatDateOnly(rawSettlement) : '');
+  const tatDue = r.tatDueDate ? formatDateOnly(r.tatDueDate) : (rawSettlement ? computeTatDueDate(rawSettlement) : '');
+  const txnDateStr = r.txnDate || (r.txnDateTime ? formatDateTime(r.txnDateTime) : '');
 
   let dStatus = r.disputeStatus;
   if (!dStatus || dStatus === 'Pending') {
@@ -179,7 +144,7 @@ function mapDbRecordToUi(r, idx = 0) {
       r.plazaActionAt ||
       r.updatedAt ||
       r.createdAt;
-    resolvedAssignedAt = candidate ? (formatDisplayDateTime(candidate) || String(candidate)) : formatIstTimestamp();
+    resolvedAssignedAt = candidate ? (formatDateTime(candidate) || String(candidate)) : formatIstTimestamp();
   }
 
   const fileReason = (r.memberMessageText || r.cbReason || r.member_message_text || r.cb_reason || '').trim();
@@ -187,6 +152,10 @@ function mapDbRecordToUi(r, idx = 0) {
   const resolvedAdminReason = (!existingRemarks || existingRemarks === 'Bulk-assigned for plaza review') && fileReason
     ? fileReason
     : (existingRemarks || fileReason);
+
+  const resolvedPlazaActionTime = r.plazaActionTime
+    ? (r.plazaActionTime === 'Pending Plaza Decision' ? 'Pending Plaza Decision' : formatDateTime(r.plazaActionTime))
+    : (r.plazaActionAt ? formatDateTime(r.plazaActionAt) : '');
 
   return {
     ...r,
@@ -206,9 +175,9 @@ function mapDbRecordToUi(r, idx = 0) {
     disputeType: r.functionLabel || FUNCTION_CODE_MAP[r.functionCode] || `Code ${r.functionCode}`,
     txnDate: txnDateStr,
     txnDateTime: txnDateStr,
-    settlementDate: settlement,
+    settlementDate: formattedSettlement,
     tatDueDate: tatDue,
-    cbRaisedDate: settlement || r.cbRaisedDate || '',
+    cbRaisedDate: formattedSettlement,
     cbReason: fileReason || '—',
     memberMessageText: fileReason || '—',
     assigned: isAssigned,
@@ -216,9 +185,9 @@ function mapDbRecordToUi(r, idx = 0) {
     assignedToPlaza: r.assignedToPlaza || (isAssigned ? r.plazaId : null),
     adminReason: resolvedAdminReason,
     adminRemarks: resolvedAdminReason,
-    adminRemarksAt: r.adminRemarksAt ? formatDisplayDateTime(r.adminRemarksAt) : '',
+    adminRemarksAt: r.adminRemarksAt ? formatDateTime(r.adminRemarksAt) : '',
     plazaAction: (r.plazaAction === true || r.plazaAction === 'Yes' || r.plazaAction === 'Accepted' || r.plazaAction === 'Rejected') ? 'Yes' : 'No',
-    plazaActionTime: r.plazaActionTime || '',
+    plazaActionTime: resolvedPlazaActionTime,
     plazaActionAt: r.plazaActionAt || '',
     decidedAt: r.plazaActionAt || null,
     plazaReason: r.plazaRemarks || 'NA',

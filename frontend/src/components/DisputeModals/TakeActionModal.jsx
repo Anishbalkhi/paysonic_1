@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import EvidenceUploader from './EvidenceUploader';
 import './DisputeModals.scss';
@@ -184,13 +185,13 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
               <div className="meta-box">
                 <label>Dispute Raise Date</label>
                 <div className="meta-display">
-                  {disputeRow.settlementDate || disputeRow.cbRaisedDate || '—'}
+                  {formatDateOnly(disputeRow.settlementDate || disputeRow.cbRaisedDate) || '—'}
                 </div>
               </div>
               <div className="meta-box">
                 <label>TAT Due Date (T+8)</label>
                 <div className="meta-display" style={{ color: '#0369a1', fontWeight: 600 }}>
-                  {disputeRow.tatDueDate || '—'}
+                  {formatDateOnly(disputeRow.tatDueDate) || disputeRow.tatDueDate || '—'}
                 </div>
               </div>
             </div>
@@ -317,7 +318,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                         }}
                       >
                         🔒 Decision submitted ({disputeRow.disputeStatus === 'Approved' ? 'Plaza Accepted' : 'Plaza Rejected'})
-                        {disputeRow.plazaActionTime ? ` on ${disputeRow.plazaActionTime}` : ''} — Locked for audit.
+                        {disputeRow.plazaActionTime && disputeRow.plazaActionTime !== 'Pending Plaza Decision' ? ` on ${formatDateTime(disputeRow.plazaActionTime)}` : ''} — Locked for audit.
                       </div>
                     </>
                   )}

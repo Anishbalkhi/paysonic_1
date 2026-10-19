@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TRANSACTION_MASTER, PLAZA_MAP } from '../../config/disputeConstants';
-import { formatDisplayDateTime } from '../../services/dispute/DisputeManagementService';
+import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import './DisputeModals.scss';
 
@@ -37,18 +37,18 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
 
   const assignedAtDisplay = (() => {
     if (disputeRow.assignedAt) {
-      const f = formatDisplayDateTime(disputeRow.assignedAt);
-      if (f) return f;
+      const f = formatDateTime(disputeRow.assignedAt);
+      if (f && f !== '—') return f;
     }
     if (disputeRow.adminRemarksAt) {
-      const f = formatDisplayDateTime(disputeRow.adminRemarksAt);
-      if (f) return f;
+      const f = formatDateTime(disputeRow.adminRemarksAt);
+      if (f && f !== '—') return f;
     }
     if (disputeRow.assigned) {
       const fallback = disputeRow.updatedAt || disputeRow.plazaActionTime || disputeRow.createdAt;
       if (fallback && fallback !== 'Pending Plaza Decision') {
-        const f = formatDisplayDateTime(fallback);
-        if (f) return f;
+        const f = formatDateTime(fallback);
+        if (f && f !== '—') return f;
       }
     }
     return '—';
@@ -63,15 +63,15 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     { label: 'Toll Plaza Name', val: master.plazaName || PLAZA_MAP[master.plazaId] || disputeRow.plazaName },
     { label: 'Txn Date', val: master.txnDate },
     { label: 'Txn Amount', val: `₹ ${Number(master.txnAmount || 0).toFixed(2)}`, isHighlight: true },
-    { label: 'Dispute Raise Date', val: disputeRow.settlementDate || disputeRow.cbRaisedDate || '—' },
+    { label: 'Dispute Raise Date', val: formatDateOnly(disputeRow.settlementDate || disputeRow.cbRaisedDate) || '—' },
     { label: 'CB Reason', val: disputeRow.cbReason || '—' },
     { label: 'Dispute Amount', val: `₹ ${Number(disputeRow.disputeAmount || 0).toFixed(2)}`, isHighlight: true },
     { label: 'Function Code', val: disputeRow.functionCode || '—', isCode: true },
     { label: 'Dispute Name', val: disputeRow.disputeType || '—' },
     { label: 'Assigned Date & Time', val: assignedAtDisplay },
-    { label: 'TAT Due Date', val: disputeRow.tatDueDate || '—', isHighlight: true },
+    { label: 'TAT Due Date', val: formatDateOnly(disputeRow.tatDueDate) || disputeRow.tatDueDate || '—', isHighlight: true },
     { label: 'Plaza Action', val: disputeRow.plazaAction || 'No' },
-    { label: 'Plaza Action Date & Time', val: disputeRow.plazaActionTime || '—' },
+    { label: 'Plaza Action Date & Time', val: disputeRow.plazaActionTime ? (disputeRow.plazaActionTime === 'Pending Plaza Decision' ? '—' : formatDateTime(disputeRow.plazaActionTime)) : (disputeRow.plazaActionAt ? formatDateTime(disputeRow.plazaActionAt) : '—') },
     { label: 'CB Plaza Status', val: disputeRow.disputeStatus || 'NA' },
   ];
 
