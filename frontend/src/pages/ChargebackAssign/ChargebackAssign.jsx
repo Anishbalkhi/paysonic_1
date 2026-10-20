@@ -201,7 +201,7 @@ export const ChargebackAssign = () => {
       const result = await downloadBulkDisputeEvidence(targets, {
         archiveName: `Chargeback_Evidence_Bulk_${Date.now()}.zip`,
       });
-      setBulkFeedback(`✓ Successfully exported ${result.totalFiles} evidence file(s) for ${result.totalDisputes} dispute(s) named with RRN.`);
+      setBulkFeedback(`✓ Successfully exported ${result.totalFiles} evidence file(s) for ${result.totalDisputes} dispute(s) organized into user folders.`);
     } catch (err) {
       console.error('[ChargebackAssign] Bulk evidence download error:', err);
       alert('Failed to download bulk evidence: ' + err.message);
@@ -1033,7 +1033,7 @@ export const ChargebackAssign = () => {
             className="btn btn-outline-primary btn-sm"
             onClick={handleBulkDownloadPlazaEvidence}
             disabled={isDownloadingEvidence || (selectedPlazaChips.length === 0 && filteredRows.length === 0)}
-            title="Download bulk evidence for all disputes in the selected plaza(s) named by RRN"
+            title="Download bulk evidence for all disputes in the selected plaza(s) organized into user folders"
             id="cbaBulkPlazaEvidenceDownloadBtn"
           >
             {isDownloadingEvidence ? '⏳ Downloading Evidence...' : '📥 Download Plaza Evidence (Bulk)'}
@@ -1081,7 +1081,7 @@ export const ChargebackAssign = () => {
               onClick={() => handleBulkDownloadEvidence()}
               disabled={filteredRows.length === 0 || isDownloadingEvidence}
               id="cbaBulkEvidenceDownloadBtn"
-              title={selectedRowIds.size > 0 ? `Download evidence for ${selectedRowIds.size} selected dispute(s) named by RRN` : 'Download evidence for all current disputes named by RRN'}
+              title={selectedRowIds.size > 0 ? `Download evidence for ${selectedRowIds.size} selected dispute(s) organized into user folders` : 'Download evidence for all current disputes organized into user folders'}
             >
               {isDownloadingEvidence ? '⏳ Downloading...' : '📥 Bulk Evidence Download'}
             </button>
@@ -1128,7 +1128,7 @@ export const ChargebackAssign = () => {
                 onClick={() => handleBulkDownloadEvidence()}
                 disabled={isDownloadingEvidence}
                 id="cbaDownloadSelectedEvidenceBtn"
-                title="Download bulk evidence files named with RRN"
+                title="Download bulk evidence files organized into user folders"
               >
                 {isDownloadingEvidence ? '⏳ Downloading...' : `📥 Download Evidence (${selectedRowIds.size})`}
               </button>

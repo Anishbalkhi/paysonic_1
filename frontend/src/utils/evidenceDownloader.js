@@ -306,14 +306,45 @@ export const downloadAllEvidenceAsZip = async (fileList = [], disputeRow = {}) =
 };
 
 /**
+ * Sanitizes folder names for operating systems (removes illegal characters)
+ */
+export const sanitizeFolderName = (name) => {
+  return String(name || '')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+/**
+ * Resolves the folder name for a user/dispute record:
+ * - Uses customer/user name if available alongside RRN
+ * - Uses RRN (Acq Txn ID) as unique identifier
+ */
+export const getDisputeFolderName = (dispute = {}, rrn = '') => {
+  const user = (dispute?.userName || dispute?.customerName || dispute?.customer || dispute?.user || '').trim();
+  const cleanRrn = String(
+    rrn ||
+    dispute?.acqTxnId ||
+    dispute?.rrn ||
+    dispute?.acq_txn_id ||
+    dispute?.disputeId ||
+    'DISPUTE'
+  ).trim();
+
+  if (user && user.toLowerCase() !== cleanRrn.toLowerCase()) {
+    return sanitizeFolderName(`${user}_${cleanRrn}`);
+  }
+  return sanitizeFolderName(cleanRrn);
+};
+
+/**
  * Bulk Downloads Evidence for multiple dispute records:
- * - Each dispute's evidence is named with the RRN (Acq Txn ID).
- * - If a dispute has 1 evidence: <RRN>.<ext>
- * - If a dispute has multiple evidences: <RRN>-I.<ext>, <RRN>-II.<ext>, etc.
- * - If multiple disputes or multiple files exist: Packages into a single ZIP archive:
- *   Bulk_Evidence_<timestamp>.zip
+ * - Every dispute/user's evidence is placed into its own dedicated subfolder inside the ZIP archive.
+ * - Subfolder named with RRN (or User_RRN).
+ * - If a dispute has 1 evidence: <RRN>.<ext> inside that user's folder.
+ * - If a dispute has multiple evidences: <RRN>-I.<ext>, <RRN>-II.<ext>, etc. inside that user's folder.
  * - If only 1 file exists across the entire selection: Downloads as single file directly without zipping.
- * - Includes Audit_Manifest.txt indexing all RRNs, VRNs, Plazas, Dispute Amounts, and file names.
+ * - If multiple files exist: Packages into a single ZIP archive with Audit_Manifest.txt indexing all folders and files.
  */
 export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}) => {
   if (!Array.isArray(disputeList) || disputeList.length === 0) {
@@ -389,7 +420,7 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
     return downloadSingleEvidence(singleItem.evidenceList[0], 0, 1, singleItem.dispute);
   }
 
-  // Multiple files -> Bundle into a ZIP archive with RRN naming
+  // Multiple files -> Bundle into a ZIP archive with dedicated folders per user/dispute
   const zip = new JSZip();
   const manifestLines = [
     `PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — BULK EVIDENCE EXPORT ARCHIVE`,
@@ -398,18 +429,30 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
     `Total Dispute Records: ${filesToProcess.length}`,
     `Total Evidence Files: ${totalFilesCount}`,
     `Archive Name: ${options.archiveName || `Bulk_Evidence_${Date.now()}.zip`}`,
+    `Organization: Every user/dispute evidence isolated in its own dedicated subfolder`,
     `================================================================================`,
-    `INDEXED BY RRN (ACQUIRER TRANSACTION ID):`,
+    `INDEXED BY USER / RRN (ACQUIRER TRANSACTION ID):`,
     `--------------------------------------------------------------------------------`,
-    `RRN                 | VRN         | Plaza Name / ID          | Dispute Amt | Evidence Filename`,
+    `User Folder / RRN   | VRN         | Plaza Name / ID          | Dispute Amt | Evidence Path`,
     `--------------------------------------------------------------------------------`,
   ];
 
-  const usedZipNames = new Set();
+  // Map to hold JSZip folder instances for each user / dispute
+  const folderInstances = new Map();
+  // Map to track used filenames within each specific folder
+  const folderUsedNames = new Map();
 
   for (const item of filesToProcess) {
     const { dispute, rrn, evidenceList } = item;
     const countForThisDispute = evidenceList.length;
+    const folderName = getDisputeFolderName(dispute, rrn);
+
+    if (!folderInstances.has(folderName)) {
+      folderInstances.set(folderName, zip.folder(folderName));
+      folderUsedNames.set(folderName, new Set());
+    }
+    const currentFolder = folderInstances.get(folderName);
+    const usedNames = folderUsedNames.get(folderName);
 
     for (let idx = 0; idx < countForThisDispute; idx++) {
       const file = evidenceList[idx];
@@ -420,34 +463,37 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
         dispute
       );
 
-      // Ensure unique filename inside zip
-      let finalZipName = downloadName;
-      if (usedZipNames.has(finalZipName)) {
+      // Ensure unique filename inside this user's subfolder
+      let finalFileName = downloadName;
+      if (usedNames.has(finalFileName)) {
         const ext = getEvidenceExtension(file);
-        const base = finalZipName.replace(new RegExp(`\\.${ext}$`), '');
+        const base = finalFileName.replace(new RegExp(`\\.${ext}$`), '');
         let counter = 2;
-        while (usedZipNames.has(`${base}_${counter}.${ext}`)) {
+        while (usedNames.has(`${base}_${counter}.${ext}`)) {
           counter++;
         }
-        finalZipName = `${base}_${counter}.${ext}`;
+        finalFileName = `${base}_${counter}.${ext}`;
       }
-      usedZipNames.add(finalZipName);
+      usedNames.add(finalFileName);
 
-      zip.file(finalZipName, blob);
+      // Save file inside the user's subfolder in the ZIP
+      currentFolder.file(finalFileName, blob);
 
       const vrnStr = String(dispute.vrn || dispute.vehicleNo || '—').padEnd(11, ' ');
-      const rrnStr = String(rrn).padEnd(19, ' ');
+      const folderStr = String(folderName).slice(0, 19).padEnd(19, ' ');
       const plazaStr = String(dispute.plazaName || dispute.plazaId || '—').slice(0, 24).padEnd(24, ' ');
       const amtStr = `₹ ${Number(dispute.disputeAmount || 0).toFixed(2)}`.padStart(11, ' ');
-      manifestLines.push(`${rrnStr} | ${vrnStr} | ${plazaStr} | ${amtStr} | ${finalZipName}`);
+      manifestLines.push(`${folderStr} | ${vrnStr} | ${plazaStr} | ${amtStr} | ${folderName}/${finalFileName}`);
     }
   }
 
   manifestLines.push(`--------------------------------------------------------------------------------`);
   manifestLines.push(`Authenticated Netc Dispute & Chargeback Audit Proof.`);
-  manifestLines.push(`All files named with RRN for direct reconciliation.`);
+  manifestLines.push(`All evidence files categorized per user/dispute into dedicated folders.`);
+  manifestLines.push(`Named with RRN for direct accounting & NPCI reconciliation.`);
   manifestLines.push(`================================================================================`);
 
+  // Place the audit manifest at the root of the ZIP
   zip.file('Audit_Manifest.txt', manifestLines.join('\n'));
 
   const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -480,4 +526,6 @@ export default {
   downloadMultipleEvidenceSequentially,
   downloadAllEvidenceAsZip,
   downloadBulkDisputeEvidence,
+  sanitizeFolderName,
+  getDisputeFolderName,
 };
