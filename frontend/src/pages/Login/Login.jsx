@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getDefaultRouteForUser } from '../../config/roleMenus';
+import SecurityService from '../../services/security/SecurityService';
 import './Login.scss';
 
 export const Login = () => {
@@ -17,8 +18,16 @@ export const Login = () => {
   const [timeoutNotice, setTimeoutNotice] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ── Brute Force & Rate Limiting Security States ──
+  const [isLockedOut, setIsLockedOut] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const [remainingAttempts, setRemainingAttempts] = useState(null);
+  const [rateLimitNotice, setRateLimitNotice] = useState('');
+  const [rateLimitSeconds, setRateLimitSeconds] = useState(0);
+  const [progressiveDelayNotice, setProgressiveDelayNotice] = useState(false);
+
   // Clean up any inactivity notice and only show relevant device notices
-  React.useEffect(() => {
+  useEffect(() => {
     sessionStorage.removeItem('paysonic_timeout_notice');
     const params = new URLSearchParams(location.search);
     const reason = params.get('reason');
@@ -35,6 +44,76 @@ export const Login = () => {
     }
   }, [location.search, navigate]);
 
+  // Listen for global 429 Rate Limit exceeded events from HTTP client
+  useEffect(() => {
+    const handleRateLimit = (e) => {
+      if (e.detail) {
+        const secs = e.detail.retryAfter || 60;
+        setRateLimitSeconds(secs);
+        setRateLimitNotice(
+          e.detail.message || `Request quota exceeded (HTTP 429). Too many requests from your IP. Please wait ${secs} seconds.`
+        );
+      }
+    };
+
+    window.addEventListener('paysonic_rate_limit_exceeded', handleRateLimit);
+    return () => window.removeEventListener('paysonic_rate_limit_exceeded', handleRateLimit);
+  }, []);
+
+  // ── Lockout Countdown Ticker (MM:SS) ──
+  useEffect(() => {
+    let timer;
+    if (isLockedOut && lockoutSeconds > 0) {
+      timer = setInterval(() => {
+        setLockoutSeconds((prev) => {
+          if (prev <= 1) {
+            setIsLockedOut(false);
+            setRemainingAttempts(5);
+            setError('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isLockedOut, lockoutSeconds]);
+
+  // ── Rate Limit Retry-After Countdown Ticker ──
+  useEffect(() => {
+    let timer;
+    if (rateLimitSeconds > 0) {
+      timer = setInterval(() => {
+        setRateLimitSeconds((prev) => {
+          if (prev <= 1) {
+            setRateLimitNotice('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [rateLimitSeconds]);
+
+  // Check lockout status for the entered identifier on blur
+  const checkAccountLockout = async (targetId) => {
+    const idToCheck = (targetId || identifier).trim().toLowerCase();
+    if (!idToCheck) return;
+    try {
+      const status = await SecurityService.checkLockout(idToCheck);
+      if (status.isLocked) {
+        setIsLockedOut(true);
+        setLockoutSeconds(status.remainingSeconds || 900);
+        setRemainingAttempts(0);
+      } else {
+        if (status.remainingAttempts !== undefined) {
+          setRemainingAttempts(status.remainingAttempts);
+        }
+      }
+    } catch {}
+  };
+
   // Time-based theme & video detection
   const getIsDayTime = () => {
     const hours = new Date().getHours();
@@ -45,7 +124,7 @@ export const Login = () => {
   const [currentIsDay, setCurrentIsDay] = useState(getIsDayTime);
 
   // Re-check system time periodically
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIsDay(getIsDayTime());
     }, 30000);
@@ -60,7 +139,7 @@ export const Login = () => {
 
   const from = location.state?.from?.pathname;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAuthenticated && currentUser) {
       const targetDestination = (from && from !== '/') ? from : getDefaultRouteForUser(currentUser);
       navigate(targetDestination, { replace: true });
@@ -69,19 +148,46 @@ export const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLockedOut) return;
+
     setError('');
     setTimeoutNotice('');
-    if (!identifier.trim()) { setError('Please enter your email address.'); return; }
+    setRateLimitNotice('');
+
+    if (!identifier.trim()) { setError('Please enter your registered email address.'); return; }
     if (!password)           { setError('Please enter your password.'); return; }
+
+    // Progressive backoff delay for suspicious/repeated attempts
+    if (remainingAttempts !== null && remainingAttempts <= 2) {
+      setProgressiveDelayNotice(true);
+      await new Promise((r) => setTimeout(r, 1200));
+      setProgressiveDelayNotice(false);
+    }
+
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 600));
+
     try {
       const session = await login(identifier.trim(), password);
       // Navigate to target: Dashboard if permitted, otherwise user's first allowed menu
       const targetDestination = (from && from !== '/') ? from : getDefaultRouteForUser(session);
       navigate(targetDestination, { replace: true });
     } catch (err) {
-      setError(err.message || 'Invalid credentials. Please try again.');
+      if (err.isLocked) {
+        setIsLockedOut(true);
+        setLockoutSeconds(err.remainingSeconds || 900);
+        setRemainingAttempts(0);
+        setError(err.message || 'Account locked due to multiple failed login attempts.');
+      } else if (err.isRateLimited) {
+        const secs = err.retryAfter || 60;
+        setRateLimitSeconds(secs);
+        setRateLimitNotice(err.message || `Rate limit exceeded (HTTP 429). Please wait ${secs} seconds.`);
+      } else {
+        if (err.remainingAttempts !== undefined) {
+          setRemainingAttempts(err.remainingAttempts);
+        }
+        setError(err.message || 'Invalid credentials. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -116,7 +222,8 @@ export const Login = () => {
         </div>
         <div className="login-left-footer">
           <div className="left-stat"><span className="stat-dot green" />RFID FASTag</div>
-          <div className="left-stat"><span className="stat-dot green" />Real-Time</div>
+          <div className="left-stat"><span className="stat-dot green" />Rate Limited</div>
+          <div className="left-stat"><span className="stat-dot green" />Brute-Force Shield</div>
           <div className="left-stat"><span className="stat-dot green" />99.9% Uptime</div>
         </div>
       </div>
@@ -153,6 +260,7 @@ export const Login = () => {
             <span className="pill-text">Night</span>
           </button>
         </div>
+
         <div className="login-form-wrap">
 
           {/* Logo */}
@@ -169,8 +277,82 @@ export const Login = () => {
           <h1 className="lf-title">Welcome back</h1>
           <p className="lf-sub">Sign in to your Toll Operations account</p>
 
-          {/* Error */}
-          {error && (
+          {/* ── SECURITY: Rate Limit 429 Notice ── */}
+          {rateLimitNotice && (
+            <div className="lf-security-alert lf-security-alert--ratelimit" role="alert">
+              <div className="lf-alert-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div className="lf-alert-content">
+                <span className="lf-alert-title">Rate Limit Exceeded (HTTP 429)</span>
+                <span className="lf-alert-desc">{rateLimitNotice}</span>
+                {rateLimitSeconds > 0 && (
+                  <div className="lf-cooldown-timer lf-cooldown-timer--amber">
+                    <span className="lf-cooldown-pulse amber" />
+                    <span>Retry available in: <strong>{SecurityService.formatCooldown(rateLimitSeconds)}</strong></span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── SECURITY: Brute-Force Lockout Alert with Live Countdown ── */}
+          {isLockedOut && (
+            <div className="lf-security-alert lf-security-alert--lockout" role="alert">
+              <div className="lf-alert-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <div className="lf-alert-content">
+                <span className="lf-alert-title">Account Security Lockout Active</span>
+                <span className="lf-alert-desc">
+                  This account has been temporarily locked after 5 consecutive failed login attempts to safeguard against credential brute-forcing.
+                </span>
+                <div className="lf-cooldown-timer">
+                  <span className="lf-cooldown-pulse" />
+                  <span>Lockout Cooldown: <strong>{SecurityService.formatCooldown(lockoutSeconds)}</strong></span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── SECURITY: Remaining Attempts Warning Badge ── */}
+          {!isLockedOut && remainingAttempts !== null && remainingAttempts > 0 && remainingAttempts < 5 && (
+            <div className="lf-security-alert lf-security-alert--warning" role="alert">
+              <div className="lf-alert-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div className="lf-alert-content">
+                <span className="lf-alert-title">
+                  Security Warning: {remainingAttempts} attempt{remainingAttempts === 1 ? '' : 's'} remaining
+                </span>
+                <span className="lf-alert-desc">
+                  5 consecutive incorrect attempts will automatically lock your account for 15 minutes.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Progressive Delay Notice ── */}
+          {progressiveDelayNotice && (
+            <div className="lf-security-pill">
+              <span className="lf-spinner-mini" />
+              <span>Applying progressive security verification backoff…</span>
+            </div>
+          )}
+
+          {/* General Error */}
+          {error && !isLockedOut && (
             <div className="lf-error" role="alert">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -214,10 +396,15 @@ export const Login = () => {
               <input
                 id="lf-email"
                 type="email"
-                className={`lf-input ${error ? 'lf-input--err' : ''}`}
+                className={`lf-input ${error ? 'lf-input--err' : ''} ${isLockedOut ? 'lf-input--locked' : ''}`}
                 placeholder="name@tolloperator.com"
                 value={identifier}
-                onChange={e => { setIdentifier(e.target.value); setError(''); }}
+                disabled={isLockedOut}
+                onBlur={() => checkAccountLockout()}
+                onChange={e => {
+                  setIdentifier(e.target.value);
+                  setError('');
+                }}
                 autoComplete="email"
                 autoFocus
               />
@@ -227,21 +414,23 @@ export const Login = () => {
             <div className="lf-field">
               <div className="lf-label-row">
                 <label htmlFor="lf-pw" className="lf-label">Password</label>
-                <button type="button" className="lf-forgot">Forgot password?</button>
+                <button type="button" className="lf-forgot" disabled={isLockedOut}>Forgot password?</button>
               </div>
               <div className="lf-pw-wrap">
                 <input
                   id="lf-pw"
                   type={showPassword ? 'text' : 'password'}
-                  className={`lf-input ${error ? 'lf-input--err' : ''}`}
-                  placeholder="Enter your password"
+                  className={`lf-input ${error ? 'lf-input--err' : ''} ${isLockedOut ? 'lf-input--locked' : ''}`}
+                  placeholder={isLockedOut ? "Account temporarily locked" : "Enter your password"}
                   value={password}
+                  disabled={isLockedOut}
                   onChange={e => { setPassword(e.target.value); setError(''); }}
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   className="lf-eye"
+                  disabled={isLockedOut}
                   onClick={() => setShowPassword(v => !v)}
                   aria-label={showPassword ? 'Hide' : 'Show'}
                 >
@@ -262,7 +451,12 @@ export const Login = () => {
 
             {/* Remember me */}
             <label className="lf-remember">
-              <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
+              <input
+                type="checkbox"
+                disabled={isLockedOut}
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+              />
               <span>Keep me signed in</span>
             </label>
 
@@ -270,10 +464,12 @@ export const Login = () => {
             <button
               id="lf-submit"
               type="submit"
-              className="lf-btn"
-              disabled={isSubmitting}
+              className={`lf-btn ${isLockedOut ? 'lf-btn--locked' : ''}`}
+              disabled={isSubmitting || isLockedOut}
             >
-              {isSubmitting ? (
+              {isLockedOut ? (
+                <>🔒 Locked ({SecurityService.formatCooldown(lockoutSeconds)})</>
+              ) : isSubmitting ? (
                 <><span className="lf-spinner" /> Signing in…</>
               ) : (
                 <>Sign in</>
@@ -291,12 +487,12 @@ export const Login = () => {
             <span className="lf-trust-sep" />
             <span className="lf-trust-item">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              ISO 27001
+              Rate Limiting Protected
             </span>
             <span className="lf-trust-sep" />
             <span className="lf-trust-item">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              PCI-DSS
+              Brute-Force Shield
             </span>
           </div>
 

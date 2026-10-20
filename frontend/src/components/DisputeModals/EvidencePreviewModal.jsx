@@ -122,9 +122,9 @@ export const EvidencePreviewModal = ({
     lowerName.endsWith('.csv') ||
     (typeof currentItem === 'object' && currentItem.type?.startsWith('text/'));
 
-  const currentDownloadName = useMemo(() => {
-    return getEvidenceDownloadName(currentItem, activeIndex, items.length, disputeRow);
-  }, [currentItem, activeIndex, items.length, disputeRow]);
+  const currentDownloadName = currentItem
+    ? getEvidenceDownloadName(currentItem, activeIndex, items.length, disputeRow)
+    : '';
 
   const handleDownload = async () => {
     try {

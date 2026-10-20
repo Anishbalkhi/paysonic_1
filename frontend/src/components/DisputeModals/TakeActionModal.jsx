@@ -252,19 +252,15 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                   Acquirer · Reason &amp; Evidence (View Only)
                 </div>
                 <div className="section-content">
-                  <div className="attachment-section-label">
+                  <div className="field-block">
+                    <label>Reason Given by Acquirer</label>
+                    <div className="readonly-value-box" style={{ minHeight: '84px' }}>
+                      {disputeRow.adminReason || 'Not provided'}
+                    </div>
+                  </div>
+
+                  <div className="attachment-section-label" style={{ marginTop: '10px' }}>
                     <span>Evidence Attachments ({(disputeRow.adminEvidence || []).length})</span>
-                    {(disputeRow.adminEvidence || []).length > 0 && (
-                      <button
-                        type="button"
-                        className="btn-download-zip"
-                        onClick={handleDownloadAdminZip}
-                        disabled={isZippingAdmin}
-                        title="Download all Acquirer evidence as ZIP"
-                      >
-                        {isZippingAdmin ? '⏳ Zipping...' : '📦 Download ZIP'}
-                      </button>
-                    )}
                     <span className="sub-tag">Visible to Admin &amp; Plaza</span>
                   </div>
 
@@ -276,13 +272,6 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                         renderEvidenceChip(f, i, false)
                       )
                     )}
-                  </div>
-
-                  <div className="field-block">
-                    <label>Reason Given by Acquirer</label>
-                    <div className="readonly-value-box">
-                      {disputeRow.adminReason || 'Not provided'}
-                    </div>
                   </div>
 
                   <div className="audit-locked-banner">
@@ -322,7 +311,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                         onChange={setPlazaEvidence}
                         disabled={isSubmitting}
                         label="Plaza Counter-Evidence"
-                        isMandatory={false}
+                        mandatoryText="* (Mandatory for Rejection)"
                         onPreview={(file) => setPreviewTarget({ file, source: 'Plaza Counter-Evidence', fileList: plazaEvidence })}
                       />
 
@@ -358,17 +347,7 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                     <>
                       <div className="attachment-section-label" style={{ marginTop: '10px' }}>
                         <span>Plaza Attachments ({plazaEvidence.length})</span>
-                        {plazaEvidence.length > 0 && (
-                          <button
-                            type="button"
-                            className="btn-download-zip"
-                            onClick={handleDownloadPlazaZip}
-                            disabled={isZippingPlaza}
-                            title="Download all Plaza counter-evidence as ZIP"
-                          >
-                            {isZippingPlaza ? '⏳ Zipping...' : '📦 Download ZIP'}
-                          </button>
-                        )}
+                        <span className="sub-tag">Visible to Admin &amp; Plaza</span>
                       </div>
                       <div className="files-container">
                         {plazaEvidence.length === 0 ? (

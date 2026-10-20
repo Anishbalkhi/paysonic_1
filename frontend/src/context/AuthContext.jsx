@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getRoleMenuDefaults } from '../pages/UserList/menuConfig';
 import UserService, { getStoredUserPermissions } from '../services/user/UserService';
 import UserActivityService, { getOrCreateDeviceId } from '../services/userActivity/UserActivityService';
+import httpClient from '../services/api/httpClient';
+import SecurityService from '../services/security/SecurityService';
 
 const STORAGE_KEY = 'paysonic_auth_session';
 export const TAB_SESSION_KEY = 'paysonic_tab_session_active';
@@ -342,6 +344,117 @@ export const AuthProvider = ({ children }) => {
    */
   const login = async (rawIdentifier, password) => {
     const trimmed = (rawIdentifier || '').trim().toLowerCase();
+    if (!trimmed) {
+      throw new Error('Please enter your registered email address.');
+    }
+
+    // ── Pre-check Brute Force Lockout Status ──
+    const lockout = await SecurityService.checkLockout(trimmed);
+    if (lockout.isLocked) {
+      const cd = SecurityService.formatCooldown(lockout.remainingSeconds);
+      const err = new Error(`Account locked due to multiple failed login attempts. Try again in ${cd}.`);
+      err.isLocked = true;
+      err.remainingSeconds = lockout.remainingSeconds;
+      throw err;
+    }
+
+    // ── Attempt Enterprise Authenticated Backend Login ──
+    const deviceId = getOrCreateDeviceId();
+    try {
+      const authRes = await httpClient.post('/api/auth/login', {
+        email: trimmed,
+        password,
+        deviceId,
+      });
+
+      if (authRes && authRes.data && authRes.data.success) {
+        SecurityService.recordSuccess(trimmed);
+        const serverUser = authRes.data.user;
+        const sessionId = authRes.data.sessionId;
+
+        const perms = getStoredUserPermissions();
+        const assignedPermissions =
+          (serverUser.menuAccess !== undefined && serverUser.menuAccess !== null && serverUser.menuAccess.length > 0)
+            ? serverUser.menuAccess
+            : perms[serverUser.id] ||
+              (serverUser.email && perms[serverUser.email.toLowerCase()]) ||
+              (serverUser.username && perms[serverUser.username.toLowerCase()]) ||
+              getRoleMenuDefaults(serverUser.role);
+
+        if (serverUser.role !== 'Master Admin') {
+          localStorage.setItem('paysonic_active_device_session_' + serverUser.id, sessionId);
+          localStorage.setItem('paysonic_device_login_event', JSON.stringify({
+            userId: serverUser.id,
+            sessionId,
+            deviceId,
+            timestamp: Date.now(),
+          }));
+        }
+
+        const sessionData = {
+          ...serverUser,
+          sessionId,
+          deviceId,
+          menuAccess: assignedPermissions,
+          permissions: assignedPermissions,
+          loginTimestamp: new Date().toISOString(),
+          lastActive: new Date().toISOString(),
+          isDormant: false,
+          dormant: false,
+          locked: false,
+        };
+
+        sessionStorage.setItem(TAB_SESSION_KEY, 'true');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+        localStorage.setItem('actorId', sessionData.id);
+        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+        setCurrentUser(sessionData);
+        return sessionData;
+      }
+    } catch (apiErr) {
+      const status = apiErr?.response?.status;
+      const data = apiErr?.response?.data || {};
+
+      if (status === 429) {
+        const retryAfter = apiErr?.response?.headers?.['retry-after'] || data.retryAfter || 60;
+        const err = new Error(`Rate limit exceeded. Too many requests. Please wait ${retryAfter} seconds.`);
+        err.isRateLimited = true;
+        err.retryAfter = retryAfter;
+        throw err;
+      }
+
+      if (status === 423 || data.locked) {
+        SecurityService.recordFailedAttempt(trimmed);
+        const sec = data.remainingSeconds || 900;
+        const cd = SecurityService.formatCooldown(sec);
+        const err = new Error(`Account locked due to multiple failed login attempts. Try again in ${cd}.`);
+        err.isLocked = true;
+        err.remainingSeconds = sec;
+        throw err;
+      }
+
+      if (status === 401 || status === 403) {
+        const secRecord = SecurityService.recordFailedAttempt(trimmed);
+        if (secRecord.isLocked) {
+          const cd = SecurityService.formatCooldown(secRecord.remainingSeconds);
+          const err = new Error(`Account locked due to multiple failed login attempts. Try again in ${cd}.`);
+          err.isLocked = true;
+          err.remainingSeconds = secRecord.remainingSeconds;
+          throw err;
+        }
+        const remaining = data.remainingAttempts !== undefined ? data.remainingAttempts : secRecord.remainingAttempts;
+        const rawMsg = data.error || data.message || 'Invalid credentials. Please try again.';
+        const err = new Error(
+          remaining > 0
+            ? `${rawMsg} (${remaining} attempt${remaining === 1 ? '' : 's'} remaining before lockout)`
+            : rawMsg
+        );
+        err.remainingAttempts = remaining;
+        throw err;
+      }
+
+      console.warn('[AuthContext] Backend /api/auth/login endpoint unavailable, checking database directly:', apiErr?.message);
+    }
 
     // Fetch live users directly from Railway MySQL database
     // SECURITY: Always prioritize live DB; cache is only used when DB is genuinely unreachable
@@ -487,6 +600,7 @@ export const AuthProvider = ({ children }) => {
     const enteredPassword = String(password || '').trim();
 
     if (!enteredPassword || enteredPassword !== expectedPassword) {
+      const secRecord = SecurityService.recordFailedAttempt(trimmed);
       UserActivityService.recordLoginAttempt({
         userId: match.id,
         email: match.email,
@@ -495,10 +609,26 @@ export const AuthProvider = ({ children }) => {
         status: 'Failed',
         failureReason: 'Invalid password: authentication credential mismatch',
       });
-      throw new Error('Invalid password. Please check your credentials and try again.');
+
+      if (secRecord.isLocked) {
+        try {
+          UserService.toggleLock(match.id);
+        } catch {}
+        const cd = SecurityService.formatCooldown(secRecord.remainingSeconds);
+        const err = new Error(`Account locked due to 5 consecutive failed login attempts. Try again in ${cd}.`);
+        err.isLocked = true;
+        err.remainingSeconds = secRecord.remainingSeconds;
+        throw err;
+      }
+
+      const rem = secRecord.remainingAttempts;
+      const err = new Error(`Invalid password. ${rem} attempt${rem === 1 ? '' : 's'} remaining before account lockout.`);
+      err.remainingAttempts = rem;
+      throw err;
     }
 
     // Record SUCCESSFUL login attempt
+    SecurityService.recordSuccess(trimmed);
     UserActivityService.recordLoginAttempt({
       userId: match.id,
       email: match.email,
@@ -508,7 +638,6 @@ export const AuthProvider = ({ children }) => {
     });
 
     // Register REAL active session (enforces single-device login for non-Master Admin)
-    const deviceId = getOrCreateDeviceId();
     const sessionId = await UserActivityService.registerActiveSession({
       userId: match.id,
       username: match.username || match.email.split('@')[0],

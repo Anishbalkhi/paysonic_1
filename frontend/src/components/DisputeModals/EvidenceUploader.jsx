@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 /**
  * Format bytes to readable size
  */
-export const formatFileSize = (bytes) => {
+const formatFileSize = (bytes) => {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -11,8 +11,8 @@ export const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-export const MAX_FILES_LIMIT = 4;
-export const MAX_COMBINED_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_FILES_LIMIT = 4;
+const MAX_COMBINED_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export const EvidenceUploader = ({
   files = [],
@@ -20,6 +20,7 @@ export const EvidenceUploader = ({
   disabled = false,
   label = 'Attach Evidence Files',
   isMandatory = false,
+  mandatoryText = null,
   onPreview,
 }) => {
   const [errorMsg, setErrorMsg] = useState('');
@@ -94,7 +95,12 @@ export const EvidenceUploader = ({
     <div className="evidence-uploader-wrapper">
       <div className="uploader-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <label className="uploader-label" style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>
-          {label} {isMandatory && <span style={{ color: '#ef4444' }}>* (Mandatory)</span>}
+          {label}{' '}
+          {mandatoryText ? (
+            <span style={{ color: '#ef4444' }}>{mandatoryText}</span>
+          ) : isMandatory ? (
+            <span style={{ color: '#ef4444' }}>* (Mandatory)</span>
+          ) : null}
         </label>
         <span className="file-count-indicator" style={{ fontSize: '0.8rem', color: '#64748b' }}>
           {files.length} / {MAX_FILES_LIMIT} files attached ({totalMbFormatted} MB / 10 MB)

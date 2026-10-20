@@ -7,8 +7,9 @@ import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import EvidencePreviewModal from '../../components/DisputeModals/EvidencePreviewModal';
 import TablePagination from '../../components/common/TablePagination';
-import { formatFetchTime } from '../../utils/dateUtils';
+import { formatFetchTime, formatDateTime, parseUtcTimestamp } from '../../utils/dateUtils';
 import evidenceStorage from '../../services/dispute/evidenceStorage';
+import { downloadBulkDisputeEvidence } from '../../utils/evidenceDownloader';
 import './ClosedDisputes.scss';
 
 export const ClosedDisputes = () => {
@@ -43,6 +44,7 @@ export const ClosedDisputes = () => {
   const [acqTxnId, setAcqTxnId] = useState('');
   const [tollTxnId, setTollTxnId] = useState('');
   const [tagId, setTagId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Pagination & rows
   const [rows, setRows] = useState([]);
@@ -50,6 +52,7 @@ export const ClosedDisputes = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [fetchTime, setFetchTime] = useState('');
+  const [isDownloadingEvidence, setIsDownloadingEvidence] = useState(false);
 
   // Modals state
   const [detailsModalRow, setDetailsModalRow] = useState(null);
@@ -57,6 +60,20 @@ export const ClosedDisputes = () => {
 
   // Sorting state
   const [sortConfig, setSortConfig] = useState({ field: 'actionDate', direction: 'desc' });
+
+  const getPlazaActionTimeDisplay = useCallback((r) => {
+    if (!r) return '—';
+    if (r.plazaActionTime && r.plazaActionTime !== 'Pending Plaza Decision' && r.plazaActionTime !== '—') {
+      return formatDateTime(r.plazaActionTime);
+    }
+    if (r.plazaActionAt) {
+      return formatDateTime(r.plazaActionAt);
+    }
+    if (r.decidedAt && r.decidedAt !== '—') {
+      return formatDateTime(r.decidedAt);
+    }
+    return '—';
+  }, []);
 
   const loadData = useCallback(async (overrides = {}) => {
     try {
@@ -66,13 +83,31 @@ export const ClosedDisputes = () => {
       const dType = overrides.dateType !== undefined ? overrides.dateType : dateType;
       const fCode = overrides.functionCode !== undefined ? overrides.functionCode : functionCode;
       const decFilter = overrides.decisionFilter !== undefined ? overrides.decisionFilter : decisionFilter;
-      const aTxn = (overrides.acqTxnId !== undefined ? overrides.acqTxnId : acqTxnId).trim().toLowerCase();
-      const tTxn = (overrides.tollTxnId !== undefined ? overrides.tollTxnId : tollTxnId).trim().toLowerCase();
-      const tTag = (overrides.tagId !== undefined ? overrides.tagId : tagId).trim().toLowerCase();
+      const aTxn = (overrides.acqTxnId !== undefined ? overrides.acqTxnId : acqTxnId).trim();
+      const tTxn = (overrides.tollTxnId !== undefined ? overrides.tollTxnId : tollTxnId).trim();
+      const tTag = (overrides.tagId !== undefined ? overrides.tagId : tagId).trim();
+      const search = (overrides.search !== undefined ? overrides.search : searchQuery).trim();
       const pId = overrides.plazaId !== undefined ? overrides.plazaId : activePlazaId;
 
-      // Fetch all stored disputes
-      const allDisputes = DisputeManagementService.getStoredDisputes();
+      const effectiveSearch = (search || aTxn || tTxn || tTag || '').trim();
+
+      // Fetch fresh disputes from live Railway backend or cache fallback
+      const fetched = await DisputeManagementService.searchDisputes({
+        scopedPlazaId: pId !== 'ALL' ? pId : undefined,
+        plazaId: pId !== 'ALL' ? pId : undefined,
+        fromDate: fDate,
+        toDate: tDate,
+        dateType: dType,
+        functionCode: fCode && fCode !== 'ALL' ? fCode : undefined,
+        search: effectiveSearch || undefined,
+        acqTxnId: aTxn,
+        tollTxnId: tTxn,
+        tagId: tTag,
+      });
+
+      const allDisputes = Array.isArray(fetched) && fetched.length > 0
+        ? fetched
+        : DisputeManagementService.getStoredDisputes();
 
       // Filter for ACTION TAKEN / CLOSED disputes only
       let actionedRows = allDisputes.filter((r) => {
@@ -103,17 +138,6 @@ export const ClosedDisputes = () => {
         }
       }
 
-      // Filter by IDs
-      if (aTxn) {
-        actionedRows = actionedRows.filter((r) => String(r.acqTxnId || '').toLowerCase().includes(aTxn));
-      }
-      if (tTxn) {
-        actionedRows = actionedRows.filter((r) => String(r.tollTxnId || '').toLowerCase().includes(tTxn));
-      }
-      if (tTag) {
-        actionedRows = actionedRows.filter((r) => String(r.tagId || '').toLowerCase().includes(tTag));
-      }
-
       // Multi-tenant plaza scoping (strict for Plaza User)
       const scopedRows = filterRecordsByPlazaScope(actionedRows, plazas, currentUser);
 
@@ -125,7 +149,7 @@ export const ClosedDisputes = () => {
     } finally {
       setLoading(false);
     }
-  }, [activePlazaId, fromDate, toDate, dateType, functionCode, decisionFilter, acqTxnId, tollTxnId, tagId, plazas, currentUser]);
+  }, [activePlazaId, fromDate, toDate, dateType, functionCode, decisionFilter, acqTxnId, tollTxnId, tagId, searchQuery, plazas, currentUser]);
 
   useEffect(() => {
     loadData();
@@ -159,6 +183,7 @@ export const ClosedDisputes = () => {
     setAcqTxnId('');
     setTollTxnId('');
     setTagId('');
+    setSearchQuery('');
     if (!isPlazaLocked) {
       setSelectedPlazaId('ALL');
     }
@@ -172,20 +197,63 @@ export const ClosedDisputes = () => {
       acqTxnId: '',
       tollTxnId: '',
       tagId: '',
+      search: '',
       plazaId: isPlazaLocked ? defaultPlazaId : 'ALL',
     });
   };
 
-  // KPI Calculations
+  // Live filtering on Tag ID, RRN (Acq Txn ID), Plaza Txn ID (Toll Txn ID), or VRN
+  const filteredRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    const q = (searchQuery || '').trim().toLowerCase();
+    const acqQ = (acqTxnId || '').trim().toLowerCase();
+    const tollQ = (tollTxnId || '').trim().toLowerCase();
+    const tagQ = (tagId || '').trim().toLowerCase();
+
+    return rows.filter((r) => {
+      if (acqQ) {
+        const rrnMatch =
+          (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(acqQ)) ||
+          (r.rrn && String(r.rrn).toLowerCase().includes(acqQ));
+        if (!rrnMatch) return false;
+      }
+      if (tollQ) {
+        const tollMatch =
+          (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(tollQ)) ||
+          (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(tollQ));
+        if (!tollMatch) return false;
+      }
+      if (tagQ) {
+        const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(tagQ);
+        if (!tagMatch) return false;
+      }
+      if (q) {
+        const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(q);
+        const rrnMatch =
+          (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
+          (r.rrn && String(r.rrn).toLowerCase().includes(q));
+        const plazaTxnMatch =
+          (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
+          (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(q));
+        const vrnMatch =
+          (r.vrn && String(r.vrn).toLowerCase().includes(q)) ||
+          (r.vehicleNo && String(r.vehicleNo).toLowerCase().includes(q));
+        if (!(tagMatch || rrnMatch || plazaTxnMatch || vrnMatch)) return false;
+      }
+      return true;
+    });
+  }, [rows, searchQuery, acqTxnId, tollTxnId, tagId]);
+
+  // KPI Calculations on filteredRows
   const kpiStats = useMemo(() => {
-    const total = rows.length;
-    const accepted = rows.filter((r) => r.disputeStatus === 'Approved').length;
-    const rejected = rows.filter((r) => r.disputeStatus === 'Rejected').length;
-    const totalDisputeAmt = rows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
-    const acceptedAmt = rows
+    const total = filteredRows.length;
+    const accepted = filteredRows.filter((r) => r.disputeStatus === 'Approved').length;
+    const rejected = filteredRows.filter((r) => r.disputeStatus === 'Rejected').length;
+    const totalDisputeAmt = filteredRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
+    const acceptedAmt = filteredRows
       .filter((r) => r.disputeStatus === 'Approved')
       .reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
-    const rejectedAmt = rows
+    const rejectedAmt = filteredRows
       .filter((r) => r.disputeStatus === 'Rejected')
       .reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0);
     return {
@@ -196,7 +264,7 @@ export const ClosedDisputes = () => {
       acceptedAmt,
       rejectedAmt,
     };
-  }, [rows]);
+  }, [filteredRows]);
 
   // Sorting
   const handleSort = (field) => {
@@ -209,12 +277,12 @@ export const ClosedDisputes = () => {
   };
 
   const sortedRows = useMemo(() => {
-    if (!Array.isArray(rows)) return [];
-    if (!sortConfig.field) return rows;
-    return [...rows].sort((a, b) => {
+    if (!Array.isArray(filteredRows)) return [];
+    if (!sortConfig.field) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
       if (sortConfig.field === 'actionDate') {
-        const timeA = a.decidedAt ? new Date(a.decidedAt).getTime() : (a.plazaActionTime ? 1 : 0);
-        const timeB = b.decidedAt ? new Date(b.decidedAt).getTime() : (b.plazaActionTime ? 1 : 0);
+        const timeA = a.plazaActionTime ? (parseUtcTimestamp(a.plazaActionTime)?.getTime() || 0) : (a.plazaActionAt ? (parseUtcTimestamp(a.plazaActionAt)?.getTime() || 0) : (a.decidedAt ? (parseUtcTimestamp(a.decidedAt)?.getTime() || 0) : 0));
+        const timeB = b.plazaActionTime ? (parseUtcTimestamp(b.plazaActionTime)?.getTime() || 0) : (b.plazaActionAt ? (parseUtcTimestamp(b.plazaActionAt)?.getTime() || 0) : (b.decidedAt ? (parseUtcTimestamp(b.decidedAt)?.getTime() || 0) : 0));
         return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
       }
       if (sortConfig.field === 'disputeAmount') {
@@ -224,7 +292,7 @@ export const ClosedDisputes = () => {
       }
       return 0;
     });
-  }, [rows, sortConfig]);
+  }, [filteredRows, sortConfig]);
 
   const paginatedRows = useMemo(() => {
     const from = (currentPage - 1) * pageSize;
@@ -250,9 +318,28 @@ export const ClosedDisputes = () => {
     });
   };
 
+  // Bulk Evidence Download Handler
+  const handleBulkEvidenceDownload = async () => {
+    if (!filteredRows || filteredRows.length === 0) {
+      alert('No closed disputes available to download evidence.');
+      return;
+    }
+    try {
+      setIsDownloadingEvidence(true);
+      await downloadBulkDisputeEvidence(filteredRows, {
+        archiveName: `Closed_Disputes_Evidence_Bulk_${Date.now()}.zip`,
+      });
+    } catch (err) {
+      console.error('[ClosedDisputes] Bulk evidence download error:', err);
+      alert('Failed to download bulk evidence: ' + err.message);
+    } finally {
+      setIsDownloadingEvidence(false);
+    }
+  };
+
   // Export to CSV
   const handleExportCsv = () => {
-    if (!rows || rows.length === 0) return;
+    if (!filteredRows || filteredRows.length === 0) return;
     const fetchTimeStr = formatFetchTime(new Date());
 
     const headers = [
@@ -268,7 +355,7 @@ export const ClosedDisputes = () => {
       return `"${str}"`;
     };
 
-    const csvRows = rows.map((r) => {
+    const csvRows = filteredRows.map((r) => {
       const cleanId = r.disputeId || r.rowId;
       const counterEv = evidenceStorage.getPlazaEvidence(cleanId, r.acqTxnId);
       const evCount = counterEv ? counterEv.length : (r.counterEvidence?.length || 0);
@@ -289,17 +376,17 @@ export const ClosedDisputes = () => {
         r.disputeType,
         Number(r.txnAmount || 0).toFixed(2),
         Number(r.disputeAmount || 0).toFixed(2),
-        r.decidedAt || r.plazaActionTime || '—',
+        getPlazaActionTimeDisplay(r),
         r.plazaReason || '—',
         r.adminReason || r.adminRemarks || '—',
         evCount
       ].map(escapeCsv).join(',');
     });
 
-    const totDispute = rows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
+    const totDispute = filteredRows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
     const bannerRows = [
       `"PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — CLOSED DISPUTES AUDIT REPORT"`,
-      `"Export Time: ${fetchTimeStr}   |   Total Actioned Records: ${rows.length}   |   Cumulative Dispute Value: ₹ ${totDispute}"`,
+      `"Export Time: ${fetchTimeStr}   |   Total Actioned Records: ${filteredRows.length}   |   Cumulative Dispute Value: ₹ ${totDispute}"`,
       ''
     ];
 
@@ -322,7 +409,7 @@ export const ClosedDisputes = () => {
 
   // Export to Excel (.xls)
   const handleExportExcel = () => {
-    if (!rows || rows.length === 0) return;
+    if (!filteredRows || filteredRows.length === 0) return;
     const fetchTimeStr = formatFetchTime(new Date());
 
     const xmlEsc = (str) =>
@@ -344,7 +431,7 @@ export const ClosedDisputes = () => {
     let totalTxnAmt = 0;
     let totalDisputeAmt = 0;
 
-    rows.forEach((r) => {
+    filteredRows.forEach((r) => {
       const isAccepted = r.disputeStatus === 'Approved';
       const isRejected = r.disputeStatus === 'Rejected';
       const statusStyle = isAccepted ? 'sBadgeGreen' : isRejected ? 'sBadgeRed' : 'sBadgeGray';
@@ -370,7 +457,7 @@ export const ClosedDisputes = () => {
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.disputeType)}</Data></Cell>
         <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${tAmt}</Data></Cell>
         <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${dAmt}</Data></Cell>
-        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.decidedAt || r.plazaActionTime || '—')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(getPlazaActionTimeDisplay(r))}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaReason || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.adminReason || r.adminRemarks || '—')}</Data></Cell>
       </Row>`;
@@ -384,7 +471,7 @@ export const ClosedDisputes = () => {
     const totalXml = `
       <Row ss:Height="24">
         <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>
-        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Records: ${rows.length}</Data></Cell>
+        <Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Records: ${filteredRows.length}</Data></Cell>
         ${Array(11).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>').join('')}
         <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalTxnAmt.toFixed(2)}</Data></Cell>
         <Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt.toFixed(2)}</Data></Cell>
@@ -494,7 +581,7 @@ export const ClosedDisputes = () => {
     <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sTitle"><Data ss:Type="String">PAYSONIC DISPUTE MANAGEMENT — CLOSED DISPUTES QUEUE</Data></Cell>
    </Row>
    <Row ss:Height="20">
-    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Actioned Records: ${rows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
+    <Cell ss:MergeAcross="${colSpan}" ss:StyleID="sSubtitle"><Data ss:Type="String">Export Time: ${xmlEsc(fetchTimeStr)}   |   Total Actioned Records: ${filteredRows.length}   |   Cumulative Dispute Amount: ₹ ${totalDisputeAmt.toFixed(2)}</Data></Cell>
    </Row>
    ${headerXml}
    ${dataXml}
@@ -642,6 +729,43 @@ export const ClosedDisputes = () => {
             </select>
           </div>
 
+          <div className="field-box search-field-box">
+            <label htmlFor="cdSearch">Search (Tag ID, RRN, Plaza Txn ID)</label>
+            <div className="search-input-wrapper">
+              <span className="search-icon">🔍</span>
+              <input
+                id="cdSearch"
+                type="text"
+                placeholder="Search Tag ID, RRN, Plaza Txn ID..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    loadData({ search: searchQuery });
+                  }
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                    loadData({ search: '' });
+                  }}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="field-box">
             <label htmlFor="cdAcqTxnId">RRN / Acq Txn ID</label>
             <input
@@ -691,14 +815,59 @@ export const ClosedDisputes = () => {
         <div className="table-top-bar">
           <div className="table-title">Closed Disputes Working Queue</div>
           <div className="top-bar-right-actions">
+            <div className="table-quick-search">
+              <div className="search-input-wrapper">
+                <span className="search-icon">🔍</span>
+                <input
+                  id="cdQuickSearch"
+                  type="text"
+                  placeholder="Search Tag ID, RRN, Plaza Txn ID..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      loadData({ search: searchQuery });
+                    }
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear-btn"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setCurrentPage(1);
+                      loadData({ search: '' });
+                    }}
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
             <span className="record-count-text">
-              Showing {rows.length} records {fetchTime && `(Fetched: ${fetchTime})`}
+              Showing <strong>{filteredRows.length}</strong> {searchQuery ? `of ${rows.length}` : ''} records {fetchTime && `(Fetched: ${fetchTime})`}
             </span>
+            <button
+              type="button"
+              className="btn btn-outline-info btn-sm"
+              onClick={handleBulkEvidenceDownload}
+              disabled={filteredRows.length === 0 || isDownloadingEvidence}
+              id="cdBulkEvidenceDownloadBtn"
+              title="Download evidence for closed disputes in queue named by RRN"
+            >
+              {isDownloadingEvidence ? '⏳ Downloading...' : '📥 Bulk Evidence Download'}
+            </button>
             <button
               type="button"
               className="btn btn-outline-success btn-sm"
               onClick={handleExportExcel}
-              disabled={rows.length === 0}
+              disabled={filteredRows.length === 0}
               id="cdExportExcelBtn"
               title="Export closed disputes to Excel"
             >
@@ -708,7 +877,7 @@ export const ClosedDisputes = () => {
               type="button"
               className="btn btn-outline-primary btn-sm"
               onClick={handleExportCsv}
-              disabled={rows.length === 0}
+              disabled={filteredRows.length === 0}
               id="cdExportCsvBtn"
               title="Export closed disputes to CSV"
             >
@@ -760,14 +929,16 @@ export const ClosedDisputes = () => {
                     Loading action-taken dispute records...
                   </td>
                 </tr>
-              ) : rows.length === 0 ? (
+              ) : filteredRows.length === 0 ? (
                 <tr>
                   <td colSpan="17" className="text-center py-5 empty-cell">
                     <div className="empty-state-box">
-                      <div className="empty-state-icon">📂</div>
-                      <div className="empty-state-title">No Closed / Action-Taken Disputes Found</div>
+                      <div className="empty-state-icon">{searchQuery ? '🔍' : '📂'}</div>
+                      <div className="empty-state-title">
+                        {searchQuery ? `No Closed Disputes Matching "${searchQuery}"` : 'No Closed / Action-Taken Disputes Found'}
+                      </div>
                       <div className="empty-state-sub">
-                        Disputes will appear here immediately once a plaza validates and submits their decision (Accept or Reject).
+                        {searchQuery ? 'Try clearing or modifying your search query to see other records.' : 'Disputes will appear here immediately once a plaza validates and submits their decision (Accept or Reject).'}
                       </div>
                     </div>
                   </td>
@@ -804,7 +975,7 @@ export const ClosedDisputes = () => {
                       </td>
                       <td>{r.disputeType}</td>
                       <td className="text-center action-date-cell">
-                        {r.decidedAt ? new Date(r.decidedAt).toLocaleString('en-IN') : (r.plazaActionTime || '—')}
+                        {getPlazaActionTimeDisplay(r)}
                       </td>
                       <td className="reason-cell" title={r.plazaReason || '—'}>
                         {r.plazaReason || '—'}
@@ -861,7 +1032,7 @@ export const ClosedDisputes = () => {
         <TablePagination
           currentPage={currentPage}
           pageSize={pageSize}
-          totalItems={rows.length}
+          totalItems={filteredRows.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={(newSize) => {
             setPageSize(newSize);

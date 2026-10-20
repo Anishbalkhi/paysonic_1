@@ -362,6 +362,28 @@
           }
         }
 
+        .btn-outline-info {
+          background: #f0fdf4;
+          color: #0d9488;
+          border: 1px solid #14b8a6;
+          font-weight: 600;
+          font-size: 0.8rem;
+          padding: 5px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          &:hover:not(:disabled) {
+            background: #0d9488;
+            color: #ffffff;
+          }
+
+          &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+        }
+
         .btn-outline-primary {
           background: #eff6ff;
           color: #2563eb;
@@ -382,6 +404,54 @@
             opacity: 0.5;
             cursor: not-allowed;
           }
+        }
+      }
+    }
+
+    .table-selection-action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      background: #eff6ff;
+      border-bottom: 1px solid #bfdbfe;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .selection-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: #1e40af;
+        font-weight: 600;
+
+        .btn-link {
+          background: none;
+          border: none;
+          color: #64748b;
+          font-size: 0.78rem;
+          cursor: pointer;
+          text-decoration: underline;
+          padding: 0;
+
+          &:hover {
+            color: #0f172a;
+          }
+        }
+      }
+
+      .selection-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        button {
+          font-size: 0.8rem;
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-weight: 600;
         }
       }
     }
@@ -421,6 +491,13 @@
 
             &:hover {
               background-color: #eff6ff;
+            }
+
+            &.row-selected {
+              background-color: #e0f2fe !important;
+              td {
+                background-color: #e0f2fe !important;
+              }
             }
 
             td {
@@ -603,6 +680,13 @@
 
           &:hover {
             background-color: var(--surface-raised, #1C2430);
+          }
+
+          &.row-selected {
+            background-color: rgba(30, 58, 138, 0.45) !important;
+            td {
+              background-color: rgba(30, 58, 138, 0.45) !important;
+            }
           }
 
           td {

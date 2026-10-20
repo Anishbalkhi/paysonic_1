@@ -467,7 +467,8 @@ class DisputeManagementService {
       if (filters.assignStatus) queryParams.assignStatus = filters.assignStatus;
       if (filters.disputeStatus && filters.disputeStatus !== 'ALL') queryParams.disputeStatus = filters.disputeStatus;
       if (filters.plazaAction) queryParams.plazaAction = filters.plazaAction;
-      if (filters.search) queryParams.search = filters.search;
+      const effectiveSearch = (filters.search || filters.acqTxnId || filters.tollTxnId || filters.tagId || '').trim();
+      if (effectiveSearch) queryParams.search = effectiveSearch;
 
       const res = await httpClient.get('/api/disputes/workflow/queue', { params: queryParams });
       if (Array.isArray(res.data)) {
@@ -506,6 +507,24 @@ class DisputeManagementService {
     }
     if (filters.plazaId && filters.plazaId !== 'ALL') {
       rows = rows.filter((r) => String(r.plazaId) === String(filters.plazaId));
+    }
+    if (filters.acqTxnId && filters.acqTxnId.trim()) {
+      const q = filters.acqTxnId.trim().toLowerCase();
+      rows = rows.filter((r) =>
+        (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
+        (r.rrn && String(r.rrn).toLowerCase().includes(q))
+      );
+    }
+    if (filters.tollTxnId && filters.tollTxnId.trim()) {
+      const q = filters.tollTxnId.trim().toLowerCase();
+      rows = rows.filter((r) =>
+        (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
+        (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(q))
+      );
+    }
+    if (filters.tagId && filters.tagId.trim()) {
+      const q = filters.tagId.trim().toLowerCase();
+      rows = rows.filter((r) => r.tagId && String(r.tagId).toLowerCase().includes(q));
     }
     if (filters.search && filters.search.trim()) {
       const q = filters.search.trim().toLowerCase();
@@ -778,6 +797,124 @@ class DisputeManagementService {
           await httpClient.put('/api/disputes/workflow/bulk-unassign', {
             disputeIds: unassignedIds,
             plazaIds: Array.from(setIds),
+            actor,
+          });
+        } catch (err) {
+          console.debug('[DisputeManagementService] Backend bulk-unassign notice:', err?.message);
+        }
+      }
+    }
+
+    return { updatedCount };
+  }
+
+  /**
+   * Bulk-assign specific dispute IDs
+   */
+  async bulkAssignDisputeIds(disputeIds = [], actor = 'Master Admin', adminRemarks = 'Bulk-assigned for plaza review') {
+    if (!Array.isArray(disputeIds) || disputeIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+    const targetSet = new Set(disputeIds.map((id) => String(id).trim().toLowerCase()));
+    const rows = this.getStoredDisputes();
+    let updatedCount = 0;
+    const assignedIds = [];
+
+    const updated = rows.map((r) => {
+      const cleanId = String(r.disputeId || r.rowId || '').trim().toLowerCase();
+      const acqId = String(r.acqTxnId || '').trim().toLowerCase();
+      if ((targetSet.has(cleanId) || targetSet.has(acqId)) && !r.assigned && !r.closed) {
+        updatedCount++;
+        assignedIds.push(r.disputeId || r.rowId);
+        const rowRemarks = (r.memberMessageText || r.cbReason || adminRemarks || '').trim();
+        return {
+          ...r,
+          assigned: true,
+          assignedToPlaza: r.plazaId,
+          assignedBy: actor,
+          assignedAt: formatIstTimestamp(),
+          adminRemarks: rowRemarks,
+          adminReason: rowRemarks,
+          adminRemarksAt: formatIstTimestamp(),
+          lifecycleStatus: 'Assigned to Plaza',
+        };
+      }
+      return r;
+    });
+
+    if (updatedCount > 0) {
+      this.saveDisputes(updated);
+      this.logAudit(
+        'BULK_ASSIGN_ROWS',
+        `Bulk-assigned ${updatedCount} selected dispute(s)`,
+        actor
+      );
+
+      if (assignedIds.length > 0) {
+        try {
+          await httpClient.put('/api/disputes/workflow/bulk-assign', {
+            disputeIds: assignedIds,
+            plazaId: '',
+            adminRemarks,
+            actor,
+          });
+        } catch (err) {
+          console.debug('[DisputeManagementService] Backend bulk-assign notice:', err?.message);
+        }
+      }
+    }
+
+    return { updatedCount };
+  }
+
+  /**
+   * Bulk-unassign specific dispute IDs
+   */
+  async bulkUnassignDisputeIds(disputeIds = [], actor = 'Master Admin') {
+    if (!Array.isArray(disputeIds) || disputeIds.length === 0) {
+      return { updatedCount: 0 };
+    }
+    const targetSet = new Set(disputeIds.map((id) => String(id).trim().toLowerCase()));
+    const rows = this.getStoredDisputes();
+    let updatedCount = 0;
+    const unassignedIds = [];
+
+    const updated = rows.map((r) => {
+      const cleanId = String(r.disputeId || r.rowId || '').trim().toLowerCase();
+      const acqId = String(r.acqTxnId || '').trim().toLowerCase();
+      const isDecided =
+        r.disputeStatus === 'Approved' ||
+        r.disputeStatus === 'Rejected' ||
+        r.plazaAction === 'Yes';
+      if ((targetSet.has(cleanId) || targetSet.has(acqId)) && r.assigned && !isDecided && !r.closed) {
+        updatedCount++;
+        unassignedIds.push(r.disputeId || r.rowId);
+        return {
+          ...r,
+          assigned: false,
+          assignedToPlaza: null,
+          assignedBy: null,
+          assignedAt: null,
+          adminRemarks: null,
+          adminReason: '',
+          lifecycleStatus: 'Pending Assignment',
+        };
+      }
+      return r;
+    });
+
+    if (updatedCount > 0) {
+      this.saveDisputes(updated);
+      this.logAudit(
+        'BULK_UNASSIGN_ROWS',
+        `Bulk-unassigned ${updatedCount} selected dispute(s)`,
+        actor
+      );
+
+      if (unassignedIds.length > 0) {
+        try {
+          await httpClient.put('/api/disputes/workflow/bulk-unassign', {
+            disputeIds: unassignedIds,
             actor,
           });
         } catch (err) {

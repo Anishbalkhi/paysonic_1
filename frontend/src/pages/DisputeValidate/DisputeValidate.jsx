@@ -9,6 +9,7 @@ import TakeActionModal from '../../components/DisputeModals/TakeActionModal';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import { formatFetchTime } from '../../utils/dateUtils';
+import { downloadBulkDisputeEvidence } from '../../utils/evidenceDownloader';
 import './DisputeValidate.scss';
 
 export const DisputeValidate = () => {
@@ -30,6 +31,7 @@ export const DisputeValidate = () => {
   const [pageSize, setPageSize] = useState(25);
   const [fetchTime, setFetchTime] = useState('');
   const [downloadTime, setDownloadTime] = useState('');
+  const [isDownloadingEvidence, setIsDownloadingEvidence] = useState(false);
 
   useEffect(() => {
     if (isPlazaLocked && defaultPlazaId && selectedPlazaId !== defaultPlazaId) {
@@ -57,6 +59,7 @@ export const DisputeValidate = () => {
   const [acqTxnId, setAcqTxnId] = useState('');
   const [tollTxnId, setTollTxnId] = useState('');
   const [tagId, setTagId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Modals state
   const [txnModalRow, setTxnModalRow] = useState(null);
@@ -72,6 +75,9 @@ export const DisputeValidate = () => {
       const aTxn = overrides.acqTxnId !== undefined ? overrides.acqTxnId : acqTxnId;
       const tTxn = overrides.tollTxnId !== undefined ? overrides.tollTxnId : tollTxnId;
       const tId = overrides.tagId !== undefined ? overrides.tagId : tagId;
+      const search = overrides.search !== undefined ? overrides.search : searchQuery;
+
+      const effectiveSearch = (search || aTxn || tTxn || tId || '').trim();
 
       const fetched = await DisputeManagementService.searchDisputes({
         scopedPlazaId: activePlazaId !== 'ALL' ? activePlazaId : undefined,
@@ -79,6 +85,7 @@ export const DisputeValidate = () => {
         toDate: tDate,
         dateType: dType,
         functionCode: fCode,
+        search: effectiveSearch || undefined,
         acqTxnId: aTxn,
         tollTxnId: tTxn,
         tagId: tId,
@@ -97,7 +104,7 @@ export const DisputeValidate = () => {
     } finally {
       setLoading(false);
     }
-  }, [activePlazaId, fromDate, toDate, dateType, functionCode, acqTxnId, tollTxnId, tagId]);
+  }, [activePlazaId, fromDate, toDate, dateType, functionCode, acqTxnId, tollTxnId, tagId, searchQuery, plazas, currentUser]);
 
   useEffect(() => {
     loadData();
@@ -132,6 +139,7 @@ export const DisputeValidate = () => {
     setAcqTxnId('');
     setTollTxnId('');
     setTagId('');
+    setSearchQuery('');
     setCurrentPage(1);
     loadData({
       fromDate: '2026-09-01',
@@ -141,16 +149,77 @@ export const DisputeValidate = () => {
       acqTxnId: '',
       tollTxnId: '',
       tagId: '',
+      search: '',
     });
   };
 
+  // Live filtering on Tag ID, RRN (Acq Txn ID), Plaza Txn ID (Toll Txn ID), or VRN
+  const filteredRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    const q = (searchQuery || '').trim().toLowerCase();
+    const acqQ = (acqTxnId || '').trim().toLowerCase();
+    const tollQ = (tollTxnId || '').trim().toLowerCase();
+    const tagQ = (tagId || '').trim().toLowerCase();
+
+    return rows.filter((r) => {
+      if (acqQ) {
+        const rrnMatch =
+          (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(acqQ)) ||
+          (r.rrn && String(r.rrn).toLowerCase().includes(acqQ));
+        if (!rrnMatch) return false;
+      }
+      if (tollQ) {
+        const tollMatch =
+          (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(tollQ)) ||
+          (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(tollQ));
+        if (!tollMatch) return false;
+      }
+      if (tagQ) {
+        const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(tagQ);
+        if (!tagMatch) return false;
+      }
+      if (q) {
+        const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(q);
+        const rrnMatch =
+          (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
+          (r.rrn && String(r.rrn).toLowerCase().includes(q));
+        const plazaTxnMatch =
+          (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
+          (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(q));
+        const vrnMatch =
+          (r.vrn && String(r.vrn).toLowerCase().includes(q)) ||
+          (r.vehicleNo && String(r.vehicleNo).toLowerCase().includes(q));
+        if (!(tagMatch || rrnMatch || plazaTxnMatch || vrnMatch)) return false;
+      }
+      return true;
+    });
+  }, [rows, searchQuery, acqTxnId, tollTxnId, tagId]);
+
   const paginatedRows = useMemo(() => {
     const from = (currentPage - 1) * pageSize;
-    return rows.slice(from, from + pageSize);
-  }, [rows, currentPage, pageSize]);
+    return filteredRows.slice(from, from + pageSize);
+  }, [filteredRows, currentPage, pageSize]);
+
+  const handleBulkEvidenceDownload = async () => {
+    if (!filteredRows || filteredRows.length === 0) {
+      alert('No disputes available to download evidence.');
+      return;
+    }
+    try {
+      setIsDownloadingEvidence(true);
+      await downloadBulkDisputeEvidence(filteredRows, {
+        archiveName: `Validate_Dispute_Evidence_Bulk_${Date.now()}.zip`,
+      });
+    } catch (err) {
+      console.error('[DisputeValidate] Bulk evidence download error:', err);
+      alert('Failed to download bulk evidence: ' + err.message);
+    } finally {
+      setIsDownloadingEvidence(false);
+    }
+  };
 
   const handleExportCsv = () => {
-    if (!rows || rows.length === 0) return;
+    if (!filteredRows || filteredRows.length === 0) return;
     const fetchTimeStr = formatFetchTime(new Date());
     setDownloadTime(fetchTimeStr);
 
@@ -180,7 +249,7 @@ export const DisputeValidate = () => {
       'SLA Status'
     ];
 
-    const csvRows = rows.map((r) => {
+    const csvRows = filteredRows.map((r) => {
       const tat = DisputeManagementService.getTatBadge(r);
       return [
         r.acqTxnId,
@@ -203,7 +272,7 @@ export const DisputeValidate = () => {
       ].map(escapeCsv).join(',');
     });
 
-    const totDispute = rows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
+    const totDispute = filteredRows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
 
     const totalRow = Array(headers.length).fill('""');
     totalRow[0] = '"TOTAL"';
@@ -211,7 +280,7 @@ export const DisputeValidate = () => {
 
     const bannerRows = [
       `"PAYSONIC DISPUTE MANAGEMENT — VALIDATE DISPUTES QUEUE"`,
-      `"Plaza: ${activePlaza.name} (${activePlazaId})   |   Export Time: ${fetchTimeStr}   |   Assigned Disputes: ${rows.length}   |   Total Value: ₹ ${totDispute}"`,
+      `"Plaza: ${activePlaza.name} (${activePlazaId})   |   Export Time: ${fetchTimeStr}   |   Assigned Disputes: ${filteredRows.length}   |   Total Value: ₹ ${totDispute}"`,
       ''
     ];
 
@@ -234,7 +303,7 @@ export const DisputeValidate = () => {
   };
 
   const handleExportExcel = () => {
-    if (!rows || rows.length === 0) return;
+    if (!filteredRows || filteredRows.length === 0) return;
     const fetchTimeStr = formatFetchTime(new Date());
     setDownloadTime(fetchTimeStr);
 
@@ -269,7 +338,7 @@ export const DisputeValidate = () => {
     let dataXml = '';
     let totalDisputeAmt = 0;
 
-    rows.forEach((r) => {
+    filteredRows.forEach((r) => {
       const tat = DisputeManagementService.getTatBadge(r);
       const isAccepted = r.disputeStatus === 'Approved';
       const isRejected = r.disputeStatus === 'Rejected';
@@ -310,7 +379,7 @@ export const DisputeValidate = () => {
 
     const totalCells = [
       '<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>',
-      `<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Assigned Disputes: ${rows.length}</Data></Cell>`,
+      `<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Assigned Disputes: ${filteredRows.length}</Data></Cell>`,
       ...Array(13).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>'),
       `<Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt}</Data></Cell>`,
       '<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>'
@@ -578,6 +647,43 @@ export const DisputeValidate = () => {
             </select>
           </div>
 
+          <div className="field-box search-field-box">
+            <label htmlFor="vdSearch">Search (Tag ID, RRN, Plaza Txn ID)</label>
+            <div className="search-input-wrapper">
+              <span className="search-icon">🔍</span>
+              <input
+                id="vdSearch"
+                type="text"
+                placeholder="Search Tag ID, RRN, Plaza Txn ID..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    loadData({ search: searchQuery });
+                  }
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setCurrentPage(1);
+                    loadData({ search: '' });
+                  }}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="field-box">
             <label htmlFor="vdAcqTxnId">RRN / Acq Txn ID</label>
             <input
@@ -635,32 +741,43 @@ export const DisputeValidate = () => {
         cards={[
           {
             label: 'Total Assigned Disputes',
-            value: rows.length,
-            sub: `Plaza: ${activePlaza.name} (${activePlazaId})`
+            value: filteredRows.length,
+            sub: searchQuery ? `Filtered from ${rows.length} total` : `Plaza: ${activePlaza.name} (${activePlazaId})`
           },
           {
             label: 'Total Dispute Amount',
-            value: `₹ ${rows.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            value: `₹ ${filteredRows.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             sub: 'Cumulative Queue Value',
             highlight: 'blue'
           },
           {
             label: 'Pending Plaza Action',
-            value: rows.filter(r => r.disputeStatus === 'NA').length,
-            sub: `Decided: ${rows.filter(r => r.disputeStatus !== 'NA').length}`,
-            highlight: rows.some(r => r.disputeStatus === 'NA') ? 'amber' : 'green'
+            value: filteredRows.filter(r => r.disputeStatus === 'NA').length,
+            sub: `Decided: ${filteredRows.filter(r => r.disputeStatus !== 'NA').length}`,
+            highlight: filteredRows.some(r => r.disputeStatus === 'NA') ? 'amber' : 'green'
           }
         ]}
       />
 
-      {/* Export Toolbar */}
+      {/* Export Toolbar & Quick Live Search */}
       <div className="table-toolbar-row">
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="left-toolbar-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn btn-outline-info btn-sm"
+            onClick={handleBulkEvidenceDownload}
+            disabled={!filteredRows || filteredRows.length === 0 || isDownloadingEvidence}
+            id="valBulkEvidenceDownloadBtn"
+            title="Download evidence for all disputes in queue named by RRN"
+            style={{ fontWeight: 600 }}
+          >
+            {isDownloadingEvidence ? '⏳ Downloading...' : '📥 Bulk Evidence Download'}
+          </button>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={handleExportCsv}
-            disabled={!rows || rows.length === 0}
+            disabled={!filteredRows || filteredRows.length === 0}
             id="valExportCsvBtn"
           >
             Export CSV
@@ -669,14 +786,51 @@ export const DisputeValidate = () => {
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={handleExportExcel}
-            disabled={!rows || rows.length === 0}
+            disabled={!filteredRows || filteredRows.length === 0}
             id="valExportExcelBtn"
           >
             Export Excel
           </button>
         </div>
+
+        <div className="table-quick-search">
+          <div className="search-input-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              id="valQuickSearch"
+              type="text"
+              placeholder="Search Tag ID, RRN, Plaza Txn ID..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  loadData({ search: searchQuery });
+                }
+              }}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => {
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                  loadData({ search: '' });
+                }}
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="record-count-text">
-          Showing {rows.length} assigned disputes
+          Showing <strong>{filteredRows.length}</strong> {searchQuery ? `of ${rows.length}` : ''} assigned disputes
         </div>
       </div>
 
@@ -710,10 +864,10 @@ export const DisputeValidate = () => {
                     Loading plaza disputes...
                   </td>
                 </tr>
-              ) : rows.length === 0 ? (
+              ) : filteredRows.length === 0 ? (
                 <tr>
                   <td colSpan="15" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
-                    No disputes assigned to your plaza match the filters.
+                    {searchQuery ? `No disputes matching "${searchQuery}" found.` : 'No disputes assigned to your plaza match the filters.'}
                   </td>
                 </tr>
               ) : (
@@ -822,7 +976,7 @@ export const DisputeValidate = () => {
 
         {/* Table Pagination Bar */}
         <TablePagination
-          totalItems={rows.length}
+          totalItems={filteredRows.length}
           currentPage={currentPage}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
@@ -835,7 +989,8 @@ export const DisputeValidate = () => {
 
         <div className="table-footer-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            Total records: <strong>{rows.length}</strong>
+            Showing <strong>{filteredRows.length}</strong> of <strong>{rows.length}</strong> records
+            {searchQuery && <span style={{ marginLeft: '8px', color: '#2563eb' }}>(Filtered by "{searchQuery}")</span>}
           </div>
           <div style={{ color: '#0369a1', fontWeight: 600 }}>
             <span>📥 Export Download Time: </span>

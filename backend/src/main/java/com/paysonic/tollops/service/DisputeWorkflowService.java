@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -639,8 +641,9 @@ public class DisputeWorkflowService {
             }
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        String istStr = now.format(IST_DATETIME_FMT);
+        ZonedDateTime nowIst = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+        LocalDateTime now = nowIst.toLocalDateTime();
+        String istStr = nowIst.format(IST_DATETIME_FMT);
 
         if (dt.getAssignedAt() == null) {
             dt.setAssignedAt(dt.getAdminRemarksAt() != null ? dt.getAdminRemarksAt() : (dt.getCreatedAt() != null ? dt.getCreatedAt() : now));

@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { TRANSACTION_MASTER, PLAZA_MAP } from '../../config/disputeConstants';
 import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
-import { downloadAllEvidenceAsZip } from '../../utils/evidenceDownloader';
+import {
+  downloadSingleEvidence,
+  downloadMultipleEvidenceSequentially,
+  downloadAllEvidenceAsZip,
+  getEvidenceDownloadName,
+  toRoman,
+} from '../../utils/evidenceDownloader';
 import EvidencePreviewModal from './EvidencePreviewModal';
 import './DisputeModals.scss';
 
@@ -9,6 +15,7 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
   const [previewTarget, setPreviewTarget] = useState(null);
   const [copiedRemark, setCopiedRemark] = useState(false);
   const [isZippingPlaza, setIsZippingPlaza] = useState(false);
+  const [isDownloadingPlaza, setIsDownloadingPlaza] = useState(false);
 
   const handleCopy = async (text) => {
     if (!text) return;
@@ -30,6 +37,32 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     }
   };
 
+  const handleDownloadPlazaSingle = async () => {
+    const list = disputeRow?.plazaEvidence || [];
+    if (list.length === 0) return;
+    try {
+      setIsDownloadingPlaza(true);
+      await downloadSingleEvidence(list[0], 0, 1, disputeRow);
+    } catch (err) {
+      alert('Failed to download evidence file: ' + err.message);
+    } finally {
+      setIsDownloadingPlaza(false);
+    }
+  };
+
+  const handleDownloadPlazaSeries = async () => {
+    const list = disputeRow?.plazaEvidence || [];
+    if (list.length === 0) return;
+    try {
+      setIsDownloadingPlaza(true);
+      await downloadMultipleEvidenceSequentially(list, disputeRow);
+    } catch (err) {
+      alert('Failed to download evidence files: ' + err.message);
+    } finally {
+      setIsDownloadingPlaza(false);
+    }
+  };
+
   const handleDownloadPlazaZip = async () => {
     const list = disputeRow?.plazaEvidence || [];
     if (list.length === 0) return;
@@ -40,6 +73,14 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
       alert('Failed to download Plaza Evidence ZIP: ' + err.message);
     } finally {
       setIsZippingPlaza(false);
+    }
+  };
+
+  const handleDownloadItem = async (file, index, list) => {
+    try {
+      await downloadSingleEvidence(file, index, list.length, disputeRow);
+    } catch (err) {
+      alert('Failed to download evidence file: ' + err.message);
     }
   };
 
@@ -170,50 +211,121 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
 
             {hasEvidence && (
               <div className="txn-modal-evidence-section">
-                <div className="evidence-section-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>📎 Attached Evidence Files</span>
+                <div className="evidence-section-header">
+                  <div className="evidence-header-left">
+                    <span className="evidence-header-title">📎 Attached Evidence Files</span>
+                    <span className="evidence-header-badge">Visible to both Admin &amp; Plaza</span>
+                  </div>
                   {plazaEvidence.length > 0 && (
-                    <button
-                      type="button"
-                      className="btn-download-zip"
-                      onClick={handleDownloadPlazaZip}
-                      disabled={isZippingPlaza}
-                      title="Download Plaza evidence as ZIP"
-                      style={{ fontSize: '0.72rem', padding: '2px 8px' }}
-                    >
-                      {isZippingPlaza ? '⏳ Zipping...' : '📦 Plaza Evidence (ZIP)'}
-                    </button>
+                    <div className="evidence-header-actions">
+                      {plazaEvidence.length === 1 ? (
+                        <button
+                          type="button"
+                          className="btn-evidence-action btn-single"
+                          onClick={handleDownloadPlazaSingle}
+                          disabled={isDownloadingPlaza}
+                          title={`Download Plaza evidence file named by RRN (${disputeRow.acqTxnId || 'RRN'})`}
+                        >
+                          {isDownloadingPlaza ? '⏳ Downloading...' : '⬇️ Download Plaza Evidence'}
+                        </button>
+                      ) : (
+                        <div className="btn-actions-duo">
+                          <button
+                            type="button"
+                            className="btn-evidence-action btn-zip"
+                            onClick={handleDownloadPlazaZip}
+                            disabled={isZippingPlaza}
+                            title={`Download all ${plazaEvidence.length} files as ${(disputeRow.acqTxnId || 'RRN')}.zip`}
+                          >
+                            {isZippingPlaza ? '⏳ Zipping...' : '📦 Download ZIP'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-evidence-action btn-series"
+                            onClick={handleDownloadPlazaSeries}
+                            disabled={isDownloadingPlaza}
+                            title="Download individual files in RRN-I, RRN-II format"
+                          >
+                            {isDownloadingPlaza ? '⏳ Downloading...' : '⬇️ Download (RRN-I, II)'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
-                  <small>Visible to both Admin &amp; Plaza</small>
                 </div>
+
                 <div className="evidence-chips-list">
                   {adminEvidence.map((f, i) => {
                     const name = typeof f === 'string' ? f : f.name;
+                    const dlName = getEvidenceDownloadName(f, i, adminEvidence.length, disputeRow);
                     return (
-                      <div
-                        key={`acq-${i}`}
-                        className="evidence-chip-mini"
-                        onClick={() => setPreviewTarget({ file: f, source: 'Acquirer Evidence', fileList: adminEvidence })}
-                        title="Click to view file"
-                      >
-                        <span className="badge-acq-mini">Acquirer</span>
-                        <span className="file-name-mini">📎 {name}</span>
-                        <span className="view-action-mini">👁️ View</span>
+                      <div key={`acq-${i}`} className="evidence-chip-mini">
+                        <div
+                          className="chip-meta-clickable"
+                          onClick={() => setPreviewTarget({ file: f, source: 'Acquirer Evidence', fileList: adminEvidence })}
+                          title={`Click to preview ${name}`}
+                        >
+                          <span className="badge-acq-mini">Acquirer</span>
+                          <span className="file-name-mini">📎 {name}</span>
+                          {adminEvidence.length > 1 && (
+                            <span className="file-roman-tag">({toRoman(i + 1)})</span>
+                          )}
+                        </div>
+                        <div className="chip-actions-group">
+                          <button
+                            type="button"
+                            className="btn-mini-chip btn-mini-view"
+                            onClick={() => setPreviewTarget({ file: f, source: 'Acquirer Evidence', fileList: adminEvidence })}
+                            title="Preview File"
+                          >
+                            👁️ View
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-mini-chip btn-mini-download"
+                            onClick={() => handleDownloadItem(f, i, adminEvidence)}
+                            title={`Download as ${dlName}`}
+                          >
+                            ⬇️ Download
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                   {plazaEvidence.map((f, i) => {
                     const name = typeof f === 'string' ? f : f.name;
+                    const dlName = getEvidenceDownloadName(f, i, plazaEvidence.length, disputeRow);
                     return (
-                      <div
-                        key={`plz-${i}`}
-                        className="evidence-chip-mini"
-                        onClick={() => setPreviewTarget({ file: f, source: 'Plaza Evidence', fileList: plazaEvidence })}
-                        title="Click to view file"
-                      >
-                        <span className="badge-plz-mini">Plaza</span>
-                        <span className="file-name-mini">📎 {name}</span>
-                        <span className="view-action-mini">👁️ View</span>
+                      <div key={`plz-${i}`} className="evidence-chip-mini">
+                        <div
+                          className="chip-meta-clickable"
+                          onClick={() => setPreviewTarget({ file: f, source: 'Plaza Evidence', fileList: plazaEvidence })}
+                          title={`Click to preview ${name}`}
+                        >
+                          <span className="badge-plz-mini">Plaza</span>
+                          <span className="file-name-mini">📎 {name}</span>
+                          {plazaEvidence.length > 1 && (
+                            <span className="file-roman-tag">({toRoman(i + 1)})</span>
+                          )}
+                        </div>
+                        <div className="chip-actions-group">
+                          <button
+                            type="button"
+                            className="btn-mini-chip btn-mini-view"
+                            onClick={() => setPreviewTarget({ file: f, source: 'Plaza Evidence', fileList: plazaEvidence })}
+                            title="Preview File"
+                          >
+                            👁️ View
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-mini-chip btn-mini-download"
+                            onClick={() => handleDownloadItem(f, i, plazaEvidence)}
+                            title={`Download as ${dlName}`}
+                          >
+                            ⬇️ Download
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

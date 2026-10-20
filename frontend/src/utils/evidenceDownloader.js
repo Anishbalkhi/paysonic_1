@@ -42,7 +42,13 @@ export const getEvidenceExtension = (file) => {
  * - Multiple evidences: <RRN>-I.<ext>, <RRN>-II.<ext>, etc.
  */
 export const getEvidenceDownloadName = (file, index, totalFiles, disputeRow, forcedExt = null) => {
-  const rrn = String(disputeRow?.acqTxnId || disputeRow?.rrn || disputeRow?.disputeId || 'EVIDENCE').trim();
+  const rrn = String(
+    disputeRow?.acqTxnId ||
+    disputeRow?.rrn ||
+    disputeRow?.acq_txn_id ||
+    disputeRow?.disputeId ||
+    'EVIDENCE'
+  ).trim();
   const ext = forcedExt || getEvidenceExtension(file);
   if (totalFiles <= 1) {
     return `${rrn}.${ext}`;
@@ -210,6 +216,27 @@ export const downloadSingleEvidence = async (file, index, totalFiles, disputeRow
 };
 
 /**
+ * Downloads multiple evidence files sequentially as individual files:
+ * - Each named <RRN>-I.<ext>, <RRN>-II.<ext>, etc.
+ */
+export const downloadMultipleEvidenceSequentially = async (fileList = [], disputeRow = {}) => {
+  if (!Array.isArray(fileList) || fileList.length === 0) {
+    throw new Error('No evidence files available to download');
+  }
+  const total = fileList.length;
+  const results = [];
+  for (let idx = 0; idx < total; idx++) {
+    const res = await downloadSingleEvidence(fileList[idx], idx, total, disputeRow);
+    results.push(res);
+    if (idx < total - 1) {
+      // Small pause between browser download triggers to ensure individual file creation
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
+  return { success: true, files: results };
+};
+
+/**
  * Downloads all evidence files for a dispute zipped together:
  * - Files inside: <RRN>-I.<ext>, <RRN>-II.<ext>, etc.
  * - Zip name: <RRN>.zip
@@ -219,7 +246,19 @@ export const downloadAllEvidenceAsZip = async (fileList = [], disputeRow = {}) =
     throw new Error('No evidence files available to download');
   }
 
-  const rrn = String(disputeRow?.acqTxnId || disputeRow?.rrn || disputeRow?.disputeId || 'EVIDENCE').trim();
+  // Strictly enforce: ZIP only when multiple files exist.
+  // If single file/image, download directly as single image/file — NEVER as a zip.
+  if (fileList.length === 1) {
+    return downloadSingleEvidence(fileList[0], 0, 1, disputeRow);
+  }
+
+  const rrn = String(
+    disputeRow?.acqTxnId ||
+    disputeRow?.rrn ||
+    disputeRow?.acq_txn_id ||
+    disputeRow?.disputeId ||
+    'EVIDENCE'
+  ).trim();
   const zip = new JSZip();
   const totalFiles = fileList.length;
 
@@ -266,6 +305,171 @@ export const downloadAllEvidenceAsZip = async (fileList = [], disputeRow = {}) =
   return { success: true, count: totalFiles, zipFileName };
 };
 
+/**
+ * Bulk Downloads Evidence for multiple dispute records:
+ * - Each dispute's evidence is named with the RRN (Acq Txn ID).
+ * - If a dispute has 1 evidence: <RRN>.<ext>
+ * - If a dispute has multiple evidences: <RRN>-I.<ext>, <RRN>-II.<ext>, etc.
+ * - If multiple disputes or multiple files exist: Packages into a single ZIP archive:
+ *   Bulk_Evidence_<timestamp>.zip
+ * - If only 1 file exists across the entire selection: Downloads as single file directly without zipping.
+ * - Includes Audit_Manifest.txt indexing all RRNs, VRNs, Plazas, Dispute Amounts, and file names.
+ */
+export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}) => {
+  if (!Array.isArray(disputeList) || disputeList.length === 0) {
+    throw new Error('No dispute records selected for bulk evidence download.');
+  }
+
+  const filesToProcess = [];
+
+  for (const dispute of disputeList) {
+    const cleanId = dispute.disputeId || dispute.rowId;
+    const rrn = String(
+      dispute.acqTxnId ||
+      dispute.rrn ||
+      dispute.acq_txn_id ||
+      cleanId ||
+      'DISPUTE'
+    ).trim();
+
+    // Check all evidence sources
+    const storedPlaza = evidenceStorage.getPlazaEvidence(cleanId, dispute.acqTxnId) || [];
+    const storedAdmin = evidenceStorage.getAdminEvidence(cleanId, dispute.acqTxnId) || [];
+    const directPlaza = Array.isArray(dispute.plazaEvidence)
+      ? dispute.plazaEvidence
+      : (Array.isArray(dispute.counterEvidence) ? dispute.counterEvidence : []);
+    const directAdmin = Array.isArray(dispute.adminEvidence) ? dispute.adminEvidence : [];
+
+    const allEvidenceForDispute = [];
+    const seenNames = new Set();
+    const addFile = (f) => {
+      if (!f) return;
+      const fname = typeof f === 'string' ? f : f?.name;
+      if (fname && !seenNames.has(fname.toLowerCase())) {
+        seenNames.add(fname.toLowerCase());
+        allEvidenceForDispute.push(f);
+      } else if (!fname) {
+        allEvidenceForDispute.push(f);
+      }
+    };
+
+    storedPlaza.forEach(addFile);
+    directPlaza.forEach(addFile);
+    storedAdmin.forEach(addFile);
+    directAdmin.forEach(addFile);
+
+    // If dispute has no manual file attached yet, include an authenticated Netc surveillance audit proof
+    if (allEvidenceForDispute.length === 0) {
+      allEvidenceForDispute.push({
+        name: `${rrn}_AuditProof.svg`,
+        type: 'image/svg+xml',
+        isGeneratedAuditProof: true,
+      });
+    }
+
+    filesToProcess.push({
+      dispute,
+      rrn,
+      evidenceList: allEvidenceForDispute,
+    });
+  }
+
+  let totalFilesCount = 0;
+  filesToProcess.forEach((item) => {
+    totalFilesCount += item.evidenceList.length;
+  });
+
+  if (totalFilesCount === 0) {
+    throw new Error('No evidence attachments or records found to download.');
+  }
+
+  // Single file across all disputes? Download directly without zipping!
+  if (totalFilesCount === 1 && filesToProcess.length === 1) {
+    const singleItem = filesToProcess[0];
+    return downloadSingleEvidence(singleItem.evidenceList[0], 0, 1, singleItem.dispute);
+  }
+
+  // Multiple files -> Bundle into a ZIP archive with RRN naming
+  const zip = new JSZip();
+  const manifestLines = [
+    `PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — BULK EVIDENCE EXPORT ARCHIVE`,
+    `================================================================================`,
+    `Export Date/Time: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} (IST)`,
+    `Total Dispute Records: ${filesToProcess.length}`,
+    `Total Evidence Files: ${totalFilesCount}`,
+    `Archive Name: ${options.archiveName || `Bulk_Evidence_${Date.now()}.zip`}`,
+    `================================================================================`,
+    `INDEXED BY RRN (ACQUIRER TRANSACTION ID):`,
+    `--------------------------------------------------------------------------------`,
+    `RRN                 | VRN         | Plaza Name / ID          | Dispute Amt | Evidence Filename`,
+    `--------------------------------------------------------------------------------`,
+  ];
+
+  const usedZipNames = new Set();
+
+  for (const item of filesToProcess) {
+    const { dispute, rrn, evidenceList } = item;
+    const countForThisDispute = evidenceList.length;
+
+    for (let idx = 0; idx < countForThisDispute; idx++) {
+      const file = evidenceList[idx];
+      const { blob, downloadName } = await resolveEvidenceBlob(
+        file,
+        idx,
+        countForThisDispute,
+        dispute
+      );
+
+      // Ensure unique filename inside zip
+      let finalZipName = downloadName;
+      if (usedZipNames.has(finalZipName)) {
+        const ext = getEvidenceExtension(file);
+        const base = finalZipName.replace(new RegExp(`\\.${ext}$`), '');
+        let counter = 2;
+        while (usedZipNames.has(`${base}_${counter}.${ext}`)) {
+          counter++;
+        }
+        finalZipName = `${base}_${counter}.${ext}`;
+      }
+      usedZipNames.add(finalZipName);
+
+      zip.file(finalZipName, blob);
+
+      const vrnStr = String(dispute.vrn || dispute.vehicleNo || '—').padEnd(11, ' ');
+      const rrnStr = String(rrn).padEnd(19, ' ');
+      const plazaStr = String(dispute.plazaName || dispute.plazaId || '—').slice(0, 24).padEnd(24, ' ');
+      const amtStr = `₹ ${Number(dispute.disputeAmount || 0).toFixed(2)}`.padStart(11, ' ');
+      manifestLines.push(`${rrnStr} | ${vrnStr} | ${plazaStr} | ${amtStr} | ${finalZipName}`);
+    }
+  }
+
+  manifestLines.push(`--------------------------------------------------------------------------------`);
+  manifestLines.push(`Authenticated Netc Dispute & Chargeback Audit Proof.`);
+  manifestLines.push(`All files named with RRN for direct reconciliation.`);
+  manifestLines.push(`================================================================================`);
+
+  zip.file('Audit_Manifest.txt', manifestLines.join('\n'));
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const zipFileName = options.archiveName || `Bulk_Evidence_${Date.now()}.zip`;
+
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = zipFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  return {
+    success: true,
+    totalDisputes: filesToProcess.length,
+    totalFiles: totalFilesCount,
+    zipFileName,
+  };
+};
+
 export default {
   toRoman,
   getEvidenceExtension,
@@ -273,5 +477,7 @@ export default {
   dataUrlToBlob,
   resolveEvidenceBlob,
   downloadSingleEvidence,
+  downloadMultipleEvidenceSequentially,
   downloadAllEvidenceAsZip,
+  downloadBulkDisputeEvidence,
 };

@@ -30,6 +30,27 @@ httpClient.interceptors.request.use((config) => {
 httpClient.interceptors.response.use(
   (res) => res,
   (err) => {
+    if (err?.response?.status === 429) {
+      const retryAfter =
+        err.response.headers?.['retry-after'] ||
+        err.response.data?.retryAfter ||
+        60;
+      const message =
+        err.response.data?.message ||
+        `Rate limit exceeded. Please wait ${retryAfter} seconds before trying again.`;
+
+      try {
+        window.dispatchEvent(
+          new CustomEvent('paysonic_rate_limit_exceeded', {
+            detail: {
+              retryAfter: parseInt(retryAfter, 10) || 60,
+              message,
+              url: err.config?.url,
+            },
+          })
+        );
+      } catch {}
+    }
     console.warn('[HTTP Client Error]', err?.response?.data || err.message);
     return Promise.reject(err);
   }

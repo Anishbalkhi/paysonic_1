@@ -323,17 +323,6 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                     <>
                       <div className="attachment-section-label" style={{ marginTop: '10px' }}>
                         <span>Admin Attachments ({adminEvidence.length})</span>
-                        {adminEvidence.length > 0 && (
-                          <button
-                            type="button"
-                            className="btn-download-zip"
-                            onClick={handleDownloadAdminZip}
-                            disabled={isZippingAdmin}
-                            title="Download all Admin evidence as ZIP"
-                          >
-                            {isZippingAdmin ? '⏳ Zipping...' : '📦 Download ZIP'}
-                          </button>
-                        )}
                         <span className="sub-tag">Visible to Admin &amp; Plaza</span>
                       </div>
                       <div className="files-container">
@@ -358,32 +347,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                   Plaza · Evidence &amp; Decision from Plaza
                 </div>
                 <div className="section-content">
-                  <div className="attachment-section-label">
-                    <span>Plaza Attachments ({(disputeRow.plazaEvidence || []).length})</span>
-                    {(disputeRow.plazaEvidence || []).length > 0 && (
-                      <button
-                        type="button"
-                        className="btn-download-zip"
-                        onClick={handleDownloadPlazaZip}
-                        disabled={isZippingPlaza}
-                        title="Download all Plaza counter-evidence as ZIP"
-                      >
-                        {isZippingPlaza ? '⏳ Zipping...' : '📦 Download ZIP'}
-                      </button>
-                    )}
-                    <span className="sub-tag">Visible to Admin &amp; Plaza</span>
-                  </div>
-
-                  <div className="files-container">
-                    {(disputeRow.plazaEvidence || []).length === 0 ? (
-                      <div className="no-evidence-text">No counter-evidence uploaded</div>
-                    ) : (
-                      disputeRow.plazaEvidence.map((f, i) =>
-                        renderEvidenceChip(f, i, false)
-                      )
-                    )}
-                  </div>
-
+                  {/* Plaza Reason / Remarks directly in front of Admin Reason */}
                   <div className="field-block">
                     <div className="field-label-row">
                       <label>Plaza Reason / Remarks</label>
@@ -397,20 +361,33 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
                         {copiedPlazaRemark ? '✓ Copied' : '📋 Copy'}
                       </button>
                     </div>
-                    <div className="readonly-value-box readonly-with-action">
-                      <span className="remark-text">
-                        {disputeRow.plazaReason || disputeRow.plazaRemarks || 'NA'}
-                      </span>
-                      <button
-                        type="button"
-                        className={`btn-copy-inline ${copiedPlazaRemark ? 'copied' : ''}`}
-                        onClick={handleCopyPlazaRemarks}
-                        title="Copy Plaza remarks to clipboard"
-                        aria-label="Copy Plaza remarks"
-                      >
-                        {copiedPlazaRemark ? '✓ Copied' : '📋 Copy'}
-                      </button>
+                    <div
+                      className="readonly-value-box"
+                      style={{
+                        minHeight: '84px',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: '1.45',
+                      }}
+                    >
+                      {disputeRow.plazaReason || disputeRow.plazaRemarks || 'NA'}
                     </div>
+                  </div>
+
+                  {/* Plaza Attachments directly in front of Admin Attachments */}
+                  <div className="attachment-section-label" style={{ marginTop: '10px' }}>
+                    <span>Plaza Attachments ({(disputeRow.plazaEvidence || []).length})</span>
+                    <span className="sub-tag">Visible to Admin &amp; Plaza</span>
+                  </div>
+
+                  <div className="files-container">
+                    {(disputeRow.plazaEvidence || []).length === 0 ? (
+                      <div className="no-evidence-text">No counter-evidence uploaded</div>
+                    ) : (
+                      disputeRow.plazaEvidence.map((f, i) =>
+                        renderEvidenceChip(f, i, false)
+                      )
+                    )}
                   </div>
 
                   <div className="field-block">

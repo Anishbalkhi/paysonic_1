@@ -232,6 +232,157 @@
 }
 @keyframes errIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
 
+/* ── Enterprise Security Alerts (Brute Force & Rate Limit) ── */
+.lf-security-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  line-height: 1.45;
+  animation: errIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+
+  .lf-alert-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .lf-alert-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .lf-alert-title {
+    font-weight: 700;
+    font-size: 13.5px;
+    letter-spacing: -0.1px;
+  }
+
+  .lf-alert-desc {
+    font-size: 12.5px;
+    opacity: 0.92;
+  }
+
+  &--lockout {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #dc2626;
+    color: #991b1b;
+
+    .lf-alert-title {
+      color: #b91c1c;
+    }
+  }
+
+  &--ratelimit {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    color: #92400e;
+
+    .lf-alert-title {
+      color: #b45309;
+    }
+  }
+
+  &--warning {
+    background: #fefce8;
+    border: 1px solid #fef08a;
+    border-left: 4px solid #eab308;
+    color: #854d0e;
+
+    .lf-alert-title {
+      color: #a16207;
+    }
+  }
+}
+
+.lf-cooldown-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 5px 12px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  width: fit-content;
+
+  strong {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: #991b1b;
+  }
+
+  &--amber {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.2);
+    color: #b45309;
+    strong { color: #92400e; }
+  }
+}
+
+.lf-cooldown-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dc2626;
+  box-shadow: 0 0 6px #dc2626;
+  animation: livePulse 1.2s ease-in-out infinite;
+
+  &.amber {
+    background: #f59e0b;
+    box-shadow: 0 0 6px #f59e0b;
+  }
+}
+
+.lf-security-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 16px;
+  animation: errIn 0.2s ease;
+}
+
+.lf-spinner-mini {
+  width: 13px;
+  height: 13px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.lf-input--locked {
+  background: #f8fafc !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  border-color: #e2e8f0 !important;
+}
+
+.lf-btn--locked {
+  background: #e11d48 !important;
+  opacity: 0.9 !important;
+  cursor: not-allowed !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.25) !important;
+}
+
 /* ── Field ── */
 .lf-field {
   margin-bottom: 20px;
@@ -471,6 +622,66 @@
     background: rgba(239, 68, 68, 0.12);
     border-color: rgba(239, 68, 68, 0.3);
     color: #fca5a5;
+  }
+
+  .lf-security-alert {
+    &--lockout {
+      background: rgba(185, 28, 28, 0.18);
+      border-color: rgba(239, 68, 68, 0.4);
+      border-left-color: #ef4444;
+      color: #fca5a5;
+      .lf-alert-title { color: #fecaca; }
+      .lf-alert-desc { color: #fca5a5; }
+    }
+
+    &--ratelimit {
+      background: rgba(180, 83, 9, 0.18);
+      border-color: rgba(245, 158, 11, 0.4);
+      border-left-color: #f59e0b;
+      color: #fde68a;
+      .lf-alert-title { color: #fef08a; }
+      .lf-alert-desc { color: #fde68a; }
+    }
+
+    &--warning {
+      background: rgba(161, 98, 7, 0.18);
+      border-color: rgba(234, 179, 8, 0.4);
+      border-left-color: #eab308;
+      color: #fef08a;
+      .lf-alert-title { color: #fef9c3; }
+      .lf-alert-desc { color: #fef08a; }
+    }
+  }
+
+  .lf-cooldown-timer {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    strong { color: #fee2e2; }
+
+    &--amber {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+      strong { color: #fef3c7; }
+    }
+  }
+
+  .lf-security-pill {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+  }
+
+  .lf-input--locked {
+    background: #0f172a !important;
+    border-color: #1e293b !important;
+    color: #64748b !important;
+  }
+
+  .lf-btn--locked {
+    background: #dc2626 !important;
+    color: #fff !important;
   }
 
   .lf-trust-item {
