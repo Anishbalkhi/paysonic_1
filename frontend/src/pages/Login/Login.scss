@@ -315,6 +315,8 @@
   font-weight: 600;
   color: #b91c1c;
   width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
 
   strong {
     font-family: 'Space Grotesk', monospace;

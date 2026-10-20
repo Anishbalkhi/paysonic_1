@@ -69,25 +69,266 @@ a {
   color: var(--faint);
 }
 
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+}
+
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
 .app {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   position: relative;
 }
 
 .main {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-page);
   min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
-
-
 
 .content-container {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   GLOBAL RESPONSIVE ARCHITECTURE & VIEWPORT ADAPTATIONS
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Universal Table Horizontal Scroll Isolation ── */
+.table-wrapper,
+.table-container,
+.table-responsive,
+.status-table-card,
+.datatable-container,
+.custom-table-container,
+.table-responsive-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  position: relative;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 4px;
+  }
+}
+
+/* ── Universal Modal Responsive Constraint ── */
+.dispute-modal-overlay,
+.modal-overlay,
+.cpm-overlay,
+.operations-modal-overlay {
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* ── Large Desktops & Ultrawide (>= 1440px) ── */
+@media (min-width: 1440px) {
+  .content-container {
+    max-width: 1800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* ── Laptops & Medium Desktops (<= 1200px) ── */
+@media (max-width: 1200px) {
+  .mini-dashboard-grid,
+  .kpi-grid,
+  .summary-cards-grid,
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  }
+}
+
+/* ── Tablets & Mobile Devices (<= 992px) ── */
+@media (max-width: 992px) {
+  .topbar {
+    padding: 0 16px !important;
+
+    .mobile-hamburger-btn {
+      display: inline-flex !important;
+    }
+
+    .search-box {
+      width: 180px !important;
+    }
+  }
+
+  [class$="-page"],
+  .page-container,
+  .report-page {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+
+/* ── Mobile Landscape & Tablet Portrait (<= 768px) ── */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 12px !important;
+
+    .search-box {
+      display: none !important;
+    }
+
+    .topbar-crumb-block .crumb {
+      display: none !important;
+    }
+
+    .topbar-crumb-block .crumb-title {
+      font-size: 13px !important;
+      max-width: 140px !important;
+    }
+  }
+
+  [class$="-page"],
+  .page-container,
+  .report-page {
+    padding: 16px 14px 36px !important;
+    gap: 16px !important;
+  }
+
+  .page-header-block {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+
+    h1 {
+      font-size: 1.35rem !important;
+      letter-spacing: -0.01em !important;
+    }
+
+    .subtitle {
+      font-size: 0.82rem !important;
+    }
+  }
+
+  /* Responsive Metric Grids */
+  .mini-dashboard-grid,
+  .kpi-grid,
+  .stats-grid,
+  .summary-cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* Responsive Filters & Form Rows */
+  .filters-grid,
+  .search-criteria-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .filter-actions-row,
+  .table-top-bar,
+  .table-footer-bar,
+  .bulk-action-controls,
+  .table-toolbar-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+
+    button, select, input {
+      width: 100% !important;
+    }
+  }
+
+  .page-controls,
+  .pagination-row {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 6px !important;
+  }
+}
+
+/* ── Small Smartphones & Extra Small Screens (<= 480px) ── */
+@media (max-width: 480px) {
+  .topbar {
+    padding: 0 8px !important;
+
+    .topbar-left {
+      gap: 6px !important;
+    }
+
+    .topbar-crumb-block .crumb-title {
+      max-width: 105px !important;
+      font-size: 12px !important;
+    }
+
+    .topbar-right {
+      gap: 5px !important;
+
+      .clearance-pill {
+        display: none !important;
+      }
+
+      .theme-toggle-btn {
+        width: 30px !important;
+        height: 30px !important;
+      }
+
+      .topbar-avatar {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 10.5px !important;
+      }
+    }
+  }
+
+  [class$="-page"],
+  .page-container,
+  .report-page {
+    padding: 12px 10px 24px !important;
+    gap: 12px !important;
+  }
+
+  .mini-dashboard-grid,
+  .kpi-grid,
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .table-wrapper,
+  .table-container {
+    padding: 10px 8px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Optimize touch target buttons on mobile */
+  .btn,
+  button[type="button"],
+  button[type="submit"] {
+    min-height: 38px;
+  }
+}
+
