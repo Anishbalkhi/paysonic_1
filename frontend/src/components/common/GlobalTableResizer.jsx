@@ -31,33 +31,65 @@ const applyTableScale = (table, scaleItem) => {
  * ─────────────────────────────────────────────────────────────────────────────
  * Enables interactive column width stretching & shrinking on each table across
  * the application, plus a toolbar option to increase/decrease table density (zoom).
+ * Strict single-toolbar enforcement per container.
  */
 export const GlobalTableResizer = () => {
   const location = useLocation();
   const initTimeoutRef = useRef(null);
 
   useEffect(() => {
-    const attachToTables = () => {
-      const tables = document.querySelectorAll('table');
-      if (!tables || tables.length === 0) return;
+    // Deduplicates toolbars globally to ensure strictly single toolbar per container
+    const enforceSingleToolbars = () => {
+      const toolbars = Array.from(document.querySelectorAll('.table-stretch-toolbar'));
+      const seenContainers = new Set();
 
-      tables.forEach((table, tblIdx) => {
-        // Skip hidden, calendar, or modal tables
+      toolbars.forEach((tb) => {
+        const parent = tb.parentElement;
+        if (!parent) return;
+        if (seenContainers.has(parent)) {
+          // Extra toolbar in the same container: remove immediately!
+          tb.remove();
+        } else {
+          seenContainers.add(parent);
+        }
+      });
+    };
+
+    const attachToTables = () => {
+      const allTables = Array.from(document.querySelectorAll('table'));
+      if (!allTables || allTables.length === 0) return;
+
+      // Filter out non-main tables (calendars, modals, child/nested tables, diff tables)
+      const validTables = allTables.filter((table) => {
         if (
           table.closest('.react-calendar') ||
           table.closest('.date-picker') ||
           table.closest('.dispute-modal') ||
-          table.closest('.modal-body')
+          table.closest('.modal-body') ||
+          table.closest('.diff-table') ||
+          table.classList.contains('child-table') ||
+          table.closest('.child-table') ||
+          table.classList.contains('sub-table') ||
+          table.closest('.sub-table')
         ) {
-          return;
+          return false;
         }
+        return true;
+      });
 
-        const pathKey = location.pathname.replace(/\/$/, '') || '/';
+      if (validTables.length === 0) return;
+
+      const pathKey = location.pathname.replace(/\/$/, '') || '/';
+      const claimedContainers = new Set();
+
+      validTables.forEach((table, tblIdx) => {
         const tableKey = `${pathKey}_tbl_${tblIdx}`;
 
         setupColumnResizers(table, tableKey);
-        setupTableStretchToolbar(table, tableKey);
+        setupTableStretchToolbar(table, tableKey, claimedContainers);
       });
+
+      enforceSingleToolbars();
     };
 
     const setupColumnResizers = (table, tableKey) => {
@@ -159,7 +191,7 @@ export const GlobalTableResizer = () => {
       });
     };
 
-    const setupTableStretchToolbar = (table, tableKey) => {
+    const setupTableStretchToolbar = (table, tableKey, claimedContainers) => {
       // Find parent container or wrapper
       const wrapper = table.closest('.table-wrapper') ||
                       table.closest('.table-responsive') ||
@@ -202,25 +234,45 @@ export const GlobalTableResizer = () => {
       } catch {}
 
       const currentIdx = Math.max(0, SCALE_LEVELS.findIndex((l) => l.key === savedScaleKey));
-      const currentLevel = SCALE_LEVELS[currentIdx] || SCALE_LEVELS.find((l) => l.key === 'normal') || SCALE_LEVELS[0];
+      const currentLevel = SCALE_LEVELS[currentIdx] || SCALE_LEVELS.find((l) => l.key === 'normal') || SCALE_LEVELS[3];
 
       // Always apply scale directly to the live table element
       applyTableScale(table, currentLevel);
 
-      // Check if toolbar control already exists
-      const existingToolbar = document.querySelector(`.table-stretch-toolbar[data-for="${tableKey}"]`);
-      if (existingToolbar) {
-        // If already bound to this active table, sync label and return
-        if (existingToolbar._boundTable === table && table.isConnected) {
-          const valSpan = existingToolbar.querySelector('.stretch-val');
+      // If a target container is already claimed by another table on this page, do not add a duplicate!
+      if (targetToolbar) {
+        if (claimedContainers.has(targetToolbar)) {
+          return;
+        }
+        claimedContainers.add(targetToolbar);
+      }
+
+      // Check if toolbar control already exists in targetToolbar or wrapper
+      const containerToSearch = targetToolbar || wrapper;
+      const existingInContainer = Array.from(containerToSearch.querySelectorAll('.table-stretch-toolbar'));
+
+      if (existingInContainer.length > 0) {
+        // Keep at most ONE toolbar in this container, remove any duplicates immediately!
+        while (existingInContainer.length > 1) {
+          const dup = existingInContainer.pop();
+          dup.remove();
+        }
+
+        const singleToolbar = existingInContainer[0];
+        // If this single toolbar is already bound to this active table, update its label and exit
+        if (singleToolbar._boundTable === table && table.isConnected) {
+          const valSpan = singleToolbar.querySelector('.stretch-val');
           if (valSpan && valSpan.textContent !== currentLevel.label) {
             valSpan.textContent = currentLevel.label;
           }
           return;
         }
-        // If bound to a previous unmounted table, remove stale toolbar to re-create with fresh bindings
-        existingToolbar.remove();
+        // If stale or bound to an unmounted table, remove it so we can create a clean fresh one
+        singleToolbar.remove();
       }
+
+      // Also clean up any other toolbar that claims this tableKey in the document
+      document.querySelectorAll(`.table-stretch-toolbar[data-for="${tableKey}"]`).forEach((el) => el.remove());
 
       // Create Stretch / Size Toolbar
       const toolbar = document.createElement('div');
@@ -274,7 +326,7 @@ export const GlobalTableResizer = () => {
         e.stopPropagation();
         const currentKey = table.getAttribute('data-table-scale') || 'normal';
         const curIdx = SCALE_LEVELS.findIndex((l) => l.key === currentKey);
-        const nextIdx = curIdx >= 0 ? Math.min(SCALE_LEVELS.length - 1, curIdx + 1) : 1;
+        const nextIdx = curIdx >= 0 ? Math.min(SCALE_LEVELS.length - 1, curIdx + 1) : 3;
         updateScale(nextIdx);
       });
 
@@ -300,13 +352,23 @@ export const GlobalTableResizer = () => {
       });
 
       if (targetToolbar) {
+        // Enforce strictly one toolbar in targetToolbar
+        targetToolbar.querySelectorAll('.table-stretch-toolbar').forEach((el) => el.remove());
         targetToolbar.appendChild(toolbar);
       } else {
         // Fallback: mount before scrolling container
         const mountContainer = table.closest('.table-responsive') || table;
+        mountContainer.parentElement?.querySelectorAll('.table-stretch-toolbar').forEach((el) => el.remove());
         mountContainer.parentElement?.insertBefore(toolbar, mountContainer);
       }
     };
+
+    // Clean up any stale toolbars from other pages immediately on navigation
+    document.querySelectorAll('.table-stretch-toolbar').forEach((el) => {
+      if (!el._boundTable || !el._boundTable.isConnected) {
+        el.remove();
+      }
+    });
 
     // Attach immediately and monitor for dynamic table updates
     attachToTables();
@@ -336,6 +398,8 @@ export const GlobalTableResizer = () => {
     return () => {
       if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
       observer.disconnect();
+      // On unmounting / page change, remove any stray toolbars so they don't bleed into the next page
+      document.querySelectorAll('.table-stretch-toolbar').forEach((el) => el.remove());
     };
   }, [location.pathname]);
 
