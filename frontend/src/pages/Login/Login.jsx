@@ -392,7 +392,7 @@ export const Login = () => {
 
             {/* Email */}
             <div className="lf-field">
-              <label htmlFor="lf-email" className="lf-label">Email address</label>
+              <label htmlFor="lf-email" className="lf-label">Email</label>
               <input
                 id="lf-email"
                 type="email"
