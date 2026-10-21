@@ -86,6 +86,47 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
   if (!isOpen || !disputeRow) return null;
 
   const isDecided = disputeRow.disputeStatus !== 'NA';
+  const isAssigned = Boolean(disputeRow.assigned);
+
+  const assignedAtDisplay = (() => {
+    if (disputeRow.assignedAt) {
+      const f = formatDateTime(disputeRow.assignedAt);
+      if (f && f !== '—') return f;
+    }
+    if (disputeRow.assigned_at) {
+      const f = formatDateTime(disputeRow.assigned_at);
+      if (f && f !== '—') return f;
+    }
+    if (disputeRow.adminRemarksAt) {
+      const f = formatDateTime(disputeRow.adminRemarksAt);
+      if (f && f !== '—') return f;
+    }
+    if (disputeRow.admin_remarks_at) {
+      const f = formatDateTime(disputeRow.admin_remarks_at);
+      if (f && f !== '—') return f;
+    }
+    if (isAssigned) {
+      const fallback = disputeRow.updatedAt || disputeRow.plazaActionTime || disputeRow.createdAt;
+      if (fallback && fallback !== 'Pending Plaza Decision') {
+        const f = formatDateTime(fallback);
+        if (f && f !== '—') return f;
+      }
+    }
+    return '—';
+  })();
+
+  const plazaActionTimeDisplay = (() => {
+    if (disputeRow.plazaActionTime && disputeRow.plazaActionTime !== 'Pending Plaza Decision' && disputeRow.plazaActionTime !== '—') {
+      return formatDateTime(disputeRow.plazaActionTime);
+    }
+    if (disputeRow.plazaActionAt && disputeRow.plazaActionAt !== '—') {
+      return formatDateTime(disputeRow.plazaActionAt);
+    }
+    if (disputeRow.decidedAt && disputeRow.decidedAt !== '—') {
+      return formatDateTime(disputeRow.decidedAt);
+    }
+    return '—';
+  })();
 
   const handleDecision = async (decision) => {
     if (decision === 'Rejected' && !plazaReason.trim()) {
@@ -240,6 +281,18 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                 <label>TAT Due Date (T+8)</label>
                 <div className="meta-display" style={{ color: '#0369a1', fontWeight: 600 }}>
                   {formatDateOnly(disputeRow.tatDueDate) || disputeRow.tatDueDate || '—'}
+                </div>
+              </div>
+              <div className="meta-box">
+                <label>Assigned Date &amp; Time</label>
+                <div className="meta-display">
+                  {assignedAtDisplay}
+                </div>
+              </div>
+              <div className="meta-box">
+                <label>Plaza Action Date &amp; Time</label>
+                <div className="meta-display" style={{ fontWeight: 600 }}>
+                  {plazaActionTimeDisplay}
                 </div>
               </div>
             </div>
