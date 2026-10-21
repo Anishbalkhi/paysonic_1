@@ -241,21 +241,6 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
           </div>
 
           <div className="modal-body">
-            {errorMsg && (
-              <div
-                style={{
-                  padding: '8px 12px',
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '6px',
-                  color: '#991b1b',
-                  fontSize: '0.85rem',
-                }}
-              >
-                {errorMsg}
-              </div>
-            )}
-
             {/* Plaza Meta Header */}
             <div className="plaza-meta-row">
               <div className="meta-box">
@@ -354,7 +339,10 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                           : 'Optional when accepting, mandatory when rejecting...'
                       }
                       value={plazaReason}
-                      onChange={(e) => setPlazaReason(e.target.value)}
+                      onChange={(e) => {
+                        setPlazaReason(e.target.value);
+                        if (errorMsg) setErrorMsg('');
+                      }}
                       disabled={isDecided}
                     />
                   </div>
@@ -363,12 +351,31 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                     <>
                       <EvidenceUploader
                         files={plazaEvidence}
-                        onChange={setPlazaEvidence}
+                        onChange={(files) => {
+                          setPlazaEvidence(files);
+                          if (errorMsg) setErrorMsg('');
+                        }}
                         disabled={isSubmitting}
                         label="Plaza Counter-Evidence"
                         mandatoryText="* (Mandatory for Rejection)"
                         onPreview={(file) => setPreviewTarget({ file, source: 'Plaza Counter-Evidence', fileList: plazaEvidence })}
                       />
+
+                      {errorMsg && (
+                        <div
+                          style={{
+                            marginTop: '10px',
+                            padding: '8px 12px',
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            color: '#991b1b',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          {errorMsg}
+                        </div>
+                      )}
 
                       <div className="decision-actions-row" style={{ marginTop: '14px', display: 'flex', gap: '10px' }}>
                         <button
