@@ -42,8 +42,6 @@ export const ChargebackAssign = () => {
   const [selectedPlazaChips, setSelectedPlazaChips] = useState([]);
   const [bulkFeedback, setBulkFeedback] = useState('');
 
-  // Row Selection State for Working Queue Table
-  const [selectedRowIds, setSelectedRowIds] = useState(new Set());
   const [isDownloadingEvidence, setIsDownloadingEvidence] = useState(false);
 
   // Modals state
@@ -88,7 +86,6 @@ export const ChargebackAssign = () => {
       setMiniStats(stats);
       setFetchTime(formatFetchTime(new Date()));
       setCurrentPage(1);
-      setSelectedRowIds(new Set());
     } catch (e) {
       console.error('[ChargebackAssign] Load error:', e);
     } finally {
@@ -156,39 +153,9 @@ export const ChargebackAssign = () => {
     }
   };
 
-  // Row Selection Handlers
-  const handleToggleSelectAllRows = (e) => {
-    if (e.target.checked) {
-      const allIds = new Set(filteredRows.map((r) => String(r.rowId || r.disputeId)));
-      setSelectedRowIds(allIds);
-    } else {
-      setSelectedRowIds(new Set());
-    }
-  };
-
-  const handleToggleRowSelect = (rowId) => {
-    const idStr = String(rowId);
-    setSelectedRowIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(idStr)) {
-        next.delete(idStr);
-      } else {
-        next.add(idStr);
-      }
-      return next;
-    });
-  };
-
   // Bulk Evidence Download Handler (with RRN naming)
   const handleBulkDownloadEvidence = async (explicitRows = null) => {
-    let targets = explicitRows;
-    if (!targets) {
-      if (selectedRowIds.size > 0) {
-        targets = filteredRows.filter((r) => selectedRowIds.has(String(r.rowId || r.disputeId)));
-      } else {
-        targets = filteredRows;
-      }
-    }
+    const targets = explicitRows || filteredRows;
 
     if (!targets || targets.length === 0) {
       alert('No dispute transactions found to download evidence.');
@@ -216,60 +183,16 @@ export const ChargebackAssign = () => {
     let targets = [];
     if (selectedPlazaChips.length > 0) {
       targets = rows.filter((r) => selectedPlazaChips.includes(String(r.plazaId)));
-    } else if (selectedRowIds.size > 0) {
-      targets = rows.filter((r) => selectedRowIds.has(String(r.rowId || r.disputeId)));
     } else {
       targets = filteredRows;
     }
 
     if (targets.length === 0) {
-      setBulkFeedback('Please pick at least one plaza chip or select disputes first.');
+      setBulkFeedback('Please pick at least one plaza chip first.');
       return;
     }
 
     await handleBulkDownloadEvidence(targets);
-  };
-
-  // Bulk Assign Selected Rows
-  const handleBulkAssignSelectedRows = async () => {
-    if (selectedRowIds.size === 0) {
-      setBulkFeedback('Please select at least one dispute row.');
-      return;
-    }
-    try {
-      setBulkFeedback(`Assigning ${selectedRowIds.size} selected row(s)...`);
-      const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
-      const { updatedCount } = await DisputeManagementService.bulkAssignDisputeIds(
-        Array.from(selectedRowIds),
-        actorName
-      );
-      setBulkFeedback(`✓ ${updatedCount} selected dispute(s) assigned to plaza.`);
-      setSelectedRowIds(new Set());
-      loadData();
-    } catch (err) {
-      setBulkFeedback(`⚠️ Failed to bulk assign selected rows: ${err.message}`);
-    }
-  };
-
-  // Bulk Unassign Selected Rows
-  const handleBulkUnassignSelectedRows = async () => {
-    if (selectedRowIds.size === 0) {
-      setBulkFeedback('Please select at least one dispute row.');
-      return;
-    }
-    try {
-      setBulkFeedback(`Unassigning ${selectedRowIds.size} selected row(s)...`);
-      const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
-      const { updatedCount } = await DisputeManagementService.bulkUnassignDisputeIds(
-        Array.from(selectedRowIds),
-        actorName
-      );
-      setBulkFeedback(`✓ ${updatedCount} selected dispute(s) unassigned.`);
-      setSelectedRowIds(new Set());
-      loadData();
-    } catch (err) {
-      setBulkFeedback(`⚠️ Failed to bulk unassign selected rows: ${err.message}`);
-    }
   };
 
   // Sync with realtime onboarded plaza updates and dispute state updates
@@ -1157,66 +1080,10 @@ export const ChargebackAssign = () => {
           </div>
         </div>
 
-        {/* Row Selection Action Bar */}
-        {selectedRowIds.size > 0 && (
-          <div className="table-selection-action-bar">
-            <div className="selection-info">
-              <span>✓ <strong>{selectedRowIds.size}</strong> dispute(s) selected</span>
-              <button
-                type="button"
-                className="btn-link"
-                onClick={() => setSelectedRowIds(new Set())}
-              >
-                Clear Selection
-              </button>
-            </div>
-            <div className="selection-actions">
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => handleBulkDownloadEvidence()}
-                disabled={isDownloadingEvidence}
-                id="cbaDownloadSelectedEvidenceBtn"
-                title="Download bulk evidence files organized into user folders"
-              >
-                {isDownloadingEvidence ? '⏳ Downloading...' : `📥 Download Evidence (${selectedRowIds.size})`}
-              </button>
-              <button
-                type="button"
-                className="btn btn-success btn-sm"
-                onClick={handleBulkAssignSelectedRows}
-                title="Assign selected disputes to their plaza"
-                id="cbaAssignSelectedRowsBtn"
-              >
-                ✓ Bulk Assign ({selectedRowIds.size})
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger btn-sm"
-                onClick={handleBulkUnassignSelectedRows}
-                title="Unassign selected disputes"
-                id="cbaUnassignSelectedRowsBtn"
-              >
-                ✕ Bulk Unassign ({selectedRowIds.size})
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="table-responsive">
           <table>
             <thead>
               <tr>
-                <th style={{ width: '42px', textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    id="cbaSelectAllCheckbox"
-                    checked={filteredRows.length > 0 && selectedRowIds.size === filteredRows.length}
-                    onChange={handleToggleSelectAllRows}
-                    title="Select all disputes"
-                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                  />
-                </th>
                 <th>Assign Status</th>
                 <th style={{ textAlign: 'center' }}>Action</th>
                 <th>Acq Txn ID</th>
@@ -1248,13 +1115,13 @@ export const ChargebackAssign = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="21" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="20" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     Loading dispute queue...
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan="21" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="20" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     {searchQuery ? `No disputes match "${searchQuery}".` : 'No disputes found for the selected criteria.'}
                   </td>
                 </tr>
@@ -1262,19 +1129,9 @@ export const ChargebackAssign = () => {
                 paginatedRows.map((r) => {
                   const tat = DisputeManagementService.getTatBadge(r);
                   const canClose = (r.disputeStatus === 'Approved' || r.disputeStatus === 'Rejected') && !r.closed;
-                  const isSelected = selectedRowIds.has(String(r.rowId || r.disputeId));
                   const { disputeRaiseDate, tatDueDate } = resolveDisputeDates(r);
                   return (
-                    <tr key={r.rowId} className={isSelected ? 'row-selected' : ''}>
-                      <td style={{ textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggleRowSelect(r.rowId || r.disputeId)}
-                          title={`Select dispute RRN: ${r.acqTxnId}`}
-                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                        />
-                      </td>
+                    <tr key={r.rowId}>
                       <td>
                         {r.closed ? (
                           <span className="badge badge-gray">Closed</span>
