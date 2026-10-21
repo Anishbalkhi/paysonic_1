@@ -165,9 +165,20 @@ body.table-is-resizing {
 
 /* Stretched and Scaled Table Styles */
 table[data-table-scale] {
-  transition: font-size 0.15s ease;
+  transform-origin: top left;
+  transition: font-size 0.12s ease, zoom 0.12s ease;
+
+  &[data-table-scale="compact-70"] {
+    zoom: 0.7 !important;
+    font-size: 0.7rem !important;
+
+    th, td {
+      padding: 4px 6px !important;
+    }
+  }
 
   &[data-table-scale="compact"] {
+    zoom: 0.8 !important;
     font-size: 0.74rem !important;
 
     th, td {
@@ -175,11 +186,22 @@ table[data-table-scale] {
     }
   }
 
+  &[data-table-scale="compact-90"] {
+    zoom: 0.9 !important;
+    font-size: 0.78rem !important;
+
+    th, td {
+      padding: 7px 10px !important;
+    }
+  }
+
   &[data-table-scale="normal"] {
+    zoom: 1 !important;
     /* default size */
   }
 
   &[data-table-scale="stretched-1"] {
+    zoom: 1.1 !important;
     font-size: 0.88rem !important;
 
     th, td {
@@ -188,6 +210,7 @@ table[data-table-scale] {
   }
 
   &[data-table-scale="stretched-2"] {
+    zoom: 1.2 !important;
     font-size: 0.94rem !important;
 
     th, td {
@@ -196,6 +219,7 @@ table[data-table-scale] {
   }
 
   &[data-table-scale="stretched-3"] {
+    zoom: 1.3 !important;
     font-size: 1rem !important;
 
     th, td {

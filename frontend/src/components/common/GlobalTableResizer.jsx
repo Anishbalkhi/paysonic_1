@@ -6,7 +6,9 @@ const STORAGE_PREFIX = 'paysonic_tbl_widths_v2_';
 const STORAGE_SCALE_PREFIX = 'paysonic_tbl_scale_v2_';
 
 const SCALE_LEVELS = [
+  { key: 'compact-70', label: '70%', percent: 70 },
   { key: 'compact', label: '80%', percent: 80 },
+  { key: 'compact-90', label: '90%', percent: 90 },
   { key: 'normal', label: '100%', percent: 100 },
   { key: 'stretched-1', label: '110%', percent: 110 },
   { key: 'stretched-2', label: '120%', percent: 120 },
@@ -14,10 +16,21 @@ const SCALE_LEVELS = [
 ];
 
 /**
+ * Applies both CSS attributes and inline zoom style to reliably scale tables
+ */
+const applyTableScale = (table, scaleItem) => {
+  if (!table) return;
+  table.setAttribute('data-table-scale', scaleItem.key);
+  const ratio = scaleItem.percent / 100;
+  table.style.zoom = String(ratio);
+  table.dataset.zoomPercent = String(scaleItem.percent);
+};
+
+/**
  * GlobalTableResizer
  * ─────────────────────────────────────────────────────────────────────────────
  * Enables interactive column width stretching & shrinking on each table across
- * the application, plus a toolbar option to increase/decrease table density.
+ * the application, plus a toolbar option to increase/decrease table density (zoom).
  */
 export const GlobalTableResizer = () => {
   const location = useLocation();
@@ -29,16 +42,19 @@ export const GlobalTableResizer = () => {
       if (!tables || tables.length === 0) return;
 
       tables.forEach((table, tblIdx) => {
-        // Skip hidden, calendar, or date-picker tables
+        // Skip hidden, calendar, or modal tables
         if (
           table.closest('.react-calendar') ||
           table.closest('.date-picker') ||
-          table.offsetParent === null
+          table.closest('.dispute-modal') ||
+          table.closest('.modal-body')
         ) {
           return;
         }
 
-        const tableKey = `${location.pathname}_tbl_${tblIdx}`;
+        const pathKey = location.pathname.replace(/\/$/, '') || '/';
+        const tableKey = `${pathKey}_tbl_${tblIdx}`;
+
         setupColumnResizers(table, tableKey);
         setupTableStretchToolbar(table, tableKey);
       });
@@ -81,7 +97,8 @@ export const GlobalTableResizer = () => {
         let startWidth = 0;
 
         const onMouseMove = (e) => {
-          const diff = e.pageX - startX;
+          const currentZoom = parseFloat(table.style.zoom) || 1;
+          const diff = (e.pageX - startX) / currentZoom;
           const newWidth = Math.max(50, Math.round(startWidth + diff));
 
           th.style.width = `${newWidth}px`;
@@ -94,7 +111,7 @@ export const GlobalTableResizer = () => {
           }
         };
 
-        const onMouseUp = (e) => {
+        const onMouseUp = () => {
           document.removeEventListener('mousemove', onMouseMove);
           document.removeEventListener('mouseup', onMouseUp);
           document.body.classList.remove('table-is-resizing');
@@ -143,7 +160,7 @@ export const GlobalTableResizer = () => {
     };
 
     const setupTableStretchToolbar = (table, tableKey) => {
-      // Find parent container or toolbar to mount scale controls
+      // Find parent container or wrapper
       const wrapper = table.closest('.table-wrapper') ||
                       table.closest('.table-responsive') ||
                       table.closest('.status-table-card') ||
@@ -152,17 +169,28 @@ export const GlobalTableResizer = () => {
 
       if (!wrapper) return;
 
-      // Find best toolbar anchor
+      // Find best toolbar anchor across different layout structures
       let targetToolbar =
         wrapper.querySelector('.top-bar-right-actions') ||
+        wrapper.querySelector('.left-toolbar-actions') ||
+        wrapper.querySelector('.table-toolbar-row') ||
+        wrapper.querySelector('.table-actions-row') ||
         wrapper.querySelector('.table-top-bar') ||
-        wrapper.querySelector('.page-header-block') ||
         wrapper.parentElement?.querySelector('.top-bar-right-actions') ||
+        wrapper.parentElement?.querySelector('.left-toolbar-actions') ||
+        wrapper.parentElement?.querySelector('.table-toolbar-row') ||
+        wrapper.parentElement?.querySelector('.table-actions-row') ||
         wrapper.parentElement?.querySelector('.table-top-bar');
 
-      // Check if toolbar control already exists
-      const existingToolbar = (targetToolbar || wrapper).querySelector(`.table-stretch-toolbar[data-for="${tableKey}"]`);
-      if (existingToolbar) return;
+      if (!targetToolbar && wrapper.previousElementSibling) {
+        const prev = wrapper.previousElementSibling;
+        targetToolbar =
+          prev.querySelector('.left-toolbar-actions') ||
+          prev.querySelector('.top-bar-right-actions') ||
+          (prev.classList.contains('table-toolbar-row') ||
+           prev.classList.contains('table-top-bar') ||
+           prev.classList.contains('table-actions-row') ? prev : null);
+      }
 
       // Restore saved table scale
       let savedScaleKey = 'normal';
@@ -173,15 +201,33 @@ export const GlobalTableResizer = () => {
         }
       } catch {}
 
-      table.setAttribute('data-table-scale', savedScaleKey);
+      const currentIdx = Math.max(0, SCALE_LEVELS.findIndex((l) => l.key === savedScaleKey));
+      const currentLevel = SCALE_LEVELS[currentIdx] || SCALE_LEVELS.find((l) => l.key === 'normal') || SCALE_LEVELS[0];
+
+      // Always apply scale directly to the live table element
+      applyTableScale(table, currentLevel);
+
+      // Check if toolbar control already exists
+      const existingToolbar = document.querySelector(`.table-stretch-toolbar[data-for="${tableKey}"]`);
+      if (existingToolbar) {
+        // If already bound to this active table, sync label and return
+        if (existingToolbar._boundTable === table && table.isConnected) {
+          const valSpan = existingToolbar.querySelector('.stretch-val');
+          if (valSpan && valSpan.textContent !== currentLevel.label) {
+            valSpan.textContent = currentLevel.label;
+          }
+          return;
+        }
+        // If bound to a previous unmounted table, remove stale toolbar to re-create with fresh bindings
+        existingToolbar.remove();
+      }
 
       // Create Stretch / Size Toolbar
       const toolbar = document.createElement('div');
       toolbar.className = 'table-stretch-toolbar';
       toolbar.setAttribute('data-for', tableKey);
+      toolbar._boundTable = table;
       toolbar.title = 'Increase size by stretching or decrease column & table size';
-
-      const currentIdx = Math.max(0, SCALE_LEVELS.findIndex((l) => l.key === savedScaleKey));
 
       toolbar.innerHTML = `
         <span class="stretch-badge" title="Table size and column stretch controls">
@@ -194,7 +240,7 @@ export const GlobalTableResizer = () => {
           Size:
         </span>
         <button type="button" class="stretch-btn stretch-dec" title="Decrease size (Compact)" aria-label="Decrease table size">−</button>
-        <span class="stretch-val">${SCALE_LEVELS[currentIdx]?.label || '100%'}</span>
+        <span class="stretch-val">${currentLevel.label}</span>
         <button type="button" class="stretch-btn stretch-inc" title="Increase size by stretching (Expand)" aria-label="Increase table size">+</button>
         <button type="button" class="stretch-btn stretch-reset" title="Reset table size and column widths back to default" aria-label="Reset table size">↺</button>
       `;
@@ -207,7 +253,7 @@ export const GlobalTableResizer = () => {
       const updateScale = (newIdx) => {
         const clampedIdx = Math.max(0, Math.min(SCALE_LEVELS.length - 1, newIdx));
         const item = SCALE_LEVELS[clampedIdx];
-        table.setAttribute('data-table-scale', item.key);
+        applyTableScale(table, item);
         if (valSpan) valSpan.textContent = item.label;
         try {
           localStorage.setItem(STORAGE_SCALE_PREFIX + tableKey, item.key);
@@ -219,7 +265,8 @@ export const GlobalTableResizer = () => {
         e.stopPropagation();
         const currentKey = table.getAttribute('data-table-scale') || 'normal';
         const curIdx = SCALE_LEVELS.findIndex((l) => l.key === currentKey);
-        updateScale(curIdx > 0 ? curIdx - 1 : 0);
+        const nextIdx = curIdx > 0 ? curIdx - 1 : 0;
+        updateScale(nextIdx);
       });
 
       btnInc.addEventListener('click', (e) => {
@@ -227,14 +274,16 @@ export const GlobalTableResizer = () => {
         e.stopPropagation();
         const currentKey = table.getAttribute('data-table-scale') || 'normal';
         const curIdx = SCALE_LEVELS.findIndex((l) => l.key === currentKey);
-        updateScale(curIdx < SCALE_LEVELS.length - 1 ? curIdx + 1 : SCALE_LEVELS.length - 1);
+        const nextIdx = curIdx >= 0 ? Math.min(SCALE_LEVELS.length - 1, curIdx + 1) : 1;
+        updateScale(nextIdx);
       });
 
       btnReset.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // Reset scale
-        updateScale(1); // 'normal' 100%
+        // Reset scale to normal (100%)
+        const normalIdx = SCALE_LEVELS.findIndex((l) => l.key === 'normal');
+        updateScale(normalIdx >= 0 ? normalIdx : 3);
 
         // Reset all custom column widths on this table
         const thList = table.querySelectorAll('thead th');
@@ -253,16 +302,29 @@ export const GlobalTableResizer = () => {
       if (targetToolbar) {
         targetToolbar.appendChild(toolbar);
       } else {
-        // Fallback: insert before table
-        table.parentElement.insertBefore(toolbar, table);
+        // Fallback: mount before scrolling container
+        const mountContainer = table.closest('.table-responsive') || table;
+        mountContainer.parentElement?.insertBefore(toolbar, mountContainer);
       }
     };
 
     // Attach immediately and monitor for dynamic table updates
     attachToTables();
-    initTimeoutRef.current = setTimeout(attachToTables, 300);
+    initTimeoutRef.current = setTimeout(attachToTables, 250);
 
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((mutations) => {
+      // Ignore mutations from our own scaling attributes or toolbar DOM additions
+      const isInternal = mutations.every((m) => {
+        if (m.type === 'attributes' && (m.attributeName === 'data-table-scale' || m.attributeName === 'style')) {
+          return true;
+        }
+        if (m.target && m.target.classList && m.target.classList.contains('table-stretch-toolbar')) {
+          return true;
+        }
+        return false;
+      });
+      if (isInternal) return;
+
       attachToTables();
     });
 
