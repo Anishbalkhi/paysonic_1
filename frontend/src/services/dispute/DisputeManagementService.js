@@ -461,6 +461,9 @@ class DisputeManagementService {
   async searchDisputes(filters = {}) {
     try {
       const queryParams = {};
+      if (filters.fromDate) queryParams.fromDate = filters.fromDate;
+      if (filters.toDate) queryParams.toDate = filters.toDate;
+      if (filters.dateType) queryParams.dateType = filters.dateType;
       if (filters.functionCode && filters.functionCode !== 'ALL') queryParams.functionCode = filters.functionCode;
       if (filters.plazaId && filters.plazaId !== 'ALL') queryParams.plazaId = filters.plazaId;
       if (filters.scopedPlazaId && filters.scopedPlazaId !== 'ALL') queryParams.plazaId = filters.scopedPlazaId;
@@ -540,6 +543,33 @@ class DisputeManagementService {
           (r.vrn && String(r.vrn).toLowerCase().includes(q)) ||
           (r.vehicleNo && String(r.vehicleNo).toLowerCase().includes(q));
         return tagMatch || rrnMatch || plazaTxnMatch || vrnMatch;
+      });
+    }
+
+    if (filters.fromDate || filters.toDate) {
+      let startMs = 0;
+      let endMs = Infinity;
+      if (filters.fromDate) {
+        const d = new Date(filters.fromDate + 'T00:00:00');
+        if (!isNaN(d.getTime())) startMs = d.getTime();
+      }
+      if (filters.toDate) {
+        const d = new Date(filters.toDate + 'T23:59:59.999');
+        if (!isNaN(d.getTime())) endMs = d.getTime();
+      }
+      const dType = filters.dateType || 'Transaction DateTime';
+      rows = rows.filter((r) => {
+        let target = dType === 'Chargeback Date' ? (r.cbRaisedDate || r.settlementDate)
+                   : dType === 'Plaza Action Date' ? (r.plazaActionTime || r.plazaActionAt || r.decidedAt)
+                   : (r.txnDateTime || r.txnDate);
+        if (target && target !== '—' && target !== 'Pending Plaza Decision') {
+          const parsed = parseUtcTimestamp(target);
+          if (parsed && !isNaN(parsed.getTime())) {
+            const time = parsed.getTime();
+            if (time < startMs || time > endMs) return false;
+          }
+        }
+        return true;
       });
     }
 

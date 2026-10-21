@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -383,6 +384,22 @@ public class DisputeWorkflowService {
                         cb.like(cb.lower(root.get("tagId")), pattern),
                         cb.like(cb.lower(root.get("disputeId")), pattern)
                 ));
+            }
+
+            String fromDateStr = filters.get("fromDate");
+            if (fromDateStr != null && !fromDateStr.trim().isEmpty()) {
+                try {
+                    LocalDate fDate = LocalDate.parse(fromDateStr.trim());
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("txnDateTime"), fDate.atStartOfDay()));
+                } catch (Exception ignored) {}
+            }
+
+            String toDateStr = filters.get("toDate");
+            if (toDateStr != null && !toDateStr.trim().isEmpty()) {
+                try {
+                    LocalDate tDate = LocalDate.parse(toDateStr.trim());
+                    predicates.add(cb.lessThanOrEqualTo(root.get("txnDateTime"), tDate.atTime(LocalTime.MAX)));
+                } catch (Exception ignored) {}
             }
 
             query.orderBy(cb.desc(root.get("createdAt")));

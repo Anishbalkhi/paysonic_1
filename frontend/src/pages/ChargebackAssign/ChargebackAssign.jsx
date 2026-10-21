@@ -7,7 +7,7 @@ import DisputeManagementService from '../../services/dispute/DisputeManagementSe
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import MoreInformationModal from '../../components/DisputeModals/MoreInformationModal';
 import TablePagination from '../../components/common/TablePagination';
-import { formatFetchTime } from '../../utils/dateUtils';
+import { formatFetchTime, parseUtcTimestamp } from '../../utils/dateUtils';
 import { downloadBulkDisputeEvidence } from '../../utils/evidenceDownloader';
 import './ChargebackAssign.scss';
 
@@ -25,9 +25,9 @@ export const ChargebackAssign = () => {
   const [pageSize, setPageSize] = useState(25);
 
   // Filters
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [dateType, setDateType] = useState('');
+  const [fromDate, setFromDate] = useState('2026-09-01');
+  const [toDate, setToDate] = useState('2026-10-31');
+  const [dateType, setDateType] = useState('Transaction DateTime');
   const [functionCode, setFunctionCode] = useState('');
   const [tollPlazaId, setTollPlazaId] = useState(isPlazaLocked ? (defaultPlazaId || '') : '');
   const [searchQuery, setSearchQuery] = useState('');
@@ -295,25 +295,77 @@ export const ChargebackAssign = () => {
     };
   }, [loadData]);
 
-  // Live filtering on Tag ID, RRN (Acq Txn ID), Plaza Txn ID, or VRN
+  // Live filtering on Date, Tag ID, RRN (Acq Txn ID), Plaza Txn ID, or VRN
   const filteredRows = useMemo(() => {
     if (!Array.isArray(rows)) return [];
     const q = (searchQuery || '').trim().toLowerCase();
-    if (!q) return rows;
+
+    // Parse date bounds (from start of fromDate to end of toDate)
+    let startMs = 0;
+    let endMs = Infinity;
+    if (fromDate) {
+      const d = new Date(fromDate + 'T00:00:00');
+      if (!isNaN(d.getTime())) startMs = d.getTime();
+    }
+    if (toDate) {
+      const d = new Date(toDate + 'T23:59:59.999');
+      if (!isNaN(d.getTime())) endMs = d.getTime();
+    }
+
     return rows.filter((r) => {
-      const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(q);
-      const rrnMatch =
-        (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
-        (r.rrn && String(r.rrn).toLowerCase().includes(q));
-      const plazaTxnMatch =
-        (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
-        (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(q));
-      const vrnMatch =
-        (r.vrn && String(r.vrn).toLowerCase().includes(q)) ||
-        (r.vehicleNo && String(r.vehicleNo).toLowerCase().includes(q));
-      return tagMatch || rrnMatch || plazaTxnMatch || vrnMatch;
+      // 1. Function Code filter
+      if (functionCode && String(r.functionCode) !== String(functionCode)) {
+        return false;
+      }
+
+      // 2. Toll Plaza filter
+      if (tollPlazaId && String(r.plazaId) !== String(tollPlazaId) && String(r.assignedToPlaza) !== String(tollPlazaId)) {
+        return false;
+      }
+
+      // 3. Date filtering based on dateType
+      if (startMs > 0 || endMs < Infinity) {
+        let targetDateVal = null;
+        if (dateType === 'Chargeback Date') {
+          targetDateVal = r.cbRaisedDate || r.settlementDate;
+        } else if (dateType === 'Plaza Action Date') {
+          targetDateVal = r.plazaActionTime || r.plazaActionAt || r.decidedAt;
+        } else {
+          // Default: Transaction DateTime
+          targetDateVal = r.txnDateTime || r.txnDate;
+        }
+
+        if (targetDateVal && targetDateVal !== '—' && targetDateVal !== 'Pending Plaza Decision') {
+          const parsed = parseUtcTimestamp(targetDateVal);
+          if (parsed && !isNaN(parsed.getTime())) {
+            const time = parsed.getTime();
+            if (time < startMs || time > endMs) {
+              return false;
+            }
+          }
+        }
+      }
+
+      // 4. Search query
+      if (q) {
+        const tagMatch = r.tagId && String(r.tagId).toLowerCase().includes(q);
+        const rrnMatch =
+          (r.acqTxnId && String(r.acqTxnId).toLowerCase().includes(q)) ||
+          (r.rrn && String(r.rrn).toLowerCase().includes(q));
+        const plazaTxnMatch =
+          (r.tollTxnId && String(r.tollTxnId).toLowerCase().includes(q)) ||
+          (r.toll_txn_id && String(r.toll_txn_id).toLowerCase().includes(q));
+        const vrnMatch =
+          (r.vrn && String(r.vrn).toLowerCase().includes(q)) ||
+          (r.vehicleNo && String(r.vehicleNo).toLowerCase().includes(q));
+        if (!(tagMatch || rrnMatch || plazaTxnMatch || vrnMatch)) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }, [rows, searchQuery]);
+  }, [rows, searchQuery, fromDate, toDate, dateType, functionCode, tollPlazaId]);
 
   // Export CSV directly matching current filtered records with Paysonic theme
   const handleExportCsv = () => {
@@ -807,24 +859,28 @@ export const ChargebackAssign = () => {
         <div className="card-title">Search &amp; Filter Queue</div>
         <div className="filters-grid">
           <div className="field-box">
-            <label htmlFor="assignFromDate">From Date</label>
+            <label htmlFor="assignFromDate">From Date *</label>
             <input
               id="assignFromDate"
-              type="text"
-              placeholder="dd-mm-yyyy hh:mm:ss"
+              type="date"
               value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
 
           <div className="field-box">
-            <label htmlFor="assignToDate">To Date</label>
+            <label htmlFor="assignToDate">To Date *</label>
             <input
               id="assignToDate"
-              type="text"
-              placeholder="dd-mm-yyyy hh:mm:ss"
+              type="date"
               value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
 
@@ -833,9 +889,11 @@ export const ChargebackAssign = () => {
             <select
               id="assignDateType"
               value={dateType}
-              onChange={(e) => setDateType(e.target.value)}
+              onChange={(e) => {
+                setDateType(e.target.value);
+                setCurrentPage(1);
+              }}
             >
-              <option value="">Select Date Type</option>
               <option value="Transaction DateTime">Transaction DateTime</option>
               <option value="Chargeback Date">Chargeback Date</option>
               <option value="Plaza Action Date">Plaza Action Date</option>
@@ -920,16 +978,16 @@ export const ChargebackAssign = () => {
             className="btn btn-secondary btn-sm"
             onClick={() => {
               const targetPlaza = isPlazaLocked ? (defaultPlazaId || '') : '';
-              setFromDate('');
-              setToDate('');
-              setDateType('');
+              setFromDate('2026-09-01');
+              setToDate('2026-10-31');
+              setDateType('Transaction DateTime');
               setFunctionCode('');
               setTollPlazaId(targetPlaza);
               setSearchQuery('');
               loadData({
-                fromDate: '',
-                toDate: '',
-                dateType: '',
+                fromDate: '2026-09-01',
+                toDate: '2026-10-31',
+                dateType: 'Transaction DateTime',
                 functionCode: '',
                 tollPlazaId: targetPlaza,
                 search: '',
