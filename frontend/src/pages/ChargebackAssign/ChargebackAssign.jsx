@@ -327,7 +327,7 @@ export const ChargebackAssign = () => {
       if (startMs > 0 || endMs < Infinity) {
         let targetDateVal = null;
         if (dateType === 'Chargeback Date') {
-          targetDateVal = r.cbRaisedDate || r.settlementDate;
+          targetDateVal = resolveDisputeDates(r).disputeRaiseDate;
         } else if (dateType === 'Plaza Action Date') {
           targetDateVal = r.plazaActionTime || r.plazaActionAt || r.decidedAt;
         } else {
@@ -512,9 +512,9 @@ export const ChargebackAssign = () => {
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaName)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaId)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
-        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || '—')}</Data></Cell>
-        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.tatDueDate || '—')}</Data></Cell>
-        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.settlementDate || r.cbRaisedDate || '—')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).disputeRaiseDate || '—')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).tatDueDate || '—')}</Data></Cell>
+        <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).disputeRaiseDate || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.cbReason)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="Number">${Number(r.functionCode || 0)}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.disputeType)}</Data></Cell>
