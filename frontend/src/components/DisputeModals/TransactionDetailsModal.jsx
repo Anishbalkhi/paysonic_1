@@ -134,7 +134,7 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
 
   const { disputeRaiseDate, tatDueDate } = resolveDisputeDates(disputeRow, master);
 
-  const rows = [
+  const txnRows = [
     { label: 'Acq Txn ID (RRN)', val: acqTxnId, isCode: true },
     { label: 'Toll Txn ID', val: master.tollTxnId, isCode: true },
     { label: 'VRN', val: master.vrn },
@@ -143,13 +143,16 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     { label: 'Toll Plaza Name', val: master.plazaName || PLAZA_MAP[master.plazaId] || disputeRow.plazaName },
     { label: 'Txn Date', val: master.txnDate },
     { label: 'Txn Amount', val: `₹ ${Number(master.txnAmount || 0).toFixed(2)}`, isHighlight: true },
+  ];
+
+  const disputeRows = [
     { label: 'Dispute Raise Date', val: disputeRaiseDate },
-    { label: 'CB Reason', val: disputeRow.cbReason || '—' },
+    { label: 'TAT Due Date', val: tatDueDate, isHighlight: true },
     { label: 'Dispute Amount', val: `₹ ${Number(disputeRow.disputeAmount || 0).toFixed(2)}`, isHighlight: true },
     { label: 'Function Code', val: disputeRow.functionCode || '—', isCode: true },
     { label: 'Dispute Name', val: disputeRow.disputeType || '—' },
+    { label: 'CB Reason', val: disputeRow.cbReason || '—' },
     { label: 'Assigned Date & Time', val: assignedAtDisplay },
-    { label: 'TAT Due Date', val: tatDueDate, isHighlight: true },
     { label: 'Plaza Action', val: disputeRow.plazaAction || 'No' },
     { label: 'Plaza Action Date & Time', val: disputeRow.plazaActionTime ? (disputeRow.plazaActionTime === 'Pending Plaza Decision' ? '—' : formatDateTime(disputeRow.plazaActionTime)) : (disputeRow.plazaActionAt ? formatDateTime(disputeRow.plazaActionAt) : '—') },
     { label: 'CB Plaza Status', val: disputeRow.disputeStatus || 'NA' },
@@ -164,7 +167,7 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     <>
       <div className="dispute-modal-overlay" onClick={onClose}>
         <div
-          className="dispute-modal size-sm"
+          className="dispute-modal size-txn-details"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
@@ -177,39 +180,68 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
           </div>
 
           <div className="modal-body">
-            <div className="kv-detail-list">
-              {rows.map((r, i) => (
-                <div key={i} className="kv-item">
-                  <span className="kv-label">{r.label}</span>
-                  <span
-                    className={`kv-val ${r.isCode ? 'code' : ''} ${
-                      r.isHighlight ? 'highlight' : ''
-                    }`}
-                    style={r.isCopyable ? { display: 'inline-flex', alignItems: 'center', gap: '8px' } : {}}
-                  >
-                    <span>{r.val}</span>
-                    {r.isCopyable && (
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(r.val)}
-                        title="Copy Plaza Remarks"
-                        style={{
-                          background: copiedRemark ? '#dcfce7' : '#eff6ff',
-                          color: copiedRemark ? '#15803d' : '#1d4ed8',
-                          border: `1px solid ${copiedRemark ? '#86efac' : '#bfdbfe'}`,
-                          borderRadius: '4px',
-                          padding: '1px 6px',
-                          fontSize: '0.72rem',
-                          cursor: 'pointer',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {copiedRemark ? '✓ Copied' : '📋 Copy'}
-                      </button>
-                    )}
-                  </span>
+            <div className="txn-details-grid-layout">
+              {/* Left Column: Transaction Details */}
+              <div className="txn-details-card">
+                <div className="txn-details-card-header">
+                  <span className="card-badge">TRANSACTION DETAILS</span>
                 </div>
-              ))}
+                <div className="kv-detail-list">
+                  {txnRows.map((r, i) => (
+                    <div key={i} className="kv-item">
+                      <span className="kv-label">{r.label}</span>
+                      <span
+                        className={`kv-val ${r.isCode ? 'code' : ''} ${
+                          r.isHighlight ? 'highlight' : ''
+                        }`}
+                      >
+                        {r.val}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column: Dispute & Plaza Lifecycle */}
+              <div className="txn-details-card">
+                <div className="txn-details-card-header">
+                  <span className="card-badge">DISPUTE &amp; PLAZA LIFECYCLE</span>
+                </div>
+                <div className="kv-detail-list">
+                  {disputeRows.map((r, i) => (
+                    <div key={i} className="kv-item">
+                      <span className="kv-label">{r.label}</span>
+                      <span
+                        className={`kv-val ${r.isCode ? 'code' : ''} ${
+                          r.isHighlight ? 'highlight' : ''
+                        }`}
+                        style={r.isCopyable ? { display: 'inline-flex', alignItems: 'center', gap: '8px' } : {}}
+                      >
+                        <span>{r.val}</span>
+                        {r.isCopyable && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(r.val)}
+                            title="Copy Plaza Remarks"
+                            style={{
+                              background: copiedRemark ? '#dcfce7' : '#eff6ff',
+                              color: copiedRemark ? '#15803d' : '#1d4ed8',
+                              border: `1px solid ${copiedRemark ? '#86efac' : '#bfdbfe'}`,
+                              borderRadius: '4px',
+                              padding: '1px 6px',
+                              fontSize: '0.72rem',
+                              cursor: 'pointer',
+                              fontWeight: 600,
+                            }}
+                          >
+                            {copiedRemark ? '✓ Copied' : '📋 Copy'}
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {hasEvidence && (

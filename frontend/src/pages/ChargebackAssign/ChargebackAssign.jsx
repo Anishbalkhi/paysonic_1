@@ -8,7 +8,6 @@ import TransactionDetailsModal from '../../components/DisputeModals/TransactionD
 import MoreInformationModal from '../../components/DisputeModals/MoreInformationModal';
 import TablePagination from '../../components/common/TablePagination';
 import { formatFetchTime, parseUtcTimestamp } from '../../utils/dateUtils';
-import { downloadBulkDisputeEvidence } from '../../utils/evidenceDownloader';
 import './ChargebackAssign.scss';
 
 export const ChargebackAssign = () => {
@@ -41,8 +40,6 @@ export const ChargebackAssign = () => {
   // Bulk plaza selection chips
   const [selectedPlazaChips, setSelectedPlazaChips] = useState([]);
   const [bulkFeedback, setBulkFeedback] = useState('');
-
-  const [isDownloadingEvidence, setIsDownloadingEvidence] = useState(false);
 
   // Modals state
   const [txnModalRow, setTxnModalRow] = useState(null);
@@ -95,7 +92,8 @@ export const ChargebackAssign = () => {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const togglePlazaChip = (plazaId) => {
     const idStr = String(plazaId);
@@ -153,70 +151,7 @@ export const ChargebackAssign = () => {
     }
   };
 
-  // Bulk Evidence Download Handler (with RRN naming)
-  const handleBulkDownloadEvidence = async (explicitRows = null) => {
-    const targets = explicitRows || filteredRows;
 
-    if (!targets || targets.length === 0) {
-      alert('No dispute transactions found to download evidence.');
-      return;
-    }
-
-    try {
-      setIsDownloadingEvidence(true);
-      setBulkFeedback(`⏳ Preparing bulk evidence download for ${targets.length} dispute(s)...`);
-      const result = await downloadBulkDisputeEvidence(targets, {
-        archiveName: `Chargeback_Evidence_Bulk_${Date.now()}.zip`,
-      });
-      setBulkFeedback(`✓ Successfully exported ${result.totalFiles} evidence file(s) for ${result.totalDisputes} dispute(s) organized into user folders.`);
-    } catch (err) {
-      console.error('[ChargebackAssign] Bulk evidence download error:', err);
-      alert('Failed to download bulk evidence: ' + err.message);
-      setBulkFeedback(`⚠️ Evidence download failed: ${err.message}`);
-    } finally {
-      setIsDownloadingEvidence(false);
-    }
-  };
-
-  // Bulk Evidence Download for Selected Plazas
-  const handleBulkDownloadPlazaEvidence = async () => {
-    let targets = [];
-    if (selectedPlazaChips.length > 0) {
-      targets = rows.filter((r) => selectedPlazaChips.includes(String(r.plazaId)));
-    } else {
-      targets = filteredRows;
-    }
-
-    if (targets.length === 0) {
-      setBulkFeedback('Please pick at least one plaza chip first.');
-      return;
-    }
-
-    await handleBulkDownloadEvidence(targets);
-  };
-
-  // Sync with realtime onboarded plaza updates and dispute state updates
-  useEffect(() => {
-    const handleSync = () => {
-      loadData();
-    };
-    window.addEventListener('paysonic:plazas_updated', handleSync);
-    window.addEventListener('paysonic:disputes_updated', handleSync);
-    window.addEventListener('storage', handleSync);
-    let bc;
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        bc = new BroadcastChannel('paysonic_disputes_channel');
-        bc.onmessage = () => loadData();
-      } catch {}
-    }
-    return () => {
-      window.removeEventListener('paysonic:plazas_updated', handleSync);
-      window.removeEventListener('paysonic:disputes_updated', handleSync);
-      window.removeEventListener('storage', handleSync);
-      if (bc) bc.close();
-    };
-  }, [loadData]);
 
   // Live filtering on Date, Tag ID, RRN (Acq Txn ID), Plaza Txn ID, or VRN
   const filteredRows = useMemo(() => {
@@ -1009,16 +944,6 @@ export const ChargebackAssign = () => {
             onClick={handleBulkUnassign}
           >
             Unassign Selected Plazas
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline-primary btn-sm"
-            onClick={handleBulkDownloadPlazaEvidence}
-            disabled={isDownloadingEvidence || (selectedPlazaChips.length === 0 && filteredRows.length === 0)}
-            title="Download bulk evidence for all disputes in the selected plaza(s) organized into user folders"
-            id="cbaBulkPlazaEvidenceDownloadBtn"
-          >
-            {isDownloadingEvidence ? '⏳ Downloading Evidence...' : '📥 Download Plaza Evidence (Bulk)'}
           </button>
           {bulkFeedback && <span className="feedback-msg">{bulkFeedback}</span>}
         </div>

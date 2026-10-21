@@ -4,9 +4,9 @@
   background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 40px 16px;
+  padding: 20px 16px;
   overflow-y: auto;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
@@ -19,10 +19,16 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    max-height: min(92vh, 880px);
     animation: slideUp 0.25s ease-out;
 
     &.size-sm {
       max-width: 520px;
+    }
+
+    &.size-md,
+    &.size-txn-details {
+      max-width: 860px;
     }
 
     &.size-lg {
@@ -30,6 +36,7 @@
     }
 
     .modal-header-banner {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -66,21 +73,57 @@
     }
 
     .modal-body {
-      padding: 24px;
+      padding: 20px 24px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      max-height: 78vh;
+      gap: 18px;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
     }
 
     .modal-footer {
+      flex-shrink: 0;
       display: flex;
       justify-content: flex-end;
       gap: 12px;
-      padding: 16px 24px;
+      padding: 14px 24px;
       background: #f8fafc;
       border-top: 1px solid #e2e8f0;
+    }
+  }
+
+  /* 2-Column Responsive Grid for Txn Details */
+  .txn-details-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .txn-details-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .txn-details-card-header {
+        margin-bottom: 2px;
+
+        .card-badge {
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          color: #1e40af;
+          background: #eff6ff;
+          border: 1px solid #dbeafe;
+          padding: 3px 10px;
+          border-radius: 6px;
+          display: inline-block;
+        }
+      }
     }
   }
 
