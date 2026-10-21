@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import DisputeManagementService, { parseSettlementDate } from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService from '../../services/dispute/DisputeManagementService';
 import TablePagination from '../../components/common/TablePagination';
 import { formatFetchTime } from '../../utils/dateUtils';
 import { parseNpci01FileName } from '../../utils/npciFileNameParser';
@@ -14,7 +14,7 @@ export const DisputeFileUpload = () => {
   const [fileMeta, setFileMeta] = useState(null);
   const [fileError, setFileError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [disputeFileDate, setDisputeFileDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [disputeFileDate, setDisputeFileDate] = useState('');
   const [parsedRows, setParsedRows] = useState([]);
   const [matchResult, setMatchResult] = useState(null);
   const [isMatching, setIsMatching] = useState(false);
@@ -111,11 +111,6 @@ export const DisputeFileUpload = () => {
     const meta = parseNpci01FileName(file.name);
     setFileMeta(meta);
 
-    // Auto-populate Dispute File Date if decoded from NPCI Julian date
-    if (meta.isValid && meta.releaseDate) {
-      setDisputeFileDate(toIsoDate(meta.releaseDate));
-    }
-
     // Read and parse CSV content
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -123,49 +118,6 @@ export const DisputeFileUpload = () => {
         const text = ev.target.result;
         const rows = parseCsvText(text);
         setParsedRows(rows);
-
-        // Auto-populate Dispute File Date from file content if not already decoded from NPCI Julian filename
-        if (!meta.isValid || !meta.releaseDate) {
-          if (rows.length > 0) {
-            let detectedDateStr = '';
-            const dateCandidateKeys = [
-              'Settlement Date', 'settlementDate', 'Settlement_Date', 'Settlement date', 'SETTLEMENT DATE', 'SettlementDate', 'Settlement', 'Date Settlement',
-              'Dispute Raise Date', 'Dispute Raised Date', 'Dispute_Raise_Date', 'Dispute Date', 'DisputeDate', 'Dispute_Date', 'DISPUTE RAISE DATE',
-              'CB Raised Date', 'CB Date', 'CB_Raised_Date', 'CBRaisedDate', 'CB_Date',
-              'Txn Date', 'Transaction Date', 'txnDate', 'Txn_Date', 'Transaction_Date',
-              'Date', 'Release Date', 'Release_Date', 'File Date'
-            ];
-            for (const r of rows) {
-              for (const k of dateCandidateKeys) {
-                if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '') {
-                  detectedDateStr = String(r[k]).trim();
-                  break;
-                }
-              }
-              if (detectedDateStr) break;
-              for (const rk of Object.keys(r)) {
-                const cleanK = rk.toLowerCase().replace(/[\s_-]/g, '');
-                if (['settlementdate', 'datesettlement', 'settlement', 'disputeraisedate', 'disputedate', 'cbraisedate', 'cbdate', 'txndate', 'transactiondate', 'date'].includes(cleanK)) {
-                  if (r[rk] !== undefined && r[rk] !== null && String(r[rk]).trim() !== '') {
-                    detectedDateStr = String(r[rk]).trim();
-                    break;
-                  }
-                }
-              }
-              if (detectedDateStr) break;
-            }
-
-            if (detectedDateStr) {
-              const parsed = parseSettlementDate(detectedDateStr);
-              if (parsed && parsed.dateObj && !isNaN(parsed.dateObj.getTime())) {
-                const yyyy = parsed.dateObj.getFullYear();
-                const mm = String(parsed.dateObj.getMonth() + 1).padStart(2, '0');
-                const dd = String(parsed.dateObj.getDate()).padStart(2, '0');
-                setDisputeFileDate(`${yyyy}-${mm}-${dd}`);
-              }
-            }
-          }
-        }
       } catch (err) {
         setFileError(`Failed to parse CSV content: ${err.message}`);
         setParsedRows([]);
@@ -215,16 +167,12 @@ export const DisputeFileUpload = () => {
       return;
     }
 
-    let effectiveDate = disputeFileDate ? formatDisplayDate(disputeFileDate) : null;
-    if (!effectiveDate) {
-      const firstRow = parsedRows[0] || {};
-      const dateKeys = ['Settlement Date', 'settlementDate', 'Dispute Raise Date', 'CB Raised Date', 'Txn Date', 'Date'];
-      const hasDateInRow = dateKeys.some((k) => firstRow[k] && String(firstRow[k]).trim());
-      if (!hasDateInRow) {
-        setAlertMsg('Please select a valid Dispute File Date before matching.');
-        return;
-      }
+    if (!disputeFileDate) {
+      setAlertMsg('Please select a Dispute File Date before running matching.');
+      return;
     }
+
+    const effectiveDate = formatDisplayDate(disputeFileDate);
 
     setIsMatching(true);
     setCurrentPage(1);
@@ -254,6 +202,7 @@ export const DisputeFileUpload = () => {
     setFileError('');
     setParsedRows([]);
     setMatchResult(null);
+    setDisputeFileDate('');
     setAlertMsg('');
     setCurrentPage(1);
   };
@@ -303,6 +252,10 @@ export const DisputeFileUpload = () => {
 
   const handleCommit = async () => {
     if (!matchResult) return;
+    if (!disputeFileDate) {
+      setAlertMsg('Please select a Dispute File Date before adding to working queue.');
+      return;
+    }
     try {
       setIsCommitting(true);
       const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
@@ -375,7 +328,7 @@ export const DisputeFileUpload = () => {
               required
             />
             <div className="date-display-badge">
-              Formatted: <strong>{formatDisplayDate(disputeFileDate)}</strong> (DD-MM-YYYY)
+              Formatted: <strong>{disputeFileDate ? formatDisplayDate(disputeFileDate) : 'Not selected'}</strong> (DD-MM-YYYY)
             </div>
             {fileMeta?.releaseDate && (
               <button
@@ -473,7 +426,7 @@ export const DisputeFileUpload = () => {
               <div>
                 <strong>{selectedFileName}</strong>
                 <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block' }}>
-                  {parsedRows.length} data rows parsed | Dispute File Date: <strong>{formatDisplayDate(disputeFileDate)}</strong>
+                  {parsedRows.length} data rows parsed | Dispute File Date: <strong>{disputeFileDate ? formatDisplayDate(disputeFileDate) : 'Not selected'}</strong>
                 </span>
               </div>
             </div>
