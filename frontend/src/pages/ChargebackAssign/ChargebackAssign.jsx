@@ -1136,16 +1136,6 @@ export const ChargebackAssign = () => {
             </span>
             <button
               type="button"
-              className="btn btn-outline-info btn-sm"
-              onClick={() => handleBulkDownloadEvidence()}
-              disabled={filteredRows.length === 0 || isDownloadingEvidence}
-              id="cbaBulkEvidenceDownloadBtn"
-              title={selectedRowIds.size > 0 ? `Download evidence for ${selectedRowIds.size} selected dispute(s) organized into user folders` : 'Download evidence for all current disputes organized into user folders'}
-            >
-              {isDownloadingEvidence ? '⏳ Downloading...' : '📥 Bulk Evidence Download'}
-            </button>
-            <button
-              type="button"
               className="btn btn-outline-success btn-sm"
               onClick={handleExportExcel}
               disabled={filteredRows.length === 0}
