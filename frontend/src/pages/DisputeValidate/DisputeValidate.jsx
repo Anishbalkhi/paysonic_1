@@ -764,17 +764,6 @@ export const DisputeValidate = () => {
         <div className="left-toolbar-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             type="button"
-            className="btn btn-outline-info btn-sm"
-            onClick={handleBulkEvidenceDownload}
-            disabled={!filteredRows || filteredRows.length === 0 || isDownloadingEvidence}
-            id="valBulkEvidenceDownloadBtn"
-            title="Download evidence for all disputes in queue named by RRN"
-            style={{ fontWeight: 600 }}
-          >
-            {isDownloadingEvidence ? '⏳ Downloading...' : '📥 Bulk Evidence Download'}
-          </button>
-          <button
-            type="button"
             className="btn btn-secondary btn-sm"
             onClick={handleExportCsv}
             disabled={!filteredRows || filteredRows.length === 0}
