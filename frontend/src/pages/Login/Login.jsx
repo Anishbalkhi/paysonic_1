@@ -478,23 +478,6 @@ export const Login = () => {
 
           </form>
 
-          {/* Trust strip */}
-          <div className="lf-trust">
-            <span className="lf-trust-item">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              256-bit SSL
-            </span>
-            <span className="lf-trust-sep" />
-            <span className="lf-trust-item">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Rate Limiting Protected
-            </span>
-            <span className="lf-trust-sep" />
-            <span className="lf-trust-item">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Brute-Force Shield
-            </span>
-          </div>
 
           <p className="lf-footer">© 2026 Paysonic Pvt. Ltd. All rights reserved.</p>
         </div>
