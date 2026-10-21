@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { resolveDisputeDates } from '../../services/dispute/DisputeManagementService';
 import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
 import {
   downloadSingleEvidence,
@@ -127,6 +127,8 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
     }
     return '—';
   })();
+
+  const { disputeRaiseDate, tatDueDate } = resolveDisputeDates(disputeRow);
 
   const handleDecision = async (decision) => {
     if (decision === 'Rejected' && !plazaReason.trim()) {
@@ -274,13 +276,13 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
               <div className="meta-box">
                 <label>Dispute Raise Date</label>
                 <div className="meta-display">
-                  {formatDateOnly(disputeRow.settlementDate || disputeRow.cbRaisedDate) || '—'}
+                  {disputeRaiseDate}
                 </div>
               </div>
               <div className="meta-box">
                 <label>TAT Due Date (T+8)</label>
                 <div className="meta-display" style={{ color: '#0369a1', fontWeight: 600 }}>
-                  {formatDateOnly(disputeRow.tatDueDate) || disputeRow.tatDueDate || '—'}
+                  {tatDueDate}
                 </div>
               </div>
               <div className="meta-box">

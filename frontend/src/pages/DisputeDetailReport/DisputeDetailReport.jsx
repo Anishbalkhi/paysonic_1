@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DisputeReportService from '../../services/dispute/DisputeReportService';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { resolveDisputeDates } from '../../services/dispute/DisputeManagementService';
 import { useOnboardedPlazas } from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
@@ -302,8 +302,8 @@ export const DisputeDetailReport = () => {
         r.plazaName || '—',
         r.plazaId || '—',
         formatDateTime(r.txnDateTime),
-        formatDate(r.settlementDate),
-        formatDate(r.tatDueDate),
+        resolveDisputeDates(r).disputeRaiseDate || '—',
+        resolveDisputeDates(r).tatDueDate || '—',
         Number(r.disputeAmount || 0).toFixed(2),
         r.functionCode || '—',
         r.adminReason || '—',
@@ -410,8 +410,8 @@ export const DisputeDetailReport = () => {
           <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaName || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaId || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDateTime(r.txnDateTime))}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDate(r.settlementDate))}</Data></Cell>
-          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(formatDate(r.tatDueDate))}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).disputeRaiseDate || '—')}</Data></Cell>
+          <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).tatDueDate || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${dAmt}</Data></Cell>
           <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.functionCode || '—')}</Data></Cell>
           <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.adminReason || '—')}</Data></Cell>
@@ -876,6 +876,8 @@ export const DisputeDetailReport = () => {
                       ? 'tag-assigned'
                       : 'tag-cb-assign';
 
+                  const { disputeRaiseDate, tatDueDate } = resolveDisputeDates(item);
+
                   return (
                     <tr key={item.id || index}>
                       <td className="text-center">{srNo}</td>
@@ -888,9 +890,9 @@ export const DisputeDetailReport = () => {
                       </td>
                       <td className="font-semibold">{item.plazaName} ({item.plazaId})</td>
                       <td className="text-center">{formatDateTime(item.txnDateTime)}</td>
-                      <td className="text-center">{formatDate(item.settlementDate)}</td>
+                      <td className="text-center">{disputeRaiseDate}</td>
                       <td className="text-center" style={{ fontWeight: 600, color: '#0369a1' }}>
-                        {formatDate(item.tatDueDate)}
+                        {tatDueDate}
                       </td>
                       <td className="num-col font-bold">₹ {Number(item.disputeAmount || 0).toFixed(2)}</td>
                       <td style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.adminReason}>

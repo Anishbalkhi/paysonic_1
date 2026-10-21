@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { FUNCTION_CODES, PLAZA_MAP } from '../../config/disputeConstants';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { resolveDisputeDates } from '../../services/dispute/DisputeManagementService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
@@ -369,9 +369,9 @@ export const ClosedDisputes = () => {
         r.plazaName,
         r.plazaId,
         r.txnDate,
-        r.settlementDate || '—',
-        r.tatDueDate || '—',
-        r.cbRaisedDate || '—',
+        resolveDisputeDates(r).disputeRaiseDate || '—',
+        resolveDisputeDates(r).tatDueDate || '—',
+        resolveDisputeDates(r).disputeRaiseDate || '—',
         r.functionCode,
         r.disputeType,
         Number(r.txnAmount || 0).toFixed(2),

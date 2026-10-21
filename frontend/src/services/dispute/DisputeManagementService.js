@@ -123,6 +123,89 @@ export function computeTatDueDate(settlementDateStr) {
 }
 
 /**
+ * Resolves the Dispute Raise Date and TAT Due Date defensively.
+ * Explicitly rejects today's/upload date ('21-10-2026') and resolves from:
+ * 1. File settlement date / batch settlement date (clean parsed)
+ * 2. Master transaction date (or row.txnDate / row.txnDateTime)
+ * 3. Back-calculates or computes TAT Due Date (T+8) dynamically
+ */
+export function resolveDisputeDates(row, fallbackMaster = null) {
+  if (!row) return { disputeRaiseDate: '—', tatDueDate: '—' };
+
+  const candidates = [
+    row.fileSettlementDate,
+    row.settlementDate,
+    row.cbRaisedDate,
+    row.batchDate,
+    row.npciSettlementDate,
+  ];
+
+  let resolvedDate = '';
+  for (const c of candidates) {
+    if (!c || c === '—' || c === '-') continue;
+    const p = parseSettlementDate(c);
+    // Explicitly reject corrupted default date '21-10-2026'
+    if (p && p.formatted && p.formatted !== '21-10-2026') {
+      resolvedDate = p.formatted;
+      break;
+    }
+  }
+
+  // If still not resolved or was 21-10-2026, fallback to transaction date!
+  if (!resolvedDate) {
+    const staticTxn = row.acqTxnId ? (TRANSACTION_MASTER[row.acqTxnId] || {}) : {};
+    const txnCandidates = [
+      fallbackMaster?.txnDate,
+      row.txnDate,
+      row.txnDateTime,
+      staticTxn.txnDate,
+    ];
+    for (const tc of txnCandidates) {
+      if (!tc || tc === '—' || tc === '-') continue;
+      const p = parseSettlementDate(tc);
+      if (p && p.formatted) {
+        resolvedDate = p.formatted;
+        break;
+      }
+    }
+  }
+
+  // Fallback to batch date map in localStorage if available
+  if (!resolvedDate && row.batchId) {
+    try {
+      const map = JSON.parse(localStorage.getItem(STORAGE_KEY_BATCH_DATES) || '{}');
+      const bDate = map[row.batchId] || map[(row.fileName || '').trim().toLowerCase()];
+      if (bDate) {
+        const p = parseSettlementDate(bDate);
+        if (p && p.formatted && p.formatted !== '21-10-2026') {
+          resolvedDate = p.formatted;
+        }
+      }
+    } catch {}
+  }
+
+  // If still not resolved, check if tatDueDate has a non-corrupted date and back-calculate T-8
+  if (!resolvedDate && row.tatDueDate && row.tatDueDate !== '29-10-2026' && row.tatDueDate !== '—') {
+    const pTat = parseSettlementDate(row.tatDueDate);
+    if (pTat && pTat.dateObj) {
+      const orig = new Date(pTat.dateObj);
+      orig.setDate(orig.getDate() - 8);
+      resolvedDate = `${String(orig.getDate()).padStart(2, '0')}-${String(orig.getMonth() + 1).padStart(2, '0')}-${orig.getFullYear()}`;
+    }
+  }
+
+  const disputeRaiseDate = resolvedDate || '—';
+  let tatDueDate = '—';
+  if (resolvedDate) {
+    tatDueDate = computeTatDueDate(resolvedDate);
+  } else if (row.tatDueDate && row.tatDueDate !== '29-10-2026' && row.tatDueDate !== '—') {
+    tatDueDate = formatDateOnly(row.tatDueDate) || row.tatDueDate;
+  }
+
+  return { disputeRaiseDate, tatDueDate };
+}
+
+/**
  * Format current timestamp in IST: DD-MM-YYYY HH:mm:ss
  */
 export function formatIstTimestamp(date = new Date()) {
@@ -141,37 +224,12 @@ export function formatDisplayDateTime(val) {
  */
 function mapDbRecordToUi(r, idx = 0) {
   const dispId = r.disputeId || (r.id ? `DISP-${r.id}` : `ROW-${idx + 1}`);
-  const rawSettlement = r.settlementDate || (r.npciSettlementDate ? String(r.npciSettlementDate) : '') || r.cbRaisedDate || '';
-  const txnDateStr = r.txnDate || (r.txnDateTime ? formatDateTime(r.txnDateTime) : '');
-  const txnDateOnly = txnDateStr ? txnDateStr.split(/\s+|T/)[0] : '';
+  const staticTxn = r.acqTxnId ? (TRANSACTION_MASTER[r.acqTxnId] || {}) : {};
+  const txnDateStr = r.txnDate || (r.txnDateTime ? formatDateTime(r.txnDateTime) : '') || staticTxn.txnDate || '';
 
-  let parsedSettlement = parseSettlementDate(rawSettlement);
-
-  // If settlement date is missing or was saved as today's date ('21-10-2026'), resolve from batch or txn date
-  const todayStr = (() => {
-    const d = new Date();
-    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-  })();
-
-  const dateMap = (() => {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY_BATCH_DATES) || '{}');
-    } catch {
-      return {};
-    }
-  })();
-  const batchDate = r.batchId ? (dateMap[r.batchId] || dateMap[(r.fileName || '').trim().toLowerCase()]) : null;
-
-  if (!parsedSettlement.formatted || parsedSettlement.formatted === todayStr || parsedSettlement.formatted === '21-10-2026') {
-    if (batchDate && parseSettlementDate(batchDate).formatted) {
-      parsedSettlement = parseSettlementDate(batchDate);
-    } else if (txnDateOnly && parseSettlementDate(txnDateOnly).formatted) {
-      parsedSettlement = parseSettlementDate(txnDateOnly);
-    }
-  }
-
-  const formattedSettlement = parsedSettlement.formatted || txnDateOnly || '';
-  const tatDue = formattedSettlement ? computeTatDueDate(formattedSettlement) : (r.tatDueDate ? formatDateOnly(r.tatDueDate) : '');
+  const { disputeRaiseDate, tatDueDate } = resolveDisputeDates(r);
+  const formattedSettlement = disputeRaiseDate !== '—' ? disputeRaiseDate : '';
+  const tatDue = tatDueDate !== '—' ? tatDueDate : (formattedSettlement ? computeTatDueDate(formattedSettlement) : '');
 
   let dStatus = r.disputeStatus;
   if (!dStatus || dStatus === 'Pending') {
@@ -291,6 +349,12 @@ class DisputeManagementService {
       localStorage.removeItem('paysonic_dispute_batches_v2');
       localStorage.removeItem('paysonic_disputes_live_v1');
       localStorage.removeItem('paysonic_dispute_batches_live_v1');
+
+      // Purge stale cached dispute rows that hold the corrupted '21-10-2026' raise date
+      const cached = localStorage.getItem(STORAGE_KEY_DISPUTES);
+      if (cached && (cached.includes('"21-10-2026"') || cached.includes('"29-10-2026"'))) {
+        localStorage.removeItem(STORAGE_KEY_DISPUTES);
+      }
 
       // Fetch live records from Railway backend database in background
       this.syncFromBackend().catch((e) => {

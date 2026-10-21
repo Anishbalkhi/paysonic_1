@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FUNCTION_CODES } from '../../config/disputeConstants';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { resolveDisputeDates } from '../../services/dispute/DisputeManagementService';
 import TransactionDetailsModal from '../../components/DisputeModals/TransactionDetailsModal';
 import MoreInformationModal from '../../components/DisputeModals/MoreInformationModal';
 import TablePagination from '../../components/common/TablePagination';
@@ -405,6 +405,7 @@ export const ChargebackAssign = () => {
 
     const csvRows = filteredRows.map((r) => {
       const tat = DisputeManagementService.getTatBadge(r);
+      const dispDates = resolveDisputeDates(r);
       return [
         r.lifecycleStatus || (r.assigned ? 'Assigned' : 'Unassigned'),
         r.acqTxnId,
@@ -414,9 +415,9 @@ export const ChargebackAssign = () => {
         r.plazaName,
         r.plazaId,
         r.txnDate,
-        r.settlementDate || '—',
-        r.tatDueDate || '—',
-        r.settlementDate || r.cbRaisedDate || '—',
+        dispDates.disputeRaiseDate || '—',
+        dispDates.tatDueDate || '—',
+        dispDates.disputeRaiseDate || '—',
         r.cbReason,
         r.functionCode,
         r.disputeType,
@@ -1272,6 +1273,7 @@ export const ChargebackAssign = () => {
                   const tat = DisputeManagementService.getTatBadge(r);
                   const canClose = (r.disputeStatus === 'Approved' || r.disputeStatus === 'Rejected') && !r.closed;
                   const isSelected = selectedRowIds.has(String(r.rowId || r.disputeId));
+                  const { disputeRaiseDate, tatDueDate } = resolveDisputeDates(r);
                   return (
                     <tr key={r.rowId} className={isSelected ? 'row-selected' : ''}>
                       <td style={{ textAlign: 'center' }}>
@@ -1333,8 +1335,8 @@ export const ChargebackAssign = () => {
                       <td className="code-cell" style={{ whiteSpace: 'nowrap' }} title={r.tagId}>{r.tagId || '—'}</td>
                       <td>{r.plazaName} ({r.plazaId})</td>
                       <td>{r.txnDate}</td>
-                      <td>{r.settlementDate || r.cbRaisedDate || '—'}</td>
-                      <td style={{ fontWeight: 600, color: '#0369a1' }}>{r.tatDueDate || '—'}</td>
+                      <td>{disputeRaiseDate}</td>
+                      <td style={{ fontWeight: 600, color: '#0369a1' }}>{tatDueDate}</td>
                       <td>{r.cbReason}</td>
                       <td className="code-cell" style={{ textAlign: 'center' }}>{r.functionCode}</td>
                       <td>{r.disputeType}</td>
