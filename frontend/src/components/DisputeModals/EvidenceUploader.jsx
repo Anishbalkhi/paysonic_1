@@ -21,6 +21,8 @@ export const EvidenceUploader = ({
   label = 'Attach Evidence Files',
   isMandatory = false,
   mandatoryText = null,
+  hasError = false,
+  errorMessage = '',
   onPreview,
 }) => {
   const [errorMsg, setErrorMsg] = useState('');
@@ -124,11 +126,11 @@ export const EvidenceUploader = ({
         <div
           className="upload-drop-zone"
           style={{
-            border: '2px dashed #cbd5e1',
+            border: (hasError || errorMessage) ? '2px dashed #ef4444' : '2px dashed #cbd5e1',
             borderRadius: '8px',
             padding: '14px',
             textAlign: 'center',
-            backgroundColor: '#f8fafc',
+            backgroundColor: (hasError || errorMessage) ? '#fef2f2' : '#f8fafc',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             marginBottom: '10px',
@@ -144,16 +146,28 @@ export const EvidenceUploader = ({
             onChange={handleFileInput}
           />
           <div style={{ fontSize: '1.2rem', marginBottom: '4px' }}>📎</div>
-          <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#334155' }}>
+          <div style={{ fontSize: '0.86rem', fontWeight: 600, color: (hasError || errorMessage) ? '#b91c1c' : '#334155' }}>
             Click to upload evidence files
           </div>
           <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
             PDF, JPG, JPEG, PNG (Up to 4 files, combined size &lt; 10 MB)
           </div>
+          {(mandatoryText || isMandatory) && (
+            <div style={{ fontSize: '0.76rem', color: '#dc2626', fontWeight: 600, marginTop: '4px' }}>
+              ⚠️ At least 1 evidence file is mandatory when rejecting dispute
+            </div>
+          )}
         </div>
       )}
 
-      {/* Error Alert */}
+      {/* Field Level Error Message */}
+      {errorMessage && (
+        <div style={{ color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: '6px', fontSize: '0.82rem', marginBottom: '10px', fontWeight: 500 }}>
+          ⚠️ {errorMessage}
+        </div>
+      )}
+
+      {/* File-type / size Error Alert */}
       {errorMsg && (
         <div style={{ color: '#ef4444', backgroundColor: '#fef2f2', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: '6px', fontSize: '0.82rem', marginBottom: '10px', fontWeight: 500 }}>
           ⚠️ {errorMsg}

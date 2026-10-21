@@ -18,6 +18,8 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
   const [plazaEvidence, setPlazaEvidence] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [remarkError, setRemarkError] = useState('');
+  const [evidenceError, setEvidenceError] = useState('');
   const [previewTarget, setPreviewTarget] = useState(null); // { file, source }
   const [isZippingPlaza, setIsZippingPlaza] = useState(false);
   const [isZippingAdmin, setIsZippingAdmin] = useState(false);
@@ -61,6 +63,8 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
       setPlazaReason(disputeRow.plazaReason !== 'NA' ? disputeRow.plazaReason || '' : '');
       setPlazaEvidence(disputeRow.plazaEvidence || []);
       setErrorMsg('');
+      setRemarkError('');
+      setEvidenceError('');
       setPreviewTarget(null);
     }
   }, [disputeRow]);
@@ -131,18 +135,25 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
   const { disputeRaiseDate, tatDueDate } = resolveDisputeDates(disputeRow);
 
   const handleDecision = async (decision) => {
-    if (decision === 'Rejected' && !plazaReason.trim()) {
-      setErrorMsg('Plaza remarks / justification are mandatory when rejecting a dispute.');
-      return;
-    }
-    if (decision === 'Rejected' && plazaEvidence.length === 0) {
-      setErrorMsg('At least one counter-evidence file is mandatory when rejecting a dispute.');
-      return;
+    setErrorMsg('');
+    setRemarkError('');
+    setEvidenceError('');
+
+    if (decision === 'Rejected') {
+      let hasError = false;
+      if (!plazaReason.trim()) {
+        setRemarkError('Plaza remarks / justification are mandatory when rejecting a dispute.');
+        hasError = true;
+      }
+      if (plazaEvidence.length === 0) {
+        setEvidenceError('At least one counter-evidence file is mandatory when rejecting a dispute.');
+        hasError = true;
+      }
+      if (hasError) return;
     }
 
     try {
       setIsSubmitting(true);
-      setErrorMsg('');
       const actorName = currentUser?.name || currentUser?.role || 'Plaza User';
       const actorPlazaId = currentUser?.assignedPlazaId || currentUser?.plazaId;
       const finalRemarks = plazaReason.trim() || (decision === 'Approved' ? 'Accepted' : '');
@@ -342,9 +353,16 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                       onChange={(e) => {
                         setPlazaReason(e.target.value);
                         if (errorMsg) setErrorMsg('');
+                        if (remarkError) setRemarkError('');
                       }}
+                      style={remarkError ? { borderColor: '#ef4444', backgroundColor: '#fef2f2' } : {}}
                       disabled={isDecided}
                     />
+                    {remarkError && (
+                      <div style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '4px', fontWeight: 500 }}>
+                        ⚠️ {remarkError}
+                      </div>
+                    )}
                   </div>
 
                   {!isDecided ? (
@@ -354,10 +372,13 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                         onChange={(files) => {
                           setPlazaEvidence(files);
                           if (errorMsg) setErrorMsg('');
+                          if (evidenceError) setEvidenceError('');
                         }}
                         disabled={isSubmitting}
-                        label="Plaza Counter-Evidence"
+                        label="Upload Evidence"
                         mandatoryText="* (Mandatory for Rejection)"
+                        hasError={Boolean(evidenceError)}
+                        errorMessage={evidenceError}
                         onPreview={(file) => setPreviewTarget({ file, source: 'Plaza Counter-Evidence', fileList: plazaEvidence })}
                       />
 
@@ -391,15 +412,9 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                           type="button"
                           className="btn-reject"
                           onClick={() => handleDecision('Rejected')}
-                          disabled={isSubmitting || !plazaReason.trim()}
+                          disabled={isSubmitting}
                           style={{ flex: 1, padding: '10px 16px', fontWeight: 600 }}
-                          title={
-                            !plazaReason.trim()
-                              ? 'Plaza remarks are mandatory when rejecting a dispute'
-                              : plazaEvidence.length === 0
-                              ? 'Upload at least 1 counter-evidence file to reject'
-                              : 'Reject dispute'
-                          }
+                          title="Reject dispute (requires counter-evidence & remarks)"
                         >
                           {isSubmitting ? 'Submitting...' : '✕ Reject Dispute (Requires File & Remarks)'}
                         </button>

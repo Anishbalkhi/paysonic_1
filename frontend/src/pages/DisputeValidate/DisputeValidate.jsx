@@ -9,7 +9,6 @@ import TakeActionModal from '../../components/DisputeModals/TakeActionModal';
 import ReportKpiGrid from '../../components/ReportKpiGrid/ReportKpiGrid';
 import TablePagination from '../../components/common/TablePagination';
 import { formatFetchTime } from '../../utils/dateUtils';
-import { downloadBulkDisputeEvidence } from '../../utils/evidenceDownloader';
 import './DisputeValidate.scss';
 
 export const DisputeValidate = () => {
@@ -31,7 +30,6 @@ export const DisputeValidate = () => {
   const [pageSize, setPageSize] = useState(25);
   const [fetchTime, setFetchTime] = useState('');
   const [downloadTime, setDownloadTime] = useState('');
-  const [isDownloadingEvidence, setIsDownloadingEvidence] = useState(false);
 
   useEffect(() => {
     if (isPlazaLocked && defaultPlazaId && selectedPlazaId !== defaultPlazaId) {
@@ -108,28 +106,8 @@ export const DisputeValidate = () => {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
-
-  // Synchronize across browser tabs/windows when Master Admin assigns disputes
-  useEffect(() => {
-    const handleDisputesChange = () => {
-      loadData();
-    };
-    window.addEventListener('paysonic:disputes_updated', handleDisputesChange);
-    window.addEventListener('storage', handleDisputesChange);
-    let bc;
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        bc = new BroadcastChannel('paysonic_disputes_channel');
-        bc.onmessage = () => loadData();
-      } catch {}
-    }
-    return () => {
-      window.removeEventListener('paysonic:disputes_updated', handleDisputesChange);
-      window.removeEventListener('storage', handleDisputesChange);
-      if (bc) bc.close();
-    };
-  }, [loadData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleReset = () => {
     setFromDate('2026-09-01');
@@ -199,24 +177,6 @@ export const DisputeValidate = () => {
     const from = (currentPage - 1) * pageSize;
     return filteredRows.slice(from, from + pageSize);
   }, [filteredRows, currentPage, pageSize]);
-
-  const handleBulkEvidenceDownload = async () => {
-    if (!filteredRows || filteredRows.length === 0) {
-      alert('No disputes available to download evidence.');
-      return;
-    }
-    try {
-      setIsDownloadingEvidence(true);
-      await downloadBulkDisputeEvidence(filteredRows, {
-        archiveName: `Validate_Dispute_Evidence_Bulk_${Date.now()}.zip`,
-      });
-    } catch (err) {
-      console.error('[DisputeValidate] Bulk evidence download error:', err);
-      alert('Failed to download bulk evidence: ' + err.message);
-    } finally {
-      setIsDownloadingEvidence(false);
-    }
-  };
 
   const handleExportCsv = () => {
     if (!filteredRows || filteredRows.length === 0) return;
