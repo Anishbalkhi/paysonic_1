@@ -351,6 +351,7 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
     throw new Error('No dispute records selected for bulk evidence download.');
   }
 
+  const onlyPlaza = options.onlyPlaza !== undefined ? Boolean(options.onlyPlaza) : true;
   const filesToProcess = [];
 
   for (const dispute of disputeList) {
@@ -363,13 +364,11 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
       'DISPUTE'
     ).trim();
 
-    // Check all evidence sources
+    // Check plaza evidence sources
     const storedPlaza = evidenceStorage.getPlazaEvidence(cleanId, dispute.acqTxnId) || [];
-    const storedAdmin = evidenceStorage.getAdminEvidence(cleanId, dispute.acqTxnId) || [];
     const directPlaza = Array.isArray(dispute.plazaEvidence)
       ? dispute.plazaEvidence
       : (Array.isArray(dispute.counterEvidence) ? dispute.counterEvidence : []);
-    const directAdmin = Array.isArray(dispute.adminEvidence) ? dispute.adminEvidence : [];
 
     const allEvidenceForDispute = [];
     const seenNames = new Set();
@@ -386,23 +385,31 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
 
     storedPlaza.forEach(addFile);
     directPlaza.forEach(addFile);
-    storedAdmin.forEach(addFile);
-    directAdmin.forEach(addFile);
 
-    // If dispute has no manual file attached yet, include an authenticated Netc surveillance audit proof
-    if (allEvidenceForDispute.length === 0) {
-      allEvidenceForDispute.push({
-        name: `${rrn}_AuditProof.svg`,
-        type: 'image/svg+xml',
-        isGeneratedAuditProof: true,
-      });
+    // If onlyPlaza is false, also include acquirer (admin) evidence and dummy audit proof if empty
+    if (!onlyPlaza) {
+      const storedAdmin = evidenceStorage.getAdminEvidence(cleanId, dispute.acqTxnId) || [];
+      const directAdmin = Array.isArray(dispute.adminEvidence) ? dispute.adminEvidence : [];
+      storedAdmin.forEach(addFile);
+      directAdmin.forEach(addFile);
+
+      if (allEvidenceForDispute.length === 0) {
+        allEvidenceForDispute.push({
+          name: `${rrn}_AuditProof.svg`,
+          type: 'image/svg+xml',
+          isGeneratedAuditProof: true,
+        });
+      }
     }
 
-    filesToProcess.push({
-      dispute,
-      rrn,
-      evidenceList: allEvidenceForDispute,
-    });
+    // Only include dispute in the package if it has attached evidence
+    if (allEvidenceForDispute.length > 0) {
+      filesToProcess.push({
+        dispute,
+        rrn,
+        evidenceList: allEvidenceForDispute,
+      });
+    }
   }
 
   let totalFilesCount = 0;
@@ -411,7 +418,11 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
   });
 
   if (totalFilesCount === 0) {
-    throw new Error('No evidence attachments or records found to download.');
+    throw new Error(
+      onlyPlaza
+        ? 'No plaza attached evidence files found for the selected disputes.'
+        : 'No evidence attachments or records found to download.'
+    );
   }
 
   // Single file across all disputes? Download directly without zipping!
@@ -422,14 +433,27 @@ export const downloadBulkDisputeEvidence = async (disputeList = [], options = {}
 
   // Multiple files -> Bundle into a ZIP archive with dedicated folders per user/dispute
   const zip = new JSZip();
+  const manifestTitle = onlyPlaza
+    ? `PAYSONIC DISPUTE MANAGEMENT — PLAZA ATTACHED COUNTER-EVIDENCE BULK ARCHIVE`
+    : `PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — BULK EVIDENCE EXPORT ARCHIVE`;
+
+  const manifestScope = onlyPlaza
+    ? `Scope: Plaza attached counter-evidence only (Acquirer attachments excluded)`
+    : `Scope: All evidence attachments`;
+
+  const defaultArchiveName = onlyPlaza
+    ? `Closed_Disputes_Plaza_Evidence_Bulk_${Date.now()}.zip`
+    : `Bulk_Evidence_${Date.now()}.zip`;
+
   const manifestLines = [
-    `PAYSONIC DISPUTE & CHARGEBACK MANAGEMENT — BULK EVIDENCE EXPORT ARCHIVE`,
+    manifestTitle,
     `================================================================================`,
     `Export Date/Time: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} (IST)`,
-    `Total Dispute Records: ${filesToProcess.length}`,
-    `Total Evidence Files: ${totalFilesCount}`,
-    `Archive Name: ${options.archiveName || `Bulk_Evidence_${Date.now()}.zip`}`,
+    `Total Dispute Records with Plaza Evidence: ${filesToProcess.length}`,
+    `Total Plaza Evidence Files: ${totalFilesCount}`,
+    `Archive Name: ${options.archiveName || defaultArchiveName}`,
     `Organization: Every user/dispute evidence isolated in its own dedicated subfolder`,
+    manifestScope,
     `================================================================================`,
     `INDEXED BY USER / RRN (ACQUIRER TRANSACTION ID):`,
     `--------------------------------------------------------------------------------`,

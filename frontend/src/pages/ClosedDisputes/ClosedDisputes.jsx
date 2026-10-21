@@ -153,26 +153,8 @@ export const ClosedDisputes = () => {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
-
-  // Real-time synchronization
-  useEffect(() => {
-    const handleSync = () => loadData();
-    window.addEventListener('paysonic:disputes_updated', handleSync);
-    window.addEventListener('storage', handleSync);
-    let bc;
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        bc = new BroadcastChannel('paysonic_disputes_channel');
-        bc.onmessage = () => loadData();
-      } catch {}
-    }
-    return () => {
-      window.removeEventListener('paysonic:disputes_updated', handleSync);
-      window.removeEventListener('storage', handleSync);
-      if (bc) bc.close();
-    };
-  }, [loadData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleReset = () => {
     setFromDate('2026-09-01');
@@ -318,7 +300,7 @@ export const ClosedDisputes = () => {
     });
   };
 
-  // Bulk Evidence Download Handler
+  // Bulk Evidence Download Handler - Plaza attached counter-evidence only
   const handleBulkEvidenceDownload = async () => {
     if (!filteredRows || filteredRows.length === 0) {
       alert('No closed disputes available to download evidence.');
@@ -327,11 +309,12 @@ export const ClosedDisputes = () => {
     try {
       setIsDownloadingEvidence(true);
       await downloadBulkDisputeEvidence(filteredRows, {
-        archiveName: `Closed_Disputes_Evidence_Bulk_${Date.now()}.zip`,
+        archiveName: `Closed_Disputes_Plaza_Evidence_Bulk_${Date.now()}.zip`,
+        onlyPlaza: true,
       });
     } catch (err) {
       console.error('[ClosedDisputes] Bulk evidence download error:', err);
-      alert('Failed to download bulk evidence: ' + err.message);
+      alert(err.message || 'Failed to download bulk evidence: ' + err.message);
     } finally {
       setIsDownloadingEvidence(false);
     }
@@ -859,7 +842,7 @@ export const ClosedDisputes = () => {
               onClick={handleBulkEvidenceDownload}
               disabled={filteredRows.length === 0 || isDownloadingEvidence}
               id="cdBulkEvidenceDownloadBtn"
-              title="Download evidence for closed disputes in queue named by RRN"
+              title="Download plaza attached counter-evidence for closed disputes in queue"
             >
               {isDownloadingEvidence ? '⏳ Downloading...' : '📥 Bulk Evidence Download'}
             </button>
