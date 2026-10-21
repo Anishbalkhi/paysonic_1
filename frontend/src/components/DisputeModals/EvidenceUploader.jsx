@@ -152,11 +152,6 @@ export const EvidenceUploader = ({
           <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
             PDF, JPG, JPEG, PNG (Up to 4 files, combined size &lt; 10 MB)
           </div>
-          {(mandatoryText || isMandatory) && (
-            <div style={{ fontSize: '0.76rem', color: '#dc2626', fontWeight: 600, marginTop: '4px' }}>
-              ⚠️ At least 1 evidence file is mandatory when rejecting dispute
-            </div>
-          )}
         </div>
       )}
 
