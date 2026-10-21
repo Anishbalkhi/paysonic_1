@@ -55,6 +55,13 @@ public class DisputeWorkflowService {
         this.tollTransactionRepository = tollTransactionRepository;
     }
 
+    public static final String[] DATE_CANDIDATE_KEYS = {
+            "settlementDate", "Settlement Date", "Settlement_Date", "settlement_date", "SettlementDate",
+            "Settlement", "Date Settlement", "Dispute Raise Date", "Dispute Raised Date", "Dispute_Raise_Date",
+            "Dispute Date", "DisputeDate", "CB Raised Date", "CB Date", "CB_Raised_Date", "CBRaisedDate",
+            "Txn Date", "Transaction Date", "txnDate", "Txn_Date", "Transaction_Date", "Date", "Release Date", "File Date"
+    };
+
     /**
      * Validate and match uploaded CSV rows against the Single Master Transaction Table (toll_transactions)
      * Rules:
@@ -63,8 +70,13 @@ public class DisputeWorkflowService {
      * 3. Duplicate check: Same RRN AND Same Function Code in active queue
      * 4. Disputed Amount: from CSV file
      * 5. Txn Amount, Plaza ID, Plaza Name, Txn Date: from toll_transactions
+     * 6. Dispute Raise Date: Extracted directly from CSV file rows / batch date / txn date (NEVER defaulting to today)
      */
     public Map<String, Object> validateAndMatchCsv(List<Map<String, Object>> rows) {
+        return validateAndMatchCsv(rows, null);
+    }
+
+    public Map<String, Object> validateAndMatchCsv(List<Map<String, Object>> rows, String disputeFileDate) {
         if (rows == null) rows = Collections.emptyList();
 
         List<Map<String, Object>> results = new ArrayList<>();
@@ -143,9 +155,20 @@ public class DisputeWorkflowService {
                 continue;
             }
 
-            // Hydrate Matched Record
-            String rawSettlement = extractKey(row, "settlementDate", "Settlement Date", "Settlement_Date", "settlement_date");
-            String settlementDate = (rawSettlement != null && !rawSettlement.trim().isEmpty()) ? rawSettlement.trim() : LocalDate.now().format(DATE_FMT);
+            // Hydrate Matched Record: Dispute Raise Date MUST come from file, batch date, or txn date — NEVER defaulting to today
+            String rawSettlement = extractKey(row, DATE_CANDIDATE_KEYS);
+            String settlementDate = parseDateToDdMmYyyy(rawSettlement);
+            if (settlementDate == null || settlementDate.isEmpty()) {
+                settlementDate = parseDateToDdMmYyyy(disputeFileDate);
+            }
+            if (settlementDate == null || settlementDate.isEmpty()) {
+                if (toll.getTxnDate() != null) {
+                    settlementDate = toll.getTxnDate().format(DATE_FMT);
+                }
+            }
+            if (settlementDate == null) {
+                settlementDate = "";
+            }
             String tatDueDate = computeTatDueDate(settlementDate);
             String memberMsg = extractMemberMessage(row);
 
@@ -267,8 +290,19 @@ public class DisputeWorkflowService {
             dt.setMemberMessageText(msgText);
             dt.setAdminRemarks(msgText);
 
-            String rawSettlement = extractKey(r, "settlementDate", "Settlement Date", "Settlement_Date", "settlement_date");
-            String settlementDate = (rawSettlement != null && !rawSettlement.trim().isEmpty()) ? rawSettlement.trim() : LocalDate.now().format(DATE_FMT);
+            String rawSettlement = extractKey(r, DATE_CANDIDATE_KEYS);
+            String settlementDate = parseDateToDdMmYyyy(rawSettlement);
+            if (settlementDate == null || settlementDate.isEmpty()) {
+                settlementDate = parseDateToDdMmYyyy(disputeFileDate);
+            }
+            if (settlementDate == null || settlementDate.isEmpty()) {
+                if (toll.getTxnDate() != null) {
+                    settlementDate = toll.getTxnDate().format(DATE_FMT);
+                }
+            }
+            if (settlementDate == null) {
+                settlementDate = "";
+            }
             dt.setSettlementDate(settlementDate);
             dt.setTatDueDate(computeTatDueDate(settlementDate));
             dt.setCbRaisedDate(settlementDate);
@@ -771,15 +805,123 @@ public class DisputeWorkflowService {
         return (msg != null && !msg.isEmpty()) ? msg : "Imported from file";
     }
 
+    public String parseDateToDdMmYyyy(String raw) {
+        if (raw == null) return null;
+        String s = raw.trim();
+        if (s.isEmpty() || "null".equalsIgnoreCase(s) || "undefined".equalsIgnoreCase(s) || "—".equals(s) || "-".equals(s)) {
+            return null;
+        }
+
+        // 6 digits: YYMMDD (e.g. 261013 -> 13-10-2026)
+        if (s.matches("^\\d{6}$")) {
+            try {
+                int yy = Integer.parseInt(s.substring(0, 2));
+                int mm = Integer.parseInt(s.substring(2, 4));
+                int dd = Integer.parseInt(s.substring(4, 6));
+                if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+                    LocalDate dt = LocalDate.of(2000 + yy, mm, dd);
+                    return dt.format(DATE_FMT);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 8 digits: YYYYMMDD (e.g. 20261013 -> 13-10-2026)
+        if (s.matches("^\\d{8}$")) {
+            try {
+                int yyyy = Integer.parseInt(s.substring(0, 4));
+                int mm = Integer.parseInt(s.substring(4, 6));
+                int dd = Integer.parseInt(s.substring(6, 8));
+                if (yyyy >= 2000 && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+                    LocalDate dt = LocalDate.of(yyyy, mm, dd);
+                    return dt.format(DATE_FMT);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // DD-MM-YYYY or DD/MM/YYYY with optional time
+        java.util.regex.Matcher dmyMatcher = java.util.regex.Pattern.compile("^(\\d{1,2})[-/.](\\d{1,2})[-/.](\\d{4})").matcher(s);
+        if (dmyMatcher.find()) {
+            try {
+                int dd = Integer.parseInt(dmyMatcher.group(1));
+                int mm = Integer.parseInt(dmyMatcher.group(2));
+                int yyyy = Integer.parseInt(dmyMatcher.group(3));
+                if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+                    LocalDate dt = LocalDate.of(yyyy, mm, dd);
+                    return dt.format(DATE_FMT);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // YYYY-MM-DD or YYYY/MM/DD with optional time
+        java.util.regex.Matcher ymdMatcher = java.util.regex.Pattern.compile("^(\\d{4})[-/.](\\d{1,2})[-/.](\\d{1,2})").matcher(s);
+        if (ymdMatcher.find()) {
+            try {
+                int yyyy = Integer.parseInt(ymdMatcher.group(1));
+                int mm = Integer.parseInt(ymdMatcher.group(2));
+                int dd = Integer.parseInt(ymdMatcher.group(3));
+                if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+                    LocalDate dt = LocalDate.of(yyyy, mm, dd);
+                    return dt.format(DATE_FMT);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        return null;
+    }
+
     private String computeTatDueDate(String settlementDateStr) {
-        if (settlementDateStr == null || settlementDateStr.trim().isEmpty()) {
-            return LocalDate.now().plusDays(8).format(DATE_FMT);
+        String parsed = parseDateToDdMmYyyy(settlementDateStr);
+        if (parsed == null || parsed.isEmpty()) {
+            return "";
         }
         try {
-            LocalDate dt = LocalDate.parse(settlementDateStr.trim(), DATE_FMT);
+            LocalDate dt = LocalDate.parse(parsed, DATE_FMT);
             return dt.plusDays(8).format(DATE_FMT);
         } catch (Exception e) {
-            return LocalDate.now().plusDays(8).format(DATE_FMT);
+            return "";
+        }
+    }
+
+    @jakarta.annotation.PostConstruct
+    public int normalizeExistingDisputeDates() {
+        try {
+            List<DisputeTransaction> disputes = transactionRepository.findAll();
+            if (disputes == null || disputes.isEmpty()) return 0;
+
+            Map<String, DisputeBatch> batchMap = new HashMap<>();
+            batchRepository.findAll().forEach(b -> {
+                if (b.getBatchId() != null) batchMap.put(b.getBatchId(), b);
+            });
+
+            int count = 0;
+            for (DisputeTransaction dt : disputes) {
+                String curSettlement = dt.getSettlementDate();
+                // If settlementDate was set to "21-10-2026" (today's corrupted date) or is empty
+                if (curSettlement == null || curSettlement.isEmpty() || "21-10-2026".equals(curSettlement)) {
+                    String corrected = null;
+                    DisputeBatch b = dt.getBatchId() != null ? batchMap.get(dt.getBatchId()) : null;
+                    if (b != null && b.getDisputeFileDate() != null && !b.getDisputeFileDate().trim().isEmpty()) {
+                        corrected = parseDateToDdMmYyyy(b.getDisputeFileDate());
+                    }
+                    if (corrected == null && dt.getTxnDateTime() != null) {
+                        corrected = dt.getTxnDateTime().format(DATE_FMT);
+                    }
+                    if (corrected != null && !corrected.isEmpty() && !corrected.equals(curSettlement)) {
+                        dt.setSettlementDate(corrected);
+                        dt.setCbRaisedDate(corrected);
+                        dt.setTatDueDate(computeTatDueDate(corrected));
+                        count++;
+                    }
+                }
+            }
+            if (count > 0) {
+                transactionRepository.saveAll(disputes);
+                log.info("Successfully normalized {} existing dispute dates from file batches/transactions.", count);
+            }
+            return count;
+        } catch (Exception ex) {
+            log.warn("Notice during dispute date normalization: {}", ex.getMessage());
+            return 0;
         }
     }
 }

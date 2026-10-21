@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { parseSettlementDate } from '../../services/dispute/DisputeManagementService';
 import TablePagination from '../../components/common/TablePagination';
 import { formatFetchTime } from '../../utils/dateUtils';
 import { parseNpci01FileName } from '../../utils/npciFileNameParser';
@@ -123,6 +123,49 @@ export const DisputeFileUpload = () => {
         const text = ev.target.result;
         const rows = parseCsvText(text);
         setParsedRows(rows);
+
+        // Auto-populate Dispute File Date from file content if not already decoded from NPCI Julian filename
+        if (!meta.isValid || !meta.releaseDate) {
+          if (rows.length > 0) {
+            let detectedDateStr = '';
+            const dateCandidateKeys = [
+              'Settlement Date', 'settlementDate', 'Settlement_Date', 'Settlement date', 'SETTLEMENT DATE', 'SettlementDate', 'Settlement', 'Date Settlement',
+              'Dispute Raise Date', 'Dispute Raised Date', 'Dispute_Raise_Date', 'Dispute Date', 'DisputeDate', 'Dispute_Date', 'DISPUTE RAISE DATE',
+              'CB Raised Date', 'CB Date', 'CB_Raised_Date', 'CBRaisedDate', 'CB_Date',
+              'Txn Date', 'Transaction Date', 'txnDate', 'Txn_Date', 'Transaction_Date',
+              'Date', 'Release Date', 'Release_Date', 'File Date'
+            ];
+            for (const r of rows) {
+              for (const k of dateCandidateKeys) {
+                if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '') {
+                  detectedDateStr = String(r[k]).trim();
+                  break;
+                }
+              }
+              if (detectedDateStr) break;
+              for (const rk of Object.keys(r)) {
+                const cleanK = rk.toLowerCase().replace(/[\s_-]/g, '');
+                if (['settlementdate', 'datesettlement', 'settlement', 'disputeraisedate', 'disputedate', 'cbraisedate', 'cbdate', 'txndate', 'transactiondate', 'date'].includes(cleanK)) {
+                  if (r[rk] !== undefined && r[rk] !== null && String(r[rk]).trim() !== '') {
+                    detectedDateStr = String(r[rk]).trim();
+                    break;
+                  }
+                }
+              }
+              if (detectedDateStr) break;
+            }
+
+            if (detectedDateStr) {
+              const parsed = parseSettlementDate(detectedDateStr);
+              if (parsed && parsed.dateObj && !isNaN(parsed.dateObj.getTime())) {
+                const yyyy = parsed.dateObj.getFullYear();
+                const mm = String(parsed.dateObj.getMonth() + 1).padStart(2, '0');
+                const dd = String(parsed.dateObj.getDate()).padStart(2, '0');
+                setDisputeFileDate(`${yyyy}-${mm}-${dd}`);
+              }
+            }
+          }
+        }
       } catch (err) {
         setFileError(`Failed to parse CSV content: ${err.message}`);
         setParsedRows([]);
@@ -172,16 +215,22 @@ export const DisputeFileUpload = () => {
       return;
     }
 
-    if (!disputeFileDate) {
-      setAlertMsg('Please select a valid Dispute File Date before matching.');
-      return;
+    let effectiveDate = disputeFileDate ? formatDisplayDate(disputeFileDate) : null;
+    if (!effectiveDate) {
+      const firstRow = parsedRows[0] || {};
+      const dateKeys = ['Settlement Date', 'settlementDate', 'Dispute Raise Date', 'CB Raised Date', 'Txn Date', 'Date'];
+      const hasDateInRow = dateKeys.some((k) => firstRow[k] && String(firstRow[k]).trim());
+      if (!hasDateInRow) {
+        setAlertMsg('Please select a valid Dispute File Date before matching.');
+        return;
+      }
     }
 
     setIsMatching(true);
     setCurrentPage(1);
     setAlertMsg('');
     try {
-      const res = await DisputeManagementService.matchCsvRows(parsedRows, formatDisplayDate(disputeFileDate));
+      const res = await DisputeManagementService.matchCsvRows(parsedRows, effectiveDate);
       setMatchResult(res);
     } catch (err) {
       setAlertMsg('Error during matching: ' + (err.message || String(err)));

@@ -33,10 +33,25 @@ public class DisputeWorkflowController {
         try {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> rows = (List<Map<String, Object>>) payload.get("rows");
-            Map<String, Object> res = workflowService.validateAndMatchCsv(rows);
+            String disputeFileDate = (String) payload.get("disputeFileDate");
+            Map<String, Object> res = workflowService.validateAndMatchCsv(rows, disputeFileDate);
             return ResponseEntity.ok(res);
         } catch (Exception ex) {
             log.error("Error validating dispute CSV rows: {}", ex.getMessage(), ex);
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    /**
+     * Re-normalize dispute raise dates from batches / master transactions
+     */
+    @PostMapping("/normalize-dates")
+    public ResponseEntity<?> normalizeDisputeDates() {
+        try {
+            int fixedCount = workflowService.normalizeExistingDisputeDates();
+            return ResponseEntity.ok(Map.of("status", "success", "fixedCount", fixedCount));
+        } catch (Exception ex) {
+            log.error("Error normalizing dispute dates: {}", ex.getMessage(), ex);
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
     }

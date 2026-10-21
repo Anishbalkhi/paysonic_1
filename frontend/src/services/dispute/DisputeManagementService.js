@@ -18,74 +18,103 @@ const STORAGE_KEY_AUDIT = 'paysonic_dispute_audit_db_v1';
 const STORAGE_KEY_BATCH_DATES = 'paysonic_batch_dates_map_v1';
 
 /**
- * Parses YYMMDD (e.g. '261008' -> '08-10-2026') or DD-MM-YYYY / YYYY-MM-DD
+ * Parses YYMMDD (e.g. '261008' -> '08-10-2026'), YYYYMMDD, DD-MM-YYYY, or YYYY-MM-DD (with or without time)
+ * CRITICAL: NEVER defaults to current system date (today). If invalid, returns { formatted: '', dateObj: null }.
  */
 export function parseSettlementDate(raw, fallbackDate = null) {
-  if (!raw) {
-    if (fallbackDate) {
-      const fbStr = String(fallbackDate).trim();
-      if (/^\d{2}-\d{2}-\d{4}$/.test(fbStr)) {
-        const [dd, mm, yyyy] = fbStr.split('-').map((v) => parseInt(v, 10));
-        return { formatted: fbStr, dateObj: new Date(yyyy, mm - 1, dd) };
-      }
-      if (/^\d{4}-\d{2}-\d{2}$/.test(fbStr)) {
-        const [yyyy, mm, dd] = fbStr.split('-').map((v) => parseInt(v, 10));
-        return { formatted: `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`, dateObj: new Date(yyyy, mm - 1, dd) };
+  const tryParse = (val) => {
+    if (!val) return null;
+    if (val instanceof Date && !isNaN(val.getTime())) {
+      const dd = String(val.getDate()).padStart(2, '0');
+      const mm = String(val.getMonth() + 1).padStart(2, '0');
+      const yyyy = val.getFullYear();
+      return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: val };
+    }
+    const str = String(val).trim();
+    if (!str || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined' || str === '—' || str === '-') {
+      return null;
+    }
+
+    // 6-digit YYMMDD format: e.g. 261013 -> 13-10-2026
+    if (/^\d{6}$/.test(str)) {
+      const yy = parseInt(str.substring(0, 2), 10);
+      const mm = parseInt(str.substring(2, 4), 10);
+      const dd = parseInt(str.substring(4, 6), 10);
+      if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+        const yyyy = 2000 + yy;
+        const dateObj = new Date(yyyy, mm - 1, dd);
+        const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
+        return { formatted, dateObj };
       }
     }
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const yyyy = today.getFullYear();
-    return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: today };
-  }
 
-  const str = String(raw).trim();
-  // 6-digit YYMMDD format: e.g. 261008
-  if (/^\d{6}$/.test(str)) {
-    const yy = parseInt(str.substring(0, 2), 10);
-    const mm = parseInt(str.substring(2, 4), 10);
-    const dd = parseInt(str.substring(4, 6), 10);
-    const yyyy = 2000 + yy;
-    const dateObj = new Date(yyyy, mm - 1, dd);
-    const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
-    return { formatted, dateObj };
-  }
+    // 8-digit YYYYMMDD format: e.g. 20261013 -> 13-10-2026
+    if (/^\d{8}$/.test(str)) {
+      const yyyy = parseInt(str.substring(0, 4), 10);
+      const mm = parseInt(str.substring(4, 6), 10);
+      const dd = parseInt(str.substring(6, 8), 10);
+      if (yyyy >= 2000 && mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+        const dateObj = new Date(yyyy, mm - 1, dd);
+        const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
+        return { formatted, dateObj };
+      }
+    }
 
-  // DD-MM-YYYY format
-  if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
-    const [dd, mm, yyyy] = str.split('-').map((v) => parseInt(v, 10));
-    return { formatted: str, dateObj: new Date(yyyy, mm - 1, dd) };
-  }
+    // DD-MM-YYYY or DD/MM/YYYY (with optional time HH:mm:ss)
+    const dmyMatch = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+    if (dmyMatch) {
+      const dd = parseInt(dmyMatch[1], 10);
+      const mm = parseInt(dmyMatch[2], 10);
+      const yyyy = parseInt(dmyMatch[3], 10);
+      if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+        const dateObj = new Date(yyyy, mm - 1, dd);
+        const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
+        return { formatted, dateObj };
+      }
+    }
 
-  // YYYY-MM-DD format
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-    const [yyyy, mm, dd] = str.split('-').map((v) => parseInt(v, 10));
-    const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
-    return { formatted, dateObj: new Date(yyyy, mm - 1, dd) };
-  }
+    // YYYY-MM-DD or YYYY/MM/DD (with optional time HH:mm:ss or 'T'...)
+    const ymdMatch = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (ymdMatch) {
+      const yyyy = parseInt(ymdMatch[1], 10);
+      const mm = parseInt(ymdMatch[2], 10);
+      const dd = parseInt(ymdMatch[3], 10);
+      if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+        const dateObj = new Date(yyyy, mm - 1, dd);
+        const formatted = `${String(dd).padStart(2, '0')}-${String(mm).padStart(2, '0')}-${yyyy}`;
+        return { formatted, dateObj };
+      }
+    }
 
-  const parsed = new Date(str);
-  if (!isNaN(parsed.getTime())) {
-    const dd = String(parsed.getDate()).padStart(2, '0');
-    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
-    const yyyy = parsed.getFullYear();
-    return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: parsed };
-  }
+    // General Date parse fallback
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      const dd = String(parsed.getDate()).padStart(2, '0');
+      const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+      const yyyy = parsed.getFullYear();
+      return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: parsed };
+    }
 
-  const today = new Date();
-  const dd = String(today.getDate()).padStart(2, '0');
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const yyyy = today.getFullYear();
-  return { formatted: `${dd}-${mm}-${yyyy}`, dateObj: today };
+    return null;
+  };
+
+  const fromRaw = tryParse(raw);
+  if (fromRaw) return fromRaw;
+
+  const fromFb = tryParse(fallbackDate);
+  if (fromFb) return fromFb;
+
+  return { formatted: '', dateObj: null };
 }
 
 /**
  * Calculate TAT Due Date = Settlement Date + 8 days (T+8)
  */
 export function computeTatDueDate(settlementDateStr) {
-  const { dateObj } = parseSettlementDate(settlementDateStr);
-  const due = new Date(dateObj);
+  if (!settlementDateStr) return '';
+  const parsed = parseSettlementDate(settlementDateStr);
+  if (!parsed || !parsed.dateObj || isNaN(parsed.dateObj.getTime())) return '';
+  const due = new Date(parsed.dateObj);
   due.setDate(due.getDate() + 8);
   const dd = String(due.getDate()).padStart(2, '0');
   const mm = String(due.getMonth() + 1).padStart(2, '0');
@@ -112,11 +141,37 @@ export function formatDisplayDateTime(val) {
  */
 function mapDbRecordToUi(r, idx = 0) {
   const dispId = r.disputeId || (r.id ? `DISP-${r.id}` : `ROW-${idx + 1}`);
-  const rawSettlement = r.settlementDate || (r.npciSettlementDate ? String(r.npciSettlementDate) : '');
-  const parsedSettlement = parseSettlementDate(rawSettlement);
-  const formattedSettlement = parsedSettlement?.formatted || (rawSettlement ? formatDateOnly(rawSettlement) : '');
-  const tatDue = r.tatDueDate ? formatDateOnly(r.tatDueDate) : (rawSettlement ? computeTatDueDate(rawSettlement) : '');
+  const rawSettlement = r.settlementDate || (r.npciSettlementDate ? String(r.npciSettlementDate) : '') || r.cbRaisedDate || '';
   const txnDateStr = r.txnDate || (r.txnDateTime ? formatDateTime(r.txnDateTime) : '');
+  const txnDateOnly = txnDateStr ? txnDateStr.split(/\s+|T/)[0] : '';
+
+  let parsedSettlement = parseSettlementDate(rawSettlement);
+
+  // If settlement date is missing or was saved as today's date ('21-10-2026'), resolve from batch or txn date
+  const todayStr = (() => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+  })();
+
+  const dateMap = (() => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY_BATCH_DATES) || '{}');
+    } catch {
+      return {};
+    }
+  })();
+  const batchDate = r.batchId ? (dateMap[r.batchId] || dateMap[(r.fileName || '').trim().toLowerCase()]) : null;
+
+  if (!parsedSettlement.formatted || parsedSettlement.formatted === todayStr || parsedSettlement.formatted === '21-10-2026') {
+    if (batchDate && parseSettlementDate(batchDate).formatted) {
+      parsedSettlement = parseSettlementDate(batchDate);
+    } else if (txnDateOnly && parseSettlementDate(txnDateOnly).formatted) {
+      parsedSettlement = parseSettlementDate(txnDateOnly);
+    }
+  }
+
+  const formattedSettlement = parsedSettlement.formatted || txnDateOnly || '';
+  const tatDue = formattedSettlement ? computeTatDueDate(formattedSettlement) : (r.tatDueDate ? formatDateOnly(r.tatDueDate) : '');
 
   let dStatus = r.disputeStatus;
   if (!dStatus || dStatus === 'Pending') {
@@ -251,6 +306,7 @@ class DisputeManagementService {
    */
   async syncFromBackend() {
     try {
+      await this.fetchBatches().catch(() => {});
       const res = await httpClient.get('/api/disputes/workflow/queue');
       if (Array.isArray(res.data)) {
         const mapped = res.data.map(mapDbRecordToUi);
@@ -358,6 +414,11 @@ class DisputeManagementService {
     try {
       const res = await httpClient.get('/api/disputes/workflow/batches');
       if (Array.isArray(res.data)) {
+        res.data.forEach((b) => {
+          if (b.disputeFileDate) {
+            this.setBatchDate(b.batchId, b.fileName, b.disputeFileDate);
+          }
+        });
         const mapped = res.data.map((b) => {
           const fnKey = (b.fileName || '').trim().toLowerCase();
           const resolvedDate = b.disputeFileDate || dateMap[b.batchId] || dateMap[fnKey] || '';
@@ -473,6 +534,7 @@ class DisputeManagementService {
       const effectiveSearch = (filters.search || filters.acqTxnId || filters.tollTxnId || filters.tagId || '').trim();
       if (effectiveSearch) queryParams.search = effectiveSearch;
 
+      await this.fetchBatches().catch(() => {});
       const res = await httpClient.get('/api/disputes/workflow/queue', { params: queryParams });
       if (Array.isArray(res.data)) {
         const rows = res.data.map(mapDbRecordToUi);
@@ -1124,7 +1186,14 @@ class DisputeManagementService {
 
       // Robust extraction of settlement date from CSV file (case-insensitive & whitespace tolerant)
       let rawSettlement = '';
-      for (const k of ['Settlement Date', 'settlementDate', 'Settlement_Date', 'Settlement date', 'SETTLEMENT DATE', 'SettlementDate', 'Settlement', 'Date Settlement', 'Dispute Date', 'Dispute Raise Date']) {
+      const dateKeys = [
+        'Settlement Date', 'settlementDate', 'Settlement_Date', 'Settlement date', 'SETTLEMENT DATE', 'SettlementDate', 'Settlement', 'Date Settlement',
+        'Dispute Raise Date', 'Dispute Raised Date', 'Dispute_Raise_Date', 'Dispute Date', 'DisputeDate', 'Dispute_Date', 'DISPUTE RAISE DATE',
+        'CB Raised Date', 'CB Date', 'CB_Raised_Date', 'CBRaisedDate', 'CB_Date',
+        'Txn Date', 'Transaction Date', 'txnDate', 'Txn_Date', 'Transaction_Date',
+        'Date', 'Release Date', 'Release_Date', 'File Date'
+      ];
+      for (const k of dateKeys) {
         if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
           rawSettlement = String(row[k]).trim();
           break;
@@ -1133,7 +1202,7 @@ class DisputeManagementService {
       if (!rawSettlement) {
         for (const rk of Object.keys(row)) {
           const cleanK = rk.toLowerCase().replace(/[\s_-]/g, '');
-          if (cleanK === 'settlementdate' || cleanK === 'datesettlement' || cleanK === 'settlement' || cleanK === 'disputeraisedate') {
+          if (['settlementdate', 'datesettlement', 'settlement', 'disputeraisedate', 'disputedate', 'cbraisedate', 'cbdate', 'txndate', 'transactiondate', 'date'].includes(cleanK)) {
             const v = row[rk];
             if (v !== undefined && v !== null && String(v).trim() !== '') {
               rawSettlement = String(v).trim();
@@ -1144,8 +1213,8 @@ class DisputeManagementService {
       }
 
       // User requirement: Dispute Raise Date MUST use settlement date from file, or selected file date
-      const { formatted: settlementDate } = parseSettlementDate(rawSettlement, fallbackDisputeFileDate);
-      const tatDueDate = computeTatDueDate(settlementDate);
+      let parsedRowDate = parseSettlementDate(rawSettlement, fallbackDisputeFileDate);
+      let settlementDate = parsedRowDate.formatted;
 
       // Extract Disputed Amount from CSV (Rule 3.3)
       const rawDisputeAmt = row['Dispute Amount'] || row['Disputed Amount'] || row['disputeAmount'] || row['Amount'] || row['Dispute Amt'];
@@ -1248,6 +1317,12 @@ class DisputeManagementService {
 
       const finalDisputeAmt = parsedDisputeAmt !== null ? parsedDisputeAmt : hit.txnAmount;
 
+      let effectiveSettlementDate = settlementDate;
+      if (!effectiveSettlementDate && hit.txnDate) {
+        effectiveSettlementDate = parseSettlementDate(hit.txnDate).formatted || '';
+      }
+      const effectiveTatDue = computeTatDueDate(effectiveSettlementDate);
+
       results.push({
         rowNumber: rowNum,
         status: 'Matched',
@@ -1257,8 +1332,8 @@ class DisputeManagementService {
         tagId: hit.tagId || row['Tag ID'] || '—',
         functionCode: rawFuncCode,
         disputeType: FUNCTION_CODE_MAP[rawFuncCode] || `Code ${rawFuncCode}`,
-        settlementDate,
-        tatDueDate,
+        settlementDate: effectiveSettlementDate,
+        tatDueDate: effectiveTatDue,
         txnAmount: hit.txnAmount, // Authoritative Transaction Amount from master
         disputeAmount: finalDisputeAmt, // Disputed Amount from CSV
         memberMessageText: memberMsgVal,
