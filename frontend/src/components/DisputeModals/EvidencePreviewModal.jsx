@@ -70,6 +70,7 @@ export const EvidencePreviewModal = ({
         if (typeof e.stopImmediatePropagation === 'function') {
           e.stopImmediatePropagation();
         }
+        e.__handledByChildModal = true;
         onClose();
       }
     };

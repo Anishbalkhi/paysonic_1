@@ -86,23 +86,37 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
   };
 
   const previewTargetRef = useRef(previewTarget);
-  useEffect(() => {
-    previewTargetRef.current = previewTarget;
-  }, [previewTarget]);
+  previewTargetRef.current = previewTarget;
+  const lastClosedPreviewTimeRef = useRef(0);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
+        if (e.__handledByChildModal) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        if (Date.now() - lastClosedPreviewTimeRef.current < 500) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
         if (previewTargetRef.current) {
           e.preventDefault();
           e.stopPropagation();
           if (typeof e.stopImmediatePropagation === 'function') {
             e.stopImmediatePropagation();
           }
+          e.__handledByChildModal = true;
+          lastClosedPreviewTimeRef.current = Date.now();
           setPreviewTarget(null);
-        } else {
-          onClose();
+          return;
         }
+
+        onClose();
       }
     };
     if (isOpen) {
@@ -393,7 +407,10 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
 
       <EvidencePreviewModal
         isOpen={Boolean(previewTarget)}
-        onClose={() => setPreviewTarget(null)}
+        onClose={() => {
+          lastClosedPreviewTimeRef.current = Date.now();
+          setPreviewTarget(null);
+        }}
         file={previewTarget?.file}
         fileList={previewTarget?.fileList || []}
         source={previewTarget?.source || 'Evidence'}

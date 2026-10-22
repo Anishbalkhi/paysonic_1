@@ -70,23 +70,41 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
   }, [disputeRow]);
 
   const previewTargetRef = useRef(previewTarget);
-  useEffect(() => {
-    previewTargetRef.current = previewTarget;
-  }, [previewTarget]);
+  previewTargetRef.current = previewTarget;
+  const lastClosedPreviewTimeRef = useRef(0);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
+        // 1. If this exact event was handled by the child image modal, ignore it
+        if (e.__handledByChildModal) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        // 2. If an image preview was closed less than 500ms ago, ignore this ESC press
+        if (Date.now() - lastClosedPreviewTimeRef.current < 500) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+
+        // 3. If an image preview is currently open, close ONLY the image preview
         if (previewTargetRef.current) {
           e.preventDefault();
           e.stopPropagation();
           if (typeof e.stopImmediatePropagation === 'function') {
             e.stopImmediatePropagation();
           }
+          e.__handledByChildModal = true;
+          lastClosedPreviewTimeRef.current = Date.now();
           setPreviewTarget(null);
-        } else {
-          onClose();
+          return;
         }
+
+        // 4. No image preview open — safely close TakeActionModal
+        onClose();
       }
     };
     if (isOpen) {
@@ -475,7 +493,10 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
       {/* Full Evidence Preview Modal */}
       <EvidencePreviewModal
         isOpen={Boolean(previewTarget)}
-        onClose={() => setPreviewTarget(null)}
+        onClose={() => {
+          lastClosedPreviewTimeRef.current = Date.now();
+          setPreviewTarget(null);
+        }}
         file={previewTarget?.file}
         fileList={previewTarget?.fileList || []}
         source={previewTarget?.source || 'Evidence'}
