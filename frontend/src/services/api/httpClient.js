@@ -3,11 +3,11 @@ import axios from 'axios';
 const apiBaseUrl =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
   (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL) ||
-  'https://paysonic1-production.up.railway.app';
+  'https://paysonic-1.onrender.com';
 
 const httpClient = axios.create({
   baseURL: apiBaseUrl,
-  timeout: 8000,
+  timeout: 15000,
 });
 
 httpClient.interceptors.request.use((config) => {

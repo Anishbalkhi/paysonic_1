@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
     env.VITE_API_BASE_URL ||
     env.REACT_APP_API_BASE_URL ||
     env.NEXT_PUBLIC_API_BASE_URL ||
-    'https://paysonic1-production.up.railway.app';
+    'https://paysonic-1.onrender.com';
 
   return {
     envDir: rootDir,
@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL || 'https://paysonic1-production.up.railway.app',
+          target: env.VITE_API_BASE_URL || 'https://paysonic-1.onrender.com',
           changeOrigin: true,
           secure: false,
         },

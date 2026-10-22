@@ -16,7 +16,7 @@ const API_BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
   (typeof process !== 'undefined' && process.env &&
     (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.REACT_APP_API_BASE_URL)) ||
-  'https://paysonic1-production.up.railway.app';
+  'https://paysonic-1.onrender.com';
 
 export const IS_DEV_DATA_MODE  = MODE === 'dev';
 export const IS_PROD_DATA_MODE = MODE === 'prod';

@@ -10,6 +10,6 @@ export const IS_DEV_MODE =
 
 export const API_BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
-  'https://paysonic1-production.up.railway.app';
+  'https://paysonic-1.onrender.com';
 
 export default { IS_DEV_MODE, API_BASE_URL };
