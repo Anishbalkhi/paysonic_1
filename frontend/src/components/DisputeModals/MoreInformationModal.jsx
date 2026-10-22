@@ -151,7 +151,8 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
         adminReason.trim(),
         adminEvidence,
         actorName,
-        disputeRow.plazaId
+        disputeRow.plazaId,
+        disputeRow
       );
       if (onUpdated) onUpdated();
       onClose();

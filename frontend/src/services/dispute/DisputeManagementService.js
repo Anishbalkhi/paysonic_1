@@ -350,12 +350,6 @@ class DisputeManagementService {
       localStorage.removeItem('paysonic_disputes_live_v1');
       localStorage.removeItem('paysonic_dispute_batches_live_v1');
 
-      // Purge stale cached dispute rows that hold the corrupted '21-10-2026' raise date
-      const cached = localStorage.getItem(STORAGE_KEY_DISPUTES);
-      if (cached && (cached.includes('"21-10-2026"') || cached.includes('"29-10-2026"'))) {
-        localStorage.removeItem(STORAGE_KEY_DISPUTES);
-      }
-
       // Fetch live records from Railway backend database in background
       this.syncFromBackend().catch((e) => {
         console.debug('[DisputeManagementService] Background sync notice:', e?.message);
@@ -432,6 +426,29 @@ class DisputeManagementService {
       }
     } catch (e) {
       console.warn('[DisputeManagementService] Save error:', e);
+    }
+  }
+
+  mergeDisputes(newRows) {
+    if (!Array.isArray(newRows) || newRows.length === 0) return;
+    try {
+      const current = this.getStoredDisputes();
+      const currentMap = new Map();
+      current.forEach((r) => {
+        const key = String(r.rowId || r.disputeId || r.id || '').trim();
+        if (key) currentMap.set(key, r);
+      });
+      newRows.forEach((r) => {
+        const key = String(r.rowId || r.disputeId || r.id || '').trim();
+        if (key) {
+          const existing = currentMap.get(key) || {};
+          currentMap.set(key, { ...existing, ...r });
+        }
+      });
+      const merged = Array.from(currentMap.values());
+      this.saveDisputes(merged, false);
+    } catch (e) {
+      console.warn('[DisputeManagementService] mergeDisputes error:', e);
     }
   }
 
@@ -518,6 +535,24 @@ class DisputeManagementService {
     return current;
   }
 
+  async clearAllDisputes() {
+    try {
+      await httpClient.delete('/api/disputes/workflow/clear-all');
+    } catch (e) {
+      console.warn('[DisputeManagementService] Clear all API notice:', e?.message);
+    }
+    localStorage.removeItem(STORAGE_KEY_DISPUTES);
+    localStorage.removeItem(STORAGE_KEY_BATCHES);
+    localStorage.removeItem('paysonic_disputes_v1');
+    localStorage.removeItem('paysonic_disputes_v2');
+    localStorage.removeItem('paysonic_dispute_batches_v1');
+    localStorage.removeItem('paysonic_dispute_batches_v2');
+    localStorage.removeItem('paysonic_disputes_live_v1');
+    localStorage.removeItem('paysonic_dispute_batches_live_v1');
+    window.dispatchEvent(new CustomEvent('paysonic:disputes_updated', { detail: [] }));
+    return { success: true };
+  }
+
 
   saveBatch(batch) {
     try {
@@ -602,7 +637,7 @@ class DisputeManagementService {
       const res = await httpClient.get('/api/disputes/workflow/queue', { params: queryParams });
       if (Array.isArray(res.data)) {
         const rows = res.data.map(mapDbRecordToUi);
-        this.saveDisputes(rows, false);
+        this.mergeDisputes(rows);
         return rows;
       }
     } catch (err) {
@@ -782,63 +817,110 @@ class DisputeManagementService {
   /**
    * Assign a single row with persistence to Railway MySQL
    */
-  async assignRow(rowId, adminReason, evidenceList = [], actor = 'Master Admin', targetPlazaId = null) {
+  async assignRow(rowId, adminReason, evidenceList = [], actor = 'Master Admin', targetPlazaId = null, fallbackRow = null) {
     if (!adminReason || !adminReason.trim()) {
       throw new Error('Reason / remarks explaining the dispute is mandatory.');
     }
 
-    const rows = this.getStoredDisputes();
     const cleanId = String(rowId || '').trim();
-    const row = rows.find((r) => String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId);
-    if (!row) throw new Error('Dispute row not found');
-    const hasPlazaActed =
-      row.disputeStatus === 'Approved' ||
-      row.disputeStatus === 'Rejected' ||
-      (row.plazaAction === 'Yes' && row.disputeStatus !== 'NA' && row.disputeStatus !== 'Pending');
+    let rows = this.getStoredDisputes();
+    let row = rows.find((r) =>
+      String(r.rowId || '') === cleanId ||
+      String(r.disputeId || '') === cleanId ||
+      (r.id && String(r.id) === cleanId) ||
+      (r.acqTxnId && String(r.acqTxnId) === cleanId)
+    );
 
-    if (hasPlazaActed) {
-      throw new Error('Admin cannot re-assign a dispute after the plaza has acted (Accept or Reject).');
+    // If missing from local cache, fall back to in-memory row from modal
+    if (!row && fallbackRow) {
+      row = mapDbRecordToUi(fallbackRow);
     }
 
-    const finalPlazaId = targetPlazaId ? String(targetPlazaId) : String(row.plazaId);
+    // If still missing, sync live from backend
+    if (!row) {
+      try {
+        const live = await this.syncFromBackend();
+        if (Array.isArray(live)) {
+          rows = live;
+          row = rows.find((r) =>
+            String(r.rowId || '') === cleanId ||
+            String(r.disputeId || '') === cleanId ||
+            (r.id && String(r.id) === cleanId) ||
+            (r.acqTxnId && String(r.acqTxnId) === cleanId)
+          );
+        }
+      } catch (e) {
+        console.debug('[DisputeManagementService] Sync notice during assign:', e);
+      }
+    }
+
+    if (row) {
+      const hasPlazaActed =
+        row.disputeStatus === 'Approved' ||
+        row.disputeStatus === 'Rejected' ||
+        (row.plazaAction === 'Yes' && row.disputeStatus !== 'NA' && row.disputeStatus !== 'Pending');
+
+      if (hasPlazaActed) {
+        throw new Error('Admin cannot re-assign a dispute after the plaza has acted (Accept or Reject).');
+      }
+    }
+
+    const finalPlazaId = targetPlazaId ? String(targetPlazaId) : (row?.plazaId ? String(row.plazaId) : '501101');
     const cachedPlazas = OnboardingService.getCachedPlazas() || [];
     const matchedApiPlaza = cachedPlazas.find((p) => String(p.id).trim() === finalPlazaId);
-    const targetPlazaName = matchedApiPlaza?.name || PLAZA_MAP[finalPlazaId] || row.plazaName;
+    const targetPlazaName = matchedApiPlaza?.name || PLAZA_MAP[finalPlazaId] || row?.plazaName || 'Plaza';
 
+    let backendResult = null;
     try {
-      await httpClient.put(`/api/disputes/workflow/assign/${cleanId}`, {
+      const res = await httpClient.put(`/api/disputes/workflow/assign/${cleanId}`, {
         plazaId: finalPlazaId,
         plazaName: targetPlazaName,
         adminRemarks: adminReason.trim(),
         actor,
       });
+      if (res && res.data) {
+        backendResult = mapDbRecordToUi(res.data);
+      }
     } catch (err) {
       console.warn('[DisputeManagementService] DB assign notice:', err?.message);
-    }
-
-    if (evidenceList && evidenceList.length > 0) {
-      evidenceStorage.saveAdminEvidence(cleanId, row.acqTxnId, evidenceList);
-    }
-
-    const updated = rows.map((r) => {
-      if (String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId) {
-        return {
-          ...r,
-          plazaId: finalPlazaId,
-          assignedToPlaza: finalPlazaId,
-          plazaName: targetPlazaName,
-          assigned: true,
-          lifecycleStatus: 'Assigned to Plaza',
-          assignedBy: actor,
-          assignedAt: formatIstTimestamp(),
-          adminRemarks: adminReason.trim(),
-          adminReason: adminReason.trim(),
-          adminRemarksAt: formatIstTimestamp(),
-          adminEvidence: evidenceList.length > 0 ? evidenceList : (r.adminEvidence || []),
-        };
+      if (err?.response?.data?.error) {
+        throw new Error(err.response.data.error);
       }
-      return r;
-    });
+    }
+
+    if (evidenceList && evidenceList.length > 0 && (row?.acqTxnId || backendResult?.acqTxnId)) {
+      evidenceStorage.saveAdminEvidence(cleanId, row?.acqTxnId || backendResult?.acqTxnId, evidenceList);
+    }
+
+    const updatedRow = backendResult || {
+      ...(row || fallbackRow || {}),
+      rowId: cleanId,
+      disputeId: cleanId,
+      plazaId: finalPlazaId,
+      assignedToPlaza: finalPlazaId,
+      plazaName: targetPlazaName,
+      assigned: true,
+      lifecycleStatus: 'Assigned to Plaza',
+      assignedBy: actor,
+      assignedAt: formatIstTimestamp(),
+      adminRemarks: adminReason.trim(),
+      adminReason: adminReason.trim(),
+      adminRemarksAt: formatIstTimestamp(),
+      adminEvidence: evidenceList.length > 0 ? evidenceList : (row?.adminEvidence || []),
+    };
+
+    const existingIndex = rows.findIndex((r) =>
+      String(r.rowId || '') === cleanId ||
+      String(r.disputeId || '') === cleanId ||
+      (r.id && String(r.id) === cleanId)
+    );
+
+    let updated;
+    if (existingIndex >= 0) {
+      updated = rows.map((r, i) => (i === existingIndex ? { ...r, ...updatedRow } : r));
+    } else {
+      updated = [updatedRow, ...rows];
+    }
 
     this.saveDisputes(updated);
     this.logAudit('ROW_ASSIGN', `Assigned dispute ${cleanId} to plaza ${finalPlazaId}`, actor);
@@ -853,7 +935,13 @@ class DisputeManagementService {
       return { updatedCount: 0 };
     }
     const setIds = new Set(plazaIds.map((id) => String(id).trim()));
-    const rows = this.getStoredDisputes();
+    let rows = this.getStoredDisputes();
+    if (rows.length === 0) {
+      try {
+        const live = await this.syncFromBackend();
+        if (Array.isArray(live)) rows = live;
+      } catch {}
+    }
     let updatedCount = 0;
     const assignedIds = [];
 
@@ -912,7 +1000,13 @@ class DisputeManagementService {
       return { updatedCount: 0 };
     }
     const setIds = new Set(plazaIds.map((id) => String(id).trim()));
-    const rows = this.getStoredDisputes();
+    let rows = this.getStoredDisputes();
+    if (rows.length === 0) {
+      try {
+        const live = await this.syncFromBackend();
+        if (Array.isArray(live)) rows = live;
+      } catch {}
+    }
     let updatedCount = 0;
     const unassignedIds = [];
 
@@ -1085,7 +1179,7 @@ class DisputeManagementService {
   /**
    * Plaza submits decision with persistence to Railway MySQL
    */
-  async submitPlazaDecision(rowId, decision, plazaReason, evidenceList = [], actor = 'Plaza User', actorPlazaId = null) {
+  async submitPlazaDecision(rowId, decision, plazaReason, evidenceList = [], actor = 'Plaza User', actorPlazaId = null, fallbackRow = null) {
     const trimmedReason = (plazaReason || '').trim();
     if (decision === 'Rejected' && !trimmedReason) {
       throw new Error('Plaza remarks / justification are mandatory when rejecting a dispute.');
@@ -1095,22 +1189,51 @@ class DisputeManagementService {
     }
     const finalReason = trimmedReason || (decision === 'Approved' ? 'Accepted' : '');
 
-    const rows = this.getStoredDisputes();
     const cleanId = String(rowId || '').trim();
-    const row = rows.find((r) => String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId);
-    if (!row) throw new Error('Dispute row not found');
-    if (row.disputeStatus !== 'NA' || row.plazaAction === 'Yes') {
-      throw new Error('Decision has already been submitted and locked (single-submit rule)');
+    let rows = this.getStoredDisputes();
+    let row = rows.find((r) =>
+      String(r.rowId || '') === cleanId ||
+      String(r.disputeId || '') === cleanId ||
+      (r.id && String(r.id) === cleanId) ||
+      (r.acqTxnId && String(r.acqTxnId) === cleanId)
+    );
+
+    // If missing from local cache, fall back to in-memory row from modal
+    if (!row && fallbackRow) {
+      row = mapDbRecordToUi(fallbackRow);
     }
-    if (actorPlazaId && actorPlazaId !== 'ALL' && String(row.plazaId).trim() !== String(actorPlazaId).trim()) {
-      throw new Error('Plaza cannot act on a dispute not mapped to its own plaza ID.');
+
+    // If still missing, sync live from backend
+    if (!row) {
+      try {
+        const live = await this.syncFromBackend();
+        if (Array.isArray(live)) {
+          rows = live;
+          row = rows.find((r) =>
+            String(r.rowId || '') === cleanId ||
+            String(r.disputeId || '') === cleanId ||
+            (r.id && String(r.id) === cleanId) ||
+            (r.acqTxnId && String(r.acqTxnId) === cleanId)
+          );
+        }
+      } catch (e) {
+        console.debug('[DisputeManagementService] Sync notice during decision:', e);
+      }
+    }
+
+    if (row) {
+      if (row.disputeStatus !== 'NA' && row.disputeStatus !== 'Pending' && row.plazaAction === 'Yes') {
+        throw new Error('Decision has already been submitted and locked (single-submit rule)');
+      }
+      if (actorPlazaId && actorPlazaId !== 'ALL' && String(row.plazaId).trim() !== String(actorPlazaId).trim()) {
+        throw new Error('Plaza cannot act on a dispute not mapped to its own plaza ID.');
+      }
     }
 
     const istNow = formatIstTimestamp();
 
-    // Persist full evidence list in vault
-    if (evidenceList && evidenceList.length > 0) {
-      evidenceStorage.savePlazaEvidence(cleanId, row.acqTxnId, evidenceList);
+    if (evidenceList && evidenceList.length > 0 && (row?.acqTxnId || fallbackRow?.acqTxnId)) {
+      evidenceStorage.savePlazaEvidence(cleanId, row?.acqTxnId || fallbackRow?.acqTxnId, evidenceList);
     }
 
     // Join multiple file names so all are recorded in backend
@@ -1132,8 +1255,9 @@ class DisputeManagementService {
       }
     }
 
+    let backendResult = null;
     try {
-      await httpClient.put(`/api/disputes/workflow/decision/${cleanId}`, {
+      const res = await httpClient.put(`/api/disputes/workflow/decision/${cleanId}`, {
         decision,
         plazaRemarks: finalReason,
         counterEvidenceName: evNames ? evNames.slice(0, 250) : null,
@@ -1142,27 +1266,43 @@ class DisputeManagementService {
         actorPlazaId,
         isMasterAdmin: actorPlazaId === 'ALL' || !actorPlazaId,
       });
+      if (res && res.data) {
+        backendResult = mapDbRecordToUi(res.data);
+      }
     } catch (err) {
       console.warn('[DisputeManagementService] DB decision notice:', err?.message);
+      if (err?.response?.data?.error) {
+        throw new Error(err.response.data.error);
+      }
     }
 
-    const updated = rows.map((r) => {
-      if (String(r.rowId || '') === cleanId || String(r.disputeId || '') === cleanId) {
-        return {
-          ...r,
-          plazaAction: 'Yes',
-          disputeStatus: decision,
-          lifecycleStatus: decision === 'Approved' ? 'Plaza Accepted' : 'Plaza Rejected',
-          plazaRemarks: finalReason,
-          plazaReason: finalReason,
-          plazaEvidence: evidenceList.length > 0 ? evidenceList : (r.plazaEvidence || []),
-          plazaActionTime: istNow,
-          plazaActionBy: actor,
-          decidedAt: new Date().toISOString(),
-        };
-      }
-      return r;
-    });
+    const updatedRow = backendResult || {
+      ...(row || fallbackRow || {}),
+      rowId: cleanId,
+      disputeId: cleanId,
+      plazaAction: 'Yes',
+      disputeStatus: decision,
+      lifecycleStatus: decision === 'Approved' ? 'Plaza Accepted' : 'Plaza Rejected',
+      plazaRemarks: finalReason,
+      plazaReason: finalReason,
+      plazaEvidence: evidenceList.length > 0 ? evidenceList : (row?.plazaEvidence || []),
+      plazaActionTime: istNow,
+      plazaActionBy: actor,
+      decidedAt: new Date().toISOString(),
+    };
+
+    const existingIndex = rows.findIndex((r) =>
+      String(r.rowId || '') === cleanId ||
+      String(r.disputeId || '') === cleanId ||
+      (r.id && String(r.id) === cleanId)
+    );
+
+    let updated;
+    if (existingIndex >= 0) {
+      updated = rows.map((r, i) => (i === existingIndex ? { ...r, ...updatedRow } : r));
+    } else {
+      updated = [updatedRow, ...rows];
+    }
 
     this.saveDisputes(updated);
     this.logAudit('PLAZA_DECISION', `Plaza decided ${decision} for dispute ${cleanId} at ${istNow}`, actor);

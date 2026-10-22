@@ -163,7 +163,8 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
         finalRemarks,
         plazaEvidence,
         actorName,
-        actorPlazaId
+        actorPlazaId,
+        disputeRow
       );
       if (onUpdated) onUpdated();
       onClose();
