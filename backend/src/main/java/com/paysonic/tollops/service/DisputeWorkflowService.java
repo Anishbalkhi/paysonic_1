@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -450,6 +451,13 @@ public class DisputeWorkflowService {
                     dt.setAdminRemarks(dt.getMemberMessageText().trim());
                 }
             }
+            // User requirement: Dispute amount in file is in Paisa (e.g. 7500 paisa = 75 Rs).
+            if (dt.getDisputeAmount() != null && dt.getDisputeAmount().compareTo(new BigDecimal("1000")) >= 0) {
+                dt.setDisputeAmount(dt.getDisputeAmount().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+            }
+            if (dt.getTxnAmount() != null && dt.getTxnAmount().compareTo(new BigDecimal("1000")) >= 0) {
+                dt.setTxnAmount(dt.getTxnAmount().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+            }
         }
         return results;
     }
@@ -476,8 +484,13 @@ public class DisputeWorkflowService {
 
         BigDecimal totalDisputeValue = all.stream()
                 .filter(d -> !Boolean.TRUE.equals(d.getClosed()))
-                .map(DisputeTransaction::getDisputeAmount)
-                .filter(Objects::nonNull)
+                .map(d -> {
+                    BigDecimal amt = d.getDisputeAmount();
+                    if (amt != null && amt.compareTo(new BigDecimal("1000")) >= 0) {
+                        return amt.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                    }
+                    return amt != null ? amt : BigDecimal.ZERO;
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Map<String, Object> stats = new HashMap<>();
@@ -506,14 +519,24 @@ public class DisputeWorkflowService {
 
         BigDecimal acceptedAmount = scoped.stream()
                 .filter(d -> "Approved".equalsIgnoreCase(d.getDisputeStatus()))
-                .map(DisputeTransaction::getDisputeAmount)
-                .filter(Objects::nonNull)
+                .map(d -> {
+                    BigDecimal amt = d.getDisputeAmount();
+                    if (amt != null && amt.compareTo(new BigDecimal("1000")) >= 0) {
+                        return amt.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                    }
+                    return amt != null ? amt : BigDecimal.ZERO;
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal rejectedAmount = scoped.stream()
                 .filter(d -> "Rejected".equalsIgnoreCase(d.getDisputeStatus()))
-                .map(DisputeTransaction::getDisputeAmount)
-                .filter(Objects::nonNull)
+                .map(d -> {
+                    BigDecimal amt = d.getDisputeAmount();
+                    if (amt != null && amt.compareTo(new BigDecimal("1000")) >= 0) {
+                        return amt.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                    }
+                    return amt != null ? amt : BigDecimal.ZERO;
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long withinTat = scoped.stream().filter(d -> "NA".equals(d.getDisputeStatus()) && computeDaysLeft(d.getTatDueDate()) >= 0).count();
@@ -794,7 +817,13 @@ public class DisputeWorkflowService {
         String raw = extractKey(row, "disputeAmount", "Dispute Amount", "Disputed Amount", "disputedAmount", "amount", "Amount", "Dispute Amt", "txnAmount", "Transaction Amount");
         if (raw != null && !raw.trim().isEmpty()) {
             try {
-                return new BigDecimal(raw.trim().replace(",", ""));
+                String clean = raw.trim().replace(",", "");
+                BigDecimal val = new BigDecimal(clean);
+                // User requirement: Dispute amount in file is in Paisa (e.g. 7500 in file is in paisa, actual amount is 75 Rs).
+                if (!clean.contains(".") || val.compareTo(new BigDecimal("1000")) >= 0) {
+                    return val.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                }
+                return val.setScale(2, RoundingMode.HALF_UP);
             } catch (Exception ignored) {}
         }
         return null;

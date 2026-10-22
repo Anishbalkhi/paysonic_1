@@ -282,8 +282,15 @@ function mapDbRecordToUi(r, idx = 0) {
     plazaName: r.plazaName || PLAZA_MAP[r.plazaId] || 'MUMBAI PLAZA NH-04',
     laneId: r.laneId || 'Lane-01',
     tid: r.tid || 'TID-88401',
-    txnAmount: Number(r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? r.tollAmount ?? 0),
-    disputeAmount: Number(r.disputeAmount ?? r.dispute_amount ?? (r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? 0)),
+    txnAmount: (() => {
+      const rawTxn = Number(r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? r.tollAmount ?? 0);
+      return rawTxn >= 1000 ? Number((rawTxn / 100).toFixed(2)) : Number(rawTxn.toFixed(2));
+    })(),
+    disputeAmount: (() => {
+      const rawDispute = Number(r.disputeAmount ?? r.dispute_amount ?? (r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? 0));
+      // In dispute files, amount is in Paisa (e.g. 7500 in file is in paisa, actual amount is 75 Rs)
+      return rawDispute >= 1000 ? Number((rawDispute / 100).toFixed(2)) : Number(rawDispute.toFixed(2));
+    })(),
     functionCode: r.functionCode || '450',
     disputeType: r.functionLabel || FUNCTION_CODE_MAP[r.functionCode] || `Code ${r.functionCode}`,
     txnDate: txnDateStr,
@@ -744,7 +751,11 @@ class DisputeManagementService {
     try {
       const res = await httpClient.get('/api/disputes/workflow/stats/admin');
       if (res.data) {
-        return res.data;
+        const rawTot = Number(res.data.totalDisputeValue || 0);
+        return {
+          ...res.data,
+          totalDisputeValue: rawTot >= 1000 ? Number((rawTot / 100).toFixed(2)) : rawTot,
+        };
       }
     } catch (err) {
       console.debug('[DisputeManagementService] Mini stats fallback:', err?.message);
@@ -785,7 +796,13 @@ class DisputeManagementService {
     try {
       const res = await httpClient.get('/api/disputes/workflow/stats/plaza', { params: { plazaId } });
       if (res.data) {
-        return res.data;
+        const rawAccepted = Number(res.data.acceptedAmount || 0);
+        const rawRejected = Number(res.data.rejectedAmount || 0);
+        return {
+          ...res.data,
+          acceptedAmount: rawAccepted >= 1000 ? Number((rawAccepted / 100).toFixed(2)) : rawAccepted,
+          rejectedAmount: rawRejected >= 1000 ? Number((rawRejected / 100).toFixed(2)) : rawRejected,
+        };
       }
     } catch (err) {
       console.debug('[DisputeManagementService] Plaza stats fallback:', err?.message);
@@ -1421,10 +1438,21 @@ class DisputeManagementService {
       let settlementDate = parsedRowDate.formatted;
 
       // Extract Disputed Amount from CSV (Rule 3.3)
+      // User requirement: In dispute files, amount is in Paisa (e.g. 7500 in file is in paisa, actual amount is 75 Rs).
       const rawDisputeAmt = row['Dispute Amount'] || row['Disputed Amount'] || row['disputeAmount'] || row['Amount'] || row['Dispute Amt'];
-      const parsedDisputeAmt = rawDisputeAmt !== undefined && rawDisputeAmt !== null && String(rawDisputeAmt).trim() !== ''
-        ? Number(String(rawDisputeAmt).replace(/,/g, '').trim())
-        : null;
+      let parsedDisputeAmt = null;
+      if (rawDisputeAmt !== undefined && rawDisputeAmt !== null && String(rawDisputeAmt).trim() !== '') {
+        const cleanStr = String(rawDisputeAmt).replace(/,/g, '').trim();
+        const numVal = Number(cleanStr);
+        if (!isNaN(numVal)) {
+          // If in file it is 7500 (in paisa), convert to 75 Rs (numVal / 100):
+          if (!cleanStr.includes('.') || numVal >= 1000) {
+            parsedDisputeAmt = Number((numVal / 100).toFixed(2));
+          } else {
+            parsedDisputeAmt = Number(numVal.toFixed(2));
+          }
+        }
+      }
 
       if (!rrn) {
         errorRows.push({
@@ -1462,7 +1490,15 @@ class DisputeManagementService {
         plazaId: csvPlazaId,
         plazaName: resolvedPlazaName,
         txnDate: row['Txn Date'] || row['txnDate'] || '—',
-        txnAmount: Number(row['Transaction Amount'] || row['txnAmount'] || 85.00),
+        txnAmount: (() => {
+          const rawTxn = row['Transaction Amount'] || row['txnAmount'];
+          if (rawTxn === undefined || rawTxn === null || String(rawTxn).trim() === '') return 85.00;
+          const cleanTxnStr = String(rawTxn).replace(/,/g, '').trim();
+          const numTxn = Number(cleanTxnStr);
+          if (isNaN(numTxn)) return 85.00;
+          if (!cleanTxnStr.includes('.') || numTxn >= 1000) return Number((numTxn / 100).toFixed(2));
+          return Number(numTxn.toFixed(2));
+        })(),
       } : null;
 
       const hit = masterHit || directPlazaHit;
