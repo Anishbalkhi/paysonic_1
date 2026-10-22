@@ -197,6 +197,8 @@ export const DisputeValidate = () => {
       'Toll Plaza ID',
       'Toll Plaza Name',
       'Txn Date',
+      'Txn Amount (₹)',
+      'Dispute Amount (₹)',
       'Dispute Raise Date',
       'TAT Due Date (T+8)',
       'CB Raised Date',
@@ -205,7 +207,6 @@ export const DisputeValidate = () => {
       'Plaza Action',
       'Dispute Status',
       'Plaza Reason',
-      'Dispute Amount',
       'SLA Status'
     ];
 
@@ -219,6 +220,8 @@ export const DisputeValidate = () => {
         r.plazaId,
         r.plazaName,
         r.txnDate,
+        Number(r.txnAmount || 0).toFixed(2),
+        Number(r.disputeAmount || 0).toFixed(2),
         resolveDisputeDates(r).disputeRaiseDate || '—',
         resolveDisputeDates(r).tatDueDate || '—',
         resolveDisputeDates(r).disputeRaiseDate || '—',
@@ -227,20 +230,21 @@ export const DisputeValidate = () => {
         r.plazaAction,
         r.disputeStatus,
         r.plazaReason,
-        Number(r.disputeAmount || 0).toFixed(2),
         tat.label
       ].map(escapeCsv).join(',');
     });
 
+    const totTxn = filteredRows.reduce((s, r) => s + Number(r.txnAmount || 0), 0).toFixed(2);
     const totDispute = filteredRows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toFixed(2);
 
     const totalRow = Array(headers.length).fill('""');
     totalRow[0] = '"TOTAL"';
-    totalRow[15] = `"${totDispute}"`;
+    totalRow[7] = `"${totTxn}"`;
+    totalRow[8] = `"${totDispute}"`;
 
     const bannerRows = [
       `"PAYSONIC DISPUTE MANAGEMENT — VALIDATE DISPUTES QUEUE"`,
-      `"Plaza: ${activePlaza.name} (${activePlazaId})   |   Export Time: ${fetchTimeStr}   |   Assigned Disputes: ${filteredRows.length}   |   Total Value: ₹ ${totDispute}"`,
+      `"Plaza: ${activePlaza.name} (${activePlazaId})   |   Export Time: ${fetchTimeStr}   |   Assigned Disputes: ${filteredRows.length}   |   Total Txn: ₹ ${totTxn}   |   Total Dispute: ₹ ${totDispute}"`,
       ''
     ];
 
@@ -283,6 +287,8 @@ export const DisputeValidate = () => {
       'Toll Plaza ID',
       'Toll Plaza Name',
       'Txn Date',
+      'Txn Amount (₹)',
+      'Dispute Amount (₹)',
       'Dispute Raise Date',
       'TAT Due Date (T+8)',
       'CB Raised Date',
@@ -291,11 +297,11 @@ export const DisputeValidate = () => {
       'Plaza Action',
       'Dispute Status',
       'Plaza Reason',
-      'Dispute Amount',
       'SLA Status'
     ];
 
     let dataXml = '';
+    let totalTxnAmt = 0;
     let totalDisputeAmt = 0;
 
     filteredRows.forEach((r) => {
@@ -307,7 +313,9 @@ export const DisputeValidate = () => {
       const actionStyle = r.plazaAction === 'Yes' ? 'sBadgeGreen' : 'sBadgeAmber';
       const tatStyle = tat.status === 'safe' ? 'sBadgeGreen' : tat.status === 'at-risk' ? 'sBadgeAmber' : tat.status === 'overdue' ? 'sBadgeRed' : 'sDataCenter';
 
+      const tAmt = Number(r.txnAmount || 0);
       const dAmt = Number(r.disputeAmount || 0);
+      totalTxnAmt += tAmt;
       totalDisputeAmt += dAmt;
 
       dataXml += `
@@ -319,6 +327,8 @@ export const DisputeValidate = () => {
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.plazaId)}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaName)}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(r.txnDate)}</Data></Cell>
+        <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${tAmt}</Data></Cell>
+        <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${dAmt}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).disputeRaiseDate || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).tatDueDate || '—')}</Data></Cell>
         <Cell ss:StyleID="sDataCenter"><Data ss:Type="String">${xmlEsc(resolveDisputeDates(r).disputeRaiseDate || '—')}</Data></Cell>
@@ -327,7 +337,6 @@ export const DisputeValidate = () => {
         <Cell ss:StyleID="${actionStyle}"><Data ss:Type="String">${xmlEsc(r.plazaAction)}</Data></Cell>
         <Cell ss:StyleID="${statusStyle}"><Data ss:Type="String">${xmlEsc(r.disputeStatus)}</Data></Cell>
         <Cell ss:StyleID="sDataText"><Data ss:Type="String">${xmlEsc(r.plazaReason)}</Data></Cell>
-        <Cell ss:StyleID="sDataAmt"><Data ss:Type="Number">${dAmt}</Data></Cell>
         <Cell ss:StyleID="${tatStyle}"><Data ss:Type="String">${xmlEsc(tat.label)}</Data></Cell>
       </Row>`;
     });
@@ -340,16 +349,17 @@ export const DisputeValidate = () => {
     const totalCells = [
       '<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">TOTAL</Data></Cell>',
       `<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String">Total Assigned Disputes: ${filteredRows.length}</Data></Cell>`,
-      ...Array(13).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>'),
+      ...Array(5).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>'),
+      `<Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalTxnAmt}</Data></Cell>`,
       `<Cell ss:StyleID="sTotalAmt"><Data ss:Type="Number">${totalDisputeAmt}</Data></Cell>`,
-      '<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>'
+      ...Array(9).fill('<Cell ss:StyleID="sTotalLabel"><Data ss:Type="String"></Data></Cell>')
     ];
     const totalXml = `
       <Row ss:Height="24">
         ${totalCells.join('')}
       </Row>`;
 
-    const colWidths = [185, 140, 115, 195, 95, 160, 135, 115, 135, 115, 160, 95, 110, 115, 160, 110, 110];
+    const colWidths = [185, 140, 115, 195, 95, 160, 135, 115, 125, 135, 115, 160, 95, 110, 115, 160, 110, 110];
     const colsXml = colWidths.map((w) => `<Column ss:Width="${w}"/>`).join('');
     const colSpan = headers.length - 1;
 
@@ -796,6 +806,8 @@ export const DisputeValidate = () => {
                 <th>Tag ID</th>
                 <th>Toll Plaza</th>
                 <th>Txn Date</th>
+                <th style={{ textAlign: 'right' }}>Txn Amount</th>
+                <th style={{ textAlign: 'right' }}>Dispute Amount</th>
                 <th>Dispute Raise Date</th>
                 <th>TAT Due Date</th>
                 <th>CB Reason</th>
@@ -809,13 +821,13 @@ export const DisputeValidate = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="15" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="17" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     Loading plaza disputes...
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan="15" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
+                  <td colSpan="17" style={{ textAlign: 'center', padding: '36px', color: '#64748b' }}>
                     {searchQuery ? `No disputes matching "${searchQuery}" found.` : 'No disputes assigned to your plaza match the filters.'}
                   </td>
                 </tr>
@@ -862,6 +874,12 @@ export const DisputeValidate = () => {
                       <td className="code-cell" style={{ whiteSpace: 'nowrap' }} title={r.tagId}>{r.tagId || '—'}</td>
                       <td>{r.plazaName ? `${r.plazaName} (${r.plazaId})` : `${activePlaza.name} (${r.plazaId})`}</td>
                       <td>{r.txnDate}</td>
+                      <td className="amt-cell" style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                        ₹ {Number(r.txnAmount || 0).toFixed(2)}
+                      </td>
+                      <td className="bold-amt" style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#0369a1' }}>
+                        ₹ {Number(r.disputeAmount || 0).toFixed(2)}
+                      </td>
                       <td>{resolveDisputeDates(r).disputeRaiseDate}</td>
                       <td style={{ fontWeight: 600, color: '#0369a1' }}>{resolveDisputeDates(r).tatDueDate}</td>
                       <td>{r.cbReason}</td>

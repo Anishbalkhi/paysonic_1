@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import DisputeManagementService, { resolveDisputeDates } from '../../services/dispute/DisputeManagementService';
 import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
@@ -93,10 +93,20 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
     }
   }, [disputeRow]);
 
+  const previewTargetRef = useRef(previewTarget);
+  useEffect(() => {
+    previewTargetRef.current = previewTarget;
+  }, [previewTarget]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
-        if (previewTarget) {
+        if (previewTargetRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === 'function') {
+            e.stopImmediatePropagation();
+          }
           setPreviewTarget(null);
         } else {
           onClose();
@@ -109,7 +119,7 @@ export const MoreInformationModal = ({ isOpen, onClose, disputeRow, onUpdated })
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, previewTarget, onClose]);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !disputeRow) return null;
 

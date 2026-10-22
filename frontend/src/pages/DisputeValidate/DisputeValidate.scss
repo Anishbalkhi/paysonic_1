@@ -299,6 +299,22 @@
                 color: #2563eb;
               }
 
+              &.amt-cell {
+                text-align: right;
+                font-family: ui-monospace, monospace;
+                font-size: 0.82rem;
+                font-weight: 500;
+                color: #334155;
+              }
+
+              &.bold-amt {
+                text-align: right;
+                font-family: ui-monospace, monospace;
+                font-size: 0.82rem;
+                font-weight: 700;
+                color: #0369a1;
+              }
+
               .txn-link {
                 color: #2563eb;
                 font-family: ui-monospace, monospace;
@@ -420,6 +436,14 @@
             &.code-cell,
             .txn-link {
               color: #93c5fd;
+            }
+
+            &.amt-cell {
+              color: var(--text-soft, #9AA5B4);
+            }
+
+            &.bold-amt {
+              color: #38bdf8;
             }
           }
         }

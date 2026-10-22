@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TRANSACTION_MASTER, PLAZA_MAP } from '../../config/disputeConstants';
 import { formatDateTime, formatDateOnly } from '../../utils/dateUtils';
 import { resolveDisputeDates } from '../../services/dispute/DisputeManagementService';
@@ -85,10 +85,24 @@ export const TransactionDetailsModal = ({ isOpen, onClose, disputeRow }) => {
     }
   };
 
+  const previewTargetRef = useRef(previewTarget);
+  useEffect(() => {
+    previewTargetRef.current = previewTarget;
+  }, [previewTarget]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.key === 'Escape' || e.key === 'Esc') && isOpen) {
-        onClose();
+        if (previewTargetRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === 'function') {
+            e.stopImmediatePropagation();
+          }
+          setPreviewTarget(null);
+        } else {
+          onClose();
+        }
       }
     };
     if (isOpen) {
