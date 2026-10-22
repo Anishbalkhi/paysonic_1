@@ -799,17 +799,56 @@ class DisputeManagementService {
   /**
    * Plaza Dispute Dashboard metrics directly from Railway MySQL database
    */
+  /**
+   * Computes last 5 days performance cards for Plaza Dashboard
+   */
+  computeDayCards(rows) {
+    const cards = [];
+    const today = new Date();
+
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const dateStr = `${dd}-${mm}-${yyyy}`;
+
+      const dayRows = rows.filter((r) => {
+        const { disputeRaiseDate } = resolveDisputeDates(r);
+        return (
+          disputeRaiseDate === dateStr ||
+          String(r.settlementDate || '').includes(dateStr) ||
+          String(r.txnDate || '').includes(dateStr)
+        );
+      });
+
+      const dayApproved = dayRows.filter((r) => r.disputeStatus === 'Approved');
+      const dayRejected = dayRows.filter((r) => r.disputeStatus === 'Rejected');
+
+      cards.push({
+        date: dateStr,
+        totalCount: dayRows.length,
+        totalAmount: dayRows.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0),
+        approvedCount: dayApproved.length,
+        approvedAmount: dayApproved.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0),
+        rejectedCount: dayRejected.length,
+        rejectedAmount: dayRejected.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0),
+      });
+    }
+
+    return cards;
+  }
+
+  /**
+   * Plaza Dispute Dashboard metrics directly from Railway MySQL database
+   */
   async getPlazaDashboardStats(plazaId) {
+    let backendStats = null;
     try {
       const res = await httpClient.get('/api/disputes/workflow/stats/plaza', { params: { plazaId } });
       if (res.data) {
-        const rawAccepted = Number(res.data.acceptedAmount || 0);
-        const rawRejected = Number(res.data.rejectedAmount || 0);
-        return {
-          ...res.data,
-          acceptedAmount: rawAccepted >= 1000 ? Number((rawAccepted / 100).toFixed(2)) : rawAccepted,
-          rejectedAmount: rawRejected >= 1000 ? Number((rawRejected / 100).toFixed(2)) : rawRejected,
-        };
+        backendStats = res.data;
       }
     } catch (err) {
       console.debug('[DisputeManagementService] Plaza stats fallback:', err?.message);
@@ -820,20 +859,86 @@ class DisputeManagementService {
       ? all.filter((r) => String(r.plazaId) === String(plazaId) || String(r.assignedToPlaza) === String(plazaId))
       : all;
 
-    const openRows = plazaRows.filter((r) => r.disputeStatus === 'NA' && !r.closed);
+    const openRows = plazaRows.filter((r) => (r.disputeStatus === 'NA' || !r.disputeStatus) && !r.closed);
     const approvedRows = plazaRows.filter((r) => r.disputeStatus === 'Approved');
     const rejectedRows = plazaRows.filter((r) => r.disputeStatus === 'Rejected');
+    const closedRows = plazaRows.filter((r) => r.closed);
+
+    const approvedCount = Number(backendStats?.approvedCount ?? backendStats?.approvedDisputes ?? approvedRows.length);
+    const rejectedCount = Number(backendStats?.rejectedCount ?? backendStats?.rejectedDisputes ?? rejectedRows.length);
+    const openDisputes = Number(backendStats?.openDisputes ?? openRows.length);
+    const closedCount = Number(backendStats?.closedCount ?? backendStats?.closedDisputes ?? closedRows.length);
+    const totalDisputes = Number(backendStats?.totalDisputes ?? plazaRows.length);
+
+    let rawAccepted = Number(backendStats?.acceptedAmount ?? approvedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0));
+    let rawRejected = Number(backendStats?.rejectedAmount ?? rejectedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0));
+    const acceptedAmount = rawAccepted >= 1000 ? Number((rawAccepted / 100).toFixed(2)) : Number(rawAccepted.toFixed(2));
+    const rejectedAmount = rawRejected >= 1000 ? Number((rawRejected / 100).toFixed(2)) : Number(rawRejected.toFixed(2));
+
+    const totalDisputedAmount = Number(
+      backendStats?.totalDisputedAmount ??
+      backendStats?.totalValue ??
+      plazaRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0)
+    );
+
+    const withinTatCount = Number(
+      backendStats?.withinTatCount ??
+      backendStats?.withinTat ??
+      openRows.filter((r) => this.computeDaysLeft(r) >= 0).length
+    );
+
+    const tatBreachedCount = Number(
+      backendStats?.tatBreachedCount ??
+      backendStats?.breachedTat ??
+      openRows.filter((r) => this.computeDaysLeft(r) < 0).length
+    );
+
+    const totalDecided = approvedCount + rejectedCount;
+    const approvedVsRejectedRatio = totalDecided > 0
+      ? `${Math.round((approvedCount / totalDecided) * 100)}% / ${Math.round((rejectedCount / totalDecided) * 100)}%`
+      : '0% / 0%';
+
+    // Build atRiskDisputes decorated with tatBadge & daysLeft
+    const atRiskDisputes = (Array.isArray(backendStats?.atRiskDisputes) && backendStats.atRiskDisputes.length > 0)
+      ? backendStats.atRiskDisputes.map((r, idx) => {
+          const mapped = mapDbRecordToUi(r, idx);
+          const daysLeft = this.computeDaysLeft(mapped);
+          const tatBadge = this.getTatBadge(mapped);
+          return { ...mapped, daysLeft, tatBadge };
+        })
+      : openRows
+          .map((r) => {
+            const daysLeft = this.computeDaysLeft(r);
+            const tatBadge = this.getTatBadge(r);
+            return { ...r, daysLeft, tatBadge };
+          })
+          .filter((r) => r.daysLeft <= 2);
+
+    // Build dayCards for last 5 days
+    const dayCards = this.computeDayCards(plazaRows);
 
     return {
-      totalDisputes: plazaRows.length,
-      openDisputes: openRows.length,
-      approvedDisputes: approvedRows.length,
-      rejectedDisputes: rejectedRows.length,
-      closedDisputes: plazaRows.filter((r) => r.closed).length,
-      acceptedAmount: approvedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0),
-      rejectedAmount: rejectedRows.reduce((acc, r) => acc + Number(r.disputeAmount || 0), 0),
-      withinTat: openRows.filter((r) => this.computeDaysLeft(r) >= 0).length,
-      breachedTat: openRows.filter((r) => this.computeDaysLeft(r) < 0).length,
+      ...(backendStats || {}),
+      totalDisputes,
+      totalAssigned: totalDisputes,
+      openDisputes,
+      approvedDisputes: approvedCount,
+      approvedCount,
+      rejectedDisputes: rejectedCount,
+      rejectedCount,
+      closedDisputes: closedCount,
+      closedCount,
+      acceptedAmount,
+      rejectedAmount,
+      totalDisputedAmount,
+      totalValue: totalDisputedAmount,
+      withinTat: withinTatCount,
+      withinTatCount,
+      breachedTat: tatBreachedCount,
+      tatBreachedCount,
+      approvedVsRejectedRatio,
+      atRiskDisputes,
+      dayCards,
     };
   }
 

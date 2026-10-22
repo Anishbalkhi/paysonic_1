@@ -539,19 +539,49 @@ public class DisputeWorkflowService {
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal totalDisputedAmount = scoped.stream()
+                .filter(d -> !Boolean.TRUE.equals(d.getClosed()))
+                .map(d -> {
+                    BigDecimal amt = d.getDisputeAmount();
+                    if (amt != null && amt.compareTo(new BigDecimal("1000")) >= 0) {
+                        return amt.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                    }
+                    return amt != null ? amt : BigDecimal.ZERO;
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         long withinTat = scoped.stream().filter(d -> "NA".equals(d.getDisputeStatus()) && computeDaysLeft(d.getTatDueDate()) >= 0).count();
         long breachedTat = scoped.stream().filter(d -> "NA".equals(d.getDisputeStatus()) && computeDaysLeft(d.getTatDueDate()) < 0).count();
 
+        List<DisputeTransaction> atRiskDisputes = scoped.stream()
+                .filter(d -> "NA".equals(d.getDisputeStatus()) && !Boolean.TRUE.equals(d.getClosed()) && computeDaysLeft(d.getTatDueDate()) <= 2)
+                .toList();
+
+        long totalDecided = approved + rejected;
+        String ratio = totalDecided > 0
+                ? String.format("%.0f%% / %.0f%%", (double) approved / totalDecided * 100, (double) rejected / totalDecided * 100)
+                : "0% / 0%";
+
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalDisputes", total);
+        stats.put("totalAssigned", total);
         stats.put("openDisputes", open);
         stats.put("approvedDisputes", approved);
+        stats.put("approvedCount", approved);
         stats.put("rejectedDisputes", rejected);
+        stats.put("rejectedCount", rejected);
         stats.put("closedDisputes", closed);
+        stats.put("closedCount", closed);
         stats.put("acceptedAmount", acceptedAmount);
         stats.put("rejectedAmount", rejectedAmount);
+        stats.put("totalDisputedAmount", totalDisputedAmount);
+        stats.put("totalValue", totalDisputedAmount);
         stats.put("withinTat", withinTat);
+        stats.put("withinTatCount", withinTat);
         stats.put("breachedTat", breachedTat);
+        stats.put("tatBreachedCount", breachedTat);
+        stats.put("approvedVsRejectedRatio", ratio);
+        stats.put("atRiskDisputes", atRiskDisputes);
         return stats;
     }
 

@@ -355,7 +355,7 @@ export const DisputeDashboard = () => {
 
       {/* Spec Count & Amount Tiles */}
       <div className="summary-metrics-grid" style={{ marginBottom: '14px' }}>
-        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }} title="Click to view all assigned disputes">
+        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/detail-report')} style={{ cursor: 'pointer' }} title="Click to view all assigned disputes">
           <span className="stat-label">Total Assigned</span>
           <span className="stat-value">{stats.totalAssigned || stats.totalDisputes}</span>
           <span className="stat-subtext">₹ {Number(stats.totalDisputedAmount || stats.totalValue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })} total value</span>
@@ -365,17 +365,17 @@ export const DisputeDashboard = () => {
           <span className="stat-value" style={{ color: '#d97706' }}>{stats.openDisputes}</span>
           <span className="stat-subtext" style={{ color: '#2563eb', fontWeight: 600 }}>👉 Take Action in Validate</span>
         </div>
-        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }}>
+        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/detail-report')} style={{ cursor: 'pointer' }}>
           <span className="stat-label">Accepted</span>
           <span className="stat-value" style={{ color: '#16a34a' }}>{stats.approvedCount}</span>
           <span className="stat-subtext">₹ {Number(stats.acceptedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
         </div>
-        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }}>
+        <div className="stat-card clickable-card" onClick={() => navigate('/dispute-handling/detail-report')} style={{ cursor: 'pointer' }}>
           <span className="stat-label">Rejected</span>
           <span className="stat-value" style={{ color: '#dc2626' }}>{stats.rejectedCount}</span>
           <span className="stat-subtext">₹ {Number(stats.rejectedAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
         </div>
-        <div className="stat-card highlight-closed clickable-card" onClick={() => navigate('/dispute-handling/dispute-detail-report')} style={{ cursor: 'pointer' }}>
+        <div className="stat-card highlight-closed clickable-card" onClick={() => navigate('/dispute-handling/detail-report')} style={{ cursor: 'pointer' }}>
           <span className="stat-label">Closed</span>
           <span className="stat-value">{stats.closedCount || stats.closedDisputes}</span>
           <span className="stat-subtext">Reviewed &amp; settled</span>

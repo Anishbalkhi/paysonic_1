@@ -325,6 +325,10 @@ export const AppRoutes = () => {
         element={<Navigate to="/dispute-handling/detail-report" replace />}
       />
       <Route
+        path="/dispute-handling/dispute-detail-report"
+        element={<Navigate to="/dispute-handling/detail-report" replace />}
+      />
+      <Route
         path="/violation-management/dashboard"
         element={
           <ProtectedRoute
