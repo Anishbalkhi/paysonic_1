@@ -130,7 +130,8 @@ export const Onboarding = () => {
       }
     }, 6000);
 
-    OnboardingService.loadFullStore()
+    const forceRefresh = reloadTrigger > 0;
+    OnboardingService.loadFullStore(forceRefresh)
       .then((hydrated) => {
         clearTimeout(safetyTimer);
         if (!isMounted) return;
@@ -219,34 +220,43 @@ export const Onboarding = () => {
   const [plazaCategoryFilter, setPlazaCategoryFilter] = useState('');
   const [viewPlazaDetail, setViewPlazaDetail] = useState(null);
 
-  const getConcessionaireName = (concessId) => {
-    const c = store.concessionaires.find((x) => x.id === concessId);
-    return c ? c.name : concessId || '—';
-  };
+  const concessionaireMap = useMemo(() => {
+    const map = new Map();
+    (store.concessionaires || []).forEach((c) => {
+      map.set(c.id, c.name);
+    });
+    return map;
+  }, [store.concessionaires]);
+
+  const getConcessionaireName = useCallback(
+    (concessId) => concessionaireMap.get(concessId) || concessId || '—',
+    [concessionaireMap]
+  );
 
   const filteredPlazas = useMemo(() => {
+    const searchTrimmed = plazaSearch.toLowerCase().trim();
     const list = scopedPlazas.filter((p) => {
       const matchesSearch =
-        !plazaSearch ||
+        !searchTrimmed ||
         (p.id + p.name + p.orgId + p.agencyId + getConcessionaireName(p.concessionaireId) + p.city + p.state)
           .toLowerCase()
-          .includes(plazaSearch.toLowerCase().trim());
+          .includes(searchTrimmed);
       const matchesConcess = !plazaConcessFilter || p.concessionaireId === plazaConcessFilter;
       const matchesStatus = !plazaStatusFilter || p.status === plazaStatusFilter;
       const matchesCategory = !plazaCategoryFilter || p.category === plazaCategoryFilter;
       return matchesSearch && matchesConcess && matchesStatus && matchesCategory;
     });
 
-    // Explicitly sort latest created first (newest timestamp first, fallback to original unshift order)
+    // Explicitly sort latest created first using fast string comparison instead of expensive Date object instantiations
     return [...list].sort((a, b) => {
-      const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const tA = a.createdAt || '';
+      const tB = b.createdAt || '';
       if (tA && tB && tA !== tB) {
-        return tB - tA;
+        return tB.localeCompare(tA);
       }
       return 0;
     });
-  }, [scopedPlazas, plazaSearch, plazaConcessFilter, plazaStatusFilter, plazaCategoryFilter, store.concessionaires]);
+  }, [scopedPlazas, plazaSearch, plazaConcessFilter, plazaStatusFilter, plazaCategoryFilter, getConcessionaireName]);
 
   // Tab A: View Plaza Pagination
   const [plazaPage, setPlazaPage] = useState(1);
@@ -1588,7 +1598,12 @@ export const Onboarding = () => {
 
   useEffect(() => {
     if (selectedPlazaId && store.fares[selectedPlazaId]) {
-      setPlazaFares(JSON.parse(JSON.stringify(store.fares[selectedPlazaId])));
+      const src = store.fares[selectedPlazaId];
+      const cloned = {};
+      Object.keys(src).forEach((k) => {
+        cloned[k] = { ...src[k] };
+      });
+      setPlazaFares(cloned);
     } else {
       setPlazaFares({});
     }
@@ -1722,7 +1737,12 @@ export const Onboarding = () => {
 
   useEffect(() => {
     if (selectedPlazaId && store.cch[selectedPlazaId]) {
-      setPlazaCch(JSON.parse(JSON.stringify(store.cch[selectedPlazaId])));
+      const src = store.cch[selectedPlazaId];
+      const cloned = {};
+      Object.keys(src).forEach((k) => {
+        cloned[k] = { ...src[k] };
+      });
+      setPlazaCch(cloned);
     } else {
       setPlazaCch({});
     }

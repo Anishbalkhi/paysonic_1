@@ -13,25 +13,47 @@
 
 import httpClient from '../api/httpClient';
 import UserActivityService from '../userActivity/UserActivityService';
+import { BASELINE_ONBOARDING_STORE } from './onboardingBaseline';
 
 // ─── Real Database Storage Mode (Direct Railway/Render MySQL) ────────────────
 const CACHE_KEY_STORE = 'paysonic_onboarding_full_store_cache';
 const CACHE_KEY_PLAZAS = 'paysonic_onboarded_plazas_cache';
 
+let inMemoryStore = null;
+let lastFetchTime = 0;
+const CACHE_TTL_MS = 60000; // 60s in-memory freshness window
+
 const getLocalStore = () => {
+  if (inMemoryStore && Array.isArray(inMemoryStore.plazas) && inMemoryStore.plazas.length > 0) {
+    return inMemoryStore;
+  }
   try {
     const raw = localStorage.getItem(CACHE_KEY_STORE);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') return parsed;
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.plazas) && parsed.plazas.length > 0) {
+        inMemoryStore = parsed;
+        return parsed;
+      }
     }
   } catch {}
+  // Instant fallback to baseline snapshot so UI is never empty
+  if (BASELINE_ONBOARDING_STORE && Array.isArray(BASELINE_ONBOARDING_STORE.plazas) && BASELINE_ONBOARDING_STORE.plazas.length > 0) {
+    inMemoryStore = BASELINE_ONBOARDING_STORE;
+    try {
+      localStorage.setItem(CACHE_KEY_STORE, JSON.stringify(BASELINE_ONBOARDING_STORE));
+      localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(BASELINE_ONBOARDING_STORE.plazas));
+    } catch {}
+    return BASELINE_ONBOARDING_STORE;
+  }
   return {};
 };
 
 const saveLocalStore = (store) => {
   try {
     if (store && typeof store === 'object') {
+      inMemoryStore = store;
+      lastFetchTime = Date.now();
       localStorage.setItem(CACHE_KEY_STORE, JSON.stringify(store));
       if (Array.isArray(store.plazas) && store.plazas.length > 0) {
         localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(store.plazas));
@@ -806,9 +828,14 @@ class OnboardingService {
 
   /**
    * Load full onboarding store from Railway / Backend Database.
-   * Called once on component mount to hydrate all tabs with real DB data.
+   * Uses in-memory TTL caching (60s) to avoid unnecessary network latency,
+   * while supporting forceRefresh for manual retry and write updates.
    */
-  async loadFullStore() {
+  async loadFullStore(forceRefresh = false) {
+    if (!forceRefresh && inMemoryStore && (Date.now() - lastFetchTime < CACHE_TTL_MS)) {
+      return inMemoryStore;
+    }
+
     try {
       const res = await httpClient.get('/api/onboarding/all');
       if (res?.data && res.data.plazas && Array.isArray(res.data.plazas)) {

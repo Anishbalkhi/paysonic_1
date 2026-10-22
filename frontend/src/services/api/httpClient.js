@@ -1,9 +1,15 @@
 import axios from 'axios';
 
-const apiBaseUrl =
-  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
-  (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL) ||
-  'https://paysonic-1.onrender.com';
+const isLocalhost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+// When running locally in dev, use relative URL ('') so Vite's proxy forwards requests without CORS preflight
+const apiBaseUrl = isLocalhost
+  ? ''
+  : (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
+    (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL) ||
+    'https://paysonic-1.onrender.com';
 
 const httpClient = axios.create({
   baseURL: apiBaseUrl,
