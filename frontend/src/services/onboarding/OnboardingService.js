@@ -14,9 +14,31 @@
 import httpClient from '../api/httpClient';
 import UserActivityService from '../userActivity/UserActivityService';
 
-// ─── Real Database Storage Mode (Direct Railway MySQL) ────────────────────────
-const getLocalStore = () => ({});
-const saveLocalStore = () => {};
+// ─── Real Database Storage Mode (Direct Railway/Render MySQL) ────────────────
+const CACHE_KEY_STORE = 'paysonic_onboarding_full_store_cache';
+const CACHE_KEY_PLAZAS = 'paysonic_onboarded_plazas_cache';
+
+const getLocalStore = () => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_STORE);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+  } catch {}
+  return {};
+};
+
+const saveLocalStore = (store) => {
+  try {
+    if (store && typeof store === 'object') {
+      localStorage.setItem(CACHE_KEY_STORE, JSON.stringify(store));
+      if (Array.isArray(store.plazas) && store.plazas.length > 0) {
+        localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(store.plazas));
+      }
+    }
+  } catch {}
+};
 
 
 // ─── Actor helper (active logged-in user) ────────────────────────────────────
@@ -37,7 +59,6 @@ const getActor = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-const CACHE_KEY_PLAZAS = 'paysonic_onboarded_plazas_cache';
 
 class OnboardingService {
   // ============================================================
@@ -863,16 +884,28 @@ class OnboardingService {
       this.getLanes().catch(() => []),
     ]);
 
-    return {
-      concessionaires,
-      plazas,
-      lanes,
-      callbacks: {},
-      fares: {},
-      cch: {},
+    const cached = getLocalStore();
+    const fallbackStore = {
+      concessionaires: (concessionaires && concessionaires.length > 0) ? concessionaires : (cached.concessionaires || []),
+      plazas: (plazas && plazas.length > 0) ? plazas : (cached.plazas || []),
+      lanes: (lanes && lanes.length > 0) ? lanes : (cached.lanes || []),
+      callbacks: cached.callbacks || {},
+      fares: cached.fares || {},
+      cch: cached.cch || {},
       source: 'LIVE_BACKEND_DB',
       _liveDb: true,
     };
+    if (fallbackStore.plazas.length > 0) {
+      saveLocalStore(fallbackStore);
+    }
+    return fallbackStore;
+  }
+
+  /**
+   * Synchronously retrieve full cached onboarding store.
+   */
+  getLocalStore() {
+    return getLocalStore();
   }
 }
 

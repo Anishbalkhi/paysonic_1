@@ -47,17 +47,23 @@ const CALLBACK_APIS = [
   'TagDetailsAPI',
 ];
 
-// Empty schema for Paysonic Plaza Onboarding — strictly populated from Railway live database
-const getEmptyStore = () => ({
-  concessionaires: [],
-  plazas: [],
-  lanes: [],
-  callbacks: {},
-  fares: {},
-  cch: {},
-  source: 'LIVE_BACKEND_DB',
-  _liveDb: true,
-});
+// Schema for Paysonic Plaza Onboarding — reads from cache if available, then updates from live database
+const getEmptyStore = () => {
+  const cached = OnboardingService.getLocalStore();
+  if (cached && Array.isArray(cached.plazas) && cached.plazas.length > 0) {
+    return cached;
+  }
+  return {
+    concessionaires: [],
+    plazas: [],
+    lanes: [],
+    callbacks: {},
+    fares: {},
+    cch: {},
+    source: 'LIVE_BACKEND_DB',
+    _liveDb: true,
+  };
+};
 
 export const Onboarding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -94,23 +100,41 @@ export const Onboarding = () => {
     setSearchParams({ tab });
   };
 
-  // Main state — initialized empty, loaded exclusively from Railway live database
+  // Main state — initialized with local cached data if present, refreshed live from backend database
   const [store, setStore] = useState(() => getEmptyStore());
-  const [fetchTime, setFetchTime] = useState('');
+  const [fetchTime, setFetchTime] = useState(() => formatFetchTime(new Date()));
 
-  // ── Railway live database hydration on mount ───────────────────────────────
-  const [railwayLoading, setRailwayLoading] = useState(true);
+  // ── Database hydration on mount ───────────────────────────────
+  const hasInitialData = Boolean(store.plazas && store.plazas.length > 0);
+  const [railwayLoading, setRailwayLoading] = useState(() => !hasInitialData);
   const [dbLoadError, setDbLoadError] = useState(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  const handleManualRetry = () => {
+    setRailwayLoading(true);
+    setDbLoadError(null);
+    setReloadTrigger((c) => c + 1);
+  };
 
   useEffect(() => {
     let isMounted = true;
-    setRailwayLoading(true);
+    if (!store.plazas || store.plazas.length === 0) {
+      setRailwayLoading(true);
+    }
     setDbLoadError(null);
+
+    // Safety timeout: ensure loading spinner never blocks for more than 6s
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setRailwayLoading(false);
+      }
+    }, 6000);
 
     OnboardingService.loadFullStore()
       .then((hydrated) => {
+        clearTimeout(safetyTimer);
         if (!isMounted) return;
-        if (hydrated && Array.isArray(hydrated.plazas)) {
+        if (hydrated && Array.isArray(hydrated.plazas) && hydrated.plazas.length > 0) {
           setStore({
             concessionaires: hydrated.concessionaires || [],
             plazas: hydrated.plazas || [],
@@ -134,20 +158,23 @@ export const Onboarding = () => {
         }
       })
       .catch((err) => {
-        console.error('[Onboarding] Railway database load error:', err?.message);
+        clearTimeout(safetyTimer);
+        console.error('[Onboarding] Database load error:', err?.message);
         if (isMounted) {
           setDbLoadError(err?.message || 'Failed to connect to database');
         }
       })
       .finally(() => {
+        clearTimeout(safetyTimer);
         if (isMounted) setRailwayLoading(false);
       });
 
     return () => {
+      clearTimeout(safetyTimer);
       isMounted = false;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reloadTrigger]);
 
   // Toast notifications
   const [toast, setToast] = useState({ show: false, msg: '', type: 'info' });
@@ -1817,8 +1844,8 @@ export const Onboarding = () => {
         </div>
       )}
 
-      {/* Live Railway Database Loading State */}
-      {railwayLoading && (
+      {/* Live Database Loading State — Only block if no records are available */}
+      {railwayLoading && (!store.plazas || store.plazas.length === 0) && (
         <div className="onboarding-loading-state" style={{
           display: 'flex',
           flexDirection: 'column',
@@ -1837,8 +1864,44 @@ export const Onboarding = () => {
             animation: 'spin 0.8s linear infinite'
           }} />
           <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: '#c9d1d9' }}>
-            Loading records...
+            Connecting to live database & loading records...
           </p>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleManualRetry}
+            style={{ fontSize: '12px', padding: '6px 14px', marginTop: '8px', cursor: 'pointer' }}
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
+      {/* Subtle sync indicator when hydrating in background with cached records visible */}
+      {railwayLoading && store.plazas && store.plazas.length > 0 && (
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '4px 10px',
+          margin: '0 0 12px 0',
+          borderRadius: '16px',
+          background: 'rgba(56, 189, 248, 0.12)',
+          border: '1px solid rgba(56, 189, 248, 0.25)',
+          color: '#38bdf8',
+          fontSize: '12px',
+          fontWeight: 500
+        }}>
+          <span style={{
+            display: 'inline-block',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            border: '2px solid rgba(56, 189, 248, 0.3)',
+            borderTopColor: '#38bdf8',
+            animation: 'spin 0.8s linear infinite'
+          }} />
+          Syncing with live database...
         </div>
       )}
 
@@ -1855,11 +1918,11 @@ export const Onboarding = () => {
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <span>⚠ Failed to connect to database: {dbLoadError}</span>
+          <span>⚠ Database notice: {dbLoadError}</span>
           <button
             type="button"
             className="btn-secondary"
-            onClick={() => window.location.reload()}
+            onClick={handleManualRetry}
             style={{ fontSize: '12px', padding: '4px 10px' }}
           >
             Retry Connection
@@ -1870,7 +1933,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB A: VIEW PLAZA                                                 */}
       {/* ================================================================= */}
-      {!railwayLoading && activeTab === 'view' && (
+      {(store.plazas.length > 0 || !railwayLoading) && activeTab === 'view' && (
         <div className="tab-content view-plaza-section">
           {/* KPI Summary Cards — Clickable to filter table by status */}
           <div className="kpi-grid">
@@ -2187,7 +2250,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB B: ADD CONCESSIONAIRE                                         */}
       {/* ================================================================= */}
-      {!railwayLoading && activeTab === 'concess' && (
+      {activeTab === 'concess' && (
         <div className="tab-content add-concess-section">
           <div className="two-col-layout">
             {/* Form Column */}
@@ -2402,7 +2465,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB C: ADD / EDIT PLAZA                                           */}
       {/* ================================================================= */}
-      {!railwayLoading && activeTab === 'addplaza' && (
+      {activeTab === 'addplaza' && (
         <div className="tab-content add-plaza-section">
           <div className="panel-card">
             <div className="card-header flex-header">
@@ -2826,7 +2889,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB D: LANE DETAILS                                               */}
       {/* ================================================================= */}
-      {!railwayLoading && activeTab === 'lanes' && (
+      {activeTab === 'lanes' && (
         <div className="tab-content lane-details-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
@@ -2978,7 +3041,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB E: CALLBACK URL CONFIGURATION                                 */}
       {/* ================================================================= */}
-      {!railwayLoading && activeTab === 'callback' && (
+      {activeTab === 'callback' && (
         <div className="tab-content callback-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
@@ -3102,7 +3165,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB F: FARE MAPPING                                               */}
       {/* ================================================================= */}
-      {!railwayLoading && activeTab === 'fare' && (
+      {activeTab === 'fare' && (
         <div className="tab-content fare-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
@@ -3270,7 +3333,7 @@ export const Onboarding = () => {
       {/* ================================================================= */}
       {/* TAB G: CCH MAPPING                                                */}
       {/* ================================================================= */}
-      {!railwayLoading && activeTab === 'cch' && (
+      {activeTab === 'cch' && (
         <div className="tab-content cch-section">
           {/* Plaza Selector Header */}
           <div className="plaza-scope-card">
