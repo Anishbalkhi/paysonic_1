@@ -329,6 +329,19 @@
             }
           }
         }
+
+        tfoot {
+          background: #f8fafc;
+          border-top: 2px solid #cbd5e1;
+
+          tr.totals-row td {
+            padding: 11px 14px;
+            font-size: 0.82rem;
+            color: #1e293b;
+            font-weight: 700;
+            background: #f1f5f9;
+          }
+        }
       }
     }
 

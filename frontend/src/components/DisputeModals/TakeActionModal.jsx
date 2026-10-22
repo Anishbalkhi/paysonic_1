@@ -299,6 +299,18 @@ export const TakeActionModal = ({ isOpen, onClose, disputeRow, onUpdated }) => {
                 </div>
               </div>
               <div className="meta-box">
+                <label>Txn Amount</label>
+                <div className="meta-display" style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f172a' }}>
+                  ₹ {Number(disputeRow.txnAmount || 0).toFixed(2)}
+                </div>
+              </div>
+              <div className="meta-box">
+                <label>Dispute Amount</label>
+                <div className="meta-display" style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0369a1' }}>
+                  ₹ {Number(disputeRow.disputeAmount || 0).toFixed(2)}
+                </div>
+              </div>
+              <div className="meta-box">
                 <label>Dispute Raise Date</label>
                 <div className="meta-display">
                   {disputeRaiseDate}

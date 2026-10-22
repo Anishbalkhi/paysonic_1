@@ -715,10 +715,16 @@ export const DisputeValidate = () => {
             sub: searchQuery ? `Filtered from ${rows.length} total` : `Plaza: ${activePlaza.name} (${activePlazaId})`
           },
           {
+            label: 'Total Transaction Amount',
+            value: `₹ ${filteredRows.reduce((sum, r) => sum + Number(r.txnAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            sub: 'Gross FASTag Toll Value',
+            highlight: 'blue'
+          },
+          {
             label: 'Total Dispute Amount',
             value: `₹ ${filteredRows.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             sub: 'Cumulative Queue Value',
-            highlight: 'blue'
+            highlight: 'purple'
           },
           {
             label: 'Pending Plaza Action',
@@ -938,6 +944,22 @@ export const DisputeValidate = () => {
                 })
               )}
             </tbody>
+            {filteredRows.length > 0 && (
+              <tfoot>
+                <tr className="totals-row">
+                  <td colSpan="7" style={{ textAlign: 'right', fontWeight: 700 }}>
+                    TOTAL ({filteredRows.length} disputes):
+                  </td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#0f172a' }}>
+                    ₹ {filteredRows.reduce((sum, r) => sum + Number(r.txnAmount || 0), 0).toFixed(2)}
+                  </td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#0369a1' }}>
+                    ₹ {filteredRows.reduce((sum, r) => sum + Number(r.disputeAmount || 0), 0).toFixed(2)}
+                  </td>
+                  <td colSpan="8"></td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
 
@@ -958,6 +980,10 @@ export const DisputeValidate = () => {
           <div>
             Showing <strong>{filteredRows.length}</strong> of <strong>{rows.length}</strong> records
             {searchQuery && <span style={{ marginLeft: '8px', color: '#2563eb' }}>(Filtered by "{searchQuery}")</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', fontWeight: 600, fontSize: '0.88rem' }}>
+            <span>Total Txn Amount: <strong style={{ color: '#0f172a', fontFamily: 'monospace' }}>₹ {filteredRows.reduce((s, r) => s + Number(r.txnAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+            <span>Total Dispute Amount: <strong style={{ color: '#0369a1', fontFamily: 'monospace' }}>₹ {filteredRows.reduce((s, r) => s + Number(r.disputeAmount || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
           </div>
           <div style={{ color: '#0369a1', fontWeight: 600 }}>
             <span>📥 Export Download Time: </span>
