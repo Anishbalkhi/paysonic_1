@@ -36,7 +36,7 @@ export const ClosedDisputes = () => {
   const activePlazaId = isPlazaLocked ? (defaultPlazaId || selectedPlazaId) : (selectedPlazaId || 'ALL');
 
   // Search criteria state
-  const [fromDate, setFromDate] = useState('2026-09-01');
+  const [fromDate, setFromDate] = useState('2026-08-01');
   const [toDate, setToDate] = useState('2026-10-31');
   const [dateType, setDateType] = useState('Plaza Action Date');
   const [functionCode, setFunctionCode] = useState('');
@@ -153,11 +153,18 @@ export const ClosedDisputes = () => {
 
   useEffect(() => {
     loadData();
+    const handleDisputesUpdated = () => {
+      loadData();
+    };
+    window.addEventListener('paysonic:disputes_updated', handleDisputesUpdated);
+    return () => {
+      window.removeEventListener('paysonic:disputes_updated', handleDisputesUpdated);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReset = () => {
-    setFromDate('2026-09-01');
+    setFromDate('2026-08-01');
     setToDate('2026-10-31');
     setDateType('Plaza Action Date');
     setFunctionCode('');

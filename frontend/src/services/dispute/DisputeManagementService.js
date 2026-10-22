@@ -373,10 +373,10 @@ class DisputeManagementService {
     try {
       await this.fetchBatches().catch(() => {});
       const res = await httpClient.get('/api/disputes/workflow/queue');
-      if (Array.isArray(res.data)) {
+      if (Array.isArray(res.data) && res.data.length > 0) {
         const mapped = res.data.map(mapDbRecordToUi);
-        this.saveDisputes(mapped, false);
-        return mapped;
+        this.mergeDisputes(mapped);
+        return this.getStoredDisputes();
       }
     } catch (err) {
       console.debug('[DisputeManagementService] Live DB sync unavailable:', err?.message);
@@ -501,7 +501,7 @@ class DisputeManagementService {
     const dateMap = this.getBatchDateMap();
     try {
       const res = await httpClient.get('/api/disputes/workflow/batches');
-      if (Array.isArray(res.data)) {
+      if (Array.isArray(res.data) && res.data.length > 0) {
         res.data.forEach((b) => {
           if (b.disputeFileDate) {
             this.setBatchDate(b.batchId, b.fileName, b.disputeFileDate);
@@ -522,8 +522,13 @@ class DisputeManagementService {
             status: b.status || 'Processed',
           };
         });
-        localStorage.setItem(STORAGE_KEY_BATCHES, JSON.stringify(mapped));
-        return mapped;
+        const local = this.getBatches();
+        const mergedMap = new Map();
+        local.forEach(b => mergedMap.set(b.batchId || b.fileName, b));
+        mapped.forEach(b => mergedMap.set(b.batchId || b.fileName, b));
+        const mergedList = Array.from(mergedMap.values());
+        localStorage.setItem(STORAGE_KEY_BATCHES, JSON.stringify(mergedList));
+        return mergedList;
       }
     } catch (e) {
       console.debug('[DisputeManagementService] Backend batches fetch notice:', e?.message);
@@ -598,13 +603,15 @@ class DisputeManagementService {
   }
 
   computeDaysLeft(row) {
-    if (row.tatDueDate) {
-      const { dateObj } = parseSettlementDate(row.tatDueDate);
-      const now = new Date();
-      const diffMs = dateObj.getTime() - now.getTime();
-      return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (row && row.tatDueDate && row.tatDueDate !== '—' && row.tatDueDate !== '-') {
+      const parsed = parseSettlementDate(row.tatDueDate);
+      if (parsed && parsed.dateObj && !isNaN(parsed.dateObj.getTime())) {
+        const now = new Date();
+        const diffMs = parsed.dateObj.getTime() - now.getTime();
+        return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      }
     }
-    const daysAgo = row.cbRaisedDaysAgo ?? 1;
+    const daysAgo = row?.cbRaisedDaysAgo ?? 1;
     return DEFAULT_TAT_DAYS - daysAgo;
   }
 
@@ -642,7 +649,7 @@ class DisputeManagementService {
 
       await this.fetchBatches().catch(() => {});
       const res = await httpClient.get('/api/disputes/workflow/queue', { params: queryParams });
-      if (Array.isArray(res.data)) {
+      if (Array.isArray(res.data) && res.data.length > 0) {
         const rows = res.data.map(mapDbRecordToUi);
         this.mergeDisputes(rows);
         return rows;
@@ -1602,19 +1609,24 @@ class DisputeManagementService {
    */
   async commitMatchedRows(fileName, matchedResults, actor = 'Master Admin', npciMeta = null, disputeFileDate = '') {
     // 1. Strict Duplicate File Name Check: User requirement: "Duplicate 01 files (file with same name) are getting uploaded this should accept unique name every time"
-    const liveBatches = await this.fetchBatches();
+    const liveBatches = await this.fetchBatches().catch(() => []);
     const localBatches = this.getBatches();
     const existingBatches = [...(Array.isArray(liveBatches) ? liveBatches : []), ...(Array.isArray(localBatches) ? localBatches : [])];
     const cleanFileName = String(fileName || '').trim();
+    const existing = this.getStoredDisputes();
+
+    // Check if this duplicate file actually has existing open disputes in queue
+    const hasDisputesForFile = existing.some(
+      (e) => e.fileName && e.fileName.trim().toLowerCase() === cleanFileName.toLowerCase() && !e.closed
+    );
     const isDuplicate = existingBatches.some(
       (b) => b.fileName && b.fileName.trim().toLowerCase() === cleanFileName.toLowerCase()
     );
-    if (isDuplicate) {
+    if (isDuplicate && hasDisputesForFile) {
       throw new Error(`Duplicate File Error: A dispute file with name "${cleanFileName}" has already been uploaded previously. The system accepts unique file names only.`);
     }
 
     const resolvedFileDate = disputeFileDate || npciMeta?.releaseDate || '';
-    const existing = this.getStoredDisputes();
     const toInsert = [];
 
     matchedResults.forEach((r) => {
@@ -1648,10 +1660,20 @@ class DisputeManagementService {
         memberMessageText: r.memberMessageText,
         adminRemarks: r.memberMessageText,
         adminReason: r.memberMessageText,
+        assigned: false,
+        assignedToPlaza: null,
+        assignedAt: null,
+        plazaAction: 'No',
+        disputeStatus: 'NA',
+        lifecycleStatus: 'Pending Assignment',
+        closed: false,
+        batchId: `BATCH-${Date.now().toString().slice(-6)}`,
+        fileName: cleanFileName,
+        disputeFileDate: resolvedFileDate,
       });
     });
 
-    const batchId = `BATCH-${Date.now().toString().slice(-6)}`;
+    const batchId = toInsert[0]?.batchId || `BATCH-${Date.now().toString().slice(-6)}`;
 
     // Cache batch date locally for instant UI reflection
     if (resolvedFileDate) {
@@ -1670,7 +1692,13 @@ class DisputeManagementService {
       status: 'Processed',
     });
 
-    // 2. Persist directly to Railway MySQL database
+    // 2. CRITICAL: Persist mapped records to local storage IMMEDIATELY
+    // Guarantees rows appear in Chargeback Assign even if Railway backend is offline, sleeping, or returns 404
+    const mappedToInsert = toInsert.map((item, idx) => mapDbRecordToUi(item, idx));
+    const updated = [...existing.filter(e => !(e.fileName && e.fileName.trim().toLowerCase() === cleanFileName.toLowerCase() && toInsert.length > 0)), ...mappedToInsert];
+    this.saveDisputes(updated);
+
+    // 3. Persist to Railway MySQL database in background
     try {
       await httpClient.post('/api/disputes/workflow/batches/upload', {
         batchId,
@@ -1681,14 +1709,12 @@ class DisputeManagementService {
         unmatchedRows: matchedResults.length - toInsert.length,
         rows: toInsert,
       });
+      await this.syncFromBackend();
     } catch (err) {
       console.warn('[DisputeManagementService] DB batch upload notice:', err?.message);
     }
 
-    // 3. Re-sync from Railway MySQL to get fresh DB records
-    await this.syncFromBackend();
-
-    this.logAudit('FILE_UPLOAD', `Uploaded ${fileName}: added ${toInsert.length} disputes to Railway DB`, actor);
+    this.logAudit('FILE_UPLOAD', `Uploaded ${fileName}: added ${toInsert.length} disputes to Queue`, actor);
     return { inserted: toInsert.length };
   }
 

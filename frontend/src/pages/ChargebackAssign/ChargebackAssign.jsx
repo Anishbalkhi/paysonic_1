@@ -24,7 +24,7 @@ export const ChargebackAssign = () => {
   const [pageSize, setPageSize] = useState(25);
 
   // Filters
-  const [fromDate, setFromDate] = useState('2026-09-01');
+  const [fromDate, setFromDate] = useState('2026-08-01');
   const [toDate, setToDate] = useState('2026-10-31');
   const [dateType, setDateType] = useState('Transaction DateTime');
   const [functionCode, setFunctionCode] = useState('');
@@ -92,6 +92,13 @@ export const ChargebackAssign = () => {
 
   useEffect(() => {
     loadData();
+    const handleDisputesUpdated = () => {
+      loadData();
+    };
+    window.addEventListener('paysonic:disputes_updated', handleDisputesUpdated);
+    return () => {
+      window.removeEventListener('paysonic:disputes_updated', handleDisputesUpdated);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

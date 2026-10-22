@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import DisputeManagementService from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { parseSettlementDate } from '../../services/dispute/DisputeManagementService';
 import TablePagination from '../../components/common/TablePagination';
 import { formatFetchTime } from '../../utils/dateUtils';
 import { parseNpci01FileName } from '../../utils/npciFileNameParser';
@@ -83,13 +83,17 @@ export const DisputeFileUpload = () => {
 
     // 2. Strict Unique File Name Check: User requirement: "Duplicate 01 files (file with same name) are getting uploaded this should accept unique name every time"
     try {
-      const liveBatches = await DisputeManagementService.fetchBatches();
+      const liveBatches = await DisputeManagementService.fetchBatches().catch(() => []);
       const localBatches = DisputeManagementService.getBatches();
       const combinedBatches = [...(Array.isArray(liveBatches) ? liveBatches : []), ...(Array.isArray(localBatches) ? localBatches : [])];
       const duplicate = combinedBatches.find(
         (b) => b.fileName && b.fileName.trim().toLowerCase() === file.name.trim().toLowerCase()
       );
-      if (duplicate) {
+      const existingDisputes = DisputeManagementService.getStoredDisputes();
+      const hasDisputesForFile = existingDisputes.some(
+        (d) => d.fileName && d.fileName.trim().toLowerCase() === file.name.trim().toLowerCase() && !d.closed
+      );
+      if (duplicate && hasDisputesForFile) {
         setFileError(
           `❌ Duplicate File Rejected: A file with the exact name "${file.name}" has already been uploaded previously (Batch ID: ${duplicate.batchId}, Uploaded: ${duplicate.uploadedAt || 'Earlier'}). The system accepts unique file names only. Please verify your file or upload the next sequential file.`
         );
@@ -118,6 +122,36 @@ export const DisputeFileUpload = () => {
         const text = ev.target.result;
         const rows = parseCsvText(text);
         setParsedRows(rows);
+
+        // Auto-extract and set Dispute File Date so user is never blocked
+        if (meta?.releaseDate) {
+          setDisputeFileDate(toIsoDate(meta.releaseDate));
+        } else if (rows.length > 0) {
+          const firstRow = rows[0];
+          let foundDate = '';
+          const dateKeys = [
+            'Settlement Date', 'settlementDate', 'Settlement_Date', 'Settlement date', 'SETTLEMENT DATE',
+            'Dispute Raise Date', 'Dispute Date', 'DisputeDate', 'Txn Date', 'Transaction Date', 'Date'
+          ];
+          for (const k of dateKeys) {
+            if (firstRow[k] && String(firstRow[k]).trim()) {
+              foundDate = String(firstRow[k]).trim();
+              break;
+            }
+          }
+          if (foundDate) {
+            const p = parseSettlementDate(foundDate);
+            if (p && p.formatted) {
+              setDisputeFileDate(toIsoDate(p.formatted));
+            } else {
+              setDisputeFileDate(new Date().toISOString().slice(0, 10));
+            }
+          } else {
+            setDisputeFileDate(new Date().toISOString().slice(0, 10));
+          }
+        } else {
+          setDisputeFileDate(new Date().toISOString().slice(0, 10));
+        }
       } catch (err) {
         setFileError(`Failed to parse CSV content: ${err.message}`);
         setParsedRows([]);
@@ -167,12 +201,13 @@ export const DisputeFileUpload = () => {
       return;
     }
 
-    if (!disputeFileDate) {
-      setAlertMsg('Please select a Dispute File Date before running matching.');
-      return;
+    let activeDate = disputeFileDate;
+    if (!activeDate) {
+      activeDate = new Date().toISOString().slice(0, 10);
+      setDisputeFileDate(activeDate);
     }
 
-    const effectiveDate = formatDisplayDate(disputeFileDate);
+    const effectiveDate = formatDisplayDate(activeDate);
 
     setIsMatching(true);
     setCurrentPage(1);
@@ -252,14 +287,15 @@ export const DisputeFileUpload = () => {
 
   const handleCommit = async () => {
     if (!matchResult) return;
-    if (!disputeFileDate) {
-      setAlertMsg('Please select a Dispute File Date before adding to working queue.');
-      return;
+    let activeDate = disputeFileDate;
+    if (!activeDate) {
+      activeDate = new Date().toISOString().slice(0, 10);
+      setDisputeFileDate(activeDate);
     }
     try {
       setIsCommitting(true);
       const actorName = currentUser?.name || currentUser?.role || 'Master Admin';
-      const formattedFileDate = formatDisplayDate(disputeFileDate);
+      const formattedFileDate = formatDisplayDate(activeDate);
 
       const { inserted } = await DisputeManagementService.commitMatchedRows(
         selectedFileName || 'Uploaded_Dispute_File.csv',

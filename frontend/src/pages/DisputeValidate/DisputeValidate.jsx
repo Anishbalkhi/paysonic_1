@@ -50,7 +50,7 @@ export const DisputeValidate = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters (Section 9)
-  const [fromDate, setFromDate] = useState('2026-09-01');
+  const [fromDate, setFromDate] = useState('2026-08-01');
   const [toDate, setToDate] = useState('2026-10-31');
   const [dateType, setDateType] = useState('Transaction DateTime');
   const [functionCode, setFunctionCode] = useState('');
@@ -106,11 +106,18 @@ export const DisputeValidate = () => {
 
   useEffect(() => {
     loadData();
+    const handleDisputesUpdated = () => {
+      loadData();
+    };
+    window.addEventListener('paysonic:disputes_updated', handleDisputesUpdated);
+    return () => {
+      window.removeEventListener('paysonic:disputes_updated', handleDisputesUpdated);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReset = () => {
-    setFromDate('2026-09-01');
+    setFromDate('2026-08-01');
     setToDate('2026-10-31');
     setDateType('Transaction DateTime');
     setFunctionCode('');
@@ -120,7 +127,7 @@ export const DisputeValidate = () => {
     setSearchQuery('');
     setCurrentPage(1);
     loadData({
-      fromDate: '2026-09-01',
+      fromDate: '2026-08-01',
       toDate: '2026-10-31',
       dateType: 'Transaction DateTime',
       functionCode: '',
