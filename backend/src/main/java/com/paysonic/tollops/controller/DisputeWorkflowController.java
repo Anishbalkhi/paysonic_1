@@ -211,7 +211,7 @@ public class DisputeWorkflowController {
 
             DisputeTransaction dt = workflowService.submitDecision(
                     disputeId, decision, plazaRemarks, counterEvidenceName, counterEvidenceUrl,
-                    actor, actorPlazaId, isMasterAdmin
+                    actor, actorPlazaId, isMasterAdmin, body
             );
             return ResponseEntity.ok(dt);
         } catch (SecurityException ex) {

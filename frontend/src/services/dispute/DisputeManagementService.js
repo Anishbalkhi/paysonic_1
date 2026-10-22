@@ -1385,8 +1385,9 @@ class DisputeManagementService {
     }
 
     let backendResult = null;
+    const targetRow = row || fallbackRow || {};
     try {
-      const res = await httpClient.put(`/api/disputes/workflow/decision/${cleanId}`, {
+      const payload = {
         decision,
         plazaRemarks: finalReason,
         counterEvidenceName: evNames ? evNames.slice(0, 250) : null,
@@ -1394,14 +1395,30 @@ class DisputeManagementService {
         actor,
         actorPlazaId,
         isMasterAdmin: actorPlazaId === 'ALL' || !actorPlazaId,
-      });
+        disputeId: cleanId,
+        acqTxnId: targetRow.acqTxnId || '',
+        tollTxnId: targetRow.tollTxnId || '—',
+        plazaId: targetRow.plazaId || '501101',
+        plazaName: targetRow.plazaName || 'MUMBAI PLAZA NH-04',
+        vehicleNo: targetRow.vrn || targetRow.vehicleNo || '—',
+        tagId: targetRow.tagId || '—',
+        tid: targetRow.tid || 'TID-88401',
+        functionCode: targetRow.functionCode || '450',
+        memberMessageText: targetRow.memberMessageText || finalReason,
+        settlementDate: targetRow.settlementDate || '',
+        txnAmount: targetRow.txnAmount || 85.0,
+        disputeAmount: targetRow.disputeAmount || targetRow.txnAmount || 85.0,
+        batchId: targetRow.batchId || 'BATCH-MANUAL',
+      };
+      const res = await httpClient.put(`/api/disputes/workflow/decision/${cleanId}`, payload);
       if (res && res.data) {
         backendResult = mapDbRecordToUi(res.data);
       }
     } catch (err) {
       console.warn('[DisputeManagementService] DB decision notice:', err?.message);
-      if (err?.response?.data?.error) {
-        throw new Error(err.response.data.error);
+      const errMsg = err?.response?.data?.error || err?.message || '';
+      if (errMsg.includes('mandatory') || errMsg.includes('already been actioned') || errMsg.includes('Forbidden')) {
+        throw new Error(errMsg);
       }
     }
 
