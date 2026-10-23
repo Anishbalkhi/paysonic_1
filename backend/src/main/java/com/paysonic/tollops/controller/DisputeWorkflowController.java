@@ -110,14 +110,14 @@ public class DisputeWorkflowController {
     @Auditable(module = "Dispute Handling", action = "ASSIGN_DISPUTE", actionLabel = "Assigned Dispute to Plaza", target = "Chargeback Assign")
     public ResponseEntity<?> assignDispute(
             @PathVariable String disputeId,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, Object> body) {
         try {
-            String plazaId = body.get("plazaId");
-            String plazaName = body.get("plazaName");
-            String adminRemarks = body.get("adminRemarks");
-            String actor = body.getOrDefault("actor", "Master Admin");
+            String plazaId = (String) body.get("plazaId");
+            String plazaName = (String) body.get("plazaName");
+            String adminRemarks = (String) body.get("adminRemarks");
+            String actor = (String) body.getOrDefault("actor", "Master Admin");
 
-            DisputeTransaction dt = workflowService.assignDispute(disputeId, plazaId, plazaName, adminRemarks, actor);
+            DisputeTransaction dt = workflowService.assignDispute(disputeId, plazaId, plazaName, adminRemarks, actor, body);
             return ResponseEntity.ok(dt);
         } catch (IllegalArgumentException | IllegalStateException ex) {
             return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));

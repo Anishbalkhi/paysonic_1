@@ -249,30 +249,21 @@ export const GlobalTableResizer = () => {
 
       // Check if toolbar control already exists in targetToolbar or wrapper
       const containerToSearch = targetToolbar || wrapper;
-      const existingInContainer = Array.from(containerToSearch.querySelectorAll('.table-stretch-toolbar'));
+      const existingToolbar = containerToSearch.querySelector(`.table-stretch-toolbar[data-for="${tableKey}"]`);
 
-      if (existingInContainer.length > 0) {
-        // Keep at most ONE toolbar in this container, remove any duplicates immediately!
-        while (existingInContainer.length > 1) {
-          const dup = existingInContainer.pop();
-          dup.remove();
+      if (existingToolbar && existingToolbar.isConnected) {
+        existingToolbar._boundTable = table;
+        const valSpan = existingToolbar.querySelector('.stretch-val');
+        if (valSpan && valSpan.textContent !== currentLevel.label) {
+          valSpan.textContent = currentLevel.label;
         }
-
-        const singleToolbar = existingInContainer[0];
-        // If this single toolbar is already bound to this active table, update its label and exit
-        if (singleToolbar._boundTable === table && table.isConnected) {
-          const valSpan = singleToolbar.querySelector('.stretch-val');
-          if (valSpan && valSpan.textContent !== currentLevel.label) {
-            valSpan.textContent = currentLevel.label;
-          }
-          return;
-        }
-        // If stale or bound to an unmounted table, remove it so we can create a clean fresh one
-        singleToolbar.remove();
+        return;
       }
 
-      // Also clean up any other toolbar that claims this tableKey in the document
-      document.querySelectorAll(`.table-stretch-toolbar[data-for="${tableKey}"]`).forEach((el) => el.remove());
+      // Clean up any stale toolbar claiming this tableKey in the document before inserting a new one
+      document.querySelectorAll(`.table-stretch-toolbar[data-for="${tableKey}"]`).forEach((el) => {
+        if (el !== existingToolbar) el.remove();
+      });
 
       // Create Stretch / Size Toolbar
       const toolbar = document.createElement('div');
@@ -363,6 +354,19 @@ export const GlobalTableResizer = () => {
       }
     };
 
+    let isMutating = false;
+    const safeAttachToTables = () => {
+      if (isMutating) return;
+      isMutating = true;
+      try {
+        attachToTables();
+      } finally {
+        setTimeout(() => {
+          isMutating = false;
+        }, 80);
+      }
+    };
+
     // Clean up any stale toolbars from other pages immediately on navigation
     document.querySelectorAll('.table-stretch-toolbar').forEach((el) => {
       if (!el._boundTable || !el._boundTable.isConnected) {
@@ -370,33 +374,57 @@ export const GlobalTableResizer = () => {
       }
     });
 
-    // Attach immediately and monitor for dynamic table updates
-    attachToTables();
-    initTimeoutRef.current = setTimeout(attachToTables, 250);
+    // Attach with initial delay
+    safeAttachToTables();
+    initTimeoutRef.current = setTimeout(safeAttachToTables, 200);
 
+    let debounceTimer = null;
     const observer = new MutationObserver((mutations) => {
-      // Ignore mutations from our own scaling attributes or toolbar DOM additions
+      if (isMutating) return;
+
+      // Filter out internal mutations originating from our own toolbars/resizers
       const isInternal = mutations.every((m) => {
-        if (m.type === 'attributes' && (m.attributeName === 'data-table-scale' || m.attributeName === 'style')) {
+        const target = m.target;
+        if (!target) return false;
+        if (
+          target.classList?.contains('table-stretch-toolbar') ||
+          target.classList?.contains('col-resizer') ||
+          target.classList?.contains('col-resizable') ||
+          target.closest?.('.table-stretch-toolbar, .col-resizer')
+        ) {
           return true;
         }
-        if (m.target && m.target.classList && m.target.classList.contains('table-stretch-toolbar')) {
-          return true;
+        for (let i = 0; i < (m.addedNodes?.length || 0); i++) {
+          const node = m.addedNodes[i];
+          if (node.nodeType === 1 && (node.classList?.contains('table-stretch-toolbar') || node.classList?.contains('col-resizer'))) {
+            return true;
+          }
+        }
+        for (let i = 0; i < (m.removedNodes?.length || 0); i++) {
+          const node = m.removedNodes[i];
+          if (node.nodeType === 1 && (node.classList?.contains('table-stretch-toolbar') || node.classList?.contains('col-resizer'))) {
+            return true;
+          }
         }
         return false;
       });
       if (isInternal) return;
 
-      attachToTables();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        safeAttachToTables();
+      }, 150);
     });
 
-    observer.observe(document.body, {
+    const mountTarget = document.querySelector('.content-container') || document.body;
+    observer.observe(mountTarget, {
       childList: true,
       subtree: true,
     });
 
     return () => {
       if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
+      if (debounceTimer) clearTimeout(debounceTimer);
       observer.disconnect();
       // On unmounting / page change, remove any stray toolbars so they don't bleed into the next page
       document.querySelectorAll('.table-stretch-toolbar').forEach((el) => el.remove());

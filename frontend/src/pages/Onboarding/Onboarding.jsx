@@ -200,12 +200,12 @@ export const Onboarding = () => {
       const matched = scopedPlazas.find(
         (p) => p.name === currentUser.assignedPlaza || p.id === currentUser.assignedPlaza
       );
-      if (matched) {
+      if (matched && selectedPlazaId !== matched.id) {
         setSelectedPlazaId(matched.id);
       }
     } else if (selectedPlazaId && scopedPlazas.length > 0) {
       const exists = scopedPlazas.some((p) => p.id === selectedPlazaId);
-      if (!exists) {
+      if (!exists && selectedPlazaId !== '') {
         setSelectedPlazaId('');
       }
     }
@@ -1345,7 +1345,8 @@ export const Onboarding = () => {
   }, [urlSpacePopup.show, viewPlazaDetail, laneModalOpen]);
 
   useEffect(() => {
-    if (selectedPlazaId && store.callbacks[selectedPlazaId]) {
+    if (activeTab !== 'callback') return;
+    if (selectedPlazaId && store.callbacks && store.callbacks[selectedPlazaId]) {
       setCallbackUrls({ ...store.callbacks[selectedPlazaId] });
       setTestResults({});
       setIsAutoFilledCallbacks(false);
@@ -1354,7 +1355,7 @@ export const Onboarding = () => {
       setTestResults({});
       setIsAutoFilledCallbacks(false);
     }
-  }, [selectedPlazaId, store.callbacks]);
+  }, [selectedPlazaId, store.callbacks, activeTab]);
 
   const handleCallbackChange = (api, val) => {
     if (/\s/.test(val)) {
@@ -1597,7 +1598,8 @@ export const Onboarding = () => {
   const [plazaFares, setPlazaFares] = useState({});
 
   useEffect(() => {
-    if (selectedPlazaId && store.fares[selectedPlazaId]) {
+    if (activeTab !== 'fare') return;
+    if (selectedPlazaId && store.fares && store.fares[selectedPlazaId]) {
       const src = store.fares[selectedPlazaId];
       const cloned = {};
       Object.keys(src).forEach((k) => {
@@ -1607,7 +1609,7 @@ export const Onboarding = () => {
     } else {
       setPlazaFares({});
     }
-  }, [selectedPlazaId, store.fares]);
+  }, [selectedPlazaId, store.fares, activeTab]);
 
   const [fareError, setFareError] = useState('');
   const lastAutoPopulateClickRef = useRef(0);
@@ -1736,7 +1738,8 @@ export const Onboarding = () => {
   const [plazaCch, setPlazaCch] = useState({});
 
   useEffect(() => {
-    if (selectedPlazaId && store.cch[selectedPlazaId]) {
+    if (activeTab !== 'cch') return;
+    if (selectedPlazaId && store.cch && store.cch[selectedPlazaId]) {
       const src = store.cch[selectedPlazaId];
       const cloned = {};
       Object.keys(src).forEach((k) => {
@@ -1746,7 +1749,7 @@ export const Onboarding = () => {
     } else {
       setPlazaCch({});
     }
-  }, [selectedPlazaId, store.cch]);
+  }, [selectedPlazaId, store.cch, activeTab]);
 
   const handleCchInputChange = (vcId, val) => {
     if (val && !/^\d{0,6}$/.test(val)) return;

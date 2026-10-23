@@ -999,21 +999,36 @@ class DisputeManagementService {
     const matchedApiPlaza = cachedPlazas.find((p) => String(p.id).trim() === finalPlazaId);
     const targetPlazaName = matchedApiPlaza?.name || PLAZA_MAP[finalPlazaId] || row?.plazaName || 'Plaza';
 
+    const targetRow = row || fallbackRow || {};
     let backendResult = null;
     try {
-      const res = await httpClient.put(`/api/disputes/workflow/assign/${cleanId}`, {
+      const payload = {
+        disputeId: cleanId,
         plazaId: finalPlazaId,
         plazaName: targetPlazaName,
         adminRemarks: adminReason.trim(),
         actor,
-      });
+        acqTxnId: targetRow.acqTxnId || '',
+        tollTxnId: targetRow.tollTxnId || '—',
+        vehicleNo: targetRow.vrn || targetRow.vehicleNo || '—',
+        tagId: targetRow.tagId || '—',
+        tid: targetRow.tid || 'TID-88401',
+        functionCode: targetRow.functionCode || '450',
+        memberMessageText: targetRow.memberMessageText || adminReason.trim(),
+        settlementDate: targetRow.settlementDate || '',
+        txnAmount: targetRow.txnAmount || 85.0,
+        disputeAmount: targetRow.disputeAmount || targetRow.txnAmount || 85.0,
+        batchId: targetRow.batchId || 'BATCH-MANUAL',
+      };
+      const res = await httpClient.put(`/api/disputes/workflow/assign/${cleanId}`, payload);
       if (res && res.data) {
         backendResult = mapDbRecordToUi(res.data);
       }
     } catch (err) {
       console.warn('[DisputeManagementService] DB assign notice:', err?.message);
-      if (err?.response?.data?.error) {
-        throw new Error(err.response.data.error);
+      const errMsg = err?.response?.data?.error || err?.message || '';
+      if (errMsg.includes('mandatory') || errMsg.includes('Cannot assign closed dispute')) {
+        throw new Error(errMsg);
       }
     }
 

@@ -158,14 +158,28 @@ export const AuthProvider = ({ children }) => {
                 (liveRecord.username && perms[liveRecord.username.toLowerCase()]) ||
                 getRoleMenuDefaults(liveRecord.role);
 
-          const updatedSession = {
-            ...active,
-            ...liveRecord,
-            menuAccess: assignedPermissions,
-            permissions: assignedPermissions,
-          };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSession));
-          setCurrentUser(updatedSession);
+          const currentMenuStr = JSON.stringify(active.menuAccess || []);
+          const newMenuStr = JSON.stringify(assignedPermissions || []);
+          const isSame =
+            active.id === liveRecord.id &&
+            active.role === liveRecord.role &&
+            active.status === liveRecord.status &&
+            active.locked === liveRecord.locked &&
+            active.name === liveRecord.name &&
+            active.email === liveRecord.email &&
+            active.assignedPlaza === liveRecord.assignedPlaza &&
+            currentMenuStr === newMenuStr;
+
+          if (!isSame) {
+            const updatedSession = {
+              ...active,
+              ...liveRecord,
+              menuAccess: assignedPermissions,
+              permissions: assignedPermissions,
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSession));
+            setCurrentUser(updatedSession);
+          }
         }
       } catch (err) {
         console.warn('[AuthContext] Background session validation error:', err?.message);

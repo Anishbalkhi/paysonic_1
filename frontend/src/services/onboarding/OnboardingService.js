@@ -146,9 +146,9 @@ class OnboardingService {
           _fromRailway: true,
         }));
         normalised.sort((a, b) => {
-          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return tB - tA;
+          const tA = a.createdAt || '';
+          const tB = b.createdAt || '';
+          return tB.localeCompare(tA);
         });
         try {
           localStorage.setItem(CACHE_KEY_PLAZAS, JSON.stringify(normalised));
@@ -873,9 +873,9 @@ class OnboardingService {
         }));
 
         normalisedPlazas.sort((a, b) => {
-          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-          return tB - tA;
+          const tA = a.createdAt || '';
+          const tB = b.createdAt || '';
+          return tB.localeCompare(tA);
         });
 
         const backendStore = {

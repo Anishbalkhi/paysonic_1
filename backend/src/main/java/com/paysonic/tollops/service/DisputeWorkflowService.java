@@ -587,9 +587,8 @@ public class DisputeWorkflowService {
      * Assign a single dispute to a plaza
      */
     @Transactional
-    public DisputeTransaction assignDispute(String disputeId, String plazaId, String plazaName, String adminRemarks, String actor) {
-        DisputeTransaction dt = transactionRepository.findByDisputeId(disputeId)
-                .orElseThrow(() -> new IllegalArgumentException("Dispute ID not found: " + disputeId));
+    public DisputeTransaction assignDispute(String disputeId, String plazaId, String plazaName, String adminRemarks, String actor, Map<String, Object> payload) {
+        DisputeTransaction dt = findDisputeOrUpsert(disputeId, payload);
 
         if (Boolean.TRUE.equals(dt.getClosed())) {
             throw new IllegalStateException("Cannot assign closed dispute: " + disputeId);
@@ -617,6 +616,11 @@ public class DisputeWorkflowService {
         return transactionRepository.save(dt);
     }
 
+    @Transactional
+    public DisputeTransaction assignDispute(String disputeId, String plazaId, String plazaName, String adminRemarks, String actor) {
+        return assignDispute(disputeId, plazaId, plazaName, adminRemarks, actor, Collections.emptyMap());
+    }
+
     /**
      * Bulk assign disputes
      */
@@ -628,9 +632,11 @@ public class DisputeWorkflowService {
 
         int count = 0;
         for (String id : disputeIds) {
-            Optional<DisputeTransaction> opt = transactionRepository.findByDisputeId(id);
-            if (opt.isPresent()) {
-                DisputeTransaction dt = opt.get();
+            DisputeTransaction dt = null;
+            try {
+                dt = findDisputeOrUpsert(id, null);
+            } catch (Exception ignored) {}
+            if (dt != null) {
                 if (!Boolean.TRUE.equals(dt.getClosed())) {
                     String rowRemarks = (dt.getMemberMessageText() != null && !dt.getMemberMessageText().trim().isEmpty() && !"Imported from file".equalsIgnoreCase(dt.getMemberMessageText()))
                             ? dt.getMemberMessageText().trim()
