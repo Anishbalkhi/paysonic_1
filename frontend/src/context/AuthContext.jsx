@@ -431,7 +431,8 @@ export const AuthProvider = ({ children }) => {
 
       if (status === 429) {
         const retryAfter = apiErr?.response?.headers?.['retry-after'] || data.retryAfter || 60;
-        const err = new Error(`Rate limit exceeded. Too many requests. Please wait ${retryAfter} seconds.`);
+        const cd = SecurityService.formatCooldown(retryAfter);
+        const err = new Error(`Please wait before trying again. You will be able to log in after: ${cd}`);
         err.isRateLimited = true;
         err.retryAfter = retryAfter;
         throw err;

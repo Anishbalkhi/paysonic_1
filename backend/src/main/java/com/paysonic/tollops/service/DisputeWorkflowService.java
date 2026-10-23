@@ -449,12 +449,22 @@ public class DisputeWorkflowService {
                     dt.setAdminRemarks(dt.getMemberMessageText().trim());
                 }
             }
-            // User requirement: Dispute amount in file is in Paisa (e.g. 7500 paisa = 75 Rs).
-            if (dt.getDisputeAmount() != null && dt.getDisputeAmount().compareTo(new BigDecimal("1000")) >= 0) {
-                dt.setDisputeAmount(dt.getDisputeAmount().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+            // Normalizes dispute & txn amounts to Rupees (never paise or double-divided fractions)
+            if (dt.getDisputeAmount() != null) {
+                BigDecimal da = dt.getDisputeAmount();
+                if (da.compareTo(new BigDecimal("1000")) >= 0) {
+                    dt.setDisputeAmount(da.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+                } else if (da.compareTo(BigDecimal.ZERO) > 0 && da.compareTo(BigDecimal.ONE) < 0) {
+                    dt.setDisputeAmount(da.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP));
+                }
             }
-            if (dt.getTxnAmount() != null && dt.getTxnAmount().compareTo(new BigDecimal("1000")) >= 0) {
-                dt.setTxnAmount(dt.getTxnAmount().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+            if (dt.getTxnAmount() != null) {
+                BigDecimal ta = dt.getTxnAmount();
+                if (ta.compareTo(new BigDecimal("1000")) >= 0) {
+                    dt.setTxnAmount(ta.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+                } else if (ta.compareTo(BigDecimal.ZERO) > 0 && ta.compareTo(BigDecimal.ONE) < 0) {
+                    dt.setTxnAmount(ta.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP));
+                }
             }
         }
         return results;
@@ -954,9 +964,14 @@ public class DisputeWorkflowService {
             try {
                 String clean = raw.trim().replace(",", "");
                 BigDecimal val = new BigDecimal(clean);
-                // User requirement: Dispute amount in file is in Paisa (e.g. 7500 in file is in paisa, actual amount is 75 Rs).
-                if (!clean.contains(".") || val.compareTo(new BigDecimal("1000")) >= 0) {
+                // Normalizes input to Rupees:
+                // If in raw paisa (>= 1000, e.g. 7500 paisa), convert to Rupees: 75.00
+                if (val.compareTo(new BigDecimal("1000")) >= 0) {
                     return val.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+                }
+                // If fractional < 1.0 (e.g. 0.75, 0.10, 0.25, 0.55), convert to whole Rupees: 75.00, 10.00, etc.
+                if (val.compareTo(BigDecimal.ZERO) > 0 && val.compareTo(BigDecimal.ONE) < 0) {
+                    return val.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
                 }
                 return val.setScale(2, RoundingMode.HALF_UP);
             } catch (Exception ignored) {}
@@ -1074,6 +1089,27 @@ public class DisputeWorkflowService {
                         dt.setSettlementDate(corrected);
                         dt.setCbRaisedDate(corrected);
                         dt.setTatDueDate(computeTatDueDate(corrected));
+                        count++;
+                    }
+                }
+                // Also normalize dispute and txn amounts in existing database rows
+                if (dt.getDisputeAmount() != null) {
+                    BigDecimal da = dt.getDisputeAmount();
+                    if (da.compareTo(new BigDecimal("1000")) >= 0) {
+                        dt.setDisputeAmount(da.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+                        count++;
+                    } else if (da.compareTo(BigDecimal.ZERO) > 0 && da.compareTo(BigDecimal.ONE) < 0) {
+                        dt.setDisputeAmount(da.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP));
+                        count++;
+                    }
+                }
+                if (dt.getTxnAmount() != null) {
+                    BigDecimal ta = dt.getTxnAmount();
+                    if (ta.compareTo(new BigDecimal("1000")) >= 0) {
+                        dt.setTxnAmount(ta.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP));
+                        count++;
+                    } else if (ta.compareTo(BigDecimal.ZERO) > 0 && ta.compareTo(BigDecimal.ONE) < 0) {
+                        dt.setTxnAmount(ta.multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP));
                         count++;
                     }
                 }

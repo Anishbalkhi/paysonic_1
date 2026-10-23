@@ -220,6 +220,38 @@ export function formatDisplayDateTime(val) {
 }
 
 /**
+ * Normalizes an amount into Rupees.
+ * - Raw paise values (>= 1000, e.g. 7500 paisa) -> converted to Rupees (75.00)
+ * - Fractional values < 1.0 (e.g. 0.75, 0.10, 0.25, 0.55 from double-divided paise) -> converted to Rupees (75.00, 10.00, etc.)
+ * - Standard whole/decimal values -> kept as Rupees (75 -> 75.00, 85.00 -> 85.00)
+ */
+export function normalizeDisputeAmount(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  const num = Number(String(val).replace(/,/g, '').trim());
+  if (isNaN(num)) return 0;
+  if (num >= 1000) {
+    return Number((num / 100).toFixed(2));
+  }
+  if (num > 0 && num < 1) {
+    return Number((num * 100).toFixed(2));
+  }
+  return Number(num.toFixed(2));
+}
+
+export function normalizeTxnAmount(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  const num = Number(String(val).replace(/,/g, '').trim());
+  if (isNaN(num)) return 0;
+  if (num >= 1000) {
+    return Number((num / 100).toFixed(2));
+  }
+  if (num > 0 && num < 1) {
+    return Number((num * 100).toFixed(2));
+  }
+  return Number(num.toFixed(2));
+}
+
+/**
  * Normalizes a raw database record from Railway MySQL into the UI shape
  */
 function mapDbRecordToUi(r, idx = 0) {
@@ -282,15 +314,8 @@ function mapDbRecordToUi(r, idx = 0) {
     plazaName: r.plazaName || PLAZA_MAP[r.plazaId] || 'MUMBAI PLAZA NH-04',
     laneId: r.laneId || 'Lane-01',
     tid: r.tid || 'TID-88401',
-    txnAmount: (() => {
-      const rawTxn = Number(r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? r.tollAmount ?? 0);
-      return rawTxn >= 1000 ? Number((rawTxn / 100).toFixed(2)) : Number(rawTxn.toFixed(2));
-    })(),
-    disputeAmount: (() => {
-      const rawDispute = Number(r.disputeAmount ?? r.dispute_amount ?? (r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? 0));
-      // In dispute files, amount is in Paisa (e.g. 7500 in file is in paisa, actual amount is 75 Rs)
-      return rawDispute >= 1000 ? Number((rawDispute / 100).toFixed(2)) : Number(rawDispute.toFixed(2));
-    })(),
+    txnAmount: normalizeTxnAmount(r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? r.tollAmount ?? 0),
+    disputeAmount: normalizeDisputeAmount(r.disputeAmount ?? r.dispute_amount ?? (r.txnAmount ?? r.txn_amount ?? r.transactionAmount ?? r.amount ?? 0)),
     functionCode: r.functionCode || '450',
     disputeType: r.functionLabel || FUNCTION_CODE_MAP[r.functionCode] || `Code ${r.functionCode}`,
     txnDate: txnDateStr,
@@ -1582,20 +1607,11 @@ class DisputeManagementService {
       let settlementDate = parsedRowDate.formatted;
 
       // Extract Disputed Amount from CSV (Rule 3.3)
-      // User requirement: In dispute files, amount is in Paisa (e.g. 7500 in file is in paisa, actual amount is 75 Rs).
+      // User requirement: Convert paise to rupees and maintain amounts in rupees
       const rawDisputeAmt = row['Dispute Amount'] || row['Disputed Amount'] || row['disputeAmount'] || row['Amount'] || row['Dispute Amt'];
       let parsedDisputeAmt = null;
       if (rawDisputeAmt !== undefined && rawDisputeAmt !== null && String(rawDisputeAmt).trim() !== '') {
-        const cleanStr = String(rawDisputeAmt).replace(/,/g, '').trim();
-        const numVal = Number(cleanStr);
-        if (!isNaN(numVal)) {
-          // If in file it is 7500 (in paisa), convert to 75 Rs (numVal / 100):
-          if (!cleanStr.includes('.') || numVal >= 1000) {
-            parsedDisputeAmt = Number((numVal / 100).toFixed(2));
-          } else {
-            parsedDisputeAmt = Number(numVal.toFixed(2));
-          }
-        }
+        parsedDisputeAmt = normalizeDisputeAmount(rawDisputeAmt);
       }
 
       if (!rrn) {
@@ -1637,11 +1653,7 @@ class DisputeManagementService {
         txnAmount: (() => {
           const rawTxn = row['Transaction Amount'] || row['txnAmount'];
           if (rawTxn === undefined || rawTxn === null || String(rawTxn).trim() === '') return 85.00;
-          const cleanTxnStr = String(rawTxn).replace(/,/g, '').trim();
-          const numTxn = Number(cleanTxnStr);
-          if (isNaN(numTxn)) return 85.00;
-          if (!cleanTxnStr.includes('.') || numTxn >= 1000) return Number((numTxn / 100).toFixed(2));
-          return Number(numTxn.toFixed(2));
+          return normalizeTxnAmount(rawTxn);
         })(),
       } : null;
 

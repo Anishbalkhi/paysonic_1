@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import TransactionSearchNormalService from '../../services/transactionSearch/TransactionSearchNormalService';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
+import { normalizeDisputeAmount, normalizeTxnAmount } from '../../services/dispute/DisputeManagementService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
@@ -160,6 +161,11 @@ export const TransactionSearch = () => {
 
         let content = data?.content ? data.content : Array.isArray(data) ? data : [];
         content = filterRecordsByPlazaScope(content, plazas, currentUser);
+        content = content.map((d) => ({
+          ...d,
+          disputeAmount: normalizeDisputeAmount(d.disputeAmount),
+          txnAmount: normalizeTxnAmount(d.txnAmount)
+        }));
         setRecords(content);
         setTotalElements(data?.totalElements ?? content.length);
         setTotalPages(data?.totalPages ?? (content.length > 0 ? 1 : 0));

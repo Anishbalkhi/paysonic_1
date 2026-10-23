@@ -22,7 +22,6 @@ export const Login = () => {
   const [isLockedOut, setIsLockedOut] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [remainingAttempts, setRemainingAttempts] = useState(null);
-  const [rateLimitNotice, setRateLimitNotice] = useState('');
   const [rateLimitSeconds, setRateLimitSeconds] = useState(0);
   const [progressiveDelayNotice, setProgressiveDelayNotice] = useState(false);
 
@@ -50,9 +49,6 @@ export const Login = () => {
       if (e.detail) {
         const secs = e.detail.retryAfter || 60;
         setRateLimitSeconds(secs);
-        setRateLimitNotice(
-          e.detail.message || `Request quota exceeded (HTTP 429). Too many requests from your IP. Please wait ${secs} seconds.`
-        );
       }
     };
 
@@ -86,7 +82,6 @@ export const Login = () => {
       timer = setInterval(() => {
         setRateLimitSeconds((prev) => {
           if (prev <= 1) {
-            setRateLimitNotice('');
             return 0;
           }
           return prev - 1;
@@ -148,11 +143,10 @@ export const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isLockedOut) return;
+    if (isLockedOut || rateLimitSeconds > 0) return;
 
     setError('');
     setTimeoutNotice('');
-    setRateLimitNotice('');
 
     if (!identifier.trim()) { setError('Please enter your registered email address.'); return; }
     if (!password)           { setError('Please enter your password.'); return; }
@@ -181,7 +175,6 @@ export const Login = () => {
       } else if (err.isRateLimited) {
         const secs = err.retryAfter || 60;
         setRateLimitSeconds(secs);
-        setRateLimitNotice(err.message || `Rate limit exceeded (HTTP 429). Please wait ${secs} seconds.`);
       } else {
         if (err.remainingAttempts !== undefined) {
           setRemainingAttempts(err.remainingAttempts);
@@ -222,7 +215,7 @@ export const Login = () => {
         </div>
         <div className="login-left-footer">
           <div className="left-stat"><span className="stat-dot green" />RFID FASTag</div>
-          <div className="left-stat"><span className="stat-dot green" />Rate Limited</div>
+          <div className="left-stat"><span className="stat-dot green" />DDoS Shield</div>
           <div className="left-stat"><span className="stat-dot green" />Brute-Force Shield</div>
           <div className="left-stat"><span className="stat-dot green" />99.9% Uptime</div>
         </div>
@@ -277,8 +270,8 @@ export const Login = () => {
           <h1 className="lf-title">Welcome back</h1>
           <p className="lf-sub">Sign in to your Toll Operations account</p>
 
-          {/* ── SECURITY: Rate Limit 429 Notice ── */}
-          {rateLimitNotice && (
+          {/* ── SECURITY: Temporary Sign-in Pause ── */}
+          {rateLimitSeconds > 0 && (
             <div className="lf-security-alert lf-security-alert--ratelimit" role="alert">
               <div className="lf-alert-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -287,14 +280,14 @@ export const Login = () => {
                 </svg>
               </div>
               <div className="lf-alert-content">
-                <span className="lf-alert-title">Rate Limit Exceeded (HTTP 429)</span>
-                <span className="lf-alert-desc">{rateLimitNotice}</span>
-                {rateLimitSeconds > 0 && (
-                  <div className="lf-cooldown-timer lf-cooldown-timer--amber">
-                    <span className="lf-cooldown-pulse amber" />
-                    <span>Retry available in: <strong>{SecurityService.formatCooldown(rateLimitSeconds)}</strong></span>
-                  </div>
-                )}
+                <span className="lf-alert-title">Please Wait to Sign In</span>
+                <span className="lf-alert-desc">
+                  Too many sign-in attempts detected. You will be able to log in after:
+                </span>
+                <div className="lf-cooldown-timer lf-cooldown-timer--amber">
+                  <span className="lf-cooldown-pulse amber" />
+                  <span>Available in: <strong>{SecurityService.formatCooldown(rateLimitSeconds)}</strong></span>
+                </div>
               </div>
             </div>
           )}
@@ -420,10 +413,10 @@ export const Login = () => {
                 <input
                   id="lf-pw"
                   type={showPassword ? 'text' : 'password'}
-                  className={`lf-input ${error ? 'lf-input--err' : ''} ${isLockedOut ? 'lf-input--locked' : ''}`}
-                  placeholder={isLockedOut ? "Account temporarily locked" : "Enter your password"}
+                  className={`lf-input ${error ? 'lf-input--err' : ''} ${isLockedOut || rateLimitSeconds > 0 ? 'lf-input--locked' : ''}`}
+                  placeholder={isLockedOut ? "Account temporarily locked" : rateLimitSeconds > 0 ? `Try again in ${SecurityService.formatCooldown(rateLimitSeconds)}` : "Enter your password"}
                   value={password}
-                  disabled={isLockedOut}
+                  disabled={isLockedOut || rateLimitSeconds > 0}
                   onChange={e => { setPassword(e.target.value); setError(''); }}
                   autoComplete="current-password"
                 />
@@ -465,10 +458,12 @@ export const Login = () => {
               id="lf-submit"
               type="submit"
               className={`lf-btn ${isLockedOut ? 'lf-btn--locked' : ''}`}
-              disabled={isSubmitting || isLockedOut}
+              disabled={isSubmitting || isLockedOut || rateLimitSeconds > 0}
             >
               {isLockedOut ? (
                 <>🔒 Locked ({SecurityService.formatCooldown(lockoutSeconds)})</>
+              ) : rateLimitSeconds > 0 ? (
+                <>⏱ You can log in after: {SecurityService.formatCooldown(rateLimitSeconds)}</>
               ) : isSubmitting ? (
                 <><span className="lf-spinner" /> Signing in…</>
               ) : (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import TransactionSearchDisputeService from '../../services/transactionSearch/TransactionSearchDisputeService';
 import useOnboardedPlazas from '../../hooks/useOnboardedPlazas';
+import { normalizeDisputeAmount, normalizeTxnAmount } from '../../services/dispute/DisputeManagementService';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
 import { normalizePlazaForRecord } from '../../utils/plazaNormalizer';
@@ -90,6 +91,13 @@ export const TransactionSearchDispute = () => {
 
       // Enforce multi-tenant role scoping (Concessionaire portfolio vs Single-Plaza lock vs Admin)
       content = filterRecordsByPlazaScope(content, plazas, currentUser);
+
+      // Normalize dispute and txn amounts into Rupees (e.g. 7500 -> 75.00, 0.75 -> 75.00)
+      content = content.map((d) => ({
+        ...d,
+        disputeAmount: normalizeDisputeAmount(d.disputeAmount),
+        txnAmount: normalizeTxnAmount(d.txnAmount)
+      }));
 
       setRecords(content);
       setTotalElements(data?.totalElements ?? content.length);

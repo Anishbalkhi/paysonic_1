@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import DisputeReportService from '../../services/dispute/DisputeReportService';
-import DisputeManagementService, { resolveDisputeDates } from '../../services/dispute/DisputeManagementService';
+import DisputeManagementService, { resolveDisputeDates, normalizeDisputeAmount, normalizeTxnAmount } from '../../services/dispute/DisputeManagementService';
 import { useOnboardedPlazas } from '../../hooks/useOnboardedPlazas';
 import { useAuth } from '../../context/AuthContext';
 import { filterRecordsByPlazaScope } from '../../utils/plazaScopeUtils';
@@ -110,6 +110,8 @@ export const DisputeDetailReport = () => {
           seenRrn.add(rrn);
           combined.push({
             ...d,
+            disputeAmount: normalizeDisputeAmount(d.disputeAmount),
+            txnAmount: normalizeTxnAmount(d.txnAmount),
             disputeId: `DISP-${d.id}`,
             lifecycleStatus: 'Pending Assignment',
             disputeStatus: 'NA',
